@@ -6,8 +6,20 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+  companyId: string;
   companyName: string;
-  tier: 'free' | 'pro' | 'premium';
+  companySlug: string;
+  subscription: {
+    id: string;
+    name: string;
+    maxJobs: number;
+    maxInterviewsPerMonth: number;
+    status: string;
+  } | null;
+  usageCounts: {
+    activeJobs: number;
+    interviewsThisMonth: number;
+  };
   createdAt: string;
 }
 
@@ -35,37 +47,41 @@ export const signUp = createAsyncThunk(
     lastName: string;
     companyName: string;
   }) => {
+    // Sign up user with metadata
     const { data, error } = await supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
+      options: {
+        data: {
+          first_name: userData.firstName,
+          last_name: userData.lastName,
+          company_name: userData.companyName,
+        },
+      },
     });
 
     if (error) throw error;
 
-    // Create employer record
-    const { data: employer, error: employerError } = await supabase
-      .from('employers')
-      .insert({
-        id: data.user!.id,
-        email: userData.email,
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        company_name: userData.companyName,
-        tier: 'free',
-      })
-      .select()
-      .single();
+    if (!data.user) {
+      throw new Error('User creation failed');
+    }
 
-    if (employerError) throw employerError;
-
+    // The trigger will automatically create the profile and company
+    // We'll return basic user info for now since the user needs to confirm email first
     return {
-      id: employer.id,
-      email: employer.email,
-      firstName: employer.first_name,
-      lastName: employer.last_name,
-      companyName: employer.company_name,
-      tier: employer.tier,
-      createdAt: employer.created_at,
+      id: data.user.id,
+      email: data.user.email!,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      companyId: '',
+      companyName: userData.companyName,
+      companySlug: '',
+      subscription: null,
+      usageCounts: {
+        activeJobs: 0,
+        interviewsThisMonth: 0,
+      },
+      createdAt: data.user.created_at,
     };
   }
 );
@@ -77,23 +93,35 @@ export const signIn = createAsyncThunk(
 
     if (error) throw error;
 
-    // Fetch employer data
-    const { data: employer, error: employerError } = await supabase
-      .from('employers')
+    // Fetch user data from the comprehensive user_details view
+    const { data: userDetails, error: userError } = await supabase
+      .from('user_details')
       .select('*')
       .eq('id', data.user.id)
       .single();
 
-    if (employerError) throw employerError;
+    if (userError) throw userError;
 
     return {
-      id: employer.id,
-      email: employer.email,
-      firstName: employer.first_name,
-      lastName: employer.last_name,
-      companyName: employer.company_name,
-      tier: employer.tier,
-      createdAt: employer.created_at,
+      id: userDetails.id,
+      email: userDetails.email,
+      firstName: userDetails.first_name,
+      lastName: userDetails.last_name,
+      companyId: userDetails.company_id || '',
+      companyName: userDetails.company_name || '',
+      companySlug: userDetails.company_slug || '',
+      subscription: userDetails.subscription_id ? {
+        id: userDetails.subscription_id,
+        name: userDetails.subscription_name,
+        maxJobs: userDetails.max_jobs,
+        maxInterviewsPerMonth: userDetails.max_interviews_per_month,
+        status: userDetails.subscription_status,
+      } : null,
+      usageCounts: {
+        activeJobs: userDetails.active_jobs_count || 0,
+        interviewsThisMonth: userDetails.interviews_this_month || 0,
+      },
+      createdAt: userDetails.user_created_at,
     };
   }
 );
@@ -108,8 +136,9 @@ export const checkAuth = createAsyncThunk('auth/checkAuth', async () => {
   
   if (!session) return null;
 
-  const { data: employer, error } = await supabase
-    .from('employers')
+  // Fetch user data from the comprehensive user_details view
+  const { data: userDetails, error } = await supabase
+    .from('user_details')
     .select('*')
     .eq('id', session.user.id)
     .single();
@@ -117,13 +146,62 @@ export const checkAuth = createAsyncThunk('auth/checkAuth', async () => {
   if (error) throw error;
 
   return {
-    id: employer.id,
-    email: employer.email,
-    firstName: employer.first_name,
-    lastName: employer.last_name,
-    companyName: employer.company_name,
-    tier: employer.tier,
-    createdAt: employer.created_at,
+    id: userDetails.id,
+    email: userDetails.email,
+    firstName: userDetails.first_name,
+    lastName: userDetails.last_name,
+    companyId: userDetails.company_id || '',
+    companyName: userDetails.company_name || '',
+    companySlug: userDetails.company_slug || '',
+    subscription: userDetails.subscription_id ? {
+      id: userDetails.subscription_id,
+      name: userDetails.subscription_name,
+      maxJobs: userDetails.max_jobs,
+      maxInterviewsPerMonth: userDetails.max_interviews_per_month,
+      status: userDetails.subscription_status,
+    } : null,
+    usageCounts: {
+      activeJobs: userDetails.active_jobs_count || 0,
+      interviewsThisMonth: userDetails.interviews_this_month || 0,
+    },
+    createdAt: userDetails.user_created_at,
+  };
+});
+
+// Function to refresh user data (useful after creating jobs or completing interviews)
+export const refreshUserData = createAsyncThunk('auth/refreshUserData', async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session) throw new Error('No active session');
+
+  const { data: userDetails, error } = await supabase
+    .from('user_details')
+    .select('*')
+    .eq('id', session.user.id)
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: userDetails.id,
+    email: userDetails.email,
+    firstName: userDetails.first_name,
+    lastName: userDetails.last_name,
+    companyId: userDetails.company_id || '',
+    companyName: userDetails.company_name || '',
+    companySlug: userDetails.company_slug || '',
+    subscription: userDetails.subscription_id ? {
+      id: userDetails.subscription_id,
+      name: userDetails.subscription_name,
+      maxJobs: userDetails.max_jobs,
+      maxInterviewsPerMonth: userDetails.max_interviews_per_month,
+      status: userDetails.subscription_status,
+    } : null,
+    usageCounts: {
+      activeJobs: userDetails.active_jobs_count || 0,
+      interviewsThisMonth: userDetails.interviews_this_month || 0,
+    },
+    createdAt: userDetails.user_created_at,
   };
 });
 
@@ -179,9 +257,14 @@ const authSlice = createSlice({
           state.user = action.payload;
           state.isAuthenticated = true;
         }
+      })
+      // Refresh User Data
+      .addCase(refreshUserData.fulfilled, (state, action) => {
+        state.user = action.payload;
       });
   },
 });
 
 export const { clearError, setLoading } = authSlice.actions;
+
 export default authSlice.reducer; 

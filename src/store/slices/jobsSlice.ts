@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 
 export interface Job {
   id: string;
-  employerId: string;
+  profileId: string;
   title: string;
   fields: {
     skills?: string[];
@@ -12,7 +12,10 @@ export interface Job {
     customFields?: Record<string, string>;
   };
   interviewFormat: 'text' | 'video';
+  interviewToken: string;
+  isActive: boolean;
   createdAt: string;
+  updatedAt: string;
   interviewLink?: string;
   candidateCount?: number;
 }
@@ -34,111 +37,34 @@ const initialState: JobsState = {
 };
 
 // Async thunks for jobs
-export const fetchJobs = createAsyncThunk(
-  'jobs/fetchJobs',
-  async (employerId: string) => {
+export const fetchJobsByProfile = createAsyncThunk(
+  'jobs/fetchJobsByProfile',
+  async (profileId: string) => {
     const { data, error } = await supabase
       .from('jobs')
       .select(`
         *,
         candidates(count)
       `)
-      .eq('employer_id', employerId)
+      .eq('profile_id', profileId)
+      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
     return data.map(job => ({
       id: job.id,
-      employerId: job.employer_id,
+      profileId: job.profile_id,
       title: job.title,
       fields: job.fields || {},
       interviewFormat: job.interview_format,
+      interviewToken: job.interview_token,
+      isActive: job.is_active,
       createdAt: job.created_at,
-      candidateCount: job.candidates?.[0]?.count || 0,
-      interviewLink: `${process.env.NEXT_PUBLIC_APP_URL}/interview/${job.id}`,
+      updatedAt: job.updated_at,
+      candidateCount: job.candidates?.length || 0,
+      interviewLink: `${process.env.NEXT_PUBLIC_APP_URL}/interview/${job.interview_token}`,
     }));
-  }
-);
-
-export const createJob = createAsyncThunk(
-  'jobs/createJob',
-  async (jobData: {
-    employerId: string;
-    title: string;
-    fields: Job['fields'];
-    interviewFormat: 'text' | 'video';
-  }) => {
-    const { data, error } = await supabase
-      .from('jobs')
-      .insert({
-        employer_id: jobData.employerId,
-        title: jobData.title,
-        fields: jobData.fields,
-        interview_format: jobData.interviewFormat,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return {
-      id: data.id,
-      employerId: data.employer_id,
-      title: data.title,
-      fields: data.fields || {},
-      interviewFormat: data.interview_format,
-      createdAt: data.created_at,
-      candidateCount: 0,
-      interviewLink: `${process.env.NEXT_PUBLIC_APP_URL}/interview/${data.id}`,
-    };
-  }
-);
-
-export const updateJob = createAsyncThunk(
-  'jobs/updateJob',
-  async (jobData: {
-    id: string;
-    title?: string;
-    fields?: Job['fields'];
-    interviewFormat?: 'text' | 'video';
-  }) => {
-    const { data, error } = await supabase
-      .from('jobs')
-      .update({
-        ...(jobData.title && { title: jobData.title }),
-        ...(jobData.fields && { fields: jobData.fields }),
-        ...(jobData.interviewFormat && { interview_format: jobData.interviewFormat }),
-      })
-      .eq('id', jobData.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return {
-      id: data.id,
-      employerId: data.employer_id,
-      title: data.title,
-      fields: data.fields || {},
-      interviewFormat: data.interview_format,
-      createdAt: data.created_at,
-      interviewLink: `${process.env.NEXT_PUBLIC_APP_URL}/interview/${data.id}`,
-    };
-  }
-);
-
-export const deleteJob = createAsyncThunk(
-  'jobs/deleteJob',
-  async (jobId: string) => {
-    const { error } = await supabase
-      .from('jobs')
-      .delete()
-      .eq('id', jobId);
-
-    if (error) throw error;
-
-    return jobId;
   }
 );
 
@@ -158,14 +84,106 @@ export const fetchJobById = createAsyncThunk(
 
     return {
       id: data.id,
-      employerId: data.employer_id,
+      profileId: data.profile_id,
       title: data.title,
       fields: data.fields || {},
       interviewFormat: data.interview_format,
+      interviewToken: data.interview_token,
+      isActive: data.is_active,
       createdAt: data.created_at,
-      candidateCount: data.candidates?.[0]?.count || 0,
-      interviewLink: `${process.env.NEXT_PUBLIC_APP_URL}/interview/${data.id}`,
+      updatedAt: data.updated_at,
+      candidateCount: data.candidates?.length || 0,
+      interviewLink: `${process.env.NEXT_PUBLIC_APP_URL}/interview/${data.interview_token}`,
     };
+  }
+);
+
+export const createJob = createAsyncThunk(
+  'jobs/createJob',
+  async (jobData: {
+    profileId: string;
+    title: string;
+    fields: Job['fields'];
+    interviewFormat: 'text' | 'video';
+  }) => {
+    const { data, error } = await supabase
+      .from('jobs')
+      .insert({
+        profile_id: jobData.profileId,
+        title: jobData.title,
+        fields: jobData.fields,
+        interview_format: jobData.interviewFormat,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      profileId: data.profile_id,
+      title: data.title,
+      fields: data.fields || {},
+      interviewFormat: data.interview_format,
+      interviewToken: data.interview_token,
+      isActive: data.is_active,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      candidateCount: 0,
+      interviewLink: `${process.env.NEXT_PUBLIC_APP_URL}/interview/${data.interview_token}`,
+    };
+  }
+);
+
+export const updateJob = createAsyncThunk(
+  'jobs/updateJob',
+  async (jobData: {
+    id: string;
+    title?: string;
+    fields?: Job['fields'];
+    interviewFormat?: 'text' | 'video';
+    isActive?: boolean;
+  }) => {
+    const { data, error } = await supabase
+      .from('jobs')
+      .update({
+        ...(jobData.title && { title: jobData.title }),
+        ...(jobData.fields && { fields: jobData.fields }),
+        ...(jobData.interviewFormat && { interview_format: jobData.interviewFormat }),
+        ...(jobData.isActive !== undefined && { is_active: jobData.isActive }),
+      })
+      .eq('id', jobData.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      profileId: data.profile_id,
+      title: data.title,
+      fields: data.fields || {},
+      interviewFormat: data.interview_format,
+      interviewToken: data.interview_token,
+      isActive: data.is_active,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      interviewLink: `${process.env.NEXT_PUBLIC_APP_URL}/interview/${data.interview_token}`,
+    };
+  }
+);
+
+export const deleteJob = createAsyncThunk(
+  'jobs/deleteJob',
+  async (jobId: string) => {
+    const { error } = await supabase
+      .from('jobs')
+      .update({ is_active: false })
+      .eq('id', jobId);
+
+    if (error) throw error;
+
+    return jobId;
   }
 );
 
@@ -182,61 +200,66 @@ const jobsSlice = createSlice({
     clearCurrentJob: (state) => {
       state.currentJob = null;
     },
+    updateJobCandidateCount: (state, action: PayloadAction<{ jobId: string; count: number }>) => {
+      const job = state.jobs.find(j => j.id === action.payload.jobId);
+      if (job) {
+        job.candidateCount = action.payload.count;
+      }
+      if (state.currentJob && state.currentJob.id === action.payload.jobId) {
+        state.currentJob.candidateCount = action.payload.count;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Jobs
-      .addCase(fetchJobs.pending, (state) => {
+      // Fetch Jobs by Profile
+      .addCase(fetchJobsByProfile.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchJobs.fulfilled, (state, action) => {
+      .addCase(fetchJobsByProfile.fulfilled, (state, action) => {
         state.isLoading = false;
         state.jobs = action.payload;
         state.totalJobs = action.payload.length;
       })
-      .addCase(fetchJobs.rejected, (state, action) => {
+      .addCase(fetchJobsByProfile.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch jobs';
       })
+      // Fetch Job by ID
+      .addCase(fetchJobById.fulfilled, (state, action) => {
+        state.currentJob = action.payload;
+      })
       // Create Job
-      .addCase(createJob.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
       .addCase(createJob.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.jobs.unshift(action.payload);
-        state.totalJobs++;
-      })
-      .addCase(createJob.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to create job';
+        state.totalJobs += 1;
       })
       // Update Job
       .addCase(updateJob.fulfilled, (state, action) => {
         const index = state.jobs.findIndex(job => job.id === action.payload.id);
         if (index !== -1) {
-          state.jobs[index] = { ...state.jobs[index], ...action.payload };
+          state.jobs[index] = action.payload;
         }
-        if (state.currentJob?.id === action.payload.id) {
-          state.currentJob = { ...state.currentJob, ...action.payload };
+        if (state.currentJob && state.currentJob.id === action.payload.id) {
+          state.currentJob = action.payload;
         }
       })
       // Delete Job
       .addCase(deleteJob.fulfilled, (state, action) => {
         state.jobs = state.jobs.filter(job => job.id !== action.payload);
-        state.totalJobs--;
-        if (state.currentJob?.id === action.payload) {
+        state.totalJobs -= 1;
+        if (state.currentJob && state.currentJob.id === action.payload) {
           state.currentJob = null;
         }
-      })
-      // Fetch Job By Id
-      .addCase(fetchJobById.fulfilled, (state, action) => {
-        state.currentJob = action.payload;
       });
   },
 });
 
-export const { clearError, setCurrentJob, clearCurrentJob } = jobsSlice.actions;
+export const { 
+  clearError, 
+  setCurrentJob, 
+  clearCurrentJob, 
+  updateJobCandidateCount 
+} = jobsSlice.actions;
 export default jobsSlice.reducer; 

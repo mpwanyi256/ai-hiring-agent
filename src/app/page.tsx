@@ -55,9 +55,11 @@ export default function LandingPage() {
               <Link href="#pricing" className="text-muted-text hover:text-text transition-colors">
                 Pricing
               </Link>
-              <Button variant="outline" size="sm">
-                Sign In
-              </Button>
+              <Link href="/signin">
+                <Button variant="outline" size="sm">
+                  Sign In
+                </Button>
+              </Link>
             </nav>
           </div>
         </Container>
@@ -76,10 +78,12 @@ export default function LandingPage() {
                 Skip endless resumes and long application queues. Our AI interviews, evaluates, and shortlists top candidates automatically.
               </h2>
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <Button size="lg" className="text-lg">
-                  Start Free Screening
-                  <ArrowRightIcon className="w-5 h-5 ml-2" />
-                </Button>
+                <Link href="/signup">
+                  <Button size="lg" className="text-lg">
+                    Start Free Screening
+                    <ArrowRightIcon className="w-5 h-5 ml-2" />
+                  </Button>
+                </Link>
                 <Button variant="outline" size="lg" className="text-lg">
                   Watch Demo
                 </Button>
