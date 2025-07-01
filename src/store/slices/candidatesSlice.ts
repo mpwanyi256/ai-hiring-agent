@@ -27,6 +27,14 @@ export interface Evaluation {
   redFlags: string[];
 }
 
+// Types for Supabase response data
+interface SupabaseResponse {
+  id: string;
+  candidate_id: string;
+  question: string;
+  answer: string;
+}
+
 interface CandidatesState {
   candidates: Candidate[];
   currentCandidate: Candidate | null;
@@ -73,7 +81,7 @@ export const fetchCandidatesByJob = createAsyncThunk(
         strengths: candidate.evaluations[0].strengths,
         redFlags: candidate.evaluations[0].red_flags,
       } : undefined,
-      responses: candidate.responses?.map((response: any) => ({
+      responses: candidate.responses?.map((response: SupabaseResponse) => ({
         id: response.id,
         candidateId: response.candidate_id,
         question: response.question,
@@ -112,7 +120,7 @@ export const fetchCandidateById = createAsyncThunk(
         strengths: data.evaluations[0].strengths,
         redFlags: data.evaluations[0].red_flags,
       } : undefined,
-      responses: data.responses?.map((response: any) => ({
+      responses: data.responses?.map((response: SupabaseResponse) => ({
         id: response.id,
         candidateId: response.candidate_id,
         question: response.question,

@@ -15,6 +15,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+// Types for flexible job fields
+export interface JobFields {
+  skills?: string[];
+  experienceLevel?: string;
+  traits?: string[];
+  customFields?: Record<string, string>;
+}
+
 // Database Types (will be generated later)
 export type Database = {
   public: {
@@ -53,7 +61,7 @@ export type Database = {
           id: string;
           employer_id: string;
           title: string;
-          fields: any; // JSONB for flexible custom fields
+          fields: JobFields; // JSONB for flexible custom fields
           interview_format: 'text' | 'video';
           created_at: string;
         };
@@ -61,7 +69,7 @@ export type Database = {
           id?: string;
           employer_id: string;
           title: string;
-          fields?: any;
+          fields?: JobFields;
           interview_format?: 'text' | 'video';
           created_at?: string;
         };
@@ -69,7 +77,7 @@ export type Database = {
           id?: string;
           employer_id?: string;
           title?: string;
-          fields?: any;
+          fields?: JobFields;
           interview_format?: 'text' | 'video';
           created_at?: string;
         };
