@@ -23,6 +23,9 @@ export interface JobFields {
   customFields?: Record<string, string>;
 }
 
+// User role enum
+export type UserRole = 'recruiter' | 'candidate' | 'admin' | 'developer';
+
 // Database Types
 export type Database = {
   public: {
@@ -57,6 +60,7 @@ export type Database = {
           first_name: string;
           last_name: string;
           company_id: string | null;
+          role: UserRole;
           created_at: string;
           updated_at: string;
         };
@@ -66,6 +70,7 @@ export type Database = {
           first_name: string;
           last_name: string;
           company_id?: string | null;
+          role?: UserRole;
           created_at?: string;
           updated_at?: string;
         };
@@ -75,6 +80,7 @@ export type Database = {
           first_name?: string;
           last_name?: string;
           company_id?: string | null;
+          role?: UserRole;
           created_at?: string;
           updated_at?: string;
         };
@@ -274,6 +280,7 @@ export type Database = {
           email: string;
           first_name: string;
           last_name: string;
+          role: UserRole;
           user_created_at: string;
           user_updated_at: string;
           company_id: string | null;
@@ -305,6 +312,7 @@ export type Database = {
           email: string;
           first_name: string;
           last_name: string;
+          role: UserRole;
           user_created_at: string;
           user_updated_at: string;
           company_id: string | null;

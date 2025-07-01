@@ -2,17 +2,27 @@
 
 ## Database Setup & Migration
 
-### Issues Fixed in Latest Migration
+### Issues Fixed in Latest Migrations
 
+**Migration 20241201000005 (Latest) - User Role Type Fix & Simplification**
+1. **User Role Type Error**: Fixed "type user_role does not exist" error by properly creating enum type
+2. **Function Simplification**: Removed redundant role assignment in `handle_new_user()` function 
+3. **Cleaner Code**: Role now defaults to 'recruiter' automatically via column default
+4. **Proper Type Permissions**: Added comprehensive grants for user_role enum type
+
+**Previous Migrations**
 1. **Authentication Function Errors**: Fixed `generate_company_slug` function not existing
 2. **RLS Policy Issues**: Updated Row Level Security policies to allow trigger operations
 3. **Permission Issues**: Added proper grants and SECURITY DEFINER functions
 4. **User Data Access**: Created comprehensive `user_details` view for easier queries
 
-### Migration Files
+### Migration Files (Run in Order)
 
 1. `20241201000001_initial_setup.sql` - Initial database schema
 2. `20241201000002_fix_auth_and_create_user_view.sql` - Auth fixes and user view
+3. `20241201000003_add_roles_and_fix_rls.sql` - Added user roles and RLS policies
+4. `20241201000004_ensure_user_role_type.sql` - User role type creation attempt
+5. `20241201000005_fix_user_role_and_simplify.sql` - **Final fix for user_role type and simplified function**
 
 ### Setup Instructions
 

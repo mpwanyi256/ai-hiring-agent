@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
-import { RootState } from '@/store';
+import { supabase } from '@/lib/supabase';
+import { checkAuth } from '@/store/slices/authSlice';
+import { AppDispatch } from '@/store';
 import { 
   EnvelopeIcon,
   SparklesIcon,
@@ -15,37 +17,85 @@ import {
 
 export default function ConfirmEmailPage() {
   const router = useRouter();
-  const { user } = useSelector((state: RootState) => state.auth);
-  const [countdown, setCountdown] = useState(60);
-  const [canResend, setCanResend] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // Redirect if not signed up
   useEffect(() => {
-    if (!user) {
-      router.push('/signup');
-    }
-  }, [user, router]);
+    // Check if user is already authenticated (email confirmed)
+    const checkAuthStatus = async () => {
+      try {
+        await dispatch(checkAuth()).unwrap();
+        // If we get here, user is authenticated, redirect to dashboard
+        router.push('/dashboard');
+      } catch {
+        // User not authenticated yet, that's expected
+        setIsCheckingAuth(false);
+      }
+    };
 
-  // Countdown timer for resend
+    checkAuthStatus();
+  }, [dispatch, router]);
+
   useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    // Listen for auth state changes (email confirmation)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // User has confirmed email and is signed in
+        await dispatch(checkAuth());
+        router.push('/dashboard');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [dispatch, router]);
+
+  useEffect(() => {
+    // Cooldown timer
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1);
+      }, 1000);
       return () => clearTimeout(timer);
-    } else {
-      setCanResend(true);
     }
-  }, [countdown]);
+  }, [resendCooldown]);
 
   const handleResendEmail = async () => {
-    // TODO: Implement resend email functionality
-    // This would call Supabase to resend confirmation email
-    console.log('Resending confirmation email...');
-    setCountdown(60);
-    setCanResend(false);
+    setIsResending(true);
+    
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: '', // Supabase will use the current session email
+      });
+
+      if (error) {
+        console.error('Error resending email:', error);
+        return;
+      }
+
+      setShowSuccess(true);
+      setResendCooldown(60);
+      setTimeout(() => setShowSuccess(false), 5000);
+    } catch (err) {
+      console.error('Error resending email:', err);
+    } finally {
+      setIsResending(false);
+    }
   };
 
-  if (!user) {
-    return null; // Will redirect in useEffect
+  // Show loading while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-text">Checking authentication...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -60,84 +110,109 @@ export default function ConfirmEmailPage() {
               </div>
               <span className="text-xl font-bold text-primary">AI Hiring Agent</span>
             </Link>
+            <div className="text-sm text-muted-text">
+              Need help?{' '}
+              <Link href="/support" className="text-primary hover:text-primary-light font-medium">
+                Contact Support
+              </Link>
+            </div>
           </div>
         </Container>
       </header>
 
       {/* Main Content */}
-      <div className="py-20">
+      <div className="py-12">
         <Container>
-          <div className="max-w-md mx-auto text-center">
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-light">
-              {/* Success Icon */}
+          <div className="max-w-md mx-auto">
+            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-light text-center">
+              {/* Icon */}
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <EnvelopeIcon className="w-8 h-8 text-primary" />
               </div>
 
-              <h1 className="text-2xl font-bold text-text mb-4">
-                Check Your Email
-              </h1>
+              {/* Title */}
+              <h1 className="text-2xl font-bold text-text mb-4">Check Your Email</h1>
               
+              {/* Description */}
               <p className="text-muted-text mb-6">
-                We&apos;ve sent a confirmation link to{' '}
-                <span className="font-medium text-text">{user.email}</span>
+                We&apos;ve sent a confirmation link to your email address. 
+                Click the link to verify your account and start using AI Hiring Agent.
               </p>
 
-              <div className="bg-surface p-4 rounded-lg mb-6">
-                <div className="flex items-center justify-center mb-3">
-                  <CheckCircleIcon className="w-5 h-5 text-primary mr-2" />
-                  <span className="text-sm font-medium text-text">Next Steps:</span>
+              {/* Success Message */}
+              {showSuccess && (
+                <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                  <div className="flex items-center justify-center space-x-2 text-primary">
+                    <CheckCircleIcon className="w-5 h-5" />
+                    <p className="text-sm font-medium">Confirmation email sent!</p>
+                  </div>
                 </div>
-                <ol className="text-sm text-muted-text text-left space-y-2">
-                  <li>1. Check your email inbox</li>
-                  <li>2. Click the confirmation link</li>
-                  <li>3. Return here to access your dashboard</li>
-                </ol>
-              </div>
+              )}
 
-              {/* Resend Email */}
-              <div className="mb-6">
-                {canResend ? (
-                  <Button 
-                    variant="outline" 
-                    onClick={handleResendEmail}
-                    className="w-full"
-                  >
-                    Resend Confirmation Email
-                  </Button>
-                ) : (
-                  <p className="text-sm text-muted-text">
-                    Didn&apos;t receive the email? You can resend it in {countdown}s
-                  </p>
-                )}
-              </div>
-
-              {/* Help Text */}
-              <div className="text-xs text-muted-text">
-                <p className="mb-2">
-                  <strong>Can&apos;t find the email?</strong> Check your spam or junk folder.
+              {/* Free Tier Info */}
+              <div className="bg-gradient-to-r from-primary/5 to-accent-blue/5 rounded-lg border border-primary/20 p-4 mb-6">
+                <h3 className="font-semibold text-text mb-2">🎉 You&apos;re on the Free Tier</h3>
+                <p className="text-sm text-muted-text mb-2">
+                  Your account includes:
                 </p>
-                <p>
-                  Need help? <Link href="/contact" className="text-primary hover:text-primary-light">Contact support</Link>
+                <ul className="text-sm text-muted-text text-left space-y-1">
+                  <li>• 1 active job posting</li>
+                  <li>• 5 AI interviews per month</li>
+                  <li>• Basic candidate reports</li>
+                  <li>• Email support</li>
+                </ul>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-4">
+                <Button
+                  onClick={handleResendEmail}
+                  disabled={isResending || resendCooldown > 0}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {isResending ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2" />
+                      Sending...
+                    </>
+                  ) : resendCooldown > 0 ? (
+                    `Resend in ${resendCooldown}s`
+                  ) : (
+                    'Resend Email'
+                  )}
+                </Button>
+
+                <p className="text-xs text-muted-text">
+                  Didn&apos;t receive the email? Check your spam folder or{' '}
+                  <Link href="/support" className="text-primary hover:text-primary-light">
+                    contact support
+                  </Link>
                 </p>
               </div>
-            </div>
 
-            {/* Additional Info */}
-            <div className="mt-8 text-center">
-              <h2 className="text-lg font-semibold text-text mb-4">While You Wait...</h2>
-              <div className="grid gap-4">
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-light">
-                  <h3 className="font-medium text-text mb-2">🎉 You&apos;re on the Free Tier</h3>
-                  <p className="text-sm text-muted-text">
-                    Start with 1 active job and up to 5 interviews per month
-                  </p>
-                </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-light">
-                  <h3 className="font-medium text-text mb-2">🚀 What&apos;s Next</h3>
-                  <p className="text-sm text-muted-text">
-                    Create your first job posting and start interviewing candidates
-                  </p>
+              {/* Next Steps */}
+              <div className="mt-8 pt-6 border-t border-gray-light">
+                <h4 className="font-semibold text-text mb-3">What happens next?</h4>
+                <div className="text-left space-y-2">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      1
+                    </div>
+                    <p className="text-sm text-muted-text">Confirm your email address</p>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      2
+                    </div>
+                    <p className="text-sm text-muted-text">Access your dashboard</p>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      3
+                    </div>
+                    <p className="text-sm text-muted-text">Create your first job post</p>
+                  </div>
                 </div>
               </div>
             </div>

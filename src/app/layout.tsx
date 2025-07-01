@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: "Skip job boards and long application queues. Our AI interviews, evaluates, and shortlists top candidates — automatically.",
   keywords: "AI hiring, automated interviews, candidate screening, recruitment, HR technology",
   authors: [{ name: "AI Hiring Agent" }],
-  viewport: "width=device-width, initial-scale=1",
+  // viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({
@@ -23,6 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ReduxProvider>
           {children}

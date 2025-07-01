@@ -1,11 +1,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { supabase } from '@/lib/supabase';
+import { supabase, UserRole } from '@/lib/supabase';
 
 export interface User {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
+  role: UserRole;
   companyId: string;
   companyName: string;
   companySlug: string;
@@ -73,6 +74,7 @@ export const signUp = createAsyncThunk(
       email: data.user.email!,
       firstName: userData.firstName,
       lastName: userData.lastName,
+      role: 'recruiter' as UserRole,
       companyId: '',
       companyName: userData.companyName,
       companySlug: '',
@@ -107,6 +109,7 @@ export const signIn = createAsyncThunk(
       email: userDetails.email,
       firstName: userDetails.first_name,
       lastName: userDetails.last_name,
+      role: userDetails.role,
       companyId: userDetails.company_id || '',
       companyName: userDetails.company_name || '',
       companySlug: userDetails.company_slug || '',
@@ -150,6 +153,7 @@ export const checkAuth = createAsyncThunk('auth/checkAuth', async () => {
     email: userDetails.email,
     firstName: userDetails.first_name,
     lastName: userDetails.last_name,
+    role: userDetails.role,
     companyId: userDetails.company_id || '',
     companyName: userDetails.company_name || '',
     companySlug: userDetails.company_slug || '',
@@ -187,6 +191,7 @@ export const refreshUserData = createAsyncThunk('auth/refreshUserData', async ()
     email: userDetails.email,
     firstName: userDetails.first_name,
     lastName: userDetails.last_name,
+    role: userDetails.role,
     companyId: userDetails.company_id || '',
     companyName: userDetails.company_name || '',
     companySlug: userDetails.company_slug || '',

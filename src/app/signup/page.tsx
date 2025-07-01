@@ -127,7 +127,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-surface bg-white shadow-sm">
+      <header className="border-b border-surface bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
         <Container>
           <div className="flex items-center justify-between py-4">
             <Link href="/" className="flex items-center space-x-2">
@@ -147,7 +147,7 @@ export default function SignupPage() {
       </header>
 
       {/* Main Content */}
-      <div className="py-12">
+      <div className="py-12 mt-20">
         <Container>
           <div className="max-w-md mx-auto">
             {/* Progress Bar */}
