@@ -106,8 +106,8 @@ export default function SignupPage() {
         companyName: finalData.companyName!,
       })).unwrap();
       
-      // Redirect to email confirmation page
-      router.push('/signup/confirm-email');
+      // Redirect to verification page with email parameter
+      router.push(`/verify-email?email=${encodeURIComponent(finalData.email!)}`);
     } catch (error) {
       // Error is handled by Redux
       console.error('Signup failed:', error);

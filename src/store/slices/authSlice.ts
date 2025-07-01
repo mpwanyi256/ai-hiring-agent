@@ -90,10 +90,29 @@ export const signUp = createAsyncThunk(
 
 export const signIn = createAsyncThunk(
   'auth/signIn',
-  async (credentials: { email: string; password: string }) => {
+  async (credentials: { email: string; password: string }, { rejectWithValue }) => {
     const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
-    if (error) throw error;
+    if (error) {
+      // Check if it's an email not confirmed error - return special value for component handling
+      if (error.message.includes('Email not confirmed')) {
+        return rejectWithValue({
+          type: 'EMAIL_NOT_CONFIRMED',
+          email: credentials.email,
+          message: 'Email not confirmed'
+        });
+      }
+      throw error;
+    }
+
+    // Check if user's email is confirmed
+    if (data.user && !data.user.email_confirmed_at) {
+      return rejectWithValue({
+        type: 'EMAIL_NOT_CONFIRMED',
+        email: credentials.email,
+        message: 'Email not confirmed'
+      });
+    }
 
     // Fetch user data from the comprehensive user_details view
     const { data: userDetails, error: userError } = await supabase
@@ -249,6 +268,10 @@ const authSlice = createSlice({
       })
       .addCase(signIn.rejected, (state, action) => {
         state.isLoading = false;
+        // Don't set error for EMAIL_NOT_CONFIRMED - let component handle redirect
+        if (action.payload && typeof action.payload === 'object' && 'type' in action.payload && action.payload.type === 'EMAIL_NOT_CONFIRMED') {
+          return; // Don't set error, component will handle redirect
+        }
         state.error = action.error.message || 'Sign in failed';
       })
       // Sign Out

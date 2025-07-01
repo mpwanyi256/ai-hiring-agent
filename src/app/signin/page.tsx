@@ -43,8 +43,21 @@ export default function SigninPage() {
     try {
       await dispatch(signIn(data)).unwrap();
       router.push('/dashboard');
-    } catch (error) {
-      // Error is handled by Redux
+    } catch (error: unknown) {
+      // Check if it's an email not confirmed error from the rejection
+      if (error && typeof error === 'object' && 'type' in error && error.type === 'EMAIL_NOT_CONFIRMED' && 'email' in error) {
+        router.push(`/verify-email?email=${encodeURIComponent(error.email as string)}`);
+        return;
+      }
+      
+      // For other errors, check if it's a string message
+      if (error instanceof Error && error.message.startsWith('EMAIL_NOT_CONFIRMED:')) {
+        const email = error.message.split(':')[1];
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+        return;
+      }
+      
+      // Other errors are handled by Redux
       console.error('Signin failed:', error);
     }
   };
