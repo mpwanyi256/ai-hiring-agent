@@ -6,12 +6,12 @@ import { useDispatch } from 'react-redux';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
-import { supabase } from '@/lib/supabase';
+import TopNavigation from '@/components/navigation/TopNavigation';
+import { createClient } from '@/lib/supabase/client';
 import { checkAuth } from '@/store/slices/authSlice';
 import { AppDispatch } from '@/store';
 import { 
   KeyIcon,
-  SparklesIcon,
   CheckCircleIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
@@ -33,6 +33,7 @@ function VerifyEmailContent() {
 
   useEffect(() => {
     // Listen for auth state changes
+    const supabase = createClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         await dispatch(checkAuth());
@@ -128,6 +129,7 @@ function VerifyEmailContent() {
     setError('');
 
     try {
+      const supabase = createClient();
       const { data, error } = await supabase.auth.verifyOtp({
         email,
         token: verificationCode,
@@ -171,7 +173,8 @@ function VerifyEmailContent() {
     }
 
     try {
-      const { error, data } = await supabase.auth.resend({
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
       });
@@ -204,43 +207,26 @@ function VerifyEmailContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-surface bg-white shadow-sm">
-        <Container>
-          <div className="flex items-center justify-between py-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <SparklesIcon className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-primary">AI Hiring Agent</span>
-            </Link>
-            <div className="text-sm text-muted-text">
-              Need help?{' '}
-              <Link href="/support" className="text-primary hover:text-primary-light font-medium">
-                Contact Support
-              </Link>
-            </div>
-          </div>
-        </Container>
-      </header>
+      {/* Centralized Navigation */}
+      <TopNavigation showAuthButtons={false} />
 
       {/* Main Content */}
-      <div className="py-12">
+      <div className="py-6 sm:py-12 px-4 sm:px-0">
         <Container>
           <div className="max-w-md mx-auto">
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-light text-center">
+            <div className="bg-white p-4 sm:p-8 rounded-lg shadow-sm border border-gray-light text-center">
               {/* Icon */}
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <KeyIcon className="w-8 h-8 text-primary" />
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <KeyIcon className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
               </div>
 
               {/* Title */}
-              <h1 className="text-2xl font-bold text-text mb-4">Verify Your Email</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-text mb-3 sm:mb-4">Verify Your Email</h1>
               
               {/* Description */}
-              <p className="text-muted-text mb-6">
+              <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">
                 We&apos;ve sent a 6-digit verification code to{' '}
-                <span className="font-medium text-text">{email}</span>
+                <span className="font-medium text-text break-all">{email}</span>
                 {timeRemaining > 0 && (
                   <span className="block text-xs mt-2 text-primary">
                     Code expires in {timeRemaining} seconds
@@ -255,9 +241,9 @@ function VerifyEmailContent() {
 
               {/* Success Message */}
               {showSuccess && (
-                <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-primary/10 border border-primary/20 rounded-lg">
                   <div className="flex items-center justify-center space-x-2 text-primary">
-                    <CheckCircleIcon className="w-5 h-5" />
+                    <CheckCircleIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                     <p className="text-sm font-medium">New verification code sent!</p>
                   </div>
                 </div>
@@ -265,7 +251,7 @@ function VerifyEmailContent() {
 
               {/* Error Message */}
               {error && (
-                <div className="mb-6 p-4 bg-accent-red/10 border border-accent-red/20 rounded-lg">
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-accent-red/10 border border-accent-red/20 rounded-lg">
                   <p className="text-accent-red text-sm">{error}</p>
                   {codeExpired && (
                     <div className="mt-3">
@@ -283,8 +269,8 @@ function VerifyEmailContent() {
               )}
 
               {/* Code Input */}
-              <div className="mb-6">
-                <div className="flex justify-center space-x-3 mb-4">
+              <div className="mb-4 sm:mb-6">
+                <div className="flex justify-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
                   {code.map((digit, index) => (
                     <input
                       key={index}
@@ -297,7 +283,7 @@ function VerifyEmailContent() {
                       onChange={(e) => handleCodeChange(e.target.value, index)}
                       onKeyDown={(e) => handleKeyDown(e, index)}
                       onPaste={handlePaste}
-                      className={`w-12 h-12 text-center text-lg font-semibold border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
+                      className={`w-10 h-10 sm:w-12 sm:h-12 text-center text-base sm:text-lg font-semibold border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
                         codeExpired 
                           ? 'border-accent-red/30 bg-accent-red/5 focus:ring-accent-red/50' 
                           : 'border-gray-light focus:ring-primary'
@@ -312,7 +298,7 @@ function VerifyEmailContent() {
               </div>
 
               {/* Verify Button */}
-              <div className="space-y-4 mb-6">
+              <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
                 <Button
                   onClick={handleVerifyCode}
                   disabled={!isCodeComplete || isVerifying || codeExpired}
@@ -350,7 +336,7 @@ function VerifyEmailContent() {
               </div>
 
               {/* Back to Signup */}
-              <div className="pt-6 border-t border-gray-light">
+              <div className="pt-4 sm:pt-6 border-t border-gray-light">
                 <Link 
                   href="/signup" 
                   className="inline-flex items-center text-sm text-muted-text hover:text-primary"
@@ -361,7 +347,7 @@ function VerifyEmailContent() {
               </div>
 
               {/* Free Tier Info */}
-              <div className="mt-6 bg-gradient-to-r from-primary/5 to-accent-blue/5 rounded-lg border border-primary/20 p-4">
+              <div className="mt-4 sm:mt-6 bg-gradient-to-r from-primary/5 to-accent-blue/5 rounded-lg border border-primary/20 p-3 sm:p-4">
                 <h3 className="font-semibold text-text mb-2">🎉 You&apos;re on the Free Tier</h3>
                 <p className="text-sm text-muted-text mb-2">
                   Your account includes:

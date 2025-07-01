@@ -9,12 +9,12 @@ import { z } from 'zod';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
+import TopNavigation from '@/components/navigation/TopNavigation';
 import { signUp, clearError } from '@/store/slices/authSlice';
 import { RootState, AppDispatch } from '@/store';
 import { 
   ArrowRightIcon, 
   ArrowLeftIcon,
-  SparklesIcon,
   EyeIcon,
   EyeSlashIcon
 } from '@heroicons/react/24/outline';
@@ -126,35 +126,18 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-surface bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
-        <Container>
-          <div className="flex items-center justify-between py-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <SparklesIcon className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-primary">AI Hiring Agent</span>
-            </Link>
-            <div className="text-sm text-muted-text">
-              Already have an account?{' '}
-              <Link href="/signin" className="text-primary hover:text-primary-light font-medium">
-                Sign in
-              </Link>
-            </div>
-          </div>
-        </Container>
-      </header>
+      {/* Centralized Navigation */}
+      <TopNavigation showAuthButtons={false} />
 
       {/* Main Content */}
-      <div className="py-12 mt-20">
+      <div className="py-6 sm:py-12 px-4 sm:px-0">
         <Container>
           <div className="max-w-md mx-auto">
             {/* Progress Bar */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-medium text-text">Step {currentStep} of 3</span>
-                <span className="text-sm text-muted-text">
+            <div className="mb-6 sm:mb-8">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <span className="text-xs sm:text-sm font-medium text-text">Step {currentStep} of 3</span>
+                <span className="text-xs sm:text-sm text-muted-text">
                   {currentStep === 1 && 'Company Details'}
                   {currentStep === 2 && 'Personal Information'}
                   {currentStep === 3 && 'Account Setup'}
@@ -170,7 +153,7 @@ export default function SignupPage() {
 
             {/* Error Display */}
             {error && (
-              <div className="mb-6 p-4 bg-accent-red/10 border border-accent-red/20 rounded-lg">
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-accent-red/10 border border-accent-red/20 rounded-lg">
                 <p className="text-accent-red text-sm">{error}</p>
                 <button
                   onClick={clearFormError}
@@ -183,9 +166,9 @@ export default function SignupPage() {
 
             {/* Step 1: Company Details */}
             {currentStep === 1 && (
-              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-light">
-                <h1 className="text-2xl font-bold text-text mb-2">Create Your Account</h1>
-                <p className="text-muted-text mb-6">Let&apos;s start with your company information</p>
+              <div className="bg-white p-4 sm:p-8 rounded-lg shadow-sm border border-gray-light">
+                <h1 className="text-xl sm:text-2xl font-bold text-text mb-2">Create Your Account</h1>
+                <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">Let&apos;s start with your company information</p>
                 
                 <form onSubmit={step1Form.handleSubmit(handleStep1Submit)} className="space-y-4">
                   <div>
@@ -197,7 +180,7 @@ export default function SignupPage() {
                       type="text"
                       id="companyName"
                       placeholder="Enter your company name"
-                      className="w-full px-4 py-3 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm sm:text-base"
                     />
                     {step1Form.formState.errors.companyName && (
                       <p className="text-accent-red text-sm mt-1">
@@ -216,12 +199,12 @@ export default function SignupPage() {
 
             {/* Step 2: Personal Information */}
             {currentStep === 2 && (
-              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-light">
-                <h1 className="text-2xl font-bold text-text mb-2">Personal Information</h1>
-                <p className="text-muted-text mb-6">Tell us a bit about yourself</p>
+              <div className="bg-white p-4 sm:p-8 rounded-lg shadow-sm border border-gray-light">
+                <h1 className="text-xl sm:text-2xl font-bold text-text mb-2">Personal Information</h1>
+                <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">Tell us a bit about yourself</p>
                 
                 <form onSubmit={step2Form.handleSubmit(handleStep2Submit)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="firstName" className="block text-sm font-medium text-text mb-2">
                         First Name *
@@ -231,7 +214,7 @@ export default function SignupPage() {
                         type="text"
                         id="firstName"
                         placeholder="First name"
-                        className="w-full px-4 py-3 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm sm:text-base"
                       />
                       {step2Form.formState.errors.firstName && (
                         <p className="text-accent-red text-sm mt-1">
@@ -248,7 +231,7 @@ export default function SignupPage() {
                         type="text"
                         id="lastName"
                         placeholder="Last name"
-                        className="w-full px-4 py-3 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm sm:text-base"
                       />
                       {step2Form.formState.errors.lastName && (
                         <p className="text-accent-red text-sm mt-1">
@@ -258,17 +241,17 @@ export default function SignupPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <Button 
                       type="button" 
                       variant="outline" 
                       onClick={goToPreviousStep}
-                      className="flex-1"
+                      className="flex-1 order-2 sm:order-1"
                     >
                       <ArrowLeftIcon className="w-4 h-4 mr-2" />
                       Back
                     </Button>
-                    <Button type="submit" className="flex-1">
+                    <Button type="submit" className="flex-1 order-1 sm:order-2">
                       Continue
                       <ArrowRightIcon className="w-4 h-4 ml-2" />
                     </Button>
@@ -279,9 +262,9 @@ export default function SignupPage() {
 
             {/* Step 3: Account Setup */}
             {currentStep === 3 && (
-              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-light">
-                <h1 className="text-2xl font-bold text-text mb-2">Account Setup</h1>
-                <p className="text-muted-text mb-6">Create your login credentials</p>
+              <div className="bg-white p-4 sm:p-8 rounded-lg shadow-sm border border-gray-light">
+                <h1 className="text-xl sm:text-2xl font-bold text-text mb-2">Account Setup</h1>
+                <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">Create your login credentials</p>
                 
                 <form onSubmit={step3Form.handleSubmit(handleStep3Submit)} className="space-y-4">
                   <div>
@@ -293,7 +276,7 @@ export default function SignupPage() {
                       type="email"
                       id="email"
                       placeholder="Enter your business email"
-                      className="w-full px-4 py-3 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm sm:text-base"
                     />
                     {step3Form.formState.errors.email && (
                       <p className="text-accent-red text-sm mt-1">
@@ -312,7 +295,7 @@ export default function SignupPage() {
                         type={showPassword ? 'text' : 'password'}
                         id="password"
                         placeholder="Create a secure password"
-                        className="w-full px-4 py-3 pr-12 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm sm:text-base"
                       />
                       <button
                         type="button"
@@ -320,9 +303,9 @@ export default function SignupPage() {
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-text hover:text-text"
                       >
                         {showPassword ? (
-                          <EyeSlashIcon className="w-5 h-5" />
+                          <EyeSlashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                         ) : (
-                          <EyeIcon className="w-5 h-5" />
+                          <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                         )}
                       </button>
                     </div>
@@ -343,7 +326,7 @@ export default function SignupPage() {
                         type={showConfirmPassword ? 'text' : 'password'}
                         id="confirmPassword"
                         placeholder="Confirm your password"
-                        className="w-full px-4 py-3 pr-12 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm sm:text-base"
                       />
                       <button
                         type="button"
@@ -351,9 +334,9 @@ export default function SignupPage() {
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-text hover:text-text"
                       >
                         {showConfirmPassword ? (
-                          <EyeSlashIcon className="w-5 h-5" />
+                          <EyeSlashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                         ) : (
-                          <EyeIcon className="w-5 h-5" />
+                          <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                         )}
                       </button>
                     </div>
@@ -364,19 +347,19 @@ export default function SignupPage() {
                     )}
                   </div>
 
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <Button 
                       type="button" 
                       variant="outline" 
                       onClick={goToPreviousStep}
-                      className="flex-1"
+                      className="flex-1 order-2 sm:order-1"
                     >
                       <ArrowLeftIcon className="w-4 h-4 mr-2" />
                       Back
                     </Button>
                     <Button 
                       type="submit" 
-                      className="flex-1"
+                      className="flex-1 order-1 sm:order-2"
                       isLoading={isLoading}
                     >
                       Create Account
@@ -384,7 +367,7 @@ export default function SignupPage() {
                   </div>
                 </form>
 
-                <div className="mt-6 text-center">
+                <div className="mt-4 sm:mt-6 text-center">
                   <p className="text-xs text-muted-text">
                     By creating an account, you agree to our{' '}
                     <Link href="/terms" className="text-primary hover:text-primary-light">

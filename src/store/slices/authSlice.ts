@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { supabase, UserRole } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
+import { UserRole } from '@/lib/supabase';
 
 export interface User {
   id: string;
@@ -48,6 +49,8 @@ export const signUp = createAsyncThunk(
     lastName: string;
     companyName: string;
   }) => {
+    const supabase = createClient();
+    
     // Sign up user with metadata
     const { data, error } = await supabase.auth.signUp({
       email: userData.email,
@@ -91,6 +94,8 @@ export const signUp = createAsyncThunk(
 export const signIn = createAsyncThunk(
   'auth/signIn',
   async (credentials: { email: string; password: string }, { rejectWithValue }) => {
+    const supabase = createClient();
+    
     const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
     if (error) {
@@ -149,11 +154,13 @@ export const signIn = createAsyncThunk(
 );
 
 export const signOut = createAsyncThunk('auth/signOut', async () => {
+  const supabase = createClient();
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 });
 
 export const checkAuth = createAsyncThunk('auth/checkAuth', async () => {
+  const supabase = createClient();
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session) return null;
@@ -193,6 +200,7 @@ export const checkAuth = createAsyncThunk('auth/checkAuth', async () => {
 
 // Function to refresh user data (useful after creating jobs or completing interviews)
 export const refreshUserData = createAsyncThunk('auth/refreshUserData', async () => {
+  const supabase = createClient();
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session) throw new Error('No active session');
@@ -239,6 +247,11 @@ const authSlice = createSlice({
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
+    clearAuth: (state) => {
+      state.user = null;
+      state.isAuthenticated = false;
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -250,7 +263,7 @@ const authSlice = createSlice({
       .addCase(signUp.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload;
-        state.isAuthenticated = true;
+        state.isAuthenticated = false; // User needs to verify email first
       })
       .addCase(signUp.rejected, (state, action) => {
         state.isLoading = false;
@@ -275,16 +288,42 @@ const authSlice = createSlice({
         state.error = action.error.message || 'Sign in failed';
       })
       // Sign Out
+      .addCase(signOut.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(signOut.fulfilled, (state) => {
+        state.user = null;
+        state.isAuthenticated = false;
+        state.error = null;
+        state.isLoading = false;
+      })
+      .addCase(signOut.rejected, (state) => {
+        state.isLoading = false;
+        // Even if sign out fails, clear the state
         state.user = null;
         state.isAuthenticated = false;
       })
       // Check Auth
+      .addCase(checkAuth.pending, (state) => {
+        // Only show loading if we don't have a user yet
+        if (!state.user) {
+          state.isLoading = true;
+        }
+      })
       .addCase(checkAuth.fulfilled, (state, action) => {
+        state.isLoading = false;
         if (action.payload) {
           state.user = action.payload;
           state.isAuthenticated = true;
+        } else {
+          state.user = null;
+          state.isAuthenticated = false;
         }
+      })
+      .addCase(checkAuth.rejected, (state) => {
+        state.isLoading = false;
+        state.user = null;
+        state.isAuthenticated = false;
       })
       // Refresh User Data
       .addCase(refreshUserData.fulfilled, (state, action) => {
@@ -293,6 +332,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setLoading } = authSlice.actions;
+export const { clearError, setLoading, clearAuth } = authSlice.actions;
 
 export default authSlice.reducer; 

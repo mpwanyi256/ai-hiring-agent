@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
+import TopNavigation from '@/components/navigation/TopNavigation';
 import { 
   ArrowRightIcon,
   BoltIcon,
@@ -35,35 +36,8 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-text smooth-scroll">
-      {/* Header */}
-      <header className="border-b border-surface bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
-        <Container>
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <SparklesIcon className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-primary">AI Hiring Agent</span>
-            </div>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="#how-it-works" className="text-muted-text hover:text-text transition-colors">
-                How it Works
-              </Link>
-              <Link href="#testimonials" className="text-muted-text hover:text-text transition-colors">
-                Testimonials
-              </Link>
-              <Link href="#pricing" className="text-muted-text hover:text-text transition-colors">
-                Pricing
-              </Link>
-              <Link href="/signin">
-                <Button variant="outline" size="sm">
-                  Sign In
-                </Button>
-              </Link>
-            </nav>
-          </div>
-        </Container>
-      </header>
+      {/* Centralized Navigation */}
+      <TopNavigation showAuthButtons={true} />
 
       {/* Hero Section */}
       <section className="py-20 lg:py-32 bg-white">

@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { checkAuth } from '@/store/slices/authSlice';
 import { RootState, AppDispatch } from '@/store';
-import Header from './Header';
+import TopNavigation from '@/components/navigation/TopNavigation';
 import Sidebar from './Sidebar';
 
 interface DashboardLayoutProps {
@@ -17,6 +17,8 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { user, isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     // Check authentication status on page load
@@ -43,25 +45,65 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <div className="hidden md:flex md:flex-shrink-0">
-        <Sidebar />
-      </div>
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
+      {/* Centralized Top Navigation */}
+      <TopNavigation 
+        showAuthButtons={true} 
+        onMobileMenuClick={() => setSidebarOpen(true)}
+        onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+        sidebarCollapsed={sidebarCollapsed}
+      />
+      
+      {/* Dashboard Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Mobile sidebar overlay */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <Header title={title} />
-        
-        {/* Page Content */}
-        <main className="flex-1 p-6 overflow-auto">
-          {children}
-        </main>
-      </div>
+        {/* Desktop Sidebar */}
+        <div className={`hidden lg:flex lg:flex-shrink-0 transition-all duration-300 ${
+          sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
+        }`}>
+          <Sidebar 
+            collapsed={sidebarCollapsed} 
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+            onClose={() => setSidebarOpen(false)}
+          />
+        </div>
 
-      {/* Mobile Sidebar Overlay - TODO: Implement mobile sidebar toggle */}
-      {/* Could add mobile menu button to header and overlay sidebar for mobile */}
+        {/* Mobile Sidebar */}
+        <div className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out lg:hidden ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
+          <Sidebar 
+            collapsed={false} 
+            onToggleCollapse={() => {}}
+            onClose={() => setSidebarOpen(false)}
+            isMobile={true}
+          />
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Page Title (if provided) */}
+          {title && (
+            <div className="bg-white border-b border-surface px-4 sm:px-6 py-4">
+              <h1 className="text-xl sm:text-2xl font-bold text-text">{title}</h1>
+            </div>
+          )}
+          
+          {/* Scrollable Page Content */}
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="p-4 sm:p-6">
+              {children}
+            </div>
+          </main>
+        </div>
+      </div>
     </div>
   );
 } 

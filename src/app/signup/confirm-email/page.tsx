@@ -6,12 +6,12 @@ import { useDispatch } from 'react-redux';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
-import { supabase } from '@/lib/supabase';
+import TopNavigation from '@/components/navigation/TopNavigation';
+import { createClient } from '@/lib/supabase/client';
 import { checkAuth } from '@/store/slices/authSlice';
 import { AppDispatch } from '@/store';
 import { 
   EnvelopeIcon,
-  SparklesIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
 
@@ -41,6 +41,7 @@ export default function ConfirmEmailPage() {
 
   useEffect(() => {
     // Listen for auth state changes (email confirmation)
+    const supabase = createClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         // User has confirmed email and is signed in
@@ -66,6 +67,7 @@ export default function ConfirmEmailPage() {
     setIsResending(true);
     
     try {
+      const supabase = createClient();
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: '', // Supabase will use the current session email
@@ -100,25 +102,8 @@ export default function ConfirmEmailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-surface bg-white shadow-sm">
-        <Container>
-          <div className="flex items-center justify-between py-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <SparklesIcon className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-primary">AI Hiring Agent</span>
-            </Link>
-            <div className="text-sm text-muted-text">
-              Need help?{' '}
-              <Link href="/support" className="text-primary hover:text-primary-light font-medium">
-                Contact Support
-              </Link>
-            </div>
-          </div>
-        </Container>
-      </header>
+      {/* Centralized Navigation */}
+      <TopNavigation showAuthButtons={false} />
 
       {/* Main Content */}
       <div className="py-12">
@@ -199,19 +184,19 @@ export default function ConfirmEmailPage() {
                     <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
                       1
                     </div>
-                    <p className="text-sm text-muted-text">Confirm your email address</p>
+                    <p className="text-sm text-muted-text">Click the confirmation link in your email</p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+                    <div className="w-6 h-6 bg-gray-light rounded-full flex items-center justify-center text-muted-text text-xs font-bold">
                       2
                     </div>
-                    <p className="text-sm text-muted-text">Access your dashboard</p>
+                    <p className="text-sm text-muted-text">Access your dashboard and create your first job</p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+                    <div className="w-6 h-6 bg-gray-light rounded-full flex items-center justify-center text-muted-text text-xs font-bold">
                       3
                     </div>
-                    <p className="text-sm text-muted-text">Create your first job post</p>
+                    <p className="text-sm text-muted-text">Start interviewing candidates automatically</p>
                   </div>
                 </div>
               </div>

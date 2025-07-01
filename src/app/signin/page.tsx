@@ -9,10 +9,10 @@ import { z } from 'zod';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
+import TopNavigation from '@/components/navigation/TopNavigation';
 import { signIn, clearError } from '@/store/slices/authSlice';
 import { RootState, AppDispatch } from '@/store';
 import { 
-  SparklesIcon,
   EyeIcon,
   EyeSlashIcon
 } from '@heroicons/react/24/outline';
@@ -28,7 +28,10 @@ type SigninData = z.infer<typeof signinSchema>;
 export default function SigninPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const { isLoading, error } = useSelector((state: RootState) => state.auth);
+  const { isLoading, error } = useSelector((state: RootState) => state.auth) as {
+    isLoading: boolean;
+    error: string | null;
+  };
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<SigninData>({
@@ -68,39 +71,22 @@ export default function SigninPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-surface bg-white shadow-sm">
-        <Container>
-          <div className="flex items-center justify-between py-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <SparklesIcon className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-primary">AI Hiring Agent</span>
-            </Link>
-            <div className="text-sm text-muted-text">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-primary hover:text-primary-light font-medium">
-                Sign up
-              </Link>
-            </div>
-          </div>
-        </Container>
-      </header>
+      {/* Centralized Navigation */}
+      <TopNavigation showAuthButtons={false} />
 
       {/* Main Content */}
-      <div className="py-20">
+      <div className="py-8 sm:py-20 px-4 sm:px-0">
         <Container>
           <div className="max-w-md mx-auto">
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-light">
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-text mb-2">Welcome Back</h1>
-                <p className="text-muted-text">Sign in to your AI Hiring Agent account</p>
+            <div className="bg-white p-4 sm:p-8 rounded-lg shadow-sm border border-gray-light">
+              <div className="text-center mb-6 sm:mb-8">
+                <h1 className="text-xl sm:text-2xl font-bold text-text mb-2">Welcome Back</h1>
+                <p className="text-sm sm:text-base text-muted-text">Sign in to your AI Hiring Agent account</p>
               </div>
 
               {/* Error Display */}
               {error && (
-                <div className="mb-6 p-4 bg-accent-red/10 border border-accent-red/20 rounded-lg">
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-accent-red/10 border border-accent-red/20 rounded-lg">
                   <p className="text-accent-red text-sm">{error}</p>
                   <button
                     onClick={clearFormError}
@@ -121,7 +107,7 @@ export default function SigninPage() {
                     type="email"
                     id="email"
                     placeholder="Enter your email"
-                    className="w-full px-4 py-3 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm sm:text-base"
                   />
                   {form.formState.errors.email && (
                     <p className="text-accent-red text-sm mt-1">
@@ -140,7 +126,7 @@ export default function SigninPage() {
                       type={showPassword ? 'text' : 'password'}
                       id="password"
                       placeholder="Enter your password"
-                      className="w-full px-4 py-3 pr-12 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm sm:text-base"
                     />
                     <button
                       type="button"
@@ -148,9 +134,9 @@ export default function SigninPage() {
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-text hover:text-text"
                     >
                       {showPassword ? (
-                        <EyeSlashIcon className="w-5 h-5" />
+                        <EyeSlashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                       ) : (
-                        <EyeIcon className="w-5 h-5" />
+                        <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                       )}
                     </button>
                   </div>
@@ -161,7 +147,7 @@ export default function SigninPage() {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm space-y-2 sm:space-y-0">
                   <label className="flex items-center">
                     <input
                       type="checkbox"
@@ -183,7 +169,7 @@ export default function SigninPage() {
                 </Button>
               </form>
 
-              <div className="mt-6 text-center">
+              <div className="mt-4 sm:mt-6 text-center">
                 <p className="text-sm text-muted-text">
                   Don&apos;t have an account?{' '}
                   <Link href="/signup" className="text-primary hover:text-primary-light font-medium">
@@ -194,7 +180,7 @@ export default function SigninPage() {
             </div>
 
             {/* Help Section */}
-            <div className="mt-8 text-center">
+            <div className="mt-6 sm:mt-8 text-center">
               <p className="text-sm text-muted-text">
                 Need help?{' '}
                 <Link href="/contact" className="text-primary hover:text-primary-light">

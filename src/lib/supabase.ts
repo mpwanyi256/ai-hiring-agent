@@ -1,26 +1,30 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createBrowserClient } from '@supabase/supabase-js'
+import { createClient } from './supabase/client'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Legacy client for backward compatibility
+export const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
+// New SSR-compatible client (for client components)
+export { createClient }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-  },
-});
+// NOTE: For server components, import directly from './supabase/server'
+// export { createClient as createServerClient } from './supabase/server'
 
 // Types for flexible job fields
-export interface JobFields {
-  skills?: string[];
-  experienceLevel?: string;
-  traits?: string[];
-  customFields?: Record<string, string>;
+export interface JobField {
+  id: string;
+  label: string;
+  type: 'text' | 'select' | 'multiselect' | 'number' | 'boolean';
+  required: boolean;
+  options?: string[];
+  value?: string | string[] | number | boolean;
+}
+
+export interface JobFieldsConfig {
+  [key: string]: JobField;
 }
 
 // User role enum
@@ -163,7 +167,7 @@ export type Database = {
           id: string;
           profile_id: string;
           title: string;
-          fields: JobFields;
+          fields: JobFieldsConfig;
           interview_format: 'text' | 'video';
           interview_token: string;
           is_active: boolean;
@@ -174,7 +178,7 @@ export type Database = {
           id?: string;
           profile_id: string;
           title: string;
-          fields?: JobFields;
+          fields?: JobFieldsConfig;
           interview_format?: 'text' | 'video';
           interview_token?: string;
           is_active?: boolean;
@@ -185,7 +189,7 @@ export type Database = {
           id?: string;
           profile_id?: string;
           title?: string;
-          fields?: JobFields;
+          fields?: JobFieldsConfig;
           interview_format?: 'text' | 'video';
           interview_token?: string;
           is_active?: boolean;
