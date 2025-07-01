@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import { 
-  UserGroupIcon,
   ArrowRightIcon,
   BoltIcon,
   ShieldCheckIcon,
@@ -34,9 +34,9 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-text">
+    <div className="min-h-screen bg-background text-text smooth-scroll">
       {/* Header */}
-      <header className="border-b border-surface bg-white shadow-sm">
+      <header className="border-b border-surface bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
         <Container>
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center space-x-2">
@@ -67,7 +67,7 @@ export default function LandingPage() {
       <section className="py-20 lg:py-32 bg-white">
         <Container>
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
+            <div className="flex flex-col items-start gap-4">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight text-text">
                 Hire 5x Faster with{' '}
                 <span className="text-primary">AI-Powered Interviews</span>
@@ -89,19 +89,15 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="flex justify-center">
-              <div className="w-full max-w-md">
-                {/* Placeholder for professional illustration */}
-                <div className="bg-surface rounded-lg p-8 flex items-center justify-center h-80">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                      <UserGroupIcon className="w-8 h-8 text-white" />
-                    </div>
-                    <p className="text-muted-text">Professional Interview Illustration</p>
-                    <p className="text-sm text-muted-text mt-2">
-                      (Replace with unDraw illustration)
-                    </p>
-                  </div>
-                </div>
+              <div className="w-full max-w-lg">
+                <Image
+                  src="/images/business.jpg"
+                  alt="Professional team collaboration and hiring"
+                  width={500}
+                  height={400}
+                  className="rounded-lg shadow-lg"
+                  priority
+                />
               </div>
             </div>
           </div>
@@ -119,8 +115,20 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center bg-white p-8 rounded-lg shadow-sm">
-              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-white">1</span>
+              <div className="flex justify-center mb-6">
+                <div className="w-48 h-48">
+                  <Image
+                    src="/illustrations/resume.svg"
+                    alt="Create job requirements illustration"
+                    width={128}
+                    height={128}
+                    className="w-full h-full"
+                    objectFit="contain"
+                  />
+                </div>
+              </div>
+              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-xl font-bold text-white">1</span>
               </div>
               <h3 className="text-xl font-semibold mb-4 text-text">Tell us what you&apos;re hiring for</h3>
               <p className="text-muted-text">
@@ -128,8 +136,20 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="text-center bg-white p-8 rounded-lg shadow-sm">
-              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-white">2</span>
+              <div className="flex justify-center mb-6">
+                <div className="w-48 h-48">
+                  <Image
+                    src="/illustrations/resume_scan.svg"
+                    alt="AI scanning and analyzing candidates illustration"
+                    width={128}
+                    height={128}
+                    className="w-full h-full"
+                    objectFit="contain"
+                  />
+                </div>
+              </div>
+              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-xl font-bold text-white">2</span>
               </div>
               <h3 className="text-xl font-semibold mb-4 text-text">Our AI handles the interviews</h3>
               <p className="text-muted-text">
@@ -137,8 +157,20 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="text-center bg-white p-8 rounded-lg shadow-sm">
-              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-white">3</span>
+              <div className="flex justify-center mb-6">
+                <div className="w-48 h-48">
+                  <Image
+                    src="/illustrations/candidate_selection.svg"
+                    alt="Candidate selection and ranking illustration"
+                    width={128}
+                    height={128}
+                    className="w-full h-full"
+                    objectFit="contain"
+                  />
+                </div>
+              </div>
+              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-xl font-bold text-white">3</span>
               </div>
               <h3 className="text-xl font-semibold mb-4 text-text">Get a smart shortlist</h3>
               <p className="text-muted-text">
@@ -188,22 +220,54 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-light">
-              <UserGroupIcon className="w-8 h-8 text-primary mb-3" />
+              <div className="w-16 h-16 mb-4 mx-auto">
+                <Image
+                  src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+                  alt="Startup team"
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
               <h3 className="font-semibold mb-2 text-text">Startup Founders</h3>
               <p className="text-sm text-muted-text">Building your first team without HR support</p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-light">
-              <UserGroupIcon className="w-8 h-8 text-primary mb-3" />
+              <div className="w-16 h-16 mb-4 mx-auto">
+                <Image
+                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=988&q=80"
+                  alt="Small business owner"
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
               <h3 className="font-semibold mb-2 text-text">Small Business Owners</h3>
               <p className="text-sm text-muted-text">Scale hiring without dedicated recruiters</p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-light">
-              <UserGroupIcon className="w-8 h-8 text-primary mb-3" />
+              <div className="w-16 h-16 mb-4 mx-auto">
+                <Image
+                  src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+                  alt="Recruitment agency team"
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
               <h3 className="font-semibold mb-2 text-text">Recruitment Agencies</h3>
               <p className="text-sm text-muted-text">Handle multiple clients efficiently</p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-light">
-              <UserGroupIcon className="w-8 h-8 text-primary mb-3" />
+              <div className="w-16 h-16 mb-4 mx-auto">
+                <Image
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=987&q=80"
+                  alt="HR manager"
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
               <h3 className="font-semibold mb-2 text-text">HR Managers</h3>
               <p className="text-sm text-muted-text">Streamline your screening process</p>
             </div>
@@ -223,8 +287,14 @@ export default function LandingPage() {
                 &ldquo;It&apos;s like having a recruiter, interviewer, and assistant — all in one.&rdquo;
               </p>
               <div className="flex items-center">
-                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center mr-3">
-                  <span className="text-white font-semibold">J</span>
+                <div className="w-12 h-12 mr-4">
+                  <Image
+                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+                    alt="James Chen, Tech Startup CEO"
+                    width={48}
+                    height={48}
+                    className="w-full h-full object-cover rounded-full"
+                  />
                 </div>
                 <div>
                   <p className="font-semibold text-text">James Chen</p>
@@ -237,8 +307,14 @@ export default function LandingPage() {
                 &ldquo;We saved 20 hours on one hire. This changes everything.&rdquo;
               </p>
               <div className="flex items-center">
-                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center mr-3">
-                  <span className="text-white font-semibold">S</span>
+                <div className="w-12 h-12 mr-4">
+                  <Image
+                    src="https://images.unsplash.com/photo-1494790108755-2616b612b1ac?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=987&q=80"
+                    alt="Sharon Williams, HR Manager"
+                    width={48}
+                    height={48}
+                    className="w-full h-full object-cover rounded-full"
+                  />
                 </div>
                 <div>
                   <p className="font-semibold text-text">Sharon Williams</p>
