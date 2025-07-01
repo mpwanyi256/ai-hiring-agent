@@ -2,11 +2,10 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import Container from '@/components/ui/Container';
 import Button from '@/components/ui/Button';
-import { checkAuth } from '@/store/slices/authSlice';
+import { checkAuth, User } from '@/store/slices/authSlice';
 import { RootState, AppDispatch } from '@/store';
 import { 
   PlusIcon,
@@ -17,11 +16,16 @@ import {
   SparklesIcon,
   ArrowRightIcon
 } from '@heroicons/react/24/outline';
+import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-  const { user, isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
+  const dispatch = useAppDispatch();
+  const { user, isAuthenticated, isLoading } = useAppSelector((state: RootState) => state.auth) as {
+    user: User | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+  };
 
   useEffect(() => {
     // Check authentication status on page load
@@ -56,7 +60,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-surface bg-white shadow-sm">
+      <header className="border-b border-surface bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
         <Container>
           <div className="flex items-center justify-between py-4">
             <Link href="/dashboard" className="flex items-center space-x-2">
@@ -81,7 +85,7 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Content */}
-      <main className="py-8">
+      <main className="py-8 mt-20">
         <Container>
           {/* Welcome Section */}
           <div className="mb-8">
