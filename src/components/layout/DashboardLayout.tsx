@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDispatch, useSelector } from 'react-redux';
-import { checkAuth } from '@/store/slices/authSlice';
-import { RootState, AppDispatch } from '@/store';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 import TopNavigation from '@/components/navigation/TopNavigation';
 import Sidebar from './Sidebar';
 
@@ -15,25 +14,19 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
   const { user, isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
-    // Check authentication status on page load
-    dispatch(checkAuth());
-  }, [dispatch]);
-
-  useEffect(() => {
-    // Redirect to signin if not authenticated
+    // Redirect to signin if not authenticated and not loading
     if (!isLoading && !isAuthenticated) {
       router.push('/signin');
     }
   }, [isAuthenticated, isLoading, router]);
 
-  // Show loading state while checking auth
-  if (isLoading || !user) {
+  // Show loading state while checking auth or if no user data
+  if (isLoading || (!isAuthenticated && !user)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -42,6 +35,11 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         </div>
       </div>
     );
+  }
+
+  // Don't render dashboard content if user is not authenticated
+  if (!isAuthenticated || !user) {
+    return null;
   }
 
   return (

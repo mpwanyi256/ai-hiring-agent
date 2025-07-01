@@ -6,9 +6,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
-import { signOut, checkAuth } from '@/store/slices/authSlice';
+import { signOut } from '@/store/slices/authSlice';
 import { RootState, AppDispatch } from '@/store';
-import { createClient } from '@/lib/supabase/client';
 import { 
   SparklesIcon,
   CogIcon,
@@ -38,37 +37,6 @@ export default function TopNavigation({
   const dispatch = useDispatch<AppDispatch>();
   const { user, isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  // Handle hydration
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Initialize auth state on component mount
-  useEffect(() => {
-    if (mounted) {
-      dispatch(checkAuth());
-    }
-  }, [dispatch, mounted]);
-
-  // Listen for auth changes
-  useEffect(() => {
-    if (!mounted) return;
-
-    const supabase = createClient();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        await dispatch(checkAuth());
-      } else if (event === 'SIGNED_OUT') {
-        // Redirect to home page on sign out
-        router.push('/');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [dispatch, router, mounted]);
 
   const handleSignOut = async () => {
     try {
@@ -94,25 +62,6 @@ export default function TopNavigation({
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showDropdown]);
-
-  // Don't render until mounted to avoid hydration mismatch
-  if (!mounted) {
-    return (
-      <header className="border-b border-surface bg-white shadow-sm sticky top-0 z-50">
-        <Container>
-          <div className="flex items-center justify-between h-16 px-4 sm:px-6">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-lg flex items-center justify-center">
-                <SparklesIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
-              <span className="text-lg sm:text-xl font-bold text-primary">AI Hiring Agent</span>
-            </Link>
-            <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
-          </div>
-        </Container>
-      </header>
-    );
-  }
 
   // Determine if we're on a dashboard page
   const isDashboardPage = pathname.startsWith('/dashboard');
@@ -161,7 +110,7 @@ export default function TopNavigation({
           {/* Right Section */}
           <div className="flex items-center space-x-4">
             {isLoading ? (
-              // Loading state
+              // Loading state - show skeleton
               <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
             ) : isAuthenticated && user ? (
               // Authenticated user menu

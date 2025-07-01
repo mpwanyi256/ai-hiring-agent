@@ -7,7 +7,6 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import TopNavigation from '@/components/navigation/TopNavigation';
-import { createClient } from '@/lib/supabase/client';
 import { checkAuth } from '@/store/slices/authSlice';
 import { AppDispatch } from '@/store';
 import { 
@@ -30,19 +29,6 @@ function VerifyEmailContent() {
   const [lastCodeSentAt, setLastCodeSentAt] = useState<Date | null>(null);
   
   const email = searchParams.get('email') || '';
-
-  useEffect(() => {
-    // Listen for auth state changes
-    const supabase = createClient();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        await dispatch(checkAuth());
-        router.push('/dashboard');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [dispatch, router]);
 
   useEffect(() => {
     // Cooldown timer
@@ -129,26 +115,33 @@ function VerifyEmailContent() {
     setError('');
 
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: verificationCode,
-        type: 'email'
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          token: verificationCode,
+          type: 'email'
+        }),
       });
 
-      if (error) {
-        if (error.message.includes('expired')) {
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.error === 'expired') {
           setCodeExpired(true);
           setError('Verification code has expired. Please request a new one.');
-        } else if (error.message.includes('invalid')) {
+        } else if (data.error === 'invalid') {
           setError('Invalid verification code. Please try again.');
         } else {
-          setError(error.message);
+          setError(data.message || 'Verification failed. Please try again.');
         }
         return;
       }
 
-      if (data.user) {
+      if (data.success && data.user) {
         // User is now verified and signed in
         await dispatch(checkAuth());
         router.push('/dashboard');
@@ -173,14 +166,21 @@ function VerifyEmailContent() {
     }
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
+      const response = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          type: 'signup'
+        }),
       });
 
-      if (error) {
-        setError(error.message);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to resend code. Please try again.');
         return;
       }
 

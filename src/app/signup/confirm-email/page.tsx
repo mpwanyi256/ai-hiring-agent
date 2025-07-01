@@ -7,7 +7,6 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import TopNavigation from '@/components/navigation/TopNavigation';
-import { createClient } from '@/lib/supabase/client';
 import { checkAuth } from '@/store/slices/authSlice';
 import { AppDispatch } from '@/store';
 import { 
@@ -40,20 +39,6 @@ export default function ConfirmEmailPage() {
   }, [dispatch, router]);
 
   useEffect(() => {
-    // Listen for auth state changes (email confirmation)
-    const supabase = createClient();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        // User has confirmed email and is signed in
-        await dispatch(checkAuth());
-        router.push('/dashboard');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [dispatch, router]);
-
-  useEffect(() => {
     // Cooldown timer
     if (resendCooldown > 0) {
       const timer = setTimeout(() => {
@@ -67,14 +52,21 @@ export default function ConfirmEmailPage() {
     setIsResending(true);
     
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: '', // Supabase will use the current session email
+      const response = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: '', // Server will use current session email if available
+          type: 'signup'
+        }),
       });
 
-      if (error) {
-        console.error('Error resending email:', error);
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Error resending email:', data.error);
         return;
       }
 

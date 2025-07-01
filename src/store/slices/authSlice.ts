@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { createClient } from '@/lib/supabase/client';
 import { UserRole } from '@/lib/supabase';
 
 export interface User {
@@ -39,7 +38,7 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Async thunks for authentication
+// Async thunks for authentication using API routes
 export const signUp = createAsyncThunk(
   'auth/signUp',
   async (userData: {
@@ -49,192 +48,93 @@ export const signUp = createAsyncThunk(
     lastName: string;
     companyName: string;
   }) => {
-    const supabase = createClient();
-    
-    // Sign up user with metadata
-    const { data, error } = await supabase.auth.signUp({
-      email: userData.email,
-      password: userData.password,
-      options: {
-        data: {
-          first_name: userData.firstName,
-          last_name: userData.lastName,
-          company_name: userData.companyName,
-        },
+    const response = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(userData),
     });
 
-    if (error) throw error;
+    const data = await response.json();
 
-    if (!data.user) {
-      throw new Error('User creation failed');
+    if (!response.ok) {
+      throw new Error(data.error || 'Sign up failed');
     }
 
-    // The trigger will automatically create the profile and company
-    // We'll return basic user info for now since the user needs to confirm email first
-    return {
-      id: data.user.id,
-      email: data.user.email!,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      role: 'recruiter' as UserRole,
-      companyId: '',
-      companyName: userData.companyName,
-      companySlug: '',
-      subscription: null,
-      usageCounts: {
-        activeJobs: 0,
-        interviewsThisMonth: 0,
-      },
-      createdAt: data.user.created_at,
-    };
+    return data.user;
   }
 );
 
 export const signIn = createAsyncThunk(
   'auth/signIn',
   async (credentials: { email: string; password: string }, { rejectWithValue }) => {
-    const supabase = createClient();
-    
-    const { data, error } = await supabase.auth.signInWithPassword(credentials);
+    const response = await fetch('/api/auth/signin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
 
-    if (error) {
-      // Check if it's an email not confirmed error - return special value for component handling
-      if (error.message.includes('Email not confirmed')) {
+    const data = await response.json();
+
+    if (!response.ok) {
+      // Check if it's an email not confirmed error
+      if (data.error === 'EMAIL_NOT_CONFIRMED') {
         return rejectWithValue({
           type: 'EMAIL_NOT_CONFIRMED',
-          email: credentials.email,
-          message: 'Email not confirmed'
+          email: data.email,
+          message: data.message
         });
       }
-      throw error;
+      throw new Error(data.error || 'Sign in failed');
     }
 
-    // Check if user's email is confirmed
-    if (data.user && !data.user.email_confirmed_at) {
-      return rejectWithValue({
-        type: 'EMAIL_NOT_CONFIRMED',
-        email: credentials.email,
-        message: 'Email not confirmed'
-      });
-    }
-
-    // Fetch user data from the comprehensive user_details view
-    const { data: userDetails, error: userError } = await supabase
-      .from('user_details')
-      .select('*')
-      .eq('id', data.user.id)
-      .single();
-
-    if (userError) throw userError;
-
-    return {
-      id: userDetails.id,
-      email: userDetails.email,
-      firstName: userDetails.first_name,
-      lastName: userDetails.last_name,
-      role: userDetails.role,
-      companyId: userDetails.company_id || '',
-      companyName: userDetails.company_name || '',
-      companySlug: userDetails.company_slug || '',
-      subscription: userDetails.subscription_id ? {
-        id: userDetails.subscription_id,
-        name: userDetails.subscription_name,
-        maxJobs: userDetails.max_jobs,
-        maxInterviewsPerMonth: userDetails.max_interviews_per_month,
-        status: userDetails.subscription_status,
-      } : null,
-      usageCounts: {
-        activeJobs: userDetails.active_jobs_count || 0,
-        interviewsThisMonth: userDetails.interviews_this_month || 0,
-      },
-      createdAt: userDetails.user_created_at,
-    };
+    return data.user;
   }
 );
 
 export const signOut = createAsyncThunk('auth/signOut', async () => {
-  const supabase = createClient();
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  const response = await fetch('/api/auth/signout', {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || 'Sign out failed');
+  }
+
+  return true;
 });
 
 export const checkAuth = createAsyncThunk('auth/checkAuth', async () => {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if (!session) return null;
+  const response = await fetch('/api/auth/check', {
+    method: 'GET',
+  });
 
-  // Fetch user data from the comprehensive user_details view
-  const { data: userDetails, error } = await supabase
-    .from('user_details')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
+  const data = await response.json();
 
-  if (error) throw error;
+  if (!response.ok) {
+    throw new Error('Failed to check authentication');
+  }
 
-  return {
-    id: userDetails.id,
-    email: userDetails.email,
-    firstName: userDetails.first_name,
-    lastName: userDetails.last_name,
-    role: userDetails.role,
-    companyId: userDetails.company_id || '',
-    companyName: userDetails.company_name || '',
-    companySlug: userDetails.company_slug || '',
-    subscription: userDetails.subscription_id ? {
-      id: userDetails.subscription_id,
-      name: userDetails.subscription_name,
-      maxJobs: userDetails.max_jobs,
-      maxInterviewsPerMonth: userDetails.max_interviews_per_month,
-      status: userDetails.subscription_status,
-    } : null,
-    usageCounts: {
-      activeJobs: userDetails.active_jobs_count || 0,
-      interviewsThisMonth: userDetails.interviews_this_month || 0,
-    },
-    createdAt: userDetails.user_created_at,
-  };
+  return data.isAuthenticated ? data.user : null;
 });
 
 // Function to refresh user data (useful after creating jobs or completing interviews)
 export const refreshUserData = createAsyncThunk('auth/refreshUserData', async () => {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if (!session) throw new Error('No active session');
+  const response = await fetch('/api/auth/check', {
+    method: 'GET',
+  });
 
-  const { data: userDetails, error } = await supabase
-    .from('user_details')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
+  const data = await response.json();
 
-  if (error) throw error;
+  if (!response.ok || !data.isAuthenticated) {
+    throw new Error('Failed to refresh user data');
+  }
 
-  return {
-    id: userDetails.id,
-    email: userDetails.email,
-    firstName: userDetails.first_name,
-    lastName: userDetails.last_name,
-    role: userDetails.role,
-    companyId: userDetails.company_id || '',
-    companyName: userDetails.company_name || '',
-    companySlug: userDetails.company_slug || '',
-    subscription: userDetails.subscription_id ? {
-      id: userDetails.subscription_id,
-      name: userDetails.subscription_name,
-      maxJobs: userDetails.max_jobs,
-      maxInterviewsPerMonth: userDetails.max_interviews_per_month,
-      status: userDetails.subscription_status,
-    } : null,
-    usageCounts: {
-      activeJobs: userDetails.active_jobs_count || 0,
-      interviewsThisMonth: userDetails.interviews_this_month || 0,
-    },
-    createdAt: userDetails.user_created_at,
-  };
+  return data.user;
 });
 
 const authSlice = createSlice({
@@ -251,6 +151,7 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
+      state.isLoading = false;
     },
   },
   extraReducers: (builder) => {
