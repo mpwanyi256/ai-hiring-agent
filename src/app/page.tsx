@@ -191,7 +191,7 @@ export default function LandingPage() {
       </section>
 
       {/* Who Is It For Section */}
-      <section className="py-20 bg-surface">
+      {/* <section className="py-20 bg-surface">
         <Container>
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-text">Perfect for Growing Teams</h2>
@@ -251,7 +251,7 @@ export default function LandingPage() {
             </div>
           </div>
         </Container>
-      </section>
+      </section> */}
 
       {/* Testimonials Section */}
       <section id="testimonials" className="py-20 bg-white">

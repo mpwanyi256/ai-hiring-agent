@@ -9,7 +9,8 @@ export interface Job {
     skills?: string[];
     experienceLevel?: string;
     traits?: string[];
-    customFields?: Record<string, string>;
+    jobDescription?: string;
+    customFields?: Record<string, { value: string; inputType: string } | string>;
   };
   interviewFormat: 'text' | 'video';
   interviewToken: string;

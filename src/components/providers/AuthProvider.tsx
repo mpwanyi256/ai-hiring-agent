@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 import { checkAuth } from '@/store/slices/authSlice';
-import { RootState, AppDispatch } from '@/store';
+import { AppDispatch } from '@/store';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -11,31 +11,19 @@ interface AuthProviderProps {
 
 export default function AuthProvider({ children }: AuthProviderProps) {
   const dispatch = useDispatch<AppDispatch>();
-  const { user, isLoading, isAuthenticated } = useSelector((state: RootState) => state.auth);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
-
     const initializeAuth = async () => {
       try {
         // Check current auth state via API route
         await dispatch(checkAuth());
       } catch (error) {
         console.error('Auth initialization failed:', error);
-      } finally {
-        if (isMounted) {
-          setIsInitialized(true);
-        }
       }
     };
 
     // Initialize auth when the app starts
     initializeAuth();
-
-    return () => {
-      isMounted = false;
-    };
   }, [dispatch]);
 
   // Show loading screen while initializing auth
