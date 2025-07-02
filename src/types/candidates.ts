@@ -1,3 +1,119 @@
+// Candidate Management Types
+
+export interface CandidateBasic {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  jobStatus: string;
+  interviewToken: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  fullName: string;
+  currentStep: number;
+  totalSteps: number;
+  isCompleted: boolean;
+  completionPercentage: number;
+  responseCount: number;
+  submittedAt: string | null;
+  createdAt: string;
+  evaluation: CandidateEvaluationSummary | null;
+}
+
+export interface CandidateEvaluationSummary {
+  id: string;
+  score: number;
+  recommendation: RecommendationType;
+  summary: string;
+  strengths: string[];
+  redFlags: string[];
+  createdAt: string;
+}
+
+export interface CandidateDetailed extends CandidateBasic {
+  job: {
+    id: string;
+    title: string;
+    status: string;
+    fields: Record<string, any>;
+    interviewFormat: 'text' | 'video';
+  };
+  responses: CandidateResponse[];
+  evaluation: CandidateEvaluationDetailed | null;
+  stats: CandidateStats;
+}
+
+export interface CandidateResponse {
+  id: string;
+  questionId: string;
+  question: string;
+  answer: string;
+  responseTime: number; // in seconds
+  createdAt: string;
+}
+
+export interface CandidateEvaluationDetailed {
+  id: string;
+  summary: string;
+  score: number;
+  strengths: string[];
+  redFlags: string[];
+  skillsAssessment: Record<string, any>;
+  traitsAssessment: Record<string, any>;
+  recommendation: RecommendationType;
+  feedback: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CandidateStats {
+  totalQuestions: number;
+  answeredQuestions: number;
+  averageResponseTime: number; // in seconds
+  totalInterviewTime: number; // in seconds
+  completionPercentage: number;
+}
+
+export type RecommendationType = 'strong_yes' | 'yes' | 'maybe' | 'no' | 'strong_no';
+
+export type CandidateStatusFilter = 'all' | 'completed' | 'in_progress';
+
+// API Response Types
+export interface CandidatesListResponse {
+  success: boolean;
+  candidates: CandidateBasic[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+  stats: {
+    total: number;
+    completed: number;
+    inProgress: number;
+    averageScore: number;
+  };
+  error?: string;
+}
+
+export interface CandidateDetailResponse {
+  success: boolean;
+  candidate: CandidateDetailed;
+  error?: string;
+}
+
+// Search and Filter Types
+export interface CandidateFilters {
+  jobId?: string;
+  status?: CandidateStatusFilter;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+// Legacy types for backward compatibility - keeping existing structure
 export interface Candidate {
   id: string;
   jobId: string;
@@ -13,6 +129,8 @@ export interface Response {
   candidateId: string;
   question: string;
   answer: string;
+  responseTime: number;
+  createdAt: string;
 }
 
 export interface Evaluation {
@@ -22,14 +140,12 @@ export interface Evaluation {
   score: number;
   strengths: string[];
   redFlags: string[];
-}
-
-export interface CandidatesState {
-  candidates: Candidate[];
-  currentCandidate: Candidate | null;
-  isLoading: boolean;
-  error: string | null;
-  totalCandidates: number;
+  recommendation: RecommendationType;
+  feedback?: string;
+  skillsAssessment?: Record<string, any>;
+  traitsAssessment?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateCandidateData {
