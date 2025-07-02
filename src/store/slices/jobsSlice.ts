@@ -263,4 +263,5 @@ export const {
   clearCurrentJob, 
   updateJobCandidateCount 
 } = jobsSlice.actions;
+
 export default jobsSlice.reducer; 

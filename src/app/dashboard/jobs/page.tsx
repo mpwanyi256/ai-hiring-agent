@@ -1,13 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { fetchJobsByProfile } from '@/store/slices/jobsSlice';
-import { RootState, AppDispatch } from '@/store';
-import { User } from '@/store/slices/authSlice';
+import { RootState, useAppDispatch, useAppSelector } from '@/store';
 import { 
   PlusIcon,
   BriefcaseIcon,
@@ -20,9 +18,9 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function JobsPage() {
-  const dispatch = useDispatch<AppDispatch>();
-  const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
-  const { jobs, isLoading, error } = useSelector((state: RootState) => state.jobs);
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state: RootState) => state.auth);
+  const { jobs, isLoading, error } = useAppSelector((state: RootState) => state.jobs);
 
   useEffect(() => {
     if (user?.id) {

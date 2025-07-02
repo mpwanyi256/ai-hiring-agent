@@ -23,6 +23,8 @@ import {
   BookmarkIcon,
   LinkIcon
 } from '@heroicons/react/24/outline';
+import { Skill, Trait, JobTemplate } from '@/types/jobs';
+import { experienceLevels, inputTypes } from '@/lib/constants';
 
 // Enhanced form validation schema
 const jobSchema = z.object({
@@ -43,53 +45,6 @@ const jobSchema = z.object({
 });
 
 type JobFormData = z.infer<typeof jobSchema>;
-
-interface Skill {
-  id: string;
-  name: string;
-  category: string;
-  description?: string;
-}
-
-interface Trait {
-  id: string;
-  name: string;
-  category: string;
-  description?: string;
-}
-
-interface JobTemplate {
-  id: string;
-  name: string;
-  title: string;
-  fields: {
-    skills?: string[];
-    experienceLevel?: string;
-    traits?: string[];
-    jobDescription?: string;
-    customFields?: Record<string, { value: string; inputType: string }>;
-  };
-  interview_format: string;
-  created_at: string;
-  updated_at: string;
-}
-
-const experienceLevels = [
-  { value: 'entry', label: 'Entry Level (0-2 years)' },
-  { value: 'mid', label: 'Mid Level (2-5 years)' },
-  { value: 'senior', label: 'Senior Level (5+ years)' },
-  { value: 'lead', label: 'Lead/Principal (8+ years)' },
-  { value: 'executive', label: 'Executive/Director' },
-];
-
-const inputTypes = [
-  { value: 'text', label: 'Text Input', icon: '📝' },
-  { value: 'textarea', label: 'Long Text', icon: '📄' },
-  { value: 'number', label: 'Number', icon: '🔢' },
-  { value: 'file', label: 'File Upload', icon: '📎' },
-  { value: 'url', label: 'Website URL', icon: '🔗' },
-  { value: 'email', label: 'Email Address', icon: '📧' },
-];
 
 export default function NewJobPage() {
   const router = useRouter();
