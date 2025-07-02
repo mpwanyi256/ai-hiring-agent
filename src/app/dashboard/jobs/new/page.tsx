@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDispatch, useSelector } from 'react-redux';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,13 +17,12 @@ import { selectSkillsData, selectSkillsLoading } from '@/store/skills/skillsSele
 import { selectTraitsData, selectTraitsLoading } from '@/store/traits/traitsSelectors';
 import { selectJobTemplatesData, selectJobTemplatesLoading } from '@/store/jobTemplates/jobTemplatesSelectors';
 import { RootState, useAppDispatch, useAppSelector } from '@/store';
-import { User, Skill, Trait, JobTemplate } from '@/types';
+import { JobTemplate } from '@/types';
 import { useToast } from '@/components/providers/ToastProvider';
 import { 
   PlusIcon,
   XMarkIcon,
   ArrowLeftIcon,
-  CheckCircleIcon,
   ExclamationTriangleIcon,
   ChevronDownIcon,
   BookmarkIcon,
@@ -68,7 +66,6 @@ export default function NewJobPage() {
   const templatesLoading = useAppSelector(selectJobTemplatesLoading);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [isOverLimit, setIsOverLimit] = useState(false);
   const [skillDropdownOpen, setSkillDropdownOpen] = useState(false);
   const [traitDropdownOpen, setTraitDropdownOpen] = useState(false);
@@ -349,7 +346,6 @@ export default function NewJobPage() {
       await dispatch(refreshUserData()).unwrap();
 
       // Show success message
-      setShowSuccess(true);
       success('Job created successfully! Redirecting...');
       
       setTimeout(() => {
