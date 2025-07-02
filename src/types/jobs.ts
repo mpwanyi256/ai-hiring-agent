@@ -46,6 +46,7 @@ export interface Skill {
     interviewFormat: 'text' | 'video';
     interviewToken: string;
     isActive: boolean;
+    status: 'draft' | 'interviewing' | 'closed';
     createdAt: string;
     updatedAt: string;
     interviewLink?: string;
@@ -73,6 +74,7 @@ export interface Skill {
     fields?: Job['fields'];
     interviewFormat?: 'text' | 'video';
     isActive?: boolean;
+    status?: 'draft' | 'interviewing' | 'closed';
   }
 
   export interface ExperienceLevel {

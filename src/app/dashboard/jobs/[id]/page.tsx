@@ -10,8 +10,9 @@ import JobOverview from '@/components/jobs/JobOverview';
 import QuestionManager from '@/components/questions/QuestionManager';
 import JobCandidates from '@/components/jobs/JobCandidates';
 import JobEvaluations from '@/components/jobs/JobEvaluations';
-import { RootState, useAppSelector } from '@/store';
-import { JobData } from '@/lib/services/jobsService';
+import { RootState, useAppSelector, useAppDispatch } from '@/store';
+import { fetchJobById, updateJobStatus } from '@/store/jobs/jobsThunks';
+import { selectCurrentJob, selectJobsLoading, selectJobsError } from '@/store/jobs/jobsSelectors';
 import { JobStatus } from '@/lib/supabase';
 import { JobQuestion } from '@/types/interview';
 import { 
@@ -37,11 +38,12 @@ interface JobDetailsPageProps {
 
 export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
-  const [job, setJob] = useState<JobData | null>(null);
+  const job = useAppSelector(selectCurrentJob);
+  const isLoading = useAppSelector(selectJobsLoading);
+  const error = useAppSelector(selectJobsError);
   const [questions, setQuestions] = useState<JobQuestion[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -50,24 +52,21 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
     const fetchJobData = async () => {
       if (!user?.id || !params.id) return;
 
-      setIsLoading(true);
-      setError(null);
-
       try {
-        // Fetch job details
-        const jobResponse = await fetch(`/api/jobs/${params.id}`);
-        const jobData = await jobResponse.json();
-
-        if (!jobData.success) {
-          throw new Error(jobData.error || 'Failed to fetch job');
+        // Fetch job using Redux thunk
+        const result = await dispatch(fetchJobById(params.id));
+        
+        if (fetchJobById.rejected.match(result)) {
+          console.error('Failed to fetch job:', result.error.message);
+          return;
         }
 
+        const jobData = result.payload;
+        
         // Verify the job belongs to the current user
-        if (jobData.job.profileId !== user.id) {
+        if (jobData.profileId !== user.id) {
           throw new Error('Job not found');
         }
-
-        setJob(jobData.job);
 
         // Fetch questions
         try {
@@ -79,40 +78,28 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
           }
         } catch (questionError) {
           console.error('Error fetching questions:', questionError);
-          // Don't fail the whole page if questions fail to load
         }
       } catch (err) {
         console.error('Error fetching job:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch job');
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchJobData();
-  }, [user?.id, params.id]);
+  }, [user?.id, params.id, dispatch]);
 
-  const updateJobStatus = async (newStatus: JobStatus) => {
+  const updateJobStatusHandler = async (newStatus: JobStatus) => {
     if (!job) return;
 
     setIsUpdatingStatus(true);
     try {
-      const response = await fetch(`/api/jobs/${job.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: newStatus,
-        }),
-      });
-
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to update job status');
+      const result = await dispatch(updateJobStatus({ 
+        jobId: job.id, 
+        status: newStatus 
+      }));
+      
+      if (updateJobStatus.rejected.match(result)) {
+        throw new Error(result.error.message || 'Failed to update job status');
       }
-
-      setJob(prev => prev ? { ...prev, status: newStatus } : null);
     } catch (err) {
       console.error('Error updating job status:', err);
       alert(err instanceof Error ? err.message : 'Failed to update job status');
@@ -180,7 +167,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
 
   const handleQuestionsChange = (updatedQuestions: JobQuestion[]) => {
     setQuestions(updatedQuestions);
-    // Questions have been updated, no need to fetch stats for now
+    // Questions list has been updated, component will re-render with new count
   };
 
   // Define tabs
@@ -332,7 +319,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
               {job.status === 'draft' ? (
                 <Button 
                   size="sm" 
-                  onClick={() => updateJobStatus('interviewing')}
+                  onClick={() => updateJobStatusHandler('interviewing')}
                   disabled={isUpdatingStatus}
                   className="flex items-center"
                 >
@@ -343,7 +330,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => updateJobStatus('closed')}
+                  onClick={() => updateJobStatusHandler('closed')}
                   disabled={isUpdatingStatus}
                   className="flex items-center"
                 >
@@ -354,7 +341,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => updateJobStatus('interviewing')}
+                  onClick={() => updateJobStatusHandler('interviewing')}
                   disabled={isUpdatingStatus}
                   className="flex items-center"
                 >

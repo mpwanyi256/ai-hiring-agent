@@ -7,6 +7,7 @@ import {
   updateJob,
   deleteJob,
   toggleJobStatus,
+  updateJobStatus,
   fetchSkills,
   fetchTraits,
   fetchJobTemplates,
@@ -154,6 +155,25 @@ const jobsSlice = createSlice({
         if (state.currentJob && state.currentJob.id === action.payload.id) {
           state.currentJob = action.payload;
         }
+      })
+      // Update Job Status
+      .addCase(updateJobStatus.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateJobStatus.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.jobs.findIndex(job => job.id === action.payload.id);
+        if (index !== -1) {
+          state.jobs[index] = action.payload;
+        }
+        if (state.currentJob && state.currentJob.id === action.payload.id) {
+          state.currentJob = action.payload;
+        }
+      })
+      .addCase(updateJobStatus.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to update job status';
       })
       // Fetch Skills
       .addCase(fetchSkills.pending, (state) => {

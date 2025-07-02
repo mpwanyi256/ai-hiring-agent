@@ -130,6 +130,51 @@ export const saveJobTemplate = createAsyncThunk(
   }
 );
 
+export const updateJobStatus = createAsyncThunk(
+  'jobs/updateJobStatus',
+  async ({ jobId, status }: { jobId: string; status: 'draft' | 'interviewing' | 'closed' }) => {
+    try {
+      const response = await apiUtils.put(`/api/jobs/${jobId}`, { status });
+      return response.job;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to update job status');
+    }
+  }
+);
+
+export const fetchJobQuestions = createAsyncThunk(
+  'jobs/fetchJobQuestions',
+  async (jobId: string) => {
+    try {
+      const response = await apiUtils.get(`/api/jobs/${jobId}/questions`);
+      return response;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to fetch job questions');
+    }
+  }
+);
+
+export const generateJobQuestions = createAsyncThunk(
+  'jobs/generateJobQuestions',
+  async ({ jobId, questionCount = 8, includeCustom = true, replaceExisting = false }: {
+    jobId: string;
+    questionCount?: number;
+    includeCustom?: boolean;
+    replaceExisting?: boolean;
+  }) => {
+    try {
+      const response = await apiUtils.post(`/api/jobs/${jobId}/questions`, {
+        questionCount,
+        includeCustom,
+        replaceExisting
+      });
+      return response;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to generate questions');
+    }
+  }
+);
+
 export const deleteJobTemplate = createAsyncThunk(
   'jobs/deleteJobTemplate',
   async (templateId: string) => {
