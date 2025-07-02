@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
 import { resumeService } from '@/lib/services/resumeService';
 import { jobsService } from '@/lib/services/jobsService';
+import { v4 as uuidv4 } from 'uuid';
+import { ai } from '@/lib/constants';
 
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const resumeFile = formData.get('resume') as File;
     const jobToken = formData.get('jobToken') as string;
-    // Note: candidate info is extracted but not used in current implementation
-    // These could be used for future enhancements like personalized evaluation
-    // const candidateEmail = formData.get('email') as string;
-    // const candidateFirstName = formData.get('firstName') as string;
-    // const candidateLastName = formData.get('lastName') as string;
+    const candidateEmail = formData.get('email') as string;
+    const candidateFirstName = formData.get('firstName') as string;
+    const candidateLastName = formData.get('lastName') as string;
 
     if (!resumeFile || !jobToken) {
       return NextResponse.json({ 
@@ -47,19 +47,95 @@ export async function POST(request: Request) {
       }, { status: 404 });
     }
 
+    // Generate candidate ID for file organization
+    const candidateId = uuidv4();
+
     // Parse resume content
     const resumeContent = await resumeService.parseResumeFile(resumeFile);
     
-    // Evaluate resume against job requirements
-    const evaluation = await resumeService.evaluateResume(
-      resumeContent,
-      resumeFile.name,
-      job
-    );
+    // Upload resume to Supabase storage
+    let resumeStorageInfo = null;
+    try {
+      resumeStorageInfo = await resumeService.uploadResumeToStorage(
+        resumeFile,
+        candidateId,
+        job.id
+      );
+      console.log('Resume uploaded to storage:', resumeStorageInfo.path);
+    } catch (storageError) {
+      console.warn('Failed to upload resume to storage:', storageError);
+      // Continue with evaluation even if storage fails
+    }
+
+    // Try enhanced OpenAI evaluation first, fall back to rule-based
+    let evaluation;
+    try {
+      if (ai.openaiApiKey) {
+        console.log('Using OpenAI for resume evaluation');
+        const openAIResult = await resumeService.evaluateWithOpenAI(
+          resumeContent,
+          job.fields?.jobDescription || job.title,
+          Array.isArray(job.fields?.skills) ? job.fields.skills : [],
+          job.fields?.experienceLevel
+        );
+
+        // Convert OpenAI result to our evaluation format
+        const experienceMatch: 'under' | 'match' | 'over' = 
+          openAIResult.score >= 80 ? 'match' : 
+          openAIResult.score >= 60 ? 'match' : 'under';
+
+        evaluation = {
+          score: openAIResult.score,
+          summary: openAIResult.analysis,
+          matchingSkills: openAIResult.strengths,
+          missingSkills: openAIResult.weaknesses,
+          experienceMatch,
+          recommendation: openAIResult.score >= 60 ? 'proceed' : 'reject' as 'proceed' | 'reject',
+          feedback: `AI Analysis: ${openAIResult.analysis}\n\nStrengths:\n${openAIResult.strengths.map(s => `• ${s}`).join('\n')}\n\nAreas for improvement:\n${openAIResult.weaknesses.map(w => `• ${w}`).join('\n')}`,
+          passesThreshold: openAIResult.score >= 60
+        };
+      } else {
+        throw new Error('OpenAI not configured, using rule-based evaluation');
+      }
+    } catch (aiError) {
+      const errorMessage = aiError instanceof Error ? aiError.message : 'Unknown error';
+      console.log('Using rule-based evaluation:', errorMessage);
+      // Fall back to rule-based evaluation
+      evaluation = await resumeService.evaluateResume(
+        resumeContent,
+        resumeFile.name,
+        job
+      );
+    }
+
+    // Save evaluation to database if candidate info is provided
+    let savedEvaluation = null;
+    if (candidateEmail && candidateFirstName && candidateLastName) {
+      try {
+        // Create a temporary profile ID for the evaluation
+        // In a real implementation, you might want to create a candidate record first
+        const tempProfileId = candidateId;
+        
+        savedEvaluation = await resumeService.saveResumeEvaluation(
+          tempProfileId,
+          job.id,
+          resumeContent,
+          resumeFile.name,
+          evaluation
+        );
+        console.log('Resume evaluation saved to database');
+      } catch (saveError) {
+        console.warn('Failed to save evaluation to database:', saveError);
+        // Continue without saving - the evaluation can still be used
+      }
+    }
 
     return NextResponse.json({
       success: true,
       evaluation,
+      savedEvaluation,
+      resumeStorage: resumeStorageInfo,
+      candidateId,
       job: {
         id: job.id,
         title: job.title,

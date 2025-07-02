@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import authSlice from './auth/authSlice';
 import jobsSlice from './jobs/jobsSlice';
 import candidatesSlice from './candidates/candidatesSlice';
+import evaluationSlice from './evaluation/evaluationSlice';
 import skillsSlice from './skills/skillsSlice';
 import traitsSlice from './traits/traitsSlice';
 import jobTemplatesSlice from './jobTemplates/jobTemplatesSlice';
@@ -12,6 +13,7 @@ export const store = configureStore({
     auth: authSlice,
     jobs: jobsSlice,
     candidates: candidatesSlice,
+    evaluation: evaluationSlice,
     skills: skillsSlice,
     traits: traitsSlice,
     jobTemplates: jobTemplatesSlice,

@@ -1,36 +1,24 @@
 import { createClient } from '@/lib/supabase/server';
 import { JobData } from '@/lib/services/jobsService';
+import { documentParsingService } from '@/lib/services/documentParsingService';
 import {
   ResumeEvaluation,
   InterviewEvaluation
 } from '@/types/interview';
+import { ai } from '../constants';
 
-// Note: In a real implementation, you would use OpenAI API and LangChain
-// For now, we'll implement a comprehensive rule-based evaluation system
-
+// Note: Enhanced with OpenAI integration, Supabase storage, and advanced document parsing
 class ResumeService {
   private readonly MINIMUM_SCORE_THRESHOLD = 60; // Candidates need 60% to proceed
 
-  // Parse resume content from file
+  // Parse resume content from file using advanced document parsing
   async parseResumeFile(file: File): Promise<string> {
     try {
-      // For now, we'll assume text files or PDFs converted to text
-      // In a real implementation, you'd use libraries like pdf-parse for PDFs
-      const content = await file.text();
-      return this.cleanResumeText(content);
+      return await documentParsingService.parseResume(file);
     } catch (error) {
       console.error('Error parsing resume file:', error);
-      throw new Error('Failed to parse resume file');
+      throw new Error(`Failed to parse resume file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }
-
-  private cleanResumeText(content: string): string {
-    // Clean and normalize resume text
-    return content
-      .replace(/\r\n/g, '\n')
-      .replace(/\t/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
   }
 
   // Evaluate resume against job requirements
@@ -171,7 +159,8 @@ class ResumeService {
     score: number;
     match: 'under' | 'match' | 'over';
   } {
-    if (!requiredLevel) {
+    // Handle undefined, null, or empty string
+    if (!requiredLevel || typeof requiredLevel !== 'string' || requiredLevel.trim() === '') {
       return { score: 70, match: 'match' };
     }
 
@@ -284,7 +273,8 @@ class ResumeService {
     score: number;
     relevantKeywords: string[];
   } {
-    if (!jobDescription) {
+    // Handle empty or invalid job description
+    if (!jobDescription || typeof jobDescription !== 'string' || jobDescription.trim() === '') {
       return { score: 70, relevantKeywords: [] };
     }
 
@@ -305,6 +295,11 @@ class ResumeService {
   }
 
   private extractKeywords(text: string): string[] {
+    // Handle invalid input
+    if (!text || typeof text !== 'string' || text.trim() === '') {
+      return [];
+    }
+
     // Simple keyword extraction - in a real implementation, you'd use NLP
     const words = text
       .toLowerCase()
@@ -360,8 +355,8 @@ class ResumeService {
 
   private generateRecommendation(
     score: number,
-    skillsAnalysis: any,
-    experienceAnalysis: any
+    skillsAnalysis: { score: number; matchingSkills: string[]; missingSkills: string[] },
+    experienceAnalysis: { score: number; match: 'under' | 'match' | 'over' }
   ): 'proceed' | 'reject' {
     // Strong rejection criteria
     if (score < 40) return 'reject';
@@ -376,8 +371,8 @@ class ResumeService {
 
   private generateSummary(
     score: number,
-    skillsAnalysis: any,
-    experienceAnalysis: any
+    skillsAnalysis: { matchingSkills: string[]; missingSkills: string[] },
+    experienceAnalysis: { match: 'under' | 'match' | 'over' }
   ): string {
     const skillsMatch = skillsAnalysis.matchingSkills.length;
     const totalSkills = skillsAnalysis.matchingSkills.length + skillsAnalysis.missingSkills.length;
@@ -388,7 +383,13 @@ class ResumeService {
            `${score >= this.MINIMUM_SCORE_THRESHOLD ? 'Candidate qualifies for interview.' : 'Candidate does not meet minimum requirements.'}`;
   }
 
-  private generateFeedback(analysisData: any): string {
+  private generateFeedback(analysisData: {
+    score: number;
+    skillsAnalysis: { score: number; matchingSkills: string[]; missingSkills: string[] };
+    experienceAnalysis: { score: number; match: 'under' | 'match' | 'over' };
+    traitsAnalysis: { score: number; foundTraits: string[] };
+    jobDescriptionMatch: { score: number; relevantKeywords: string[] };
+  }): string {
     const { score, skillsAnalysis, experienceAnalysis, traitsAnalysis, jobDescriptionMatch } = analysisData;
     
     let feedback = `Overall Score: ${score}/100\n\n`;
@@ -535,6 +536,135 @@ class ResumeService {
       };
     } catch (error) {
       console.error('Error fetching resume evaluation:', error);
+      throw error;
+    }
+  }
+
+  // Upload resume to Supabase storage
+  async uploadResumeToStorage(
+    file: File, 
+    candidateId: string, 
+    jobId: string
+  ): Promise<{ path: string; publicUrl: string }> {
+    try {
+      const supabase = await createClient();
+      
+      // Generate unique file path
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'pdf';
+      const fileName = `${candidateId}_${jobId}_${Date.now()}.${fileExt}`;
+      const filePath = `resumes/${fileName}`;
+
+      // Upload file to storage
+      const { data, error } = await supabase.storage
+        .from('candidate-files')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        throw new Error(`Failed to upload resume: ${error.message}`);
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('candidate-files')
+        .getPublicUrl(filePath);
+
+      return {
+        path: data.path,
+        publicUrl
+      };
+    } catch (error) {
+      console.error('Error uploading resume to storage:', error);
+      throw error;
+    }
+  }
+
+  // Enhanced OpenAI evaluation (optional integration)
+  async evaluateWithOpenAI(
+    resumeContent: string,
+    jobDescription: string,
+    skills: string[],
+    experienceLevel?: string
+  ): Promise<{
+    score: number;
+    analysis: string;
+    strengths: string[];
+    weaknesses: string[];
+  }> {
+    try {
+      // Check if OpenAI API key is configured
+      if (!ai.openaiApiKey) {
+        throw new Error('OpenAI API key not configured');
+      }
+
+      const prompt = `
+You are an expert HR professional evaluating a candidate's resume. Please analyze the following resume against the job requirements and provide a detailed assessment.
+
+JOB REQUIREMENTS:
+- Position: ${jobDescription}
+- Required Skills: ${skills.join(', ')}
+- Experience Level: ${experienceLevel || 'Not specified'}
+
+RESUME CONTENT:
+${resumeContent}
+
+Please provide your evaluation in the following JSON format:
+{
+  "score": [0-100],
+  "analysis": "[detailed analysis of fit]",
+  "strengths": ["strength1", "strength2", "strength3"],
+  "weaknesses": ["weakness1", "weakness2", "weakness3"]
+}
+`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${ai.openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: ai.model,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert HR professional who evaluates candidate resumes objectively and thoroughly.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: ai.temperature,
+          max_tokens: ai.maxTokens
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('OpenAI API error details:', errorData);
+        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error('Invalid response format from OpenAI API');
+      }
+
+      const evaluation = JSON.parse(data.choices[0].message.content);
+
+      return {
+        score: Math.min(100, Math.max(0, evaluation.score)),
+        analysis: evaluation.analysis,
+        strengths: evaluation.strengths || [],
+        weaknesses: evaluation.weaknesses || []
+      };
+    } catch (error) {
+      console.error('Error with OpenAI evaluation:', error);
+      // Fall back to rule-based evaluation
       throw error;
     }
   }

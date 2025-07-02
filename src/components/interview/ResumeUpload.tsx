@@ -1,9 +1,19 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import Button from '@/components/ui/Button';
 import { JobData } from '@/lib/services/jobsService';
 import { ResumeEvaluation } from '@/types/interview';
+import { evaluateResume } from '@/store/evaluation/evaluationThunks';
+import { 
+  selectCurrentResumeEvaluation,
+  selectResumeEvaluationLoading,
+  selectResumeEvaluationError,
+  selectIsUploading,
+  selectUploadProgress 
+} from '@/store/evaluation/evaluationSelectors';
+import { AppDispatch } from '@/store';
 import {
   DocumentTextIcon,
   CloudArrowUpIcon,
@@ -31,28 +41,61 @@ export default function ResumeUpload({
   candidateInfo,
   onEvaluationComplete 
 }: ResumeUploadProps) {
+  const dispatch = useDispatch<AppDispatch>();
+  const evaluation = useSelector(selectCurrentResumeEvaluation);
+  const isLoading = useSelector(selectResumeEvaluationLoading);
+  const error = useSelector(selectResumeEvaluationError);
+  const isUploading = useSelector(selectIsUploading);
+  const uploadProgress = useSelector(selectUploadProgress);
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [evaluation, setEvaluation] = useState<ResumeEvaluation | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (file: File) => {
-    setError(null);
+  const validateFile = (file: File): { isValid: boolean; error?: string } => {
+    const maxSize = 10 * 1024 * 1024; // 10MB limit
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+      'text/plain'
+    ];
     
-    // Validate file type
-    const allowedTypes = ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (!allowedTypes.includes(file.type)) {
-      setError('Invalid file type. Please upload PDF, DOC, DOCX, or TXT files only.');
-      return;
+    const allowedExtensions = ['pdf', 'docx', 'doc', 'txt'];
+    const extension = file.name.split('.').pop()?.toLowerCase();
+
+    if (file.size > maxSize) {
+      return {
+        isValid: false,
+        error: 'File size exceeds 10MB limit. Please upload a smaller file.'
+      };
     }
 
-    // Validate file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      setError('File size too large. Please upload files smaller than 5MB.');
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension || '')) {
+      return {
+        isValid: false,
+        error: 'Unsupported file type. Please upload PDF, DOC, DOCX, or TXT files only.'
+      };
+    }
+
+    if (file.size < 100) {
+      return {
+        isValid: false,
+        error: 'File appears to be empty. Please upload a valid resume file.'
+      };
+    }
+
+    return { isValid: true };
+  };
+
+  const handleFileSelect = (file: File) => {
+    setValidationError(null);
+    
+    const validation = validateFile(file);
+    if (!validation.isValid) {
+      setValidationError(validation.error || 'Invalid file');
       return;
     }
 
@@ -90,46 +133,28 @@ export default function ResumeUpload({
   const uploadAndEvaluateResume = async () => {
     if (!selectedFile) return;
 
-    setIsUploading(true);
-    setError(null);
-
     try {
-      const formData = new FormData();
-      formData.append('resume', selectedFile);
-      formData.append('jobToken', jobToken);
-      formData.append('email', candidateInfo.email);
-      formData.append('firstName', candidateInfo.firstName);
-      formData.append('lastName', candidateInfo.lastName);
+      const result = await dispatch(evaluateResume({
+        resumeFile: selectedFile,
+        jobToken,
+        candidateInfo
+      })).unwrap();
 
-      const response = await fetch('/api/interview/resume/evaluate', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to evaluate resume');
-      }
-
-      setEvaluation(data.evaluation);
+      console.log('Resume evaluation completed:', result);
     } catch (err) {
       console.error('Error evaluating resume:', err);
-      setError(err instanceof Error ? err.message : 'Failed to evaluate resume');
-    } finally {
-      setIsUploading(false);
     }
   };
 
   const proceedToInterview = () => {
     if (evaluation && selectedFile) {
-      // Read file content for the interview context
-      const reader = new FileReader();
-      reader.onload = () => {
-        const content = reader.result as string;
-        onEvaluationComplete(evaluation, content);
-      };
-      reader.readAsText(selectedFile);
+      // For processed documents, we'll use the evaluation summary as content reference
+      const mockContent = `Resume for ${candidateInfo.firstName} ${candidateInfo.lastName}
+Evaluation Score: ${evaluation.score}/100
+Skills Found: ${evaluation.matchingSkills.join(', ')}
+Experience Level: ${evaluation.experienceMatch}`;
+      
+      onEvaluationComplete(evaluation, mockContent);
     }
   };
 
@@ -143,6 +168,21 @@ export default function ResumeUpload({
     if (score >= 80) return 'bg-green-100 border-green-200';
     if (score >= 60) return 'bg-yellow-100 border-yellow-200';
     return 'bg-red-100 border-red-200';
+  };
+
+  const getFileIcon = (filename: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return '📄';
+      case 'doc':
+      case 'docx':
+        return '📝';
+      case 'txt':
+        return '📋';
+      default:
+        return '📎';
+    }
   };
 
   // Show evaluation results
@@ -292,7 +332,7 @@ export default function ResumeUpload({
     );
   }
 
-  // Show upload interface
+  // Main upload interface
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -303,90 +343,105 @@ export default function ResumeUpload({
           </div>
           <h1 className="text-2xl font-bold text-text mb-2">Upload Your Resume</h1>
           <p className="text-muted-text">
-            Let our AI evaluate your qualifications for the <strong>{job.title}</strong> position
+            Upload your resume to get an AI evaluation for the {job.title} position
           </p>
         </div>
 
-        {/* Upload Area */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragActive 
-                ? 'border-primary bg-primary/5' 
-                : 'border-gray-300 hover:border-primary hover:bg-primary/5'
-            }`}
-            onDrop={handleDrop}
-            onDragOver={handleDrag}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-          >
-            <CloudArrowUpIcon className="w-12 h-12 text-muted-text mx-auto mb-4" />
-            
-            {selectedFile ? (
-              <div className="space-y-2">
-                <p className="text-text font-medium">{selectedFile.name}</p>
-                <p className="text-sm text-muted-text">
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Choose Different File
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <p className="text-lg font-medium text-text mb-2">
-                    Drag and drop your resume here
-                  </p>
-                  <p className="text-muted-text">or</p>
-                </div>
-                <Button onClick={() => fileInputRef.current?.click()}>
-                  Choose File
-                </Button>
-                <p className="text-sm text-muted-text">
-                  Supported formats: PDF, DOC, DOCX, TXT (Max 5MB)
-                </p>
-              </div>
-            )}
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx,.txt"
-              onChange={handleFileInputChange}
-              className="hidden"
-            />
+        {/* Error Display */}
+        {(error || validationError) && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <XCircleIcon className="w-5 h-5 text-red-600 mr-2" />
+              <p className="text-red-800">{error || validationError}</p>
+            </div>
           </div>
+        )}
 
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{error}</p>
+        {/* Upload Progress */}
+        {isUploading && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center mb-2">
+              <CloudArrowUpIcon className="w-5 h-5 text-blue-600 mr-2" />
+              <p className="text-blue-800 font-medium">Evaluating your resume...</p>
+            </div>
+            <div className="w-full bg-blue-200 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${Math.min(uploadProgress, 90)}%` }}
+              ></div>
+            </div>
+            <p className="text-blue-600 text-sm mt-2">
+              Parsing document and analyzing content...
+            </p>
+          </div>
+        )}
+
+        {/* File Upload Area */}
+        <div
+          className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+            dragActive 
+              ? 'border-primary bg-primary/5' 
+              : selectedFile 
+              ? 'border-green-400 bg-green-50' 
+              : 'border-gray-300 bg-white hover:border-gray-400'
+          } ${isLoading ? 'pointer-events-none opacity-50' : ''}`}
+          onDrop={handleDrop}
+          onDragOver={handleDrag}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.txt"
+            onChange={handleFileInputChange}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            disabled={isLoading}
+          />
+          
+          {selectedFile ? (
+            <div className="space-y-2">
+              <div className="text-4xl">{getFileIcon(selectedFile.name)}</div>
+              <CheckCircleIcon className="w-8 h-8 text-green-600 mx-auto" />
+              <p className="text-lg font-semibold text-green-800">File Selected</p>
+              <p className="text-green-700">{selectedFile.name}</p>
+              <p className="text-sm text-green-600">
+                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <CloudArrowUpIcon className="w-12 h-12 text-gray-400 mx-auto" />
+              <p className="text-lg font-semibold text-text">
+                Drag and drop your resume here
+              </p>
+              <p className="text-muted-text">or click to browse files</p>
+              <p className="text-sm text-muted-text">
+                Supports PDF, DOC, DOCX, and TXT files (up to 10MB)
+              </p>
             </div>
           )}
         </div>
 
-        {/* How it works */}
+        {/* Info Section */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-          <h3 className="font-semibold text-blue-900 mb-3">How Resume Evaluation Works</h3>
+          <h3 className="font-semibold text-blue-900 mb-3">Enhanced Resume Analysis</h3>
           <div className="space-y-2 text-blue-800 text-sm">
             <div className="flex items-center">
               <ChevronRightIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span>Our AI analyzes your resume against job requirements</span>
+              <span>Advanced document parsing for PDF, DOC, DOCX, and TXT files</span>
             </div>
             <div className="flex items-center">
               <ChevronRightIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span>We check for relevant skills, experience, and qualifications</span>
+              <span>AI-powered skill matching and experience evaluation</span>
             </div>
             <div className="flex items-center">
               <ChevronRightIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span>You need a score of 60+ to proceed to the interview</span>
+              <span>Score of 60+ required to proceed to interview</span>
             </div>
             <div className="flex items-center">
               <ChevronRightIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span>Get detailed feedback on your qualifications</span>
+              <span>Detailed feedback on qualifications and fit</span>
             </div>
           </div>
         </div>
@@ -395,15 +450,15 @@ export default function ResumeUpload({
         <div className="text-center">
           <Button
             onClick={uploadAndEvaluateResume}
-            disabled={!selectedFile || isUploading}
-            isLoading={isUploading}
+            disabled={!selectedFile || isLoading || !!validationError}
+            isLoading={isLoading}
             className="w-full sm:w-auto"
           >
-            {isUploading ? 'Evaluating Resume...' : 'Evaluate Resume'}
+            {isLoading ? 'Evaluating Resume...' : 'Evaluate Resume'}
           </Button>
-          {selectedFile && (
+          {selectedFile && !validationError && (
             <p className="text-sm text-muted-text mt-4">
-              This process typically takes 10-15 seconds
+              Processing time varies by document size and complexity
             </p>
           )}
         </div>
