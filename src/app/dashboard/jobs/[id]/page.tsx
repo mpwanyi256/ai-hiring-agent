@@ -67,18 +67,6 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
         if (jobData.profileId !== user.id) {
           throw new Error('Job not found');
         }
-
-        // Fetch questions
-        try {
-          const questionsResponse = await fetch(`/api/jobs/${params.id}/questions`);
-          const questionsData = await questionsResponse.json();
-          
-          if (questionsData.success) {
-            setQuestions(questionsData.questions || []);
-          }
-        } catch (questionError) {
-          console.error('Error fetching questions:', questionError);
-        }
       } catch (err) {
         console.error('Error fetching job:', err);
       }

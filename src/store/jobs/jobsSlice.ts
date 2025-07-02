@@ -88,6 +88,7 @@ const jobsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
+      // dispatch fetchJobQuestions on fetchJobById.fulfilled
       .addCase(fetchJobById.fulfilled, (state, action) => {
         state.isLoading = false;
         state.currentJob = action.payload;

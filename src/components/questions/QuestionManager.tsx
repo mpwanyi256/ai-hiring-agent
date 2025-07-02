@@ -14,6 +14,7 @@ import {
   ClockIcon,
   EyeIcon
 } from '@heroicons/react/24/outline';
+import { useToast } from '@/components/providers/ToastProvider';
 
 interface QuestionManagerProps {
   jobId: string;
@@ -31,6 +32,7 @@ interface QuestionStats {
 }
 
 export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: QuestionManagerProps) {
+  const { success } = useToast();
   const [questions, setQuestions] = useState<JobQuestion[]>([]);
   const [stats, setStats] = useState<QuestionStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: 
     };
 
     fetchQuestions();
-  }, [jobId, onQuestionsChange]);
+  }, [jobId]);
 
   const refreshQuestions = async () => {
     try {
@@ -93,7 +95,7 @@ export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: 
       if (data.success) {
         setQuestions(data.questions);
         await refreshQuestions(); // Refresh stats
-        alert(`✨ Generated ${data.questions.length} AI questions successfully!`);
+        success(`Generated ${data.questions.length} AI questions successfully!`);
       } else {
         throw new Error(data.error || 'Failed to generate questions');
       }
