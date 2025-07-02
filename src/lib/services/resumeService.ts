@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
-import { JobData } from './jobsService';
+import { JobData } from '@/lib/services/jobsService';
 import {
-  ResumeUpload,
   ResumeEvaluation,
   InterviewEvaluation
 } from '@/types/interview';
@@ -62,14 +61,18 @@ class ResumeService {
   ): Promise<Omit<ResumeEvaluation, 'passesThreshold'>> {
     const resumeLower = resumeContent.toLowerCase();
     
+    // Ensure skills is always an array
+    const skills = Array.isArray(job.fields?.skills) ? job.fields.skills : [];
+    const traits = Array.isArray(job.fields?.traits) ? job.fields.traits : [];
+    
     // 1. Skills Analysis
-    const skillsAnalysis = this.analyzeSkills(resumeLower, job.fields?.skills || []);
+    const skillsAnalysis = this.analyzeSkills(resumeLower, skills);
     
     // 2. Experience Level Analysis
     const experienceAnalysis = this.analyzeExperienceLevel(resumeLower, job.fields?.experienceLevel);
     
     // 3. Traits Analysis
-    const traitsAnalysis = this.analyzeTraits(resumeLower, job.fields?.traits || []);
+    const traitsAnalysis = this.analyzeTraits(resumeLower, traits);
     
     // 4. Job Description Match
     const jobDescriptionMatch = this.analyzeJobDescriptionMatch(resumeLower, job.fields?.jobDescription || '');
@@ -110,7 +113,8 @@ class ResumeService {
     matchingSkills: string[];
     missingSkills: string[];
   } {
-    if (requiredSkills.length === 0) {
+    // Ensure requiredSkills is a valid array
+    if (!Array.isArray(requiredSkills) || requiredSkills.length === 0) {
       return { score: 80, matchingSkills: [], missingSkills: [] };
     }
 
@@ -118,6 +122,9 @@ class ResumeService {
     const missingSkills: string[] = [];
 
     requiredSkills.forEach(skill => {
+      // Ensure skill is a string
+      if (typeof skill !== 'string') return;
+      
       const skillVariations = this.getSkillVariations(skill);
       const hasSkill = skillVariations.some(variation => 
         resumeContent.includes(variation.toLowerCase())
@@ -236,7 +243,8 @@ class ResumeService {
     score: number;
     foundTraits: string[];
   } {
-    if (requiredTraits.length === 0) {
+    // Ensure requiredTraits is a valid array
+    if (!Array.isArray(requiredTraits) || requiredTraits.length === 0) {
       return { score: 75, foundTraits: [] };
     }
 
@@ -253,6 +261,9 @@ class ResumeService {
     };
 
     requiredTraits.forEach(trait => {
+      // Ensure trait is a string
+      if (typeof trait !== 'string') return;
+      
       const keywords = traitKeywords[trait.toLowerCase()] || [trait.toLowerCase()];
       const hasEvidence = keywords.some(keyword => 
         resumeContent.toLowerCase().includes(keyword)
@@ -309,8 +320,8 @@ class ResumeService {
     });
 
     return Object.entries(wordCounts)
-      .filter(([_, count]) => count > 1)
-      .map(([word, _]) => word)
+      .filter(([, count]) => count > 1)
+      .map(([word]) => word)
       .slice(0, 20); // Top 20 keywords
   }
 
@@ -400,6 +411,12 @@ class ResumeService {
     if (traitsAnalysis.foundTraits.length > 0) {
       feedback += `Demonstrated Qualities:\n`;
       feedback += `✓ ${traitsAnalysis.foundTraits.join(', ')}\n\n`;
+    }
+    
+    // Job description match feedback
+    if (jobDescriptionMatch?.relevantKeywords?.length > 0) {
+      feedback += `Relevant Experience:\n`;
+      feedback += `✓ Found keywords: ${jobDescriptionMatch.relevantKeywords.slice(0, 5).join(', ')}\n\n`;
     }
     
     // Overall recommendation

@@ -75,6 +75,17 @@ export async function PUT(
       );
     }
 
+    // Validate status if provided
+    if (body.status && !['draft', 'interviewing', 'closed'].includes(body.status)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid status. Must be "draft", "interviewing", or "closed"',
+        },
+        { status: 400 }
+      );
+    }
+
     // Prepare update data with proper typing
     interface UpdateData {
       title?: string;
@@ -86,6 +97,7 @@ export async function PUT(
         customFields?: Record<string, { value: string; inputType: string }>;
       };
       interviewFormat?: 'text' | 'video';
+      status?: 'draft' | 'interviewing' | 'closed';
       isActive?: boolean;
     }
 
@@ -93,6 +105,7 @@ export async function PUT(
     if (body.title) updateData.title = body.title;
     if (body.fields) updateData.fields = body.fields;
     if (body.interviewFormat) updateData.interviewFormat = body.interviewFormat;
+    if (body.status) updateData.status = body.status;
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
 
     const updatedJob = await jobsService.updateJob(jobId, updateData);

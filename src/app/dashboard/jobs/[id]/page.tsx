@@ -19,7 +19,8 @@ import {
   EyeIcon,
   ShareIcon,
   XCircleIcon,
-  PlayIcon
+  PlayIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 
 interface JobDetailsPageProps {
@@ -34,6 +35,8 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   const [job, setJob] = useState<JobData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
 
   // Fetch job details
   useEffect(() => {
@@ -67,6 +70,61 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
 
     fetchJob();
   }, [user?.id, params.id]);
+
+  const updateJobStatus = async (newStatus: JobStatus) => {
+    if (!job) return;
+
+    setIsUpdatingStatus(true);
+    try {
+      const response = await fetch(`/api/jobs/${job.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to update job status');
+      }
+
+      setJob(prev => prev ? { ...prev, status: newStatus } : null);
+    } catch (err) {
+      console.error('Error updating job status:', err);
+      alert(err instanceof Error ? err.message : 'Failed to update job status');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const generateQuestions = async () => {
+    if (!job) return;
+
+    setIsGeneratingQuestions(true);
+    try {
+      const response = await fetch(`/api/jobs/${job.id}/questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to generate questions');
+      }
+
+      alert(`Generated ${data.questions.length} questions for this job!`);
+    } catch (err) {
+      console.error('Error generating questions:', err);
+      alert(err instanceof Error ? err.message : 'Failed to generate questions');
+    } finally {
+      setIsGeneratingQuestions(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -229,7 +287,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 </div>
                 <div className="flex items-center space-x-1">
                   <UserGroupIcon className="w-4 h-4" />
-                  <span>{job.candidateCount || 0} candidates</span>
+                  <span>{(job.candidateCount || 0)} candidates</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <ClockIcon className="w-4 h-4" />
@@ -261,21 +319,70 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
               Copy Interview Link
             </Button>
             
-            {job.candidateCount && job.candidateCount > 0 && (
+            {(job.candidateCount || 0) > 0 && (
               <Link href={`/dashboard/candidates?job=${job.id}`}>
                 <Button variant="outline" size="sm" className="flex items-center">
                   <UserGroupIcon className="w-4 h-4 mr-1" />
-                  View {job.candidateCount} Candidate{job.candidateCount !== 1 ? 's' : ''}
+                  View {job.candidateCount || 0} Candidate{(job.candidateCount || 0) !== 1 ? 's' : ''}
                 </Button>
               </Link>
             )}
-            
-            <Link href={job.interviewLink || `/interview/${job.interviewToken}`} target="_blank">
-              <Button variant="outline" size="sm" className="flex items-center">
+
+            {/* Job Status Management */}
+            {job.status === 'draft' ? (
+              <Button 
+                size="sm" 
+                onClick={() => updateJobStatus('interviewing')}
+                disabled={isUpdatingStatus}
+                className="flex items-center"
+              >
                 <PlayIcon className="w-4 h-4 mr-1" />
-                Test Interview
+                {isUpdatingStatus ? 'Starting...' : 'Start Interviewing'}
               </Button>
-            </Link>
+            ) : job.status === 'interviewing' ? (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => updateJobStatus('closed')}
+                disabled={isUpdatingStatus}
+                className="flex items-center"
+              >
+                <XCircleIcon className="w-4 h-4 mr-1" />
+                {isUpdatingStatus ? 'Closing...' : 'Close Position'}
+              </Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => updateJobStatus('interviewing')}
+                disabled={isUpdatingStatus}
+                className="flex items-center"
+              >
+                <PlayIcon className="w-4 h-4 mr-1" />
+                {isUpdatingStatus ? 'Reopening...' : 'Reopen Position'}
+              </Button>
+            )}
+
+            {/* Question Generation */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={generateQuestions}
+              disabled={isGeneratingQuestions}
+              className="flex items-center"
+            >
+              <SparklesIcon className="w-4 h-4 mr-1" />
+              {isGeneratingQuestions ? 'Generating...' : 'Generate Questions'}
+            </Button>
+            
+            {job.status === 'interviewing' && (
+              <Link href={job.interviewLink || `/interview/${job.interviewToken}`} target="_blank">
+                <Button variant="outline" size="sm" className="flex items-center">
+                  <EyeIcon className="w-4 h-4 mr-1" />
+                  Test Interview
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 

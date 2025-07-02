@@ -3,10 +3,10 @@ import { jobsService } from '@/lib/services/jobsService';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const { token } = params;
+    const { token } = await params;
 
     if (!token) {
       return NextResponse.json(
@@ -28,6 +28,30 @@ export async function GET(
           error: 'Interview not found or expired',
         },
         { status: 404 }
+      );
+    }
+
+    // Check if the job is in interviewing status
+    if (job.status !== 'interviewing') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: job.status === 'draft' 
+            ? 'This interview is not yet available. Please check back later.'
+            : 'This interview has been closed and is no longer accepting candidates.',
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check if the job is active
+    if (!job.isActive) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This interview is currently inactive',
+        },
+        { status: 403 }
       );
     }
 
