@@ -1,14 +1,20 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authSlice from '@/store/slices/authSlice';
-import jobsSlice from '@/store/slices/jobsSlice';
-import candidatesSlice from '@/store/slices/candidatesSlice';
 import { useDispatch, useSelector } from 'react-redux';
+import authSlice from './auth/authSlice';
+import jobsSlice from './jobs/jobsSlice';
+import candidatesSlice from './candidates/candidatesSlice';
+import skillsSlice from './skills/skillsSlice';
+import traitsSlice from './traits/traitsSlice';
+import jobTemplatesSlice from './jobTemplates/jobTemplatesSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authSlice,
     jobs: jobsSlice,
     candidates: candidatesSlice,
+    skills: skillsSlice,
+    traits: traitsSlice,
+    jobTemplates: jobTemplatesSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -16,9 +22,14 @@ export const store = configureStore({
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
       },
     }),
+  devTools: process.env.NODE_ENV !== 'production',
 });
 
 export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch; 
+export type AppDispatch = typeof store.dispatch;
+
+// Typed hooks
 export const useAppDispatch = () => useDispatch<AppDispatch>();
-export const useAppSelector = useSelector;
+export const useAppSelector = useSelector.withTypes<RootState>();
+
+export default store;

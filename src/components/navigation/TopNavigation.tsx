@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
-import { signOut } from '@/store/slices/authSlice';
-import { RootState, AppDispatch } from '@/store';
+import { signOut } from '@/store/auth/authThunks';
+import { RootState, AppDispatch, useAppDispatch, useAppSelector } from '@/store';
 import { 
   SparklesIcon,
   CogIcon,
@@ -34,8 +33,8 @@ export default function TopNavigation({
 }: TopNavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const dispatch = useDispatch<AppDispatch>();
-  const { user, isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
+  const dispatch = useAppDispatch();
+  const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
   const [showDropdown, setShowDropdown] = useState(false);
 
   const handleSignOut = async () => {

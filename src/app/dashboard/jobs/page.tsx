@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { fetchJobsByProfile } from '@/store/slices/jobsSlice';
+import { fetchJobsByProfile } from '@/store/jobs/jobsThunks';
 import { RootState, useAppDispatch, useAppSelector } from '@/store';
 import { 
   PlusIcon,

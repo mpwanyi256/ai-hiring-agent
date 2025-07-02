@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { checkAuth } from '@/store/slices/authSlice';
-import { AppDispatch } from '@/store';
+import { AppDispatch } from '@/app/store';
+import { checkAuth } from '@/store/auth/authThunks';
 
 interface AuthProviderProps {
   children: React.ReactNode;

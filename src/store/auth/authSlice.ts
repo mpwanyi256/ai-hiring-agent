@@ -1,35 +1,14 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { UserRole } from '@/lib/supabase';
-
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  companyId: string;
-  companyName: string;
-  companySlug: string;
-  subscription: {
-    id: string;
-    name: string;
-    maxJobs: number;
-    maxInterviewsPerMonth: number;
-    status: string;
-  } | null;
-  usageCounts: {
-    activeJobs: number;
-    interviewsThisMonth: number;
-  };
-  createdAt: string;
-}
-
-interface AuthState {
-  user: User | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  error: string | null;
-}
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { AuthState } from '@/types';
+import { 
+  signUp, 
+  signIn, 
+  signOut, 
+  checkAuth, 
+  refreshUserData,
+  verifyOtp,
+  resendOtp 
+} from './authThunks';
 
 const initialState: AuthState = {
   user: null,
@@ -37,105 +16,6 @@ const initialState: AuthState = {
   isAuthenticated: false,
   error: null,
 };
-
-// Async thunks for authentication using API routes
-export const signUp = createAsyncThunk(
-  'auth/signUp',
-  async (userData: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    companyName: string;
-  }) => {
-    const response = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Sign up failed');
-    }
-
-    return data.user;
-  }
-);
-
-export const signIn = createAsyncThunk(
-  'auth/signIn',
-  async (credentials: { email: string; password: string }, { rejectWithValue }) => {
-    const response = await fetch('/api/auth/signin', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      // Check if it's an email not confirmed error
-      if (data.error === 'EMAIL_NOT_CONFIRMED') {
-        return rejectWithValue({
-          type: 'EMAIL_NOT_CONFIRMED',
-          email: data.email,
-          message: data.message
-        });
-      }
-      throw new Error(data.error || 'Sign in failed');
-    }
-
-    return data.user;
-  }
-);
-
-export const signOut = createAsyncThunk('auth/signOut', async () => {
-  const response = await fetch('/api/auth/signout', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    const data = await response.json();
-    throw new Error(data.error || 'Sign out failed');
-  }
-
-  return true;
-});
-
-export const checkAuth = createAsyncThunk('auth/checkAuth', async () => {
-  const response = await fetch('/api/auth/check', {
-    method: 'GET',
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error('Failed to check authentication');
-  }
-
-  return data.isAuthenticated ? data.user : null;
-});
-
-// Function to refresh user data (useful after creating jobs or completing interviews)
-export const refreshUserData = createAsyncThunk('auth/refreshUserData', async () => {
-  const response = await fetch('/api/auth/check', {
-    method: 'GET',
-  });
-
-  const data = await response.json();
-
-  if (!response.ok || !data.isAuthenticated) {
-    throw new Error('Failed to refresh user data');
-  }
-
-  return data.user;
-});
 
 const authSlice = createSlice({
   name: 'auth',
@@ -229,6 +109,32 @@ const authSlice = createSlice({
       // Refresh User Data
       .addCase(refreshUserData.fulfilled, (state, action) => {
         state.user = action.payload;
+      })
+      // Verify OTP
+      .addCase(verifyOtp.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(verifyOtp.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(verifyOtp.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'OTP verification failed';
+      })
+      // Resend OTP
+      .addCase(resendOtp.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(resendOtp.fulfilled, (state) => {
+        state.isLoading = false;
+      })
+      .addCase(resendOtp.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to resend OTP';
       });
   },
 });

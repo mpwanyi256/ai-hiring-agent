@@ -7,8 +7,8 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import TopNavigation from '@/components/navigation/TopNavigation';
-import { checkAuth } from '@/store/slices/authSlice';
-import { AppDispatch } from '@/store';
+import { checkAuth } from '@/store/auth/authThunks';
+import { AppDispatch } from '@/app/store';
 import { 
   KeyIcon,
   CheckCircleIcon,

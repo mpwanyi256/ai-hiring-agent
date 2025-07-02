@@ -1,40 +1,85 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+// Mock skills data for development - matching the existing Skill interface
+const mockSkills = [
+  {
+    id: '1',
+    name: 'JavaScript',
+    description: 'Programming language for web development',
+    category: 'Programming Languages',
+  },
+  {
+    id: '2',
+    name: 'React',
+    description: 'Frontend JavaScript library',
+    category: 'Frontend Frameworks',
+  },
+  {
+    id: '3',
+    name: 'Node.js',
+    description: 'Backend JavaScript runtime',
+    category: 'Backend Technologies',
+  },
+  {
+    id: '4',
+    name: 'TypeScript',
+    description: 'Typed superset of JavaScript',
+    category: 'Programming Languages',
+  },
+  {
+    id: '5',
+    name: 'Python',
+    description: 'General-purpose programming language',
+    category: 'Programming Languages',
+  },
+  {
+    id: '6',
+    name: 'Next.js',
+    description: 'React framework for production',
+    category: 'Frontend Frameworks',
+  },
+  {
+    id: '7',
+    name: 'SQL',
+    description: 'Database query language',
+    category: 'Databases',
+  },
+  {
+    id: '8',
+    name: 'Git',
+    description: 'Version control system',
+    category: 'Tools',
+  },
+  {
+    id: '9',
+    name: 'AWS',
+    description: 'Amazon Web Services cloud platform',
+    category: 'Cloud Platforms',
+  },
+  {
+    id: '10',
+    name: 'Docker',
+    description: 'Containerization platform',
+    category: 'DevOps',
+  },
+];
+
+export async function GET() {
   try {
-    const supabase = await createClient();
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-
-    // Check if user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Build query using the skills_view
-    let query = supabase
-      .from('skills_view')
-      .select('id, name, category, description, category_description, category_sort_order')
-      .order('category_sort_order', { ascending: true })
-      .order('name', { ascending: true });
-
-    // Filter by category if provided
-    if (category) {
-      query = query.eq('category', category);
-    }
-
-    const { data: skills, error } = await query;
-
-    if (error) {
-      console.error('Error fetching skills:', error);
-      return NextResponse.json({ error: 'Failed to fetch skills' }, { status: 500 });
-    }
-
-    return NextResponse.json({ skills });
+    // In a real application, you would fetch from a database
+    // For now, return mock data
+    return NextResponse.json({
+      success: true,
+      skills: mockSkills,
+    });
   } catch (error) {
-    console.error('Skills API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error fetching skills:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch skills',
+      },
+      { status: 500 }
+    );
   }
 } 

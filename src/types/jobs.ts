@@ -3,6 +3,8 @@ export interface Skill {
     name: string;
     category: string;
     description?: string;
+    category_description?: string;
+    category_sort_order?: number;
   }
   
   export interface Trait {
@@ -10,6 +12,8 @@ export interface Skill {
     name: string;
     category: string;
     description?: string;
+    category_description?: string;
+    category_sort_order?: number;
   }
   
   export interface JobTemplate {
@@ -26,4 +30,64 @@ export interface Skill {
     interview_format: string;
     created_at: string;
     updated_at: string;
+  }
+
+  export interface Job {
+    id: string;
+    profileId: string;
+    title: string;
+    fields: {
+      skills?: string[];
+      experienceLevel?: string;
+      traits?: string[];
+      jobDescription?: string;
+      customFields?: Record<string, { value: string; inputType: string } | string>;
+    };
+    interviewFormat: 'text' | 'video';
+    interviewToken: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    interviewLink?: string;
+    candidateCount?: number;
+  }
+
+  export interface JobsState {
+    jobs: Job[];
+    currentJob: Job | null;
+    isLoading: boolean;
+    error: string | null;
+    totalJobs: number;
+  }
+
+  export interface CreateJobData {
+    profileId: string;
+    title: string;
+    fields: Job['fields'];
+    interviewFormat: 'text' | 'video';
+  }
+
+  export interface UpdateJobData {
+    id: string;
+    title?: string;
+    fields?: Job['fields'];
+    interviewFormat?: 'text' | 'video';
+    isActive?: boolean;
+  }
+
+  export interface ExperienceLevel {
+    value: string;
+    label: string;
+  }
+
+  export interface InputType {
+    value: 'text' | 'textarea' | 'number' | 'file' | 'url' | 'email';
+    label: string;
+    icon: string;
+  }
+
+  export interface CustomField {
+    key: string;
+    value: string;
+    inputType: 'text' | 'textarea' | 'number' | 'file' | 'url' | 'email';
   }

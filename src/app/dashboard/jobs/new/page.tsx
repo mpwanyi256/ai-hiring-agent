@@ -9,10 +9,16 @@ import { z } from 'zod';
 import Button from '@/components/ui/Button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import RichTextEditor from '@/components/ui/RichTextEditor';
-import { createJob } from '@/store/slices/jobsSlice';
-import { refreshUserData } from '@/store/slices/authSlice';
-import { RootState, AppDispatch } from '@/store';
-import { User } from '@/store/slices/authSlice';
+import { createJob } from '@/store/jobs/jobsThunks';
+import { refreshUserData } from '@/store/auth/authThunks';
+import { fetchSkills } from '@/store/skills/skillsThunks';
+import { fetchTraits } from '@/store/traits/traitsThunks';
+import { fetchJobTemplates } from '@/store/jobTemplates/jobTemplatesThunks';
+import { selectSkillsData, selectSkillsLoading } from '@/store/skills/skillsSelectors';
+import { selectTraitsData, selectTraitsLoading } from '@/store/traits/traitsSelectors';
+import { selectJobTemplatesData, selectJobTemplatesLoading } from '@/store/jobTemplates/jobTemplatesSelectors';
+import { RootState, useAppDispatch, useAppSelector } from '@/store';
+import { User, Skill, Trait, JobTemplate } from '@/types';
 import { 
   PlusIcon,
   XMarkIcon,
@@ -23,7 +29,6 @@ import {
   BookmarkIcon,
   LinkIcon
 } from '@heroicons/react/24/outline';
-import { Skill, Trait, JobTemplate } from '@/types/jobs';
 import { experienceLevels, inputTypes } from '@/lib/constants';
 
 // Enhanced form validation schema
@@ -48,9 +53,17 @@ type JobFormData = z.infer<typeof jobSchema>;
 
 export default function NewJobPage() {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-  const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
-  const { isLoading: jobsLoading, error } = useSelector((state: RootState) => state.jobs);
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state: RootState) => state.auth);
+  const { isLoading: jobsLoading, error } = useAppSelector((state: RootState) => state.jobs);
+  
+  // Store selectors
+  const allSkills = useAppSelector(selectSkillsData);
+  const skillsLoading = useAppSelector(selectSkillsLoading);
+  const allTraits = useAppSelector(selectTraitsData);
+  const traitsLoading = useAppSelector(selectTraitsLoading);
+  const jobTemplates = useAppSelector(selectJobTemplatesData);
+  const templatesLoading = useAppSelector(selectJobTemplatesLoading);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -60,10 +73,6 @@ export default function NewJobPage() {
   const [skillSearch, setSkillSearch] = useState('');
   const [traitSearch, setTraitSearch] = useState('');
   const [isCrawlingUrl, setIsCrawlingUrl] = useState(false);
-  const [allSkills, setAllSkills] = useState<Skill[]>([]);
-  const [allTraits, setAllTraits] = useState<Trait[]>([]);
-  const [jobTemplates, setJobTemplates] = useState<JobTemplate[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Form setup
   const form = useForm<JobFormData>({
@@ -90,6 +99,9 @@ export default function NewJobPage() {
   const selectedSkills = form.watch('skills') || [];
   const selectedTraits = form.watch('traits') || [];
   const saveAsTemplate = form.watch('saveAsTemplate');
+
+  // Determine loading state
+  const isLoadingData = skillsLoading || traitsLoading || templatesLoading;
 
   // Filter out selected skills and traits
   const availableSkills = allSkills.filter(skill => 
@@ -127,37 +139,19 @@ export default function NewJobPage() {
   // Fetch skills, traits, and templates on component mount
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoadingData(true);
       try {
-        const [skillsResponse, traitsResponse, templatesResponse] = await Promise.all([
-          fetch('/api/skills'),
-          fetch('/api/traits'),
-          fetch('/api/job-templates')
+        await Promise.all([
+          dispatch(fetchSkills()),
+          dispatch(fetchTraits()),
+          dispatch(fetchJobTemplates())
         ]);
-
-        if (skillsResponse.ok) {
-          const skillsData = await skillsResponse.json();
-          setAllSkills(skillsData.skills || []);
-        }
-
-        if (traitsResponse.ok) {
-          const traitsData = await traitsResponse.json();
-          setAllTraits(traitsData.traits || []);
-        }
-
-        if (templatesResponse.ok) {
-          const templatesData = await templatesResponse.json();
-          setJobTemplates(templatesData.templates || []);
-        }
       } catch (err) {
         console.error('Error fetching data:', err);
-      } finally {
-        setIsLoadingData(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [dispatch]);
 
   // Check usage limits
   useEffect(() => {
@@ -282,12 +276,8 @@ export default function NewJobPage() {
 
       if (response.ok) {
         console.log('Template saved successfully');
-        // Refresh templates list
-        const templatesResponse = await fetch('/api/job-templates');
-        if (templatesResponse.ok) {
-          const templatesData = await templatesResponse.json();
-          setJobTemplates(templatesData.templates || []);
-        }
+        // Refresh templates list using Redux
+        await dispatch(fetchJobTemplates());
       } else {
         const errorData = await response.json();
         alert(`Failed to save template: ${errorData.error}`);

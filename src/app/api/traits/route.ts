@@ -1,40 +1,85 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+// Mock traits data for development - matching the existing Trait interface
+const mockTraits = [
+  {
+    id: '1',
+    name: 'Leadership',
+    description: 'Ability to guide and motivate teams',
+    category: 'Management',
+  },
+  {
+    id: '2',
+    name: 'Problem Solving',
+    description: 'Analytical thinking and solution-oriented approach',
+    category: 'Cognitive',
+  },
+  {
+    id: '3',
+    name: 'Communication',
+    description: 'Clear and effective verbal and written communication',
+    category: 'Interpersonal',
+  },
+  {
+    id: '4',
+    name: 'Adaptability',
+    description: 'Flexibility and openness to change',
+    category: 'Personal',
+  },
+  {
+    id: '5',
+    name: 'Teamwork',
+    description: 'Collaborative working style',
+    category: 'Interpersonal',
+  },
+  {
+    id: '6',
+    name: 'Initiative',
+    description: 'Proactive and self-motivated approach',
+    category: 'Personal',
+  },
+  {
+    id: '7',
+    name: 'Time Management',
+    description: 'Efficient prioritization and organization',
+    category: 'Professional',
+  },
+  {
+    id: '8',
+    name: 'Creativity',
+    description: 'Innovative thinking and original ideas',
+    category: 'Cognitive',
+  },
+  {
+    id: '9',
+    name: 'Decision Making',
+    description: 'Ability to make sound decisions under pressure',
+    category: 'Cognitive',
+  },
+  {
+    id: '10',
+    name: 'Emotional Intelligence',
+    description: 'Understanding and managing emotions effectively',
+    category: 'Interpersonal',
+  },
+];
+
+export async function GET() {
   try {
-    const supabase = await createClient();
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-
-    // Check if user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Build query using the traits_view
-    let query = supabase
-      .from('traits_view')
-      .select('id, name, category, description, category_description, category_sort_order')
-      .order('category_sort_order', { ascending: true })
-      .order('name', { ascending: true });
-
-    // Filter by category if provided
-    if (category) {
-      query = query.eq('category', category);
-    }
-
-    const { data: traits, error } = await query;
-
-    if (error) {
-      console.error('Error fetching traits:', error);
-      return NextResponse.json({ error: 'Failed to fetch traits' }, { status: 500 });
-    }
-
-    return NextResponse.json({ traits });
+    // In a real application, you would fetch from a database
+    // For now, return mock data
+    return NextResponse.json({
+      success: true,
+      traits: mockTraits,
+    });
   } catch (error) {
-    console.error('Traits API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error fetching traits:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch traits',
+      },
+      { status: 500 }
+    );
   }
 } 

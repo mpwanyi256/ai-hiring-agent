@@ -4,8 +4,8 @@ import { useSelector } from 'react-redux';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { RootState } from '@/store';
-import { User } from '@/store/slices/authSlice';
+import { RootState } from '@/app/store';
+import { User } from '@/types';
 import { 
   PlusIcon,
   BriefcaseIcon,

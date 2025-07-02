@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,8 +9,9 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import TopNavigation from '@/components/navigation/TopNavigation';
-import { signIn, clearError } from '@/store/slices/authSlice';
-import { RootState, AppDispatch } from '@/store';
+import { signIn } from '@/store/auth/authThunks';
+import { clearError } from '@/store/auth/authSlice';
+import { useAppDispatch, useAppSelector } from '@/store';
 import { 
   EyeIcon,
   EyeSlashIcon
@@ -27,8 +27,8 @@ type SigninData = z.infer<typeof signinSchema>;
 
 export default function SigninPage() {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-  const { isLoading, error } = useSelector((state: RootState) => state.auth) as {
+  const dispatch = useAppDispatch();
+  const { isLoading, error } = useAppSelector((state) => state.auth) as {
     isLoading: boolean;
     error: string | null;
   };

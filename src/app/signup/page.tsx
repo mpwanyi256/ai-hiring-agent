@@ -10,8 +10,9 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import TopNavigation from '@/components/navigation/TopNavigation';
-import { signUp, clearError } from '@/store/slices/authSlice';
-import { RootState, AppDispatch } from '@/store';
+import { signUp } from '@/store/auth/authThunks';
+import { RootState, AppDispatch } from '@/app/store';
+import { clearError } from '@/store/auth/authSlice';
 import { 
   ArrowRightIcon, 
   ArrowLeftIcon,
