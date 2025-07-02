@@ -18,7 +18,6 @@ import {
   ClockIcon,
   EyeIcon,
   ShareIcon,
-  CheckBadgeIcon,
   XCircleIcon,
   PlayIcon
 } from '@heroicons/react/24/outline';

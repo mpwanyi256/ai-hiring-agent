@@ -6,7 +6,9 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import { signOut } from '@/store/auth/authThunks';
-import { RootState, AppDispatch, useAppDispatch, useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { logout } from '@/store/auth/authSlice';
+import { logoutThunk } from '@/store/auth/authThunks';
 import { 
   SparklesIcon,
   CogIcon,

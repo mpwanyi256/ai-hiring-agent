@@ -682,6 +682,40 @@ class JobsService {
       // Don't throw error as this is a background operation
     }
   }
+
+  // Get job by interview token (public access for candidates)
+  async getJobByInterviewToken(interviewToken: string): Promise<JobData | null> {
+    try {
+      const supabase = await createClient();
+      
+      const { data: job, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('interview_token', interviewToken)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !job) {
+        return null;
+      }
+
+      return {
+        id: job.id,
+        profileId: job.profile_id,
+        title: job.title,
+        fields: job.fields,
+        interviewFormat: job.interview_format,
+        interviewToken: job.interview_token,
+        isActive: job.is_active,
+        status: job.status,
+        createdAt: job.created_at,
+        updatedAt: job.updated_at,
+      };
+    } catch (error) {
+      console.error('Error getting job by interview token:', error);
+      return null;
+    }
+  }
 }
 
 // Export a singleton instance

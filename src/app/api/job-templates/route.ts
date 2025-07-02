@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export async function GET(request: NextRequest) {
+// GET /api/job-templates - Fetch job templates
+export async function GET() {
   try {
     const supabase = await createClient();
     
