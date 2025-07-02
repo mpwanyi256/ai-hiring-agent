@@ -30,6 +30,9 @@ export interface JobFieldsConfig {
 // User role enum
 export type UserRole = 'recruiter' | 'candidate' | 'admin' | 'developer';
 
+// Job status enum
+export type JobStatus = 'draft' | 'interviewing' | 'closed';
+
 // Database Types
 export type Database = {
   public: {
@@ -171,6 +174,7 @@ export type Database = {
           interview_format: 'text' | 'video';
           interview_token: string;
           is_active: boolean;
+          status: JobStatus;
           created_at: string;
           updated_at: string;
         };
@@ -182,6 +186,7 @@ export type Database = {
           interview_format?: 'text' | 'video';
           interview_token?: string;
           is_active?: boolean;
+          status?: JobStatus;
           created_at?: string;
           updated_at?: string;
         };
@@ -193,6 +198,7 @@ export type Database = {
           interview_format?: 'text' | 'video';
           interview_token?: string;
           is_active?: boolean;
+          status?: JobStatus;
           created_at?: string;
           updated_at?: string;
         };
@@ -305,8 +311,8 @@ export type Database = {
           active_jobs_count: number | null;
           interviews_this_month: number | null;
         };
-        Insert: never; // Views don't support insert
-        Update: never; // Views don't support update
+        Insert: never;
+        Update: never;
       };
     };
     Views: {
@@ -342,4 +348,7 @@ export type Database = {
       };
     };
   };
-}; 
+};
+
+// Export types for use throughout the application
+export type { JobStatus }; 

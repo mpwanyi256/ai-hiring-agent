@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { generateInterviewToken } from '@/lib/utils';
-import { Database, JobFieldsConfig } from '@/lib/supabase';
+import { Database, JobFieldsConfig, JobStatus } from '@/lib/supabase';
 import { app } from '@/lib/constants';
 
 type JobRow = Database['public']['Tables']['jobs']['Row'];
@@ -20,10 +20,62 @@ export interface JobData {
   interviewFormat: 'text' | 'video';
   interviewToken: string;
   isActive: boolean;
+  status: JobStatus;
   createdAt: string;
   updatedAt: string;
   candidateCount?: number;
   interviewLink?: string;
+}
+
+// Company stats interface matching the database view
+export interface CompanyStats {
+  company_id: string;
+  company_name: string;
+  company_slug: string;
+  company_created_at: string;
+  total_jobs: number;
+  active_jobs: number;
+  draft_jobs: number;
+  interviewing_jobs: number;
+  closed_jobs: number;
+  total_users: number;
+  active_users: number;
+  total_candidates: number;
+  completed_interviews: number;
+  candidates_this_month: number;
+  candidates_this_week: number;
+  total_responses: number;
+  total_evaluations: number;
+  free_users: number;
+  pro_users: number;
+  business_users: number;
+  enterprise_users: number;
+  last_job_created: string | null;
+  last_candidate_created: string | null;
+  last_response_created: string | null;
+}
+
+// Enhanced job data from detailed view
+export interface DetailedJobData extends JobData {
+  creator_email: string;
+  creator_first_name: string;
+  creator_last_name: string;
+  company_id: string;
+  company_name: string;
+  company_slug: string;
+  subscription_plan: string;
+  max_jobs: number;
+  max_interviews_per_month: number;
+  total_candidates: number;
+  completed_interviews: number;
+  interviews_this_month: number;
+  interviews_this_week: number;
+  interviews_today: number;
+  total_responses: number;
+  total_evaluations: number;
+  average_score: number | null;
+  last_candidate_created: string | null;
+  last_interview_completed: string | null;
 }
 
 // Utility functions to transform between simplified and database formats
@@ -138,6 +190,7 @@ function transformJobFromDB(dbJob: JobRow): JobData {
     interviewFormat: dbJob.interview_format,
     interviewToken: dbJob.interview_token,
     isActive: dbJob.is_active,
+    status: (dbJob.status || 'draft') as JobStatus,
     createdAt: dbJob.created_at,
     updatedAt: dbJob.updated_at,
     candidateCount: 0, // This would be calculated from candidates table
@@ -153,6 +206,7 @@ function transformJobToDB(jobData: Partial<JobData>): Partial<JobInsert> {
   if (jobData.interviewFormat) dbData.interview_format = jobData.interviewFormat;
   if (jobData.interviewToken) dbData.interview_token = jobData.interviewToken;
   if (jobData.isActive !== undefined) dbData.is_active = jobData.isActive;
+  if (jobData.status) dbData.status = jobData.status;
   
   return dbData;
 }
@@ -183,6 +237,69 @@ class JobsService {
     } catch (error) {
       console.error('Error counting candidates:', error);
       return 0;
+    }
+  }
+
+  // New method to get company stats using the view
+  async getCompanyStats(companyId: string): Promise<CompanyStats | null> {
+    try {
+      const supabase = await createClient();
+      const { data: stats, error } = await supabase
+        .from('company_stats')
+        .select('*')
+        .eq('company_id', companyId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // Company not found
+        }
+        throw new Error(error.message);
+      }
+
+      return stats;
+    } catch (error) {
+      console.error('Error fetching company stats:', error);
+      throw error;
+    }
+  }
+
+  // New method to get detailed jobs using the view
+  async getDetailedJobs(profileId?: string, companyId?: string): Promise<DetailedJobData[]> {
+    try {
+      const supabase = await createClient();
+      let query = supabase
+        .from('jobs_detailed')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (profileId) {
+        query = query.eq('profile_id', profileId);
+      } else if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+
+      const { data: jobs, error } = await query;
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return jobs.map(job => ({
+        ...job,
+        profileId: job.profile_id,
+        interviewFormat: job.interview_format as 'text' | 'video',
+        interviewToken: job.interview_token,
+        isActive: job.is_active,
+        status: job.status as JobStatus,
+        createdAt: job.created_at,
+        updatedAt: job.updated_at,
+        fields: dbToSimplifiedFields(job.fields),
+        interviewLink: `${app.baseUrl}/interview/${job.interview_token}`,
+      }));
+    } catch (error) {
+      console.error('Error fetching detailed jobs:', error);
+      throw error;
     }
   }
 
@@ -285,6 +402,7 @@ class JobsService {
     title: string;
     fields: JobData['fields'];
     interviewFormat: 'text' | 'video';
+    status?: JobStatus;
   }): Promise<JobData> {
     try {
       const supabase = await createClient();
@@ -297,6 +415,7 @@ class JobsService {
         interview_format: jobData.interviewFormat,
         interview_token: interviewToken,
         is_active: true,
+        status: jobData.status || 'draft',
       };
 
       const { data: job, error } = await supabase
@@ -353,7 +472,11 @@ class JobsService {
     }
   }
 
-  async updateJobStatus(id: string, isActive: boolean): Promise<JobData | null> {
+  async updateJobStatus(id: string, status: JobStatus): Promise<JobData | null> {
+    return this.updateJob(id, { status });
+  }
+
+  async toggleJobActiveStatus(id: string, isActive: boolean): Promise<JobData | null> {
     return this.updateJob(id, { isActive });
   }
 
@@ -412,17 +535,20 @@ class JobsService {
     }
   }
 
-  // Statistics methods
+  // Statistics methods with enhanced status breakdown
   async getJobStats(profileId?: string): Promise<{
     total: number;
     active: number;
     inactive: number;
+    draft: number;
+    interviewing: number;
+    closed: number;
     totalCandidates: number;
   }> {
     try {
       const supabase = await createClient();
       
-      let query = supabase.from('jobs').select('id, is_active');
+      let query = supabase.from('jobs').select('id, is_active, status');
       
       if (profileId) {
         query = query.eq('profile_id', profileId);
@@ -438,6 +564,9 @@ class JobsService {
         total: jobs.length,
         active: jobs.filter(job => job.is_active).length,
         inactive: jobs.filter(job => !job.is_active).length,
+        draft: jobs.filter(job => job.status === 'draft').length,
+        interviewing: jobs.filter(job => job.status === 'interviewing').length,
+        closed: jobs.filter(job => job.status === 'closed').length,
         totalCandidates: 0,
       };
 
@@ -462,6 +591,36 @@ class JobsService {
     } catch (error) {
       console.error('Error getting job stats:', error);
       throw error;
+    }
+  }
+
+  // Auto-update job status based on candidate activity
+  async autoUpdateJobStatus(jobId: string): Promise<void> {
+    try {
+      const supabase = await createClient();
+      
+      // Get candidate count for the job
+      const { count } = await supabase
+        .from('candidates')
+        .select('*', { count: 'exact', head: true })
+        .eq('job_id', jobId)
+        .not('submitted_at', 'is', null);
+
+      // Update status based on candidate activity
+      let newStatus: JobStatus = 'draft';
+      if (count && count > 0) {
+        newStatus = 'interviewing';
+      }
+
+      await supabase
+        .from('jobs')
+        .update({ status: newStatus })
+        .eq('id', jobId)
+        .eq('status', 'draft'); // Only update if currently draft
+
+    } catch (error) {
+      console.error('Error auto-updating job status:', error);
+      // Don't throw error as this is a background operation
     }
   }
 }
