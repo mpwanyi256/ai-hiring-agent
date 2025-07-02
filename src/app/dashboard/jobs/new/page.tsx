@@ -19,6 +19,7 @@ import { selectTraitsData, selectTraitsLoading } from '@/store/traits/traitsSele
 import { selectJobTemplatesData, selectJobTemplatesLoading } from '@/store/jobTemplates/jobTemplatesSelectors';
 import { RootState, useAppDispatch, useAppSelector } from '@/store';
 import { User, Skill, Trait, JobTemplate } from '@/types';
+import { useToast } from '@/components/providers/ToastProvider';
 import { 
   PlusIcon,
   XMarkIcon,
@@ -56,6 +57,7 @@ export default function NewJobPage() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
   const { isLoading: jobsLoading, error } = useAppSelector((state: RootState) => state.jobs);
+  const { success, error: showError, info } = useToast();
   
   // Store selectors
   const allSkills = useAppSelector(selectSkillsData);
@@ -147,11 +149,12 @@ export default function NewJobPage() {
         ]);
       } catch (err) {
         console.error('Error fetching data:', err);
+        showError('Failed to load data. Please refresh the page and try again.');
       }
     };
 
     fetchData();
-  }, [dispatch]);
+  }, [dispatch, showError]);
 
   // Check usage limits
   useEffect(() => {
@@ -164,6 +167,7 @@ export default function NewJobPage() {
   const addSkill = (skill: string) => {
     if (skill && !selectedSkills.includes(skill)) {
       form.setValue('skills', [...selectedSkills, skill]);
+      info(`Added skill: ${skill}`);
     }
     setSkillSearch('');
     setSkillDropdownOpen(false);
@@ -171,12 +175,14 @@ export default function NewJobPage() {
 
   const removeSkill = (skillToRemove: string) => {
     form.setValue('skills', selectedSkills.filter(skill => skill !== skillToRemove));
+    info(`Removed skill: ${skillToRemove}`);
   };
 
   // Handle trait addition
   const addTrait = (trait: string) => {
     if (trait && !selectedTraits.includes(trait)) {
       form.setValue('traits', [...selectedTraits, trait]);
+      info(`Added trait: ${trait}`);
     }
     setTraitSearch('');
     setTraitDropdownOpen(false);
@@ -184,6 +190,7 @@ export default function NewJobPage() {
 
   const removeTrait = (traitToRemove: string) => {
     form.setValue('traits', selectedTraits.filter(trait => trait !== traitToRemove));
+    info(`Removed trait: ${traitToRemove}`);
   };
 
   // Handle template loading
@@ -216,14 +223,21 @@ export default function NewJobPage() {
       }
       customFieldsArray.forEach(field => appendCustomField(field));
     }
+
+    success(`Template "${template.name}" loaded successfully!`);
   };
 
   // Handle URL crawling
   const crawlJobDescription = async () => {
     const url = form.getValues('jobDescriptionUrl');
-    if (!url) return;
+    if (!url) {
+      showError('Please enter a valid URL');
+      return;
+    }
 
     setIsCrawlingUrl(true);
+    info('Importing job description from URL...');
+    
     try {
       // Simulate API call - replace with actual crawling service
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -250,9 +264,9 @@ export default function NewJobPage() {
 • Collaborative and innovative work environment`;
 
       form.setValue('jobDescription', mockDescription);
-      alert('Job description successfully extracted from URL!');
+      success('Job description successfully imported from URL!');
     } catch {
-      alert('Failed to crawl job description. Please try again or enter manually.');
+      showError('Failed to import job description. Please try again or enter manually.');
     } finally {
       setIsCrawlingUrl(false);
     }
@@ -276,15 +290,16 @@ export default function NewJobPage() {
 
       if (response.ok) {
         console.log('Template saved successfully');
+        success(`Template "${templateName}" saved successfully!`);
         // Refresh templates list using Redux
         await dispatch(fetchJobTemplates());
       } else {
         const errorData = await response.json();
-        alert(`Failed to save template: ${errorData.error}`);
+        showError(`Failed to save template: ${errorData.error}`);
       }
     } catch (err) {
       console.error('Error saving template:', err);
-      alert('Failed to save template. Please try again.');
+      showError('Failed to save template. Please try again.');
     }
   };
 
@@ -293,7 +308,7 @@ export default function NewJobPage() {
     if (!user) return;
     
     if (isOverLimit) {
-      alert('You have reached your job posting limit. Please upgrade your plan to create more jobs.');
+      showError('You have reached your job posting limit. Please upgrade your plan to create more jobs.');
       return;
     }
 
@@ -335,12 +350,15 @@ export default function NewJobPage() {
 
       // Show success message
       setShowSuccess(true);
+      success('Job created successfully! Redirecting...');
+      
       setTimeout(() => {
         router.push('/dashboard/jobs');
       }, 2000);
 
     } catch (error) {
       console.error('Failed to create job:', error);
+      showError('Failed to create job. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -424,21 +442,6 @@ export default function NewJobPage() {
                 >
                   Upgrade Plan
                 </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Success Message */}
-        {showSuccess && (
-          <div className="mb-8 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <CheckCircleIcon className="w-5 h-5 text-primary" />
-              <div>
-                <h3 className="font-semibold text-primary">Job Created Successfully!</h3>
-                <p className="text-sm text-primary mt-1">
-                  Redirecting you to your jobs list...
-                </p>
               </div>
             </div>
           </div>

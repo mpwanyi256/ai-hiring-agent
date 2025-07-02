@@ -78,3 +78,99 @@ button {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary-light);
 }
+
+/* Toast animations */
+@keyframes slideInFromTop {
+  from {
+    transform: translateX(calc(100% + 1rem));
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    transform: translateX(calc(100% + 1rem));
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(100% + 1rem));
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Toast component animation classes */
+.animate-in {
+  animation-name: slideInFromTop, fadeIn;
+  animation-duration: 200ms;
+  animation-fill-mode: forwards;
+}
+
+.animate-out {
+  animation-name: slideOutToRight, fadeOut;
+  animation-duration: 150ms;
+  animation-fill-mode: forwards;
+}
+
+.slide-in-from-top-full {
+  animation-name: slideInFromTop;
+}
+
+.slide-in-from-bottom-full {
+  animation-name: slideInFromBottom;
+}
+
+.slide-out-to-right-full {
+  animation-name: slideOutToRight;
+}
+
+.fade-out-80 {
+  animation-name: fadeOut;
+}
+
+/* Responsive behavior for toasts */
+@media (max-width: 640px) {
+  @keyframes slideInFromTop {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideOutToRight {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-100%);
+    }
+  }
+}
