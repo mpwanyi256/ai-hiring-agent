@@ -6,10 +6,68 @@ import {
   QuestionGenerationRequest,
   QuestionGenerationResponse
 } from '@/types/interview';
+import { aiQuestionService } from './aiQuestionService';
 
 class QuestionService {
   // Generate AI questions based on job requirements
   async generateQuestionsForJob(params: QuestionGenerationRequest): Promise<QuestionGenerationResponse> {
+    const {
+      jobTitle,
+      jobDescription,
+      skills = [],
+      experienceLevel,
+      traits = [],
+      customFields = {},
+      questionCount = 8,
+      includeCustom = true
+    } = params;
+
+    let questions: Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[] = [];
+
+    try {
+      // Try AI generation first
+      console.log('Attempting AI question generation...');
+      questions = await aiQuestionService.generateQuestions({
+        jobTitle,
+        jobDescription,
+        skills,
+        experienceLevel,
+        traits,
+        customFields,
+        questionCount,
+        interviewFormat: 'text' // Default to text, could be parameterized
+      });
+
+      console.log(`AI generated ${questions.length} questions successfully`);
+    } catch (error) {
+      console.error('AI question generation failed, falling back to template questions:', error);
+      
+      // Fallback to template-based generation
+      questions = await this.generateTemplateQuestions({
+        jobId: params.jobId,
+        jobTitle,
+        jobDescription,
+        skills,
+        experienceLevel,
+        traits,
+        customFields,
+        questionCount,
+        includeCustom
+      });
+    }
+
+    // Calculate total estimated duration
+    const estimatedDuration = questions.reduce((total, q) => total + q.expectedDuration, 0);
+
+    return {
+      questions,
+      totalGenerated: questions.length,
+      estimatedDuration
+    };
+  }
+
+  // Fallback template-based question generation (existing logic)
+  private async generateTemplateQuestions(params: QuestionGenerationRequest): Promise<Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[]> {
     const {
       jobTitle,
       jobDescription,
@@ -32,8 +90,8 @@ class QuestionService {
       expectedDuration: 120,
       isRequired: true,
       orderIndex: orderIndex++,
-      isAiGenerated: true,
-      metadata: { generationType: 'introduction' }
+      isAiGenerated: false, // Template-based
+      metadata: { generationType: 'introduction', templateBased: true }
     });
 
     // 2. Experience level specific questions
@@ -122,14 +180,7 @@ class QuestionService {
     // Limit to requested count
     const finalQuestions = questions.slice(0, questionCount);
     
-    // Calculate total estimated duration
-    const estimatedDuration = finalQuestions.reduce((total, q) => total + q.expectedDuration, 0);
-
-    return {
-      questions: finalQuestions,
-      totalGenerated: finalQuestions.length,
-      estimatedDuration
-    };
+    return finalQuestions;
   }
 
   private getExperienceBasedQuestions(experienceLevel: string, jobTitle: string): Array<Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt' | 'orderIndex' | 'isAiGenerated'>> {

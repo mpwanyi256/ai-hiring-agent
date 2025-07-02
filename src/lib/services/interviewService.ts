@@ -5,24 +5,27 @@ import {
   InterviewQuestion,
   CandidateResponse,
   InterviewEvaluation,
-  InterviewSession,
+  ActiveInterviewSession,
   InterviewStats
 } from '@/types/interview';
 
 class InterviewService {
   // Generate interview questions based on job requirements
   async generateQuestions(job: JobData): Promise<InterviewQuestion[]> {
-    const questions: InterviewQuestion[] = [];
+    const questions: Partial<InterviewQuestion>[] = [];
     
     // Base questions for all interviews
     const baseQuestions = [
       {
         id: 'intro-1',
-        question: 'Tell me about yourself and what interests you about this position.',
-        type: 'general' as const,
+        questionText: 'Tell me about yourself and what interests you about this position.',
+        questionType: 'general' as const,
         category: 'Introduction',
         expectedDuration: 120,
-        order: 1
+        orderIndex: 1,
+        isRequired: true,
+        isAiGenerated: false,
+        metadata: {}
       }
     ];
 
@@ -60,73 +63,102 @@ class InterviewService {
     const closingQuestions = [
       {
         id: 'closing-1',
-        question: 'Do you have any questions about the role or the company?',
-        type: 'general' as const,
+        questionText: 'Do you have any questions about the role or the company?',
+        questionType: 'general' as const,
         category: 'Closing',
         expectedDuration: 90,
-        order: 999
+        orderIndex: 999,
+        isRequired: true,
+        isAiGenerated: false,
+        metadata: {}
       }
     ];
 
-    return [...baseQuestions, ...questions, ...closingQuestions]
-      .sort((a, b) => a.order - b.order)
-      .map((q, index) => ({ ...q, order: index + 1 }));
+    const allQuestions = [...baseQuestions, ...questions, ...closingQuestions]
+      .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
+      .map((q, index) => ({ 
+        ...q, 
+        jobId: job.id,
+        orderIndex: index + 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })) as InterviewQuestion[];
+
+    return allQuestions;
   }
 
-  private getExperienceQuestions(experienceLevel: string): InterviewQuestion[] {
-    const questionMap: Record<string, InterviewQuestion[]> = {
+  private getExperienceQuestions(experienceLevel: string): Partial<InterviewQuestion>[] {
+    const questionMap: Record<string, Partial<InterviewQuestion>[]> = {
       'entry': [
         {
           id: 'exp-entry-1',
-          question: 'What projects or coursework have you worked on that relate to this position?',
-          type: 'experience',
+          questionText: 'What projects or coursework have you worked on that relate to this position?',
+          questionType: 'experience',
           category: 'Experience',
           expectedDuration: 120,
-          order: 10
+          orderIndex: 10,
+          isRequired: true,
+          isAiGenerated: false,
+          metadata: {}
         },
         {
           id: 'exp-entry-2',
-          question: 'How do you approach learning new technologies or skills?',
-          type: 'behavioral',
+          questionText: 'How do you approach learning new technologies or skills?',
+          questionType: 'behavioral',
           category: 'Learning',
           expectedDuration: 90,
-          order: 11
+          orderIndex: 11,
+          isRequired: true,
+          isAiGenerated: false,
+          metadata: {}
         }
       ],
       'mid': [
         {
           id: 'exp-mid-1',
-          question: 'Describe a challenging project you\'ve worked on and how you overcame the obstacles.',
-          type: 'experience',
+          questionText: 'Describe a challenging project you\'ve worked on and how you overcame the obstacles.',
+          questionType: 'experience',
           category: 'Problem Solving',
           expectedDuration: 150,
-          order: 10
+          orderIndex: 10,
+          isRequired: true,
+          isAiGenerated: false,
+          metadata: {}
         },
         {
           id: 'exp-mid-2',
-          question: 'How do you handle competing priorities and tight deadlines?',
-          type: 'behavioral',
+          questionText: 'How do you handle competing priorities and tight deadlines?',
+          questionType: 'behavioral',
           category: 'Time Management',
           expectedDuration: 120,
-          order: 11
+          orderIndex: 11,
+          isRequired: true,
+          isAiGenerated: false,
+          metadata: {}
         }
       ],
       'senior': [
         {
           id: 'exp-senior-1',
-          question: 'Tell me about a time when you led a team or mentored junior colleagues.',
-          type: 'behavioral',
+          questionText: 'Tell me about a time when you led a team or mentored junior colleagues.',
+          questionType: 'behavioral',
           category: 'Leadership',
           expectedDuration: 150,
-          order: 10
+          orderIndex: 10,
+          isRequired: true,
+          isAiGenerated: false,
+          metadata: {}
         },
         {
           id: 'exp-senior-2',
-          question: 'How do you approach system design and architecture decisions?',
-          type: 'technical',
+          questionText: 'How do you approach system design and architecture decisions?',
+          questionType: 'technical',
           category: 'Architecture',
           expectedDuration: 180,
-          order: 11
+          orderIndex: 11,
+          isRequired: true,
+          isAiGenerated: false,
+          metadata: {}
         }
       ]
     };
@@ -134,25 +166,28 @@ class InterviewService {
     return questionMap[experienceLevel] || questionMap['mid'];
   }
 
-  private getSkillQuestions(skills: string[]): InterviewQuestion[] {
-    const questions: InterviewQuestion[] = [];
+  private getSkillQuestions(skills: string[]): Partial<InterviewQuestion>[] {
+    const questions: Partial<InterviewQuestion>[] = [];
     const selectedSkills = skills.slice(0, 3); // Focus on top 3 skills
 
     selectedSkills.forEach((skill, index) => {
       questions.push({
         id: `skill-${index + 1}`,
-        question: `How would you rate your experience with ${skill}? Can you provide a specific example of how you've used it?`,
-        type: 'technical',
+        questionText: `How would you rate your experience with ${skill}? Can you provide a specific example of how you've used it?`,
+        questionType: 'technical',
         category: 'Skills',
         expectedDuration: 120,
-        order: 20 + index
+        orderIndex: 20 + index,
+        isRequired: true,
+        isAiGenerated: false,
+        metadata: { skill }
       });
     });
 
     return questions;
   }
 
-  private getTraitQuestions(traits: string[]): InterviewQuestion[] {
+  private getTraitQuestions(traits: string[]): Partial<InterviewQuestion>[] {
     const traitQuestionMap: Record<string, string> = {
       'communication': 'Describe a situation where you had to explain a complex concept to someone. How did you ensure they understood?',
       'teamwork': 'Tell me about a time when you had to work with a difficult team member. How did you handle it?',
@@ -164,62 +199,74 @@ class InterviewService {
       'time-management': 'How do you prioritize tasks when everything seems urgent?'
     };
 
-    const questions: InterviewQuestion[] = [];
+    const questions: Partial<InterviewQuestion>[] = [];
     const selectedTraits = traits.slice(0, 2); // Focus on top 2 traits
 
     selectedTraits.forEach((trait, index) => {
-      const question = traitQuestionMap[trait.toLowerCase()] || 
+      const questionText = traitQuestionMap[trait.toLowerCase()] || 
         `Can you give me an example of how you demonstrate ${trait} in your work?`;
       
       questions.push({
         id: `trait-${index + 1}`,
-        question,
-        type: 'behavioral',
+        questionText,
+        questionType: 'behavioral',
         category: 'Traits',
         expectedDuration: 150,
-        order: 30 + index
+        orderIndex: 30 + index,
+        isRequired: true,
+        isAiGenerated: false,
+        metadata: { trait }
       });
     });
 
     return questions;
   }
 
-  private getJobSpecificQuestions(jobDescription: string): InterviewQuestion[] {
+  private getJobSpecificQuestions(jobDescription: string): Partial<InterviewQuestion>[] {
     // In a real implementation, this would use AI to analyze the job description
     // For now, we'll return some generic but relevant questions
     return [
       {
         id: 'job-specific-1',
-        question: 'Based on the job description, what aspects of this role excite you the most?',
-        type: 'general',
+        questionText: 'Based on the job description, what aspects of this role excite you the most?',
+        questionType: 'general',
         category: 'Role Interest',
         expectedDuration: 120,
-        order: 40
+        orderIndex: 40,
+        isRequired: true,
+        isAiGenerated: false,
+        metadata: {}
       },
       {
         id: 'job-specific-2',
-        question: 'What do you think would be the biggest challenges in this position, and how would you approach them?',
-        type: 'behavioral',
+        questionText: 'What do you think would be the biggest challenges in this position, and how would you approach them?',
+        questionType: 'behavioral',
         category: 'Role Understanding',
         expectedDuration: 150,
-        order: 41
+        orderIndex: 41,
+        isRequired: true,
+        isAiGenerated: false,
+        metadata: {}
       }
     ];
   }
 
-  private getCustomFieldQuestions(customFields: Record<string, { value: string; inputType: string }>): InterviewQuestion[] {
-    const questions: InterviewQuestion[] = [];
+  private getCustomFieldQuestions(customFields: Record<string, { value: string; inputType: string }>): Partial<InterviewQuestion>[] {
+    const questions: Partial<InterviewQuestion>[] = [];
     let order = 50;
 
     Object.entries(customFields).forEach(([key, field]) => {
       if (field.inputType !== 'file') { // Skip file fields
         questions.push({
           id: `custom-${order}`,
-          question: `Regarding ${key}: ${field.value}`,
-          type: 'general',
+          questionText: `Regarding ${key}: ${field.value}`,
+          questionType: 'general',
           category: 'Custom Requirements',
           expectedDuration: 90,
-          order: order++
+          orderIndex: order++,
+          isRequired: false,
+          isAiGenerated: false,
+          metadata: { customField: key }
         });
       }
     });
@@ -277,7 +324,7 @@ class InterviewService {
   }
 
   // Start interview session
-  async startInterview(candidateId: string, job: JobData): Promise<InterviewSession> {
+  async startInterview(candidateId: string, job: JobData): Promise<ActiveInterviewSession> {
     try {
       const supabase = await createClient();
       
@@ -522,7 +569,7 @@ class InterviewService {
   }
 
   // Get interview stats
-  getInterviewStats(session: InterviewSession): InterviewStats {
+  getInterviewStats(session: ActiveInterviewSession): InterviewStats {
     const totalQuestions = session.questions.length;
     const answeredQuestions = session.responses.length;
     const timeSpent = session.timeElapsed;

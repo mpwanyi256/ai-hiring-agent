@@ -48,11 +48,24 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function POST(request: Request, { params }: RouteParams) {
   try {
     const { id: jobId } = await params;
+    
+    // Handle optional request body
+    let requestData = { questionCount: 8, includeCustom: true, replaceExisting: false };
+    try {
+      const body = await request.text();
+      if (body.trim()) {
+        requestData = { ...requestData, ...JSON.parse(body) };
+      }
+    } catch (parseError) {
+      // Use defaults if no body or invalid JSON
+      console.log('Using default question generation parameters');
+    }
+    
     const { 
       questionCount = 8, 
       includeCustom = true, 
       replaceExisting = false 
-    } = await request.json();
+    } = requestData;
 
     if (!jobId) {
       return NextResponse.json({ 

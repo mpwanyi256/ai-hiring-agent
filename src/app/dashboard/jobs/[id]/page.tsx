@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import QuestionManager from '@/components/questions/QuestionManager';
 import { RootState, useAppSelector } from '@/store';
 import { JobData } from '@/lib/services/jobsService';
 import { JobStatus } from '@/lib/supabase';
@@ -36,7 +37,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [showQuestions, setShowQuestions] = useState(false);
 
   // Fetch job details
   useEffect(() => {
@@ -103,27 +104,8 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   const generateQuestions = async () => {
     if (!job) return;
 
-    setIsGeneratingQuestions(true);
-    try {
-      const response = await fetch(`/api/jobs/${job.id}/questions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to generate questions');
-      }
-
-      alert(`Generated ${data.questions.length} questions for this job!`);
-    } catch (err) {
-      console.error('Error generating questions:', err);
-      alert(err instanceof Error ? err.message : 'Failed to generate questions');
-    } finally {
-      setIsGeneratingQuestions(false);
-    }
+    // Show the questions management interface
+    setShowQuestions(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -368,11 +350,10 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
               variant="outline" 
               size="sm" 
               onClick={generateQuestions}
-              disabled={isGeneratingQuestions}
               className="flex items-center"
             >
               <SparklesIcon className="w-4 h-4 mr-1" />
-              {isGeneratingQuestions ? 'Generating...' : 'Generate Questions'}
+              Generate Questions
             </Button>
             
             {job.status === 'interviewing' && (
@@ -382,79 +363,6 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                   Test Interview
                 </Button>
               </Link>
-            )}
-          </div>
-        </div>
-
-        {/* Job Requirements */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Skills & Experience */}
-          <div className="bg-white rounded-lg border border-gray-light p-6">
-            <h2 className="text-lg font-semibold text-text mb-4">Requirements</h2>
-            
-            {job.fields?.experienceLevel && (
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-muted-text mb-2">Experience Level</h3>
-                <span className="inline-flex items-center px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                  {job.fields.experienceLevel.replace(/([A-Z])/g, ' $1').trim()}
-                </span>
-              </div>
-            )}
-            
-            {job.fields?.skills && job.fields.skills.length > 0 && (
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-muted-text mb-2">Required Skills</h3>
-                <div className="flex flex-wrap gap-2">
-                  {job.fields.skills.map((skill, index) => (
-                    <span 
-                      key={index} 
-                      className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {job.fields?.traits && job.fields.traits.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-muted-text mb-2">Desired Traits</h3>
-                <div className="flex flex-wrap gap-2">
-                  {job.fields.traits.map((trait, index) => (
-                    <span 
-                      key={index} 
-                      className="px-3 py-1 bg-accent-blue/10 text-accent-blue rounded-full text-sm font-medium"
-                    >
-                      {trait}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {!job.fields?.skills && !job.fields?.traits && !job.fields?.experienceLevel && (
-              <p className="text-muted-text text-sm">No specific requirements specified.</p>
-            )}
-          </div>
-
-          {/* Custom Fields */}
-          <div className="bg-white rounded-lg border border-gray-light p-6">
-            <h2 className="text-lg font-semibold text-text mb-4">Additional Information</h2>
-            
-            {job.fields?.customFields && Object.keys(job.fields.customFields).length > 0 ? (
-              <div className="space-y-3">
-                {Object.entries(job.fields.customFields).map(([key, field]) => (
-                  <div key={key}>
-                    <h3 className="text-sm font-medium text-text mb-1">{key}</h3>
-                    <p className="text-sm text-muted-text">
-                      {field.value} <span className="text-xs">({field.inputType})</span>
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-text text-sm">No additional information specified.</p>
             )}
           </div>
         </div>
@@ -472,6 +380,19 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
             <p className="text-muted-text">No job description provided.</p>
           )}
         </div>
+
+        {/* Question Management */}
+        {showQuestions && (
+          <div className="mb-6">
+            <QuestionManager 
+              jobId={job.id} 
+              jobTitle={job.title}
+              onQuestionsChange={(questions) => {
+                console.log('Questions updated:', questions);
+              }}
+            />
+          </div>
+        )}
 
         {/* Interview Preview */}
         <div className="bg-white rounded-lg border border-gray-light p-6">

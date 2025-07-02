@@ -13,6 +13,9 @@ export interface JobQuestion {
   updatedAt: string;
 }
 
+// Legacy aliases for backward compatibility
+export type InterviewQuestion = JobQuestion;
+
 export interface JobQuestionDetailed extends JobQuestion {
   jobTitle: string;
   profileId: string;
@@ -31,6 +34,16 @@ export interface CandidateProfile {
   createdAt: string;
   updatedAt: string;
 }
+
+// Legacy alias for backward compatibility
+export type Candidate = CandidateProfile & {
+  jobId: string;
+  interviewToken: string;
+  submittedAt?: string;
+  currentStep: number;
+  totalSteps: number;
+  isCompleted: boolean;
+};
 
 export interface CandidateResponse {
   id: string;
@@ -79,6 +92,16 @@ export interface InterviewSession {
   lastResponseAt: string;
   isCompleted: boolean;
   totalTimeSpent: number;
+}
+
+// Enhanced session for active interviews
+export interface ActiveInterviewSession {
+  candidate: Candidate;
+  questions: InterviewQuestion[];
+  responses: CandidateResponse[];
+  currentQuestionIndex: number;
+  startedAt: string;
+  timeElapsed: number;
 }
 
 export interface InterviewStats {

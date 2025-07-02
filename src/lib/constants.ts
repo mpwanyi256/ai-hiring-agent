@@ -18,3 +18,10 @@ export const inputTypes = [
 export const app = {
     baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
 }
+
+export const ai = {
+    openaiApiKey: process.env.NEXT_PUBLIC_OPENAI_KEY,
+    model: 'gpt-4o-mini', // Cost-effective model for question generation
+    maxTokens: 2000,
+    temperature: 0.7, // Balanced creativity for question generation
+}
