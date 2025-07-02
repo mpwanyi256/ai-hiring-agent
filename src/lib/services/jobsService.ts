@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { generateInterviewToken } from '@/lib/utils';
 import { Database, JobFieldsConfig } from '@/lib/supabase';
+import { app } from '@/lib/constants';
 
 type JobRow = Database['public']['Tables']['jobs']['Row'];
 type JobInsert = Database['public']['Tables']['jobs']['Insert'];
@@ -161,7 +162,7 @@ class JobsService {
   private addInterviewLink(job: JobData): JobData {
     return {
       ...job,
-      interviewLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/interview/${job.interviewToken}`,
+      interviewLink: `${app.baseUrl}/interview/${job.interviewToken}`,
     };
   }
 

@@ -14,3 +14,7 @@ export const inputTypes = [
     { value: 'url', label: 'Website URL', icon: '🔗' },
     { value: 'email', label: 'Email Address', icon: '📧' },
 ];
+
+export const app = {
+    baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+}
