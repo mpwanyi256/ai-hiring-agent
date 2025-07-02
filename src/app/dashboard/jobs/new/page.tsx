@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Button from '@/components/ui/Button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { createJob } from '@/store/slices/jobsSlice';
 import { refreshUserData } from '@/store/slices/authSlice';
 import { RootState, AppDispatch } from '@/store';
@@ -145,6 +146,28 @@ export default function NewJobPage() {
     !selectedTraits.includes(trait.name) && 
     trait.name.toLowerCase().includes(traitSearch.toLowerCase())
   );
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      
+      // Close skills dropdown if clicking outside
+      if (skillDropdownOpen && !target.closest('[data-dropdown="skills"]')) {
+        setSkillDropdownOpen(false);
+        setSkillSearch('');
+      }
+      
+      // Close traits dropdown if clicking outside
+      if (traitDropdownOpen && !target.closest('[data-dropdown="traits"]')) {
+        setTraitDropdownOpen(false);
+        setTraitSearch('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [skillDropdownOpen, traitDropdownOpen]);
 
   // Fetch skills, traits, and templates on component mount
   useEffect(() => {
@@ -484,12 +507,12 @@ export default function NewJobPage() {
         )}
 
         {/* Form */}
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-8 space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           {/* Basic Information */}
           <div className="bg-white rounded-lg border border-gray-light p-6">
             <h2 className="text-lg font-semibold text-text mb-6">Basic Information</h2>
             
-            <div className="flex flex-col gap-4 space-y-6">
+            <div className="space-y-6">
               {/* Job Title */}
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-text mb-2">
@@ -605,12 +628,11 @@ export default function NewJobPage() {
                 <label htmlFor="jobDescription" className="block text-sm font-medium text-text mb-2">
                   Job Description *
                 </label>
-                <textarea
-                  {...form.register('jobDescription')}
-                  id="jobDescription"
-                  rows={12}
+                <RichTextEditor
+                  content={form.watch('jobDescription') || ''}
+                  onChange={(content) => form.setValue('jobDescription', content)}
                   placeholder="Describe the role, responsibilities, requirements, and what you offer..."
-                  className="w-full px-4 py-3 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-vertical"
+                  className="w-full"
                 />
                 {form.formState.errors.jobDescription && (
                   <p className="text-accent-red text-sm mt-1">
@@ -627,7 +649,7 @@ export default function NewJobPage() {
             
             <div className="space-y-4">
               {/* Skills Dropdown */}
-              <div className="relative">
+              <div className="relative" data-dropdown="skills">
                 <label className="block text-sm font-medium text-text mb-2">
                   Add Skills
                 </label>
@@ -644,8 +666,8 @@ export default function NewJobPage() {
                   </button>
                   
                   {skillDropdownOpen && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-60 overflow-hidden">
-                      <div className="p-3 border-b border-gray-light">
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-64 overflow-hidden">
+                      <div className="p-3 border-b border-gray-light bg-gray-50">
                         <input
                           type="text"
                           value={skillSearch}
@@ -661,19 +683,20 @@ export default function NewJobPage() {
                               key={skill.id}
                               type="button"
                               onClick={() => addSkill(skill.name)}
-                              className="w-full px-4 py-2 text-left text-text hover:bg-gray-50 transition-colors"
+                              className="w-full px-4 py-3 text-left text-text hover:bg-primary/5 transition-colors border-b border-gray-100 last:border-b-0"
                             >
                               <div>
                                 <p className="font-medium">{skill.name}</p>
                                 {skill.description && (
-                                  <p className="text-xs text-muted-text truncate">{skill.description}</p>
+                                  <p className="text-xs text-muted-text truncate mt-1">{skill.description}</p>
                                 )}
+                                <p className="text-xs text-primary capitalize mt-1">{skill.category}</p>
                               </div>
                             </button>
                           ))
                         ) : (
-                          <div className="px-4 py-3 text-muted-text text-sm">
-                            {skillSearch ? 'No skills found' : 'All skills selected'}
+                          <div className="px-4 py-6 text-muted-text text-sm text-center">
+                            {skillSearch ? 'No skills found matching your search' : 'All skills have been selected'}
                           </div>
                         )}
                       </div>
@@ -686,17 +709,17 @@ export default function NewJobPage() {
               {selectedSkills.length > 0 && (
                 <div>
                   <p className="text-sm font-medium text-text mb-3">Selected Skills ({selectedSkills.length}):</p>
-                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-3 bg-gray-50 rounded-lg">
+                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-4 bg-gray-50 rounded-lg border border-gray-light">
                     {selectedSkills.map((skill) => (
                       <span
                         key={skill}
-                        className="inline-flex items-center px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                        className="inline-flex items-center px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
                       >
                         {skill}
                         <button
                           type="button"
                           onClick={() => removeSkill(skill)}
-                          className="ml-2 text-primary hover:text-accent-red"
+                          className="ml-2 text-primary hover:text-accent-red transition-colors"
                         >
                           <XMarkIcon className="w-3 h-3" />
                         </button>
@@ -714,7 +737,7 @@ export default function NewJobPage() {
             
             <div className="space-y-4">
               {/* Traits Dropdown */}
-              <div className="relative">
+              <div className="relative" data-dropdown="traits">
                 <label className="block text-sm font-medium text-text mb-2">
                   Add Traits
                 </label>
@@ -731,8 +754,8 @@ export default function NewJobPage() {
                   </button>
                   
                   {traitDropdownOpen && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-60 overflow-hidden">
-                      <div className="p-3 border-b border-gray-light">
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-64 overflow-hidden">
+                      <div className="p-3 border-b border-gray-light bg-gray-50">
                         <input
                           type="text"
                           value={traitSearch}
@@ -748,19 +771,20 @@ export default function NewJobPage() {
                               key={trait.id}
                               type="button"
                               onClick={() => addTrait(trait.name)}
-                              className="w-full px-4 py-2 text-left text-text hover:bg-gray-50 transition-colors"
+                              className="w-full px-4 py-3 text-left text-text hover:bg-accent-blue/5 transition-colors border-b border-gray-100 last:border-b-0"
                             >
                               <div>
                                 <p className="font-medium">{trait.name}</p>
                                 {trait.description && (
-                                  <p className="text-xs text-muted-text truncate">{trait.description}</p>
+                                  <p className="text-xs text-muted-text truncate mt-1">{trait.description}</p>
                                 )}
+                                <p className="text-xs text-accent-blue capitalize mt-1">{trait.category}</p>
                               </div>
                             </button>
                           ))
                         ) : (
-                          <div className="px-4 py-3 text-muted-text text-sm">
-                            {traitSearch ? 'No traits found' : 'All traits selected'}
+                          <div className="px-4 py-6 text-muted-text text-sm text-center">
+                            {traitSearch ? 'No traits found matching your search' : 'All traits have been selected'}
                           </div>
                         )}
                       </div>
@@ -773,17 +797,17 @@ export default function NewJobPage() {
               {selectedTraits.length > 0 && (
                 <div>
                   <p className="text-sm font-medium text-text mb-3">Selected Traits ({selectedTraits.length}):</p>
-                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-3 bg-gray-50 rounded-lg">
+                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-4 bg-gray-50 rounded-lg border border-gray-light">
                     {selectedTraits.map((trait) => (
                       <span
                         key={trait}
-                        className="inline-flex items-center px-3 py-1 bg-accent-blue/10 text-accent-blue rounded-full text-sm"
+                        className="inline-flex items-center px-3 py-1.5 bg-accent-blue/10 text-accent-blue rounded-full text-sm font-medium"
                       >
                         {trait}
                         <button
                           type="button"
                           onClick={() => removeTrait(trait)}
-                          className="ml-2 text-accent-blue hover:text-accent-red"
+                          className="ml-2 text-accent-blue hover:text-accent-red transition-colors"
                         >
                           <XMarkIcon className="w-3 h-3" />
                         </button>

@@ -13,12 +13,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Build query
+    // Build query using the skills_view
     let query = supabase
-      .from('skills')
-      .select('id, name, category, description')
-      .eq('is_active', true)
-      .order('name');
+      .from('skills_view')
+      .select('id, name, category, description, category_description, category_sort_order')
+      .order('category_sort_order', { ascending: true })
+      .order('name', { ascending: true });
 
     // Filter by category if provided
     if (category) {
