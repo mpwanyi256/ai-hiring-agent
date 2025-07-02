@@ -56,7 +56,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       if (body.trim()) {
         requestData = { ...requestData, ...JSON.parse(body) };
       }
-    } catch (parseError) {
+    } catch {
       // Use defaults if no body or invalid JSON
       console.log('Using default question generation parameters');
     }

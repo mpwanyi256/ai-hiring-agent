@@ -5,23 +5,28 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import TabNavigation from '@/components/ui/TabNavigation';
+import JobOverview from '@/components/jobs/JobOverview';
 import QuestionManager from '@/components/questions/QuestionManager';
+import JobCandidates from '@/components/jobs/JobCandidates';
+import JobEvaluations from '@/components/jobs/JobEvaluations';
 import { RootState, useAppSelector } from '@/store';
 import { JobData } from '@/lib/services/jobsService';
 import { JobStatus } from '@/lib/supabase';
+import { JobQuestion } from '@/types/interview';
 import { 
   ArrowLeftIcon,
   BriefcaseIcon,
   PencilIcon,
   LinkIcon,
-  CalendarIcon,
   UserGroupIcon,
-  ClockIcon,
   EyeIcon,
   ShareIcon,
   XCircleIcon,
   PlayIcon,
-  SparklesIcon
+  SparklesIcon,
+  ClipboardDocumentListIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 interface JobDetailsPageProps {
@@ -34,33 +39,48 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   const router = useRouter();
   const { user } = useAppSelector((state: RootState) => state.auth);
   const [job, setJob] = useState<JobData | null>(null);
+  const [questions, setQuestions] = useState<JobQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [showQuestions, setShowQuestions] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
-  // Fetch job details
+  // Fetch job details and questions
   useEffect(() => {
-    const fetchJob = async () => {
+    const fetchJobData = async () => {
       if (!user?.id || !params.id) return;
 
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await fetch(`/api/jobs/${params.id}`);
-        const data = await response.json();
+        // Fetch job details
+        const jobResponse = await fetch(`/api/jobs/${params.id}`);
+        const jobData = await jobResponse.json();
 
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch job');
+        if (!jobData.success) {
+          throw new Error(jobData.error || 'Failed to fetch job');
         }
 
         // Verify the job belongs to the current user
-        if (data.job.profileId !== user.id) {
+        if (jobData.job.profileId !== user.id) {
           throw new Error('Job not found');
         }
 
-        setJob(data.job);
+        setJob(jobData.job);
+
+        // Fetch questions
+        try {
+          const questionsResponse = await fetch(`/api/jobs/${params.id}/questions`);
+          const questionsData = await questionsResponse.json();
+          
+          if (questionsData.success) {
+            setQuestions(questionsData.questions || []);
+          }
+        } catch (questionError) {
+          console.error('Error fetching questions:', questionError);
+          // Don't fail the whole page if questions fail to load
+        }
       } catch (err) {
         console.error('Error fetching job:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch job');
@@ -69,7 +89,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
       }
     };
 
-    fetchJob();
+    fetchJobData();
   }, [user?.id, params.id]);
 
   const updateJobStatus = async (newStatus: JobStatus) => {
@@ -99,21 +119,6 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
     } finally {
       setIsUpdatingStatus(false);
     }
-  };
-
-  const generateQuestions = async () => {
-    if (!job) return;
-
-    // Show the questions management interface
-    setShowQuestions(true);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
   };
 
   const copyInterviewLink = async () => {
@@ -173,12 +178,44 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
     }
   };
 
+  const handleQuestionsChange = (updatedQuestions: JobQuestion[]) => {
+    setQuestions(updatedQuestions);
+    // Questions have been updated, no need to fetch stats for now
+  };
+
+  // Define tabs
+  const tabs = [
+    {
+      id: 'overview',
+      label: 'Overview',
+      icon: <BriefcaseIcon />
+    },
+    {
+      id: 'questions',
+      label: 'Questions',
+      icon: <ClipboardDocumentListIcon />,
+      count: questions.length
+    },
+    {
+      id: 'candidates',
+      label: 'Candidates',
+      icon: <UserGroupIcon />,
+      count: job?.candidateCount || 0
+    },
+    {
+      id: 'evaluations',
+      label: 'Evaluations',
+      icon: <ChartBarIcon />,
+      count: 0 // TODO: Add evaluation count
+    }
+  ];
+
   if (!user) return null;
 
   if (isLoading) {
     return (
       <DashboardLayout title="Job Details">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="bg-white rounded-lg border border-gray-light p-8">
             <div className="flex items-center justify-center">
               <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
@@ -193,7 +230,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   if (error || !job) {
     return (
       <DashboardLayout title="Job Details">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="mb-6">
             <Button
               variant="outline"
@@ -221,7 +258,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
 
   return (
     <DashboardLayout title={job.title}>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
@@ -257,195 +294,127 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
           </div>
         </div>
 
-        {/* Job Overview Card */}
-        <div className="bg-white rounded-lg border border-gray-light p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-text mb-2">{job.title}</h1>
-              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-text">
-                <div className="flex items-center space-x-1">
-                  <CalendarIcon className="w-4 h-4" />
-                  <span>Created {formatDate(job.createdAt)}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <UserGroupIcon className="w-4 h-4" />
+        {/* Job Header Card */}
+        <div className="bg-white rounded-lg border border-gray-light mb-6">
+          <div className="p-6 border-b border-gray-light">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-text mb-2">{job.title}</h1>
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-text">
+                  <span>Created {new Date(job.createdAt).toLocaleDateString()}</span>
                   <span>{(job.candidateCount || 0)} candidates</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <ClockIcon className="w-4 h-4" />
-                  <span>
-                    {job.interviewFormat === 'text' ? 'Text-based' : 'Video'} Interview
-                  </span>
+                  <span className="capitalize">{job.interviewFormat} Interview</span>
                 </div>
               </div>
+              
+              <div className="flex flex-col items-end space-y-2">
+                <span className={`px-3 py-1 text-sm font-medium rounded-full border ${getStatusColor(job.status)}`}>
+                  {getStatusLabel(job.status)}
+                </span>
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  job.isActive 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'bg-gray-light text-muted-text'
+                }`}>
+                  {job.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
             </div>
-            
-            <div className="flex flex-col items-end space-y-2">
-              <span className={`px-3 py-1 text-sm font-medium rounded-full border ${getStatusColor(job.status)}`}>
-                {getStatusLabel(job.status)}
-              </span>
-              <span className={`px-2 py-1 text-xs rounded-full ${
-                job.isActive 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'bg-gray-light text-muted-text'
-              }`}>
-                {job.isActive ? 'Active' : 'Inactive'}
-              </span>
+
+            {/* Quick Actions */}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={copyInterviewLink} className="flex items-center">
+                <LinkIcon className="w-4 h-4 mr-1" />
+                Copy Interview Link
+              </Button>
+              
+              {/* Job Status Management */}
+              {job.status === 'draft' ? (
+                <Button 
+                  size="sm" 
+                  onClick={() => updateJobStatus('interviewing')}
+                  disabled={isUpdatingStatus}
+                  className="flex items-center"
+                >
+                  <PlayIcon className="w-4 h-4 mr-1" />
+                  {isUpdatingStatus ? 'Starting...' : 'Start Interviewing'}
+                </Button>
+              ) : job.status === 'interviewing' ? (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => updateJobStatus('closed')}
+                  disabled={isUpdatingStatus}
+                  className="flex items-center"
+                >
+                  <XCircleIcon className="w-4 h-4 mr-1" />
+                  {isUpdatingStatus ? 'Closing...' : 'Close Position'}
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => updateJobStatus('interviewing')}
+                  disabled={isUpdatingStatus}
+                  className="flex items-center"
+                >
+                  <PlayIcon className="w-4 h-4 mr-1" />
+                  {isUpdatingStatus ? 'Reopening...' : 'Reopen Position'}
+                </Button>
+              )}
+
+              {questions.length === 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setActiveTab('questions')}
+                  className="flex items-center"
+                >
+                  <SparklesIcon className="w-4 h-4 mr-1" />
+                  Generate Questions
+                </Button>
+              )}
+              
+              {job.status === 'interviewing' && (
+                <Link href={job.interviewLink || `/interview/${job.interviewToken}`} target="_blank">
+                  <Button variant="outline" size="sm" className="flex items-center">
+                    <EyeIcon className="w-4 h-4 mr-1" />
+                    Test Interview
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-light">
-            <Button variant="outline" size="sm" onClick={copyInterviewLink} className="flex items-center">
-              <LinkIcon className="w-4 h-4 mr-1" />
-              Copy Interview Link
-            </Button>
-            
-            {(job.candidateCount || 0) > 0 && (
-              <Link href={`/dashboard/candidates?job=${job.id}`}>
-                <Button variant="outline" size="sm" className="flex items-center">
-                  <UserGroupIcon className="w-4 h-4 mr-1" />
-                  View {job.candidateCount || 0} Candidate{(job.candidateCount || 0) !== 1 ? 's' : ''}
-                </Button>
-              </Link>
-            )}
-
-            {/* Job Status Management */}
-            {job.status === 'draft' ? (
-              <Button 
-                size="sm" 
-                onClick={() => updateJobStatus('interviewing')}
-                disabled={isUpdatingStatus}
-                className="flex items-center"
-              >
-                <PlayIcon className="w-4 h-4 mr-1" />
-                {isUpdatingStatus ? 'Starting...' : 'Start Interviewing'}
-              </Button>
-            ) : job.status === 'interviewing' ? (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => updateJobStatus('closed')}
-                disabled={isUpdatingStatus}
-                className="flex items-center"
-              >
-                <XCircleIcon className="w-4 h-4 mr-1" />
-                {isUpdatingStatus ? 'Closing...' : 'Close Position'}
-              </Button>
-            ) : (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => updateJobStatus('interviewing')}
-                disabled={isUpdatingStatus}
-                className="flex items-center"
-              >
-                <PlayIcon className="w-4 h-4 mr-1" />
-                {isUpdatingStatus ? 'Reopening...' : 'Reopen Position'}
-              </Button>
-            )}
-
-            {/* Question Generation */}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={generateQuestions}
-              className="flex items-center"
-            >
-              <SparklesIcon className="w-4 h-4 mr-1" />
-              Generate Questions
-            </Button>
-            
-            {job.status === 'interviewing' && (
-              <Link href={job.interviewLink || `/interview/${job.interviewToken}`} target="_blank">
-                <Button variant="outline" size="sm" className="flex items-center">
-                  <EyeIcon className="w-4 h-4 mr-1" />
-                  Test Interview
-                </Button>
-              </Link>
-            )}
-          </div>
+          {/* Tab Navigation */}
+          <TabNavigation 
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
         </div>
 
-        {/* Job Description */}
-        <div className="bg-white rounded-lg border border-gray-light p-6 mb-6">
-          <h2 className="text-lg font-semibold text-text mb-4">Job Description</h2>
-          
-          {job.fields?.jobDescription ? (
-            <div 
-              className="prose prose-sm max-w-none text-text"
-              dangerouslySetInnerHTML={{ __html: job.fields.jobDescription }}
-            />
-          ) : (
-            <p className="text-muted-text">No job description provided.</p>
+        {/* Tab Content */}
+        <div className="min-h-96">
+          {activeTab === 'overview' && (
+            <JobOverview job={job} />
           )}
-        </div>
-
-        {/* Question Management */}
-        {showQuestions && (
-          <div className="mb-6">
+          
+          {activeTab === 'questions' && (
             <QuestionManager 
               jobId={job.id} 
               jobTitle={job.title}
-              onQuestionsChange={(questions) => {
-                console.log('Questions updated:', questions);
-              }}
+              onQuestionsChange={handleQuestionsChange}
             />
-          </div>
-        )}
-
-        {/* Interview Preview */}
-        <div className="bg-white rounded-lg border border-gray-light p-6">
-          <h2 className="text-lg font-semibold text-text mb-4">Interview Process</h2>
+          )}
           
-          <div className="bg-gray-50 rounded-lg p-4 mb-4">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <BriefcaseIcon className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-medium text-text">AI-Powered Interview</h3>
-                <p className="text-sm text-muted-text">
-                  Candidates will participate in an automated {job.interviewFormat === 'text' ? 'text-based' : 'video'} interview
-                </p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium text-muted-text">Format:</span>
-                <span className="ml-2 text-text">
-                  {job.interviewFormat === 'text' ? 'Text-based Q&A' : 'Async Video Responses'}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium text-muted-text">Duration:</span>
-                <span className="ml-2 text-text">15-30 minutes</span>
-              </div>
-              <div>
-                <span className="font-medium text-muted-text">Questions:</span>
-                <span className="ml-2 text-text">AI-generated based on job requirements</span>
-              </div>
-              <div>
-                <span className="font-medium text-muted-text">Evaluation:</span>
-                <span className="ml-2 text-text">Automated scoring and summary</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Link href={job.interviewLink || `/interview/${job.interviewToken}`} target="_blank">
-              <Button className="flex items-center sm:w-auto w-full">
-                <PlayIcon className="w-4 h-4 mr-2" />
-                Preview Interview Experience
-              </Button>
-            </Link>
-            
-            <Button variant="outline" onClick={copyInterviewLink} className="flex items-center sm:w-auto w-full">
-              <LinkIcon className="w-4 h-4 mr-2" />
-              Share Interview Link
-            </Button>
-          </div>
+          {activeTab === 'candidates' && (
+            <JobCandidates job={job} />
+          )}
+          
+          {activeTab === 'evaluations' && (
+            <JobEvaluations job={job} />
+          )}
         </div>
       </div>
     </DashboardLayout>

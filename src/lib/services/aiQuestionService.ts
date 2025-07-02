@@ -10,7 +10,7 @@ interface AIQuestionParams {
   skills?: string[];
   experienceLevel?: string;
   traits?: string[];
-  customFields?: Record<string, any>;
+  customFields?: Record<string, unknown>;
   questionCount?: number;
   interviewFormat?: 'text' | 'video';
 }
@@ -140,13 +140,18 @@ Please generate exactly {questionCount} questions that are:
 Return the questions as a JSON array following the specified format.`;
   }
 
-  private formatCustomFields(customFields?: Record<string, any>): string {
+  private formatCustomFields(customFields?: Record<string, unknown>): string {
     if (!customFields || Object.keys(customFields).length === 0) {
       return 'No custom requirements specified.';
     }
 
     return Object.entries(customFields)
-      .map(([key, value]) => `${key}: ${typeof value === 'object' ? value.value || JSON.stringify(value) : value}`)
+      .map(([key, value]) => {
+        const valueStr = typeof value === 'object' && value !== null 
+          ? (value as Record<string, unknown>).value || JSON.stringify(value)
+          : String(value);
+        return `${key}: ${valueStr}`;
+      })
       .join(', ');
   }
 
@@ -217,7 +222,7 @@ Return the questions as a JSON array following the specified format.`;
 
     // Add skill-specific questions if available
     if (params.skills && params.skills.length > 0) {
-      params.skills.slice(0, 2).forEach((skill, index) => {
+      params.skills.slice(0, 2).forEach((skill) => {
         fallbackQuestions.push({
           questionText: `How would you rate your experience with ${skill}? Can you provide an example?`,
           questionType: 'general',
@@ -226,7 +231,7 @@ Return the questions as a JSON array following the specified format.`;
           isRequired: true,
           orderIndex: fallbackQuestions.length + 1,
           isAiGenerated: false,
-          metadata: { fallback: true, reason: 'AI generation failed', skillFocus: skill } as Record<string, any>
+          metadata: { fallback: true, reason: 'AI generation failed', skillFocus: skill } as Record<string, unknown>
         });
       });
     }
