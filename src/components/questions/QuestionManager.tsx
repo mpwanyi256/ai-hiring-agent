@@ -12,7 +12,12 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
   ClockIcon,
-  EyeIcon
+  EyeIcon,
+  PlusIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  CheckBadgeIcon,
+  ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
 import { useToast } from '@/components/providers/ToastProvider';
 
@@ -32,7 +37,7 @@ interface QuestionStats {
 }
 
 export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: QuestionManagerProps) {
-  const { success } = useToast();
+  const { success, error: showError } = useToast();
   const [questions, setQuestions] = useState<JobQuestion[]>([]);
   const [stats, setStats] = useState<QuestionStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,7 +106,7 @@ export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: 
       }
     } catch (error) {
       console.error('Error generating questions:', error);
-      alert('Failed to generate questions. Please try again.');
+      showError('Failed to generate questions. Please try again.');
     } finally {
       setIsGenerating(false);
     }

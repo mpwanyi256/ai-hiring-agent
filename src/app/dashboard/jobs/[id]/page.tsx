@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
@@ -10,9 +10,11 @@ import JobOverview from '@/components/jobs/JobOverview';
 import QuestionManager from '@/components/questions/QuestionManager';
 import JobCandidates from '@/components/jobs/JobCandidates';
 import JobEvaluations from '@/components/jobs/JobEvaluations';
+import { useToast } from '@/components/providers/ToastProvider';
 import { RootState, useAppSelector, useAppDispatch } from '@/store';
 import { fetchJobById, updateJobStatus } from '@/store/jobs/jobsThunks';
 import { selectCurrentJob, selectJobsLoading, selectJobsError } from '@/store/jobs/jobsSelectors';
+import { JobData } from '@/lib/services/jobsService';
 import { JobStatus } from '@/lib/supabase';
 import { JobQuestion } from '@/types/interview';
 import { 
@@ -31,30 +33,85 @@ import {
 } from '@heroicons/react/24/outline';
 
 interface JobDetailsPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { success, error: showError } = useToast();
   const { user } = useAppSelector((state: RootState) => state.auth);
-  const job = useAppSelector(selectCurrentJob);
+  const reduxJob = useAppSelector(selectCurrentJob);
   const isLoading = useAppSelector(selectJobsLoading);
   const error = useAppSelector(selectJobsError);
+  const [job, setJob] = useState<JobData | null>(null);
   const [questions, setQuestions] = useState<JobQuestion[]>([]);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Unwrap params using React.use()
+  const resolvedParams = use(params);
+
+  // Convert Redux Job to JobData format
+  useEffect(() => {
+    if (reduxJob) {
+      const jobData: JobData = {
+        id: reduxJob.id,
+        profileId: reduxJob.profileId,
+        title: reduxJob.title,
+        fields: {
+          skills: reduxJob.fields?.skills,
+          experienceLevel: reduxJob.fields?.experienceLevel,
+          traits: reduxJob.fields?.traits,
+          jobDescription: reduxJob.fields?.jobDescription,
+          customFields: reduxJob.fields?.customFields ? 
+            Object.fromEntries(
+              Object.entries(reduxJob.fields.customFields).map(([key, value]) => [
+                key, 
+                typeof value === 'string' ? { value, inputType: 'text' } : value
+              ])
+            ) : undefined
+        },
+        interviewFormat: reduxJob.interviewFormat,
+        interviewToken: reduxJob.interviewToken,
+        isActive: reduxJob.isActive,
+        status: reduxJob.status,
+        createdAt: reduxJob.createdAt,
+        updatedAt: reduxJob.updatedAt,
+        candidateCount: reduxJob.candidateCount,
+        interviewLink: reduxJob.interviewLink
+      };
+      setJob(jobData);
+      
+      // Fetch questions when job is loaded
+      fetchQuestions(reduxJob.id);
+    }
+  }, [reduxJob]);
+
+  // Fetch questions for the job
+  const fetchQuestions = async (jobId: string) => {
+    try {
+      const response = await fetch(`/api/jobs/${jobId}/questions`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setQuestions(data.questions || []);
+      }
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+    }
+  };
+
   // Fetch job details and questions
   useEffect(() => {
     const fetchJobData = async () => {
-      if (!user?.id || !params.id) return;
+      if (!user?.id || !resolvedParams.id) return;
 
       try {
         // Fetch job using Redux thunk
-        const result = await dispatch(fetchJobById(params.id));
+        const result = await dispatch(fetchJobById(resolvedParams.id));
         
         if (fetchJobById.rejected.match(result)) {
           console.error('Failed to fetch job:', result.error.message);
@@ -73,7 +130,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
     };
 
     fetchJobData();
-  }, [user?.id, params.id, dispatch]);
+  }, [user?.id, resolvedParams.id, dispatch]);
 
   const updateJobStatusHandler = async (newStatus: JobStatus) => {
     if (!job) return;
@@ -88,9 +145,11 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
       if (updateJobStatus.rejected.match(result)) {
         throw new Error(result.error.message || 'Failed to update job status');
       }
+      
+      success(`Job status updated to ${newStatus}`);
     } catch (err) {
       console.error('Error updating job status:', err);
-      alert(err instanceof Error ? err.message : 'Failed to update job status');
+      showError(err instanceof Error ? err.message : 'Failed to update job status');
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -101,9 +160,10 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
     const link = job.interviewLink || `${window.location.origin}/interview/${job.interviewToken}`;
     try {
       await navigator.clipboard.writeText(link);
-      alert('Interview link copied to clipboard!');
+      success('Interview link copied to clipboard!');
     } catch (error) {
       console.error('Failed to copy link:', error);
+      showError('Failed to copy link to clipboard');
     }
   };
 
@@ -394,4 +454,4 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
       </div>
     </DashboardLayout>
   );
-} 
+}

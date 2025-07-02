@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useToast } from '@/components/providers/ToastProvider';
 import Link from 'next/link';
 import Image from 'next/image';
 import Button from '@/components/ui/Button';
@@ -11,27 +12,32 @@ import {
   BoltIcon,
   ShieldCheckIcon,
   ChatBubbleLeftRightIcon,
-  SparklesIcon
+  SparklesIcon,
+  CheckIcon,
+  StarIcon,
+  UsersIcon,
+  ChartBarIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { success } = useToast();
 
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
+    // Here you would typically send to your API
+    // For now, just simulate a delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Here you would normally send to your backend
-    console.log('Waitlist email:', email);
     setEmail('');
     setIsSubmitting(false);
     
-    // Show success message (you can implement this with a toast later)
-    alert('Thanks! We&apos;ll get in touch within 24h.');
+    // Show success message
+    success('Thanks! We&apos;ll get in touch within 24h.');
   };
 
   return (
