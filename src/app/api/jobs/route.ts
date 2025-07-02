@@ -5,6 +5,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const profileId = searchParams.get('profileId');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
 
     if (!profileId) {
       return NextResponse.json(
@@ -16,12 +20,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get jobs for the specific profile using Supabase
-    const jobs = await jobsService.getJobsByProfileId(profileId);
+    // Calculate offset for pagination
+    const offset = (page - 1) * limit;
+
+    // Get jobs with pagination and search
+    const result = await jobsService.getJobsPaginated({
+      profileId,
+      limit,
+      offset,
+      search,
+      status,
+    });
 
     return NextResponse.json({
       success: true,
-      jobs,
+      jobs: result.jobs,
+      pagination: {
+        page,
+        limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / limit),
+        hasMore: offset + limit < result.total,
+      },
     });
   } catch (error) {
     console.error('Error fetching jobs:', error);

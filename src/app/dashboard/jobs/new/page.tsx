@@ -54,7 +54,7 @@ export default function NewJobPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
-  const { isLoading: jobsLoading, error } = useAppSelector((state: RootState) => state.jobs);
+  const { isLoading: jobsLoading, error } = useAppSelector((state) => state.jobs);
   const { success, error: showError, info } = useToast();
   
   // Store selectors

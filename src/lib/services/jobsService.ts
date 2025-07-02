@@ -368,6 +368,65 @@ class JobsService {
     }
   }
 
+  // New paginated method with search and filtering
+  async getJobsPaginated(params: {
+    profileId: string;
+    limit: number;
+    offset: number;
+    search?: string;
+    status?: string;
+  }): Promise<{ jobs: JobData[]; total: number }> {
+    try {
+      const supabase = await createClient();
+      
+      // Build the query
+      let query = supabase
+        .from('jobs')
+        .select('*', { count: 'exact' })
+        .eq('profile_id', params.profileId);
+
+      // Add search filter if provided
+      if (params.search) {
+        query = query.ilike('title', `%${params.search}%`);
+      }
+
+      // Add status filter if provided
+      if (params.status) {
+        query = query.eq('status', params.status);
+      }
+
+      // Add pagination and ordering
+      const { data: jobs, error, count } = await query
+        .order('created_at', { ascending: false })
+        .range(params.offset, params.offset + params.limit - 1);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const jobsWithLinks = jobs.map(job => {
+        const transformed = transformJobFromDB(job);
+        return this.addInterviewLink(transformed);
+      });
+
+      // Add candidate counts in parallel
+      const jobsWithCounts = await Promise.all(
+        jobsWithLinks.map(async (job) => ({
+          ...job,
+          candidateCount: await this.getCandidateCount(job.id),
+        }))
+      );
+
+      return {
+        jobs: jobsWithCounts,
+        total: count || 0,
+      };
+    } catch (error) {
+      console.error('Error fetching paginated jobs:', error);
+      throw error;
+    }
+  }
+
   async getJobById(id: string): Promise<JobData | null> {
     try {
       const supabase = await createClient();
