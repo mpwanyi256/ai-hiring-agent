@@ -69,7 +69,7 @@ class AIQuestionService {
     } catch (error) {
       console.error('Error generating AI questions:', error);
       // Fallback to basic questions if AI fails
-      return this.getFallbackQuestions(params);
+      return []; //this.getFallbackQuestions(params);
     }
   }
 
@@ -95,13 +95,13 @@ QUESTION TYPES:
 OUTPUT FORMAT:
 Return ONLY a valid JSON array with this exact structure:
 [
-  {
+  {{
     "questionText": "Your question here?",
     "questionType": "behavioral",
     "category": "Problem Solving",
     "expectedDuration": 150,
     "reasoning": "Why this question is important for this role"
-  }
+  }}
 ]
 
 IMPORTANT: 
@@ -112,32 +112,32 @@ IMPORTANT:
 - Always include 1 opening question and 1 closing question`;
   }
 
-  private createHumanPrompt(params: AIQuestionParams): string {
-    return `Generate {questionCount} interview questions for the following position:
+  private createHumanPrompt({ jobTitle, jobDescription, skills, experienceLevel, traits, customFields, interviewFormat, questionCount }: AIQuestionParams): string {
+    return `Generate ${questionCount} interview questions for the following position:
 
-JOB TITLE: {jobTitle}
+    JOB TITLE: ${jobTitle}
 
-JOB DESCRIPTION: {jobDescription}
+    JOB DESCRIPTION: ${jobDescription}
 
-REQUIRED SKILLS: {skills}
+    REQUIRED SKILLS: ${skills}
 
-EXPERIENCE LEVEL: {experienceLevel}
+    EXPERIENCE LEVEL: ${experienceLevel}
 
-DESIRED TRAITS: {traits}
+    DESIRED TRAITS: ${traits}
 
-CUSTOM REQUIREMENTS: {customRequirements}
+    CUSTOM REQUIREMENTS: ${this.formatCustomFields(customFields)}
 
-INTERVIEW FORMAT: {interviewFormat}
+    INTERVIEW FORMAT: ${interviewFormat}
 
-Please generate exactly {questionCount} questions that are:
-1. Relevant to this specific role and requirements
-2. Appropriate for the {experienceLevel} experience level
-3. Designed for {interviewFormat} interview format
-4. Include a mix of question types
-5. Progressive in difficulty
-6. Designed to assess both technical competence and cultural fit
+    Please generate exactly ${questionCount} questions that are:
+    1. Relevant to this specific role and requirements
+    2. Appropriate for the ${experienceLevel} experience level
+    3. Designed for ${interviewFormat} interview format
+    4. Include a mix of question types
+    5. Progressive in difficulty
+    6. Designed to assess both technical competence and cultural fit
 
-Return the questions as a JSON array following the specified format.`;
+    Return the questions as a JSON array following the specified format.`;
   }
 
   private formatCustomFields(customFields?: Record<string, unknown>): string {

@@ -1,9 +1,10 @@
+import { apiError } from '@/lib/notification';
 import axios from 'axios';
 
 // Create axios instance with base configuration
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || '',
-  timeout: 10000,
+  timeout: 60000, // Upto 1 minute
   headers: {
     'Content-Type': 'application/json',
   },
@@ -36,6 +37,12 @@ api.interceptors.response.use(
     if (error.response?.status === 500) {
       // Handle server errors
       console.error('Server error detected');
+    }
+
+    // request timeout
+    if (error.code === 'ERR_NETWORK') {
+      apiError('Request took longer than expected. Please try again.');
+      console.error('Request timeout detected');
     }
     
     return Promise.reject(error);

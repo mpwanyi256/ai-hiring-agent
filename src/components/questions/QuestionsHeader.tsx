@@ -20,14 +20,11 @@ export const QuestionsHeader = () => {
         setIsGenerating(true);
         await dispatch(generateJobQuestions({
           jobId: job.id,
-          questionCount: 8,
+          questionCount: 5,
           includeCustom: true,
           replaceExisting: true
         })).unwrap()
-        
-        apiSuccess('Questions generated successfully');
       } catch (error) {
-        console.error('Error generating questions:', error);
         apiError('Failed to generate questions. Please try again.');
       } finally {
         setIsGenerating(false);

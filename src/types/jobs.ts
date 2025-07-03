@@ -123,4 +123,5 @@ export interface Skill {
   export interface AIQuestionsGenerationResponse {
     questions: Omit<JobQuestion, "jobId" | "id" | "createdAt" | "updatedAt">[];
     generation: string;
+    success: boolean;
   }

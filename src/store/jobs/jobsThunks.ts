@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { CreateJobData, UpdateJobData } from '@/types';
+import { AIQuestionsGenerationResponse, CreateJobData, UpdateJobData } from '@/types';
 import { apiUtils } from '../api';
 import { RootState } from '..';
 
@@ -149,6 +149,7 @@ export const fetchJobQuestions = createAsyncThunk(
   'jobs/fetchJobQuestions',
   async (jobId: string) => {
     try {
+      console.log('Fetching job questions for job', jobId);
       const response = await apiUtils.get(`/api/jobs/${jobId}/questions`);
       return response;
     } catch (error: any) {
@@ -164,14 +165,14 @@ export const generateJobQuestions = createAsyncThunk(
     questionCount?: number;
     includeCustom?: boolean;
     replaceExisting?: boolean;
-  }) => {
+  }, { dispatch }) => {
     try {
-      const response = await apiUtils.post(`/api/jobs/${jobId}/questions`, {
+      const response = await apiUtils.post<AIQuestionsGenerationResponse>(`/api/jobs/${jobId}/questions`, {
         questionCount,
         includeCustom,
         replaceExisting
       });
-      console.log('Generation response', response);
+      dispatch(fetchJobQuestions(jobId));
       return response;
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to generate questions');

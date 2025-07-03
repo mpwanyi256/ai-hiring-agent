@@ -43,17 +43,18 @@ class QuestionService {
       console.error('AI question generation failed, falling back to template questions:', error);
       
       // Fallback to template-based generation
-      questions = await this.generateTemplateQuestions({
-        jobId: params.jobId,
-        jobTitle,
-        jobDescription,
-        skills,
-        experienceLevel,
-        traits,
-        customFields,
-        questionCount,
-        includeCustom
-      });
+      questions = [];
+      // await this.generateTemplateQuestions({
+      //   jobId: params.jobId,
+      //   jobTitle,
+      //   jobDescription,
+      //   skills,
+      //   experienceLevel,
+      //   traits,
+      //   customFields,
+      //   questionCount,
+      //   includeCustom
+      // });
     }
 
     // Calculate total estimated duration
