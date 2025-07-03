@@ -20,6 +20,8 @@ import {
   ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
 import { useToast } from '@/components/providers/ToastProvider';
+import { useAppSelector } from '@/store';
+import { selectJobQuestions } from '@/store/jobs/jobsSelectors';
 
 interface QuestionManagerProps {
   jobId: string;
@@ -38,35 +40,12 @@ interface QuestionStats {
 
 export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: QuestionManagerProps) {
   const { success, error: showError } = useToast();
-  const [questions, setQuestions] = useState<JobQuestion[]>([]);
   const [stats, setStats] = useState<QuestionStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
-
-  // Fetch questions and stats
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/jobs/${jobId}/questions`);
-        const data = await response.json();
-
-        if (data.success) {
-          setQuestions(data.questions || []);
-          setStats(data.stats || null);
-          onQuestionsChange?.(data.questions || []);
-        }
-      } catch (error) {
-        console.error('Error fetching questions:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchQuestions();
-  }, [jobId]);
+  const questions = useAppSelector(selectJobQuestions);
 
   const refreshQuestions = async () => {
     try {
@@ -74,7 +53,7 @@ export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: 
       const data = await response.json();
 
       if (data.success) {
-        setQuestions(data.questions || []);
+        // setQuestions(data.questions || []);
         setStats(data.stats || null);
         onQuestionsChange?.(data.questions || []);
       }
@@ -98,7 +77,7 @@ export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: 
 
       const data = await response.json();
       if (data.success) {
-        setQuestions(data.questions);
+        // setQuestions(data.questions);
         await refreshQuestions(); // Refresh stats
         success(`Generated ${data.questions.length} AI questions successfully!`);
       } else {

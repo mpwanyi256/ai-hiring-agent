@@ -1,6 +1,6 @@
 'use client';
 
-import { JobData } from '@/lib/services/jobsService';
+import { CurrentJob } from '@/types';
 import { 
   CalendarIcon,
   ClockIcon,
@@ -8,7 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 interface JobOverviewProps {
-  job: JobData;
+  job: CurrentJob;
 }
 
 export default function JobOverview({ job }: JobOverviewProps) {
@@ -119,7 +119,7 @@ export default function JobOverview({ job }: JobOverviewProps) {
                 <div key={key}>
                   <h3 className="text-sm font-medium text-text mb-1">{key}</h3>
                   <p className="text-sm text-muted-text">
-                    {field.value} <span className="text-xs">({field.inputType})</span>
+                    {typeof field === 'string' ? field : field.value} <span className="text-xs">({field.toString()})</span>
                   </p>
                 </div>
               ))}

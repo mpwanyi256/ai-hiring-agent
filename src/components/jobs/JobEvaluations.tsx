@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { JobData } from '@/lib/services/jobsService';
 import { ChartBarIcon, StarIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
+import { CurrentJob } from '@/types';
 
 interface JobEvaluationsProps {
-  job: JobData;
+  job: CurrentJob;
 }
 
 export default function JobEvaluations({ job }: JobEvaluationsProps) {

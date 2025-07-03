@@ -1,4 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
+import { JobData } from './services/jobsService';
+import { Job } from '@/types';
+import { JobQuestion } from '@/types/interview';
 
 // Utility function to merge classes with Tailwind
 export function cn(...inputs: ClassValue[]) {
@@ -85,3 +88,30 @@ export function getInitials(firstName: string, lastName?: string): string {
   }
   return firstName.substring(0, 2).toUpperCase();
 } 
+
+export const parseJobFields = (jobFields: JobData['fields']): Job['fields'] => {
+  return {
+    skills: jobFields.skills,
+    experienceLevel: jobFields.experienceLevel,
+    traits: jobFields.traits,
+    jobDescription: jobFields.jobDescription,
+    customFields: jobFields.customFields ? Object.fromEntries(Object.entries(jobFields.customFields).map(([key, value]) => [key, typeof value === 'string' ? { value, inputType: 'text' } : value])) : undefined
+  };
+}
+
+export const parseJobDetails = (jobData: JobData): Job => {
+  return {
+    id: jobData.id,
+    profileId: jobData.profileId,
+    title: jobData.title,
+    fields: parseJobFields(jobData.fields),
+    interviewFormat: jobData.interviewFormat,
+    interviewToken: jobData.interviewToken,
+    isActive: jobData.isActive,
+    status: jobData.status,
+    createdAt: jobData.createdAt,
+    updatedAt: jobData.updatedAt,
+    candidateCount: jobData.candidateCount,
+    interviewLink: jobData.interviewLink
+  };
+}

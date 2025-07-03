@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { JobsState, Job, Skill, Trait, JobTemplate } from '@/types';
+import { Job, ExtendedJobsState } from '@/types';
 import {
   fetchJobsByProfile,
   fetchJobById,
@@ -13,16 +13,10 @@ import {
   fetchJobTemplates,
   saveJobTemplate,
   deleteJobTemplate,
+  fetchJobQuestions,
 } from './jobsThunks';
+import { parseJobDetails } from '@/lib/utils';
 
-interface ExtendedJobsState extends JobsState {
-  skills: Skill[];
-  traits: Trait[];
-  jobTemplates: JobTemplate[];
-  skillsLoading: boolean;
-  traitsLoading: boolean;
-  templatesLoading: boolean;
-}
 
 const initialState: ExtendedJobsState = {
   jobs: [],
@@ -69,6 +63,11 @@ const jobsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchJobQuestions.fulfilled, (state, action) => {
+        if (state.currentJob) {
+          state.currentJob.questions = action.payload.questions;
+        }
+      })
       // Fetch Jobs by Profile
       .addCase(fetchJobsByProfile.pending, (state) => {
         state.isLoading = true;
@@ -88,10 +87,9 @@ const jobsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      // dispatch fetchJobQuestions on fetchJobById.fulfilled
       .addCase(fetchJobById.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.currentJob = action.payload;
+        state.currentJob = parseJobDetails(action.payload);
       })
       .addCase(fetchJobById.rejected, (state, action) => {
         state.isLoading = false;

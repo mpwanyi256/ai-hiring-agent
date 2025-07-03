@@ -1,3 +1,6 @@
+import { JobData } from "@/lib/services/jobsService";
+import { JobQuestion } from "./interview";
+
 export interface Skill {
     id: string;
     name: string;
@@ -53,9 +56,13 @@ export interface Skill {
     candidateCount?: number;
   }
 
+  export interface CurrentJob extends Job {
+    questions?: JobQuestion[];
+  }
+
   export interface JobsState {
     jobs: Job[];
-    currentJob: Job | null;
+    currentJob: CurrentJob | null;
     isLoading: boolean;
     error: string | null;
     totalJobs: number;
@@ -92,4 +99,13 @@ export interface Skill {
     key: string;
     value: string;
     inputType: 'text' | 'textarea' | 'number' | 'file' | 'url' | 'email';
+  }
+
+  export interface ExtendedJobsState extends JobsState {
+    skills: Skill[];
+    traits: Trait[];
+    jobTemplates: JobTemplate[];
+    skillsLoading: boolean;
+    traitsLoading: boolean;
+    templatesLoading: boolean;
   }

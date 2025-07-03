@@ -13,7 +13,7 @@ import JobEvaluations from '@/components/jobs/JobEvaluations';
 import { useToast } from '@/components/providers/ToastProvider';
 import { RootState, useAppSelector, useAppDispatch } from '@/store';
 import { fetchJobById, updateJobStatus } from '@/store/jobs/jobsThunks';
-import { selectCurrentJob, selectJobsLoading, selectJobsError } from '@/store/jobs/jobsSelectors';
+import { selectCurrentJob, selectJobsLoading, selectJobsError, selectJobQuestions } from '@/store/jobs/jobsSelectors';
 import { JobData } from '@/lib/services/jobsService';
 import { JobStatus } from '@/lib/supabase';
 import { JobQuestion } from '@/types/interview';
@@ -39,70 +39,20 @@ interface JobDetailsPageProps {
 }
 
 export default function JobDetailsPage({ params }: JobDetailsPageProps) {
+  // Unwrap params using React.use()
+  const resolvedParams = use(params);
+
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { success, error: showError } = useToast();
   const { user } = useAppSelector((state: RootState) => state.auth);
-  const reduxJob = useAppSelector(selectCurrentJob);
   const isLoading = useAppSelector(selectJobsLoading);
   const error = useAppSelector(selectJobsError);
-  const [job, setJob] = useState<JobData | null>(null);
-  const [questions, setQuestions] = useState<JobQuestion[]>([]);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Unwrap params using React.use()
-  const resolvedParams = use(params);
-
-  // Convert Redux Job to JobData format
-  useEffect(() => {
-    if (reduxJob) {
-      const jobData: JobData = {
-        id: reduxJob.id,
-        profileId: reduxJob.profileId,
-        title: reduxJob.title,
-        fields: {
-          skills: reduxJob.fields?.skills,
-          experienceLevel: reduxJob.fields?.experienceLevel,
-          traits: reduxJob.fields?.traits,
-          jobDescription: reduxJob.fields?.jobDescription,
-          customFields: reduxJob.fields?.customFields ? 
-            Object.fromEntries(
-              Object.entries(reduxJob.fields.customFields).map(([key, value]) => [
-                key, 
-                typeof value === 'string' ? { value, inputType: 'text' } : value
-              ])
-            ) : undefined
-        },
-        interviewFormat: reduxJob.interviewFormat,
-        interviewToken: reduxJob.interviewToken,
-        isActive: reduxJob.isActive,
-        status: reduxJob.status,
-        createdAt: reduxJob.createdAt,
-        updatedAt: reduxJob.updatedAt,
-        candidateCount: reduxJob.candidateCount,
-        interviewLink: reduxJob.interviewLink
-      };
-      setJob(jobData);
-      
-      // Fetch questions when job is loaded
-      fetchQuestions(reduxJob.id);
-    }
-  }, [reduxJob]);
-
-  // Fetch questions for the job
-  const fetchQuestions = async (jobId: string) => {
-    try {
-      const response = await fetch(`/api/jobs/${jobId}/questions`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setQuestions(data.questions || []);
-      }
-    } catch (error) {
-      console.error('Error fetching questions:', error);
-    }
-  };
+  const job = useAppSelector(selectCurrentJob);
+  const questions = useAppSelector(selectJobQuestions);
 
   // Fetch job details and questions
   useEffect(() => {
@@ -110,20 +60,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
       if (!user?.id || !resolvedParams.id) return;
 
       try {
-        // Fetch job using Redux thunk
-        const result = await dispatch(fetchJobById(resolvedParams.id));
-        
-        if (fetchJobById.rejected.match(result)) {
-          console.error('Failed to fetch job:', result.error.message);
-          return;
-        }
-
-        const jobData = result.payload;
-        
-        // Verify the job belongs to the current user
-        if (jobData.profileId !== user.id) {
-          throw new Error('Job not found');
-        }
+        dispatch(fetchJobById(resolvedParams.id));
       } catch (err) {
         console.error('Error fetching job:', err);
       }
@@ -211,11 +148,6 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
       default:
         return 'Unknown';
     }
-  };
-
-  const handleQuestionsChange = (updatedQuestions: JobQuestion[]) => {
-    setQuestions(updatedQuestions);
-    // Questions list has been updated, component will re-render with new count
   };
 
   // Define tabs
@@ -439,7 +371,6 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
             <QuestionManager 
               jobId={job.id} 
               jobTitle={job.title}
-              onQuestionsChange={handleQuestionsChange}
             />
           )}
           

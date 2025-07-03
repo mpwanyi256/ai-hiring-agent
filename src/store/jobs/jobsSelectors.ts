@@ -8,6 +8,7 @@ export const selectCurrentJob = (state: RootState) => state.jobs.currentJob;
 export const selectJobsLoading = (state: RootState) => state.jobs.isLoading;
 export const selectJobsError = (state: RootState) => state.jobs.error;
 export const selectTotalJobs = (state: RootState) => state.jobs.totalJobs;
+export const selectJobQuestions = (state: RootState) => state.jobs.currentJob?.questions || [];
 
 // Memoized selectors
 export const selectActiveJobs = createSelector(

@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CreateJobData, UpdateJobData } from '@/types';
 import { apiUtils } from '../api';
+import { RootState } from '..';
 
 // Async thunks for jobs using API routes
 export const fetchJobsByProfile = createAsyncThunk(
@@ -17,10 +18,12 @@ export const fetchJobsByProfile = createAsyncThunk(
 
 export const fetchJobById = createAsyncThunk(
   'jobs/fetchJobById',
-  async (jobId: string) => {
+  async (jobId: string, { dispatch }) => {
     try {
       const response = await apiUtils.get(`/api/jobs/${jobId}`);
-      return response.job;
+      const job = response.job;
+      dispatch(fetchJobQuestions(jobId));
+      return job;
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to fetch job');
     }

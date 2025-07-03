@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { JobData } from '@/lib/services/jobsService';
 import { CandidateBasic, CandidatesListResponse, CandidateStatusFilter } from '@/types/candidates';
 import { useToast } from '@/components/providers/ToastProvider';
 import { RootState, useAppSelector } from '@/store';
@@ -21,9 +20,10 @@ import {
   TrophyIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import { CurrentJob } from '@/types';
 
 interface JobCandidatesProps {
-  job: JobData;
+  job: CurrentJob;
 }
 
 export default function JobCandidates({ job }: JobCandidatesProps) {
