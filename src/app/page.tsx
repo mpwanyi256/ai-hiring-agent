@@ -22,9 +22,9 @@ export default function LandingPage() {
           }}
         ></div>
         {/* Floating Elements */}
-        <div className="absolute top-20 left-20 w-32 h-32 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-20 left-20 w-32 h-32 bg-primary/5 rounded-full blur-3xl animate-pulse pulse-glow"></div>
         <div className="absolute top-40 right-32 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl animate-bounce"></div>
-        <div className="absolute bottom-32 left-32 w-40 h-40 bg-green-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-32 left-32 w-40 h-40 bg-green-500/5 rounded-full blur-3xl animate-pulse delay-1000 pulse-glow"></div>
         <div className="absolute bottom-20 right-20 w-28 h-28 bg-teal-500/5 rounded-full blur-2xl animate-bounce delay-500"></div>
       </div>
 
@@ -32,19 +32,29 @@ export default function LandingPage() {
       <Navigation />
 
       {/* Hero Section */}
-      <HeroSection />
+      <section id="hero" className="fade-in">
+        <HeroSection />
+      </section>
 
       {/* Features Section */}
-      <FeaturesSection />
+      <section id="features" className="slide-up">
+        <FeaturesSection />
+      </section>
 
       {/* Why Choose Section */}
-      <WhyChooseSection />
+      <section id="why-choose" className="fade-in">
+        <WhyChooseSection />
+      </section>
 
       {/* Testimonials */}
-      <TestimonialsSection />
+      <section id="testimonials" className="slide-up">
+        <TestimonialsSection />
+      </section>
 
       {/* CTA Section */}
-      <CTASection />
+      <section id="cta" className="fade-in">
+        <CTASection />
+      </section>
 
       {/* Footer */}
       <Footer />

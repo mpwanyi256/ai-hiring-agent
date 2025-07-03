@@ -53,7 +53,7 @@ export default function WhyChooseSection() {
               <div className="bg-white/20 rounded-lg p-3">
                 <div className="flex items-center space-x-3 mb-2">
                   <Image
-                    src="https://images.unsplash.com/photo-1494790108755-2616b612b1ac?w=28&h=28&fit=crop&crop=face"
+                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=28&h=28&fit=crop&crop=face"
                     alt="Jane Doe"
                     width={28}
                     height={28}

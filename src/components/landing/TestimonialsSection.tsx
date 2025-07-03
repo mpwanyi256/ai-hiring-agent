@@ -6,7 +6,7 @@ export default function TestimonialsSection() {
     {
       name: "Sarah Johnson",
       role: "HR Manager",
-      image: "https://images.unsplash.com/photo-1494790108755-2616b612b1ac?w=48&h=48&fit=crop&crop=face",
+      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=48&h=48&fit=crop&crop=face",
       text: "Intervio has made it easy for me to access high-quality interview data, saving me significant time that I used to spend on manual evaluations.",
       featured: true
     },
@@ -54,10 +54,10 @@ export default function TestimonialsSection() {
           {testimonials.map((testimonial, index) => (
             <div 
               key={index} 
-              className={`rounded-2xl p-6 ${
+              className={`rounded-2xl p-6 transition-all duration-300 hover:transform hover:scale-105 hover:shadow-lg ${
                 testimonial.featured 
                   ? 'bg-primary text-white' 
-                  : 'bg-surface border border-gray-200'
+                  : 'bg-surface border border-gray-200 hover:border-primary/20'
               }`}
             >
               <p className={`mb-5 leading-relaxed ${
