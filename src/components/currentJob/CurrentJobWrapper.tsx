@@ -10,7 +10,7 @@ import JobOverview from '@/components/jobs/JobOverview';
 import QuestionManager from '@/components/questions/QuestionManager';
 import JobCandidates from '@/components/jobs/JobCandidates';
 import JobEvaluations from '@/components/jobs/JobEvaluations';
-import { RootState, useAppSelector, useAppDispatch } from '@/store';
+import { useAppSelector, useAppDispatch } from '@/store';
 import { fetchJobById } from '@/store/jobs/jobsThunks';
 import { selectCurrentJob, selectJobsLoading, selectJobsError, selectJobQuestionsCount } from '@/store/jobs/jobsSelectors';
 import { 
@@ -20,7 +20,6 @@ import {
   UserGroupIcon,
   EyeIcon,
   ShareIcon,
-  XCircleIcon,
   ClipboardDocumentListIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
@@ -42,11 +41,9 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
   const { error: showError } = useToast();
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state: RootState) => state.auth);
   const isLoading = useAppSelector(selectJobsLoading);
   const error = useAppSelector(selectJobsError);
   const [activeTab, setActiveTab] = useState('overview');
-
   const job = useAppSelector(selectCurrentJob);
   const questionsCount = useAppSelector(selectJobQuestionsCount);
 
