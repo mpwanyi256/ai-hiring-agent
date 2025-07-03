@@ -9,15 +9,6 @@ import ResumeUpload from '@/components/interview/ResumeUpload';
 import InterviewIntro from '@/components/interview/InterviewIntro';
 import CandidateInfoForm from '@/components/interview/CandidateInfoForm';
 import { ResumeEvaluation } from '@/types/interview';
-import { 
-  BriefcaseIcon, 
-  ClockIcon,
-  VideoCameraIcon,
-  DocumentTextIcon,
-  SparklesIcon,
-  ChevronRightIcon,
-  PlayIcon
-} from '@heroicons/react/24/outline';
 
 interface PageProps {
   params: Promise<{ token: string }>;

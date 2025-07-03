@@ -1,4 +1,7 @@
-import mammoth from 'mammoth';
+import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
+import { DocxLoader } from '@langchain/community/document_loaders/fs/docx';
+import { TextLoader } from 'langchain/document_loaders/fs/text';
+import { Document } from '@langchain/core/documents';
 
 export interface ParsedDocument {
   text: string;
@@ -12,36 +15,42 @@ export interface ParsedDocument {
 }
 
 class DocumentParsingService {
-  // Main parsing method that routes to specific parsers based on file type
+  // Main parsing method using LangChain document loaders
   async parseDocument(file: File): Promise<ParsedDocument> {
     const fileType = this.getFileType(file);
-    const buffer = await file.arrayBuffer();
-
+    
     try {
-      let text: string;
+      console.log(`Parsing ${fileType.toUpperCase()} file: ${file.name} (${file.size} bytes)`);
+
+      let documents: Document[];
       let pages: number | undefined;
 
-      console.log(`Parsing ${fileType.toUpperCase()} file: ${file.name} (${file.size} bytes)`);
+      // Create a temporary file-like object for LangChain loaders
+      const blob = new Blob([file], { type: file.type });
+      const tempFile = new File([blob], file.name, { type: file.type });
 
       switch (fileType) {
         case 'pdf':
-          const pdfResult = await this.parsePDF(buffer, file.name);
-          text = pdfResult.text;
-          pages = pdfResult.pages;
+          documents = await this.parsePDFWithLangChain(tempFile);
+          pages = documents.length; // Each page typically becomes a document
           break;
         case 'docx':
-          text = await this.parseDocx(buffer);
+          documents = await this.parseDocxWithLangChain(tempFile);
           break;
         case 'doc':
-          text = await this.parseDocx(buffer); // mammoth handles both DOC and DOCX
+          // For .doc files, we'll fall back to buffer parsing since LangChain DocxLoader primarily handles .docx
+          documents = await this.parseDocWithFallback(file);
           break;
         case 'txt':
-          text = await this.parseText(buffer);
+          documents = await this.parseTextWithLangChain(tempFile);
           break;
         default:
           throw new Error(`Unsupported file type: ${fileType}`);
       }
 
+      // Combine all document text
+      const text = documents.map(doc => doc.pageContent).join('\n\n');
+      
       // Clean and validate the extracted text
       const cleanedText = this.cleanText(text);
       const wordCount = this.countWords(cleanedText);
@@ -50,10 +59,16 @@ class DocumentParsingService {
         throw new Error(`Failed to extract meaningful text from ${fileType.toUpperCase()} file`);
       }
 
+      console.log(`Successfully parsed ${fileType.toUpperCase()} file:`, {
+        pages: pages || documents.length,
+        wordCount,
+        textLength: cleanedText.length
+      });
+
       return {
         text: cleanedText,
         metadata: {
-          pages,
+          pages: pages || documents.length,
           wordCount,
           fileType: fileType.toUpperCase(),
           fileName: file.name,
@@ -66,78 +81,132 @@ class DocumentParsingService {
     }
   }
 
-  private async parsePDF(buffer: ArrayBuffer, fileName: string): Promise<{ text: string; pages: number }> {
+  private async parsePDFWithLangChain(file: File): Promise<Document[]> {
     try {
-      console.log(`Starting PDF parsing for: ${fileName}`);
+      // Convert File to Blob for LangChain PDFLoader
+      const blob = new Blob([await file.arrayBuffer()], { type: 'application/pdf' });
       
-      // Store original console methods
-      const originalError = console.error;
-      const originalWarn = console.warn;
-      const originalLog = console.log;
-      const originalInfo = console.info;
+      // Use LangChain PDFLoader with blob
+      const loader = new PDFLoader(blob, {
+        splitPages: true, // Split into separate pages for better parsing
+      });
       
-      // Temporarily suppress all console output
-      console.error = () => {};
-      console.warn = () => {};
-      console.log = () => {};
-      console.info = () => {};
+      const documents = await loader.load();
       
-      let pdfParse;
-      let data;
-      
-      try {
-        // Dynamic import to avoid initialization issues
-        pdfParse = (await import('pdf-parse')).default;
-        
-        // Restore console for our logging
-        console.error = originalError;
-        console.warn = originalWarn;
-        console.log = originalLog;
-        console.info = originalInfo;
-        
-        console.log('PDF parser loaded, processing file...');
-        
-        // Suppress console again for parsing
-        console.error = () => {};
-        console.warn = () => {};
-        
-        data = await pdfParse(Buffer.from(buffer));
-        
-      } finally {
-        // Always restore console output
-        console.error = originalError;
-        console.warn = originalWarn;
-        console.log = originalLog;
-        console.info = originalInfo;
+      if (!documents || documents.length === 0) {
+        throw new Error('No content extracted from PDF');
       }
       
-      console.log(`PDF parsed successfully: ${data.numpages} pages, ${data.text.length} characters`);
-      
-      return {
-        text: data.text,
-        pages: data.numpages
-      };
+      return documents;
     } catch (error) {
-      console.error('PDF parsing error:', error);
-      // Fallback to basic text extraction if pdf-parse fails
+      console.error('LangChain PDF parsing error:', error);
+      
+      // Fallback to basic extraction
       try {
         console.log('Attempting fallback PDF text extraction...');
+        const buffer = await file.arrayBuffer();
         const decoder = new TextDecoder('utf-8');
         const text = decoder.decode(buffer);
         const extractedText = this.extractTextFromPDFString(text);
         
         if (extractedText && extractedText.length > 10) {
           console.log('Fallback PDF extraction succeeded');
-          return {
-            text: extractedText,
-            pages: 1
-          };
+          return [new Document({ 
+            pageContent: extractedText,
+            metadata: { source: file.name }
+          })];
         }
       } catch (fallbackError) {
         console.error('Fallback PDF extraction failed:', fallbackError);
       }
       
       throw new Error('Failed to parse PDF file. The file may be corrupted, password-protected, or in an unsupported format.');
+    }
+  }
+
+  private async parseDocxWithLangChain(file: File): Promise<Document[]> {
+    try {
+      // Convert File to Blob for LangChain DocxLoader
+      const blob = new Blob([await file.arrayBuffer()], { 
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+      });
+      
+      const loader = new DocxLoader(blob);
+      const documents = await loader.load();
+      
+      if (!documents || documents.length === 0) {
+        throw new Error('No content extracted from DOCX');
+      }
+      
+      return documents;
+    } catch (error) {
+      console.error('LangChain DOCX parsing error:', error);
+      throw new Error('Failed to parse DOCX file. The file may be corrupted.');
+    }
+  }
+
+  private async parseDocWithFallback(file: File): Promise<Document[]> {
+    try {
+      // Try to parse as DOCX first (some .doc files are actually .docx)
+      return await this.parseDocxWithLangChain(file);
+    } catch {
+      // Fallback to basic text extraction for older .doc files
+      console.log('DOCX parsing failed, attempting basic text extraction for .doc file');
+      
+      try {
+        const buffer = await file.arrayBuffer();
+        const decoder = new TextDecoder('utf-8');
+        let text = decoder.decode(buffer);
+        
+        // Basic cleanup for .doc files
+        text = text.replace(/[^\x20-\x7E\n\r\t]/g, ' ');
+        text = this.cleanText(text);
+        
+        if (text.length < 10) {
+          throw new Error('Insufficient text content extracted');
+        }
+        
+        return [new Document({ 
+          pageContent: text,
+          metadata: { source: file.name }
+        })];
+      } catch (fallbackError) {
+        console.error('Fallback .doc parsing failed:', fallbackError);
+        throw new Error('Failed to parse DOC file. Please convert to DOCX format for better compatibility.');
+      }
+    }
+  }
+
+  private async parseTextWithLangChain(file: File): Promise<Document[]> {
+    try {
+      // Convert File to Blob for LangChain TextLoader
+      const blob = new Blob([await file.arrayBuffer()], { type: 'text/plain' });
+      
+      const loader = new TextLoader(blob);
+      const documents = await loader.load();
+      
+      if (!documents || documents.length === 0) {
+        throw new Error('No content extracted from text file');
+      }
+      
+      return documents;
+    } catch (error) {
+      console.error('LangChain text parsing error:', error);
+      
+      // Fallback to direct text decoding
+      try {
+        const buffer = await file.arrayBuffer();
+        const decoder = new TextDecoder('utf-8');
+        const text = decoder.decode(buffer);
+        
+        return [new Document({ 
+          pageContent: text,
+          metadata: { source: file.name }
+        })];
+      } catch (fallbackError) {
+        console.error('Fallback text parsing failed:', fallbackError);
+        throw new Error('Failed to parse text file. The file encoding may not be supported.');
+      }
     }
   }
 
@@ -159,31 +228,6 @@ class DocumentParsingService {
       .replace(/[^\x20-\x7E]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-  }
-
-  private async parseDocx(buffer: ArrayBuffer): Promise<string> {
-    try {
-      const result = await mammoth.extractRawText({ buffer: Buffer.from(buffer) });
-      
-      if (result.messages.length > 0) {
-        console.warn('DOCX parsing warnings:', result.messages);
-      }
-      
-      return result.value;
-    } catch (error) {
-      console.error('DOCX parsing error:', error);
-      throw new Error('Failed to parse DOCX file. The file may be corrupted.');
-    }
-  }
-
-  private async parseText(buffer: ArrayBuffer): Promise<string> {
-    try {
-      const decoder = new TextDecoder('utf-8');
-      return decoder.decode(buffer);
-    } catch (error) {
-      console.error('Text parsing error:', error);
-      throw new Error('Failed to parse text file. The file encoding may not be supported.');
-    }
   }
 
   private cleanText(text: string): string {

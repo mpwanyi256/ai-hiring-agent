@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
+import { apiError } from '@/lib/notification';
 
 export async function POST(request: Request) {
   try {
@@ -34,8 +35,8 @@ export async function POST(request: Request) {
 
     // Save response to the responses table
     const responseData = {
-      id: uuidv4(),
-      profile_id: candidateId, // Using candidateId as profile_id for now
+      // id: uuidv4(),
+      candidate_id: candidateId, // Using candidateId as profile_id for now
       job_id: questionData.job_id,
       job_question_id: questionId,
       question: question,
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
 
     if (saveError) {
       console.error('Error saving response:', saveError);
+      apiError(saveError.message);
       return NextResponse.json({ 
         success: false, 
         error: 'Failed to save response' 

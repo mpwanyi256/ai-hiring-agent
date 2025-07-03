@@ -180,6 +180,8 @@ export default function ResumeUpload({
     if (!selectedFile) return;
 
     try {
+      console.log('Starting resume evaluation for candidate:', candidateId);
+      
       const result = await dispatch(evaluateResume({
         resumeFile: selectedFile,
         jobToken,

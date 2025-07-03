@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const { data: responses, error: responsesError } = await supabase
       .from('responses')
       .select('*')
-      .eq('profile_id', candidateId)
+      .eq('candidate_id', candidateId)
       .order('created_at', { ascending: true });
 
     if (responsesError) {
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         );
 
         const evaluationData = {
-          profile_id: candidateId,
+          candidate_id: candidateId,
           job_id: responses[0]?.job_id || null,
           evaluation_type: 'combined',
           summary: `Combined evaluation: Resume score ${resumeEvaluation.score}/100, Interview completion with ${responses.length} responses. Overall assessment: ${combinedScore}/100.`,
