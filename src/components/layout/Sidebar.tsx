@@ -195,7 +195,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {navigation.map((item) => {
           const isItemActive = isActive(item.href);
           const hasChildren = item.children && item.children.length > 0;
@@ -206,32 +206,36 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
             <div key={item.name}>
               {/* Main Navigation Item */}
               <div
-                className={`group flex items-center rounded-lg transition-colors ${
+                className={`group flex items-center rounded-lg transition-all duration-200 ${
                   isItemActive || hasActiveChildren
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-text hover:text-text hover:bg-gray-50'
+                    ? 'bg-primary/8 text-primary shadow-sm border border-primary/10'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
                 <Link
                   href={item.href}
                   onClick={() => isMobile && onClose()}
-                  className={`flex items-center flex-1 p-3 rounded-lg ${
+                  className={`flex items-center flex-1 p-2.5 rounded-lg transition-all ${
                     collapsed && !isMobile ? 'justify-center' : ''
                   }`}
                 >
                   <item.icon className={`flex-shrink-0 ${
-                    collapsed && !isMobile ? 'w-6 h-6' : 'w-5 h-5'
-                  }`} />
+                    collapsed && !isMobile ? 'w-5 h-5' : 'w-4 h-4'
+                  } ${isItemActive || hasActiveChildren ? 'text-primary' : ''}`} />
                   
                   {(!collapsed || isMobile) && (
                     <>
                       <div className="ml-3 flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{item.name}</p>
-                        <p className="text-xs opacity-75 truncate">{item.description}</p>
+                        <p className="text-xs opacity-70 truncate mt-0.5">{item.description}</p>
                       </div>
                       
                       {item.badge !== undefined && item.badge > 0 && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary text-white ml-2">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ml-2 ${
+                          isItemActive || hasActiveChildren 
+                            ? 'bg-primary text-white' 
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
                           {item.badge}
                         </span>
                       )}
@@ -243,12 +247,12 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
                 {hasChildren && (!collapsed || isMobile) && (
                   <button
                     onClick={() => toggleExpanded(item.name)}
-                    className="p-2 rounded-lg hover:bg-gray-50 mr-1"
+                    className="p-1.5 rounded-md hover:bg-white/50 mr-2 transition-colors"
                   >
                     {itemExpanded ? (
-                      <ChevronDownIcon className="w-4 h-4" />
+                      <ChevronDownIcon className="w-3 h-3" />
                     ) : (
-                      <ChevronRightIcon className="w-4 h-4" />
+                      <ChevronRightIcon className="w-3 h-3" />
                     )}
                   </button>
                 )}
@@ -256,23 +260,23 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
 
               {/* Child Navigation Items */}
               {hasChildren && itemExpanded && (!collapsed || isMobile) && (
-                <div className="ml-6 mt-1 space-y-1">
+                <div className="ml-4 mt-1 space-y-0.5 border-l border-gray-100 pl-3">
                   {item.children!.map((child) => (
                     <Link
                       key={child.href}
                       href={child.href}
                       onClick={() => isMobile && onClose()}
-                      className={`flex items-center p-2 rounded-lg text-sm transition-colors ${
+                      className={`flex items-center p-2 rounded-md text-sm transition-colors group ${
                         isActive(child.href)
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-muted-text hover:text-text hover:bg-gray-50'
+                          ? 'bg-primary/5 text-primary border-l-2 border-primary ml-[-14px] pl-3'
+                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                       }`}
                     >
-                      {child.icon && <child.icon className="w-4 h-4 mr-3 flex-shrink-0" />}
+                      {child.icon && <child.icon className="w-3 h-3 mr-2 flex-shrink-0 opacity-60" />}
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{child.name}</p>
+                        <p className="font-medium truncate text-xs">{child.name}</p>
                         {child.description && (
-                          <p className="text-xs opacity-75 truncate">{child.description}</p>
+                          <p className="text-xs opacity-60 truncate">{child.description}</p>
                         )}
                       </div>
                     </Link>
@@ -286,10 +290,10 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
 
       {/* Usage Stats Footer */}
       {(!collapsed || isMobile) && user?.subscription && (
-        <div className="p-4 border-t border-surface">
-          <div className="bg-gradient-to-r from-primary/5 to-accent-blue/5 rounded-lg p-3 border border-primary/20">
+        <div className="p-3 border-t border-gray-100">
+          <div className="bg-gradient-to-r from-primary/3 to-blue-50 rounded-lg p-3 border border-primary/10">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-text text-sm">
+              <h3 className="font-semibold text-gray-900 text-xs">
                 {user.subscription.name} Plan
               </h3>
               {user.subscription.name === 'free' && (
@@ -303,14 +307,14 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
             </div>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-text">Active Jobs</span>
-                <span className="font-medium text-text">
+                <span className="text-gray-600">Active Jobs</span>
+                <span className="font-medium text-gray-900">
                   {user.usageCounts.activeJobs}/{user.subscription.maxJobs === -1 ? '∞' : user.subscription.maxJobs}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-text">Interviews</span>
-                <span className="font-medium text-text">
+                <span className="text-gray-600">Interviews</span>
+                <span className="font-medium text-gray-900">
                   {user.usageCounts.interviewsThisMonth}/{user.subscription.maxInterviewsPerMonth === -1 ? '∞' : user.subscription.maxInterviewsPerMonth}
                 </span>
               </div>

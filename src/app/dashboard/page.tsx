@@ -2,8 +2,13 @@
 
 import { useSelector } from 'react-redux';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import MetricCard from '@/components/dashboard/MetricCard';
+import InsightCard from '@/components/dashboard/InsightCard';
+import QuickActionCard from '@/components/dashboard/QuickActionCard';
+import RecentActivity from '@/components/dashboard/RecentActivity';
 import { RootState } from '@/store';
 import { User } from '@/types';
 import { 
@@ -11,13 +16,20 @@ import {
   BriefcaseIcon,
   UserGroupIcon,
   SparklesIcon,
-  ArrowRightIcon
+  ChartBarIcon,
+  ClockIcon,
+  EyeIcon,
+  DocumentTextIcon,
+  ArrowTrendingUpIcon,
+  UsersIcon,
+  CalendarDaysIcon
 } from '@heroicons/react/24/outline';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
 
-  if (!user) return null; // DashboardLayout handles loading/auth
+  if (!user) return null;
 
   const isFreeTier = user.subscription?.name === 'free';
   const usagePercentage = user.subscription ? 
@@ -25,218 +37,324 @@ export default function DashboardPage() {
   const interviewUsagePercentage = user.subscription ? 
     (user.usageCounts.interviewsThisMonth / user.subscription.maxInterviewsPerMonth) * 100 : 0;
 
+  // Mock data for enhanced insights
+  const candidatesByStatus = [
+    { label: 'Shortlisted', value: 8, color: '#10B981' },
+    { label: 'In Review', value: 12, color: '#F59E0B' },
+    { label: 'Interviewed', value: 24, color: '#3B82F6' },
+    { label: 'Applied', value: 35, color: '#6B7280' }
+  ];
+
+  const interviewStats = [
+    { label: 'This Week', value: 15, color: '#8B5CF6' },
+    { label: 'Last Week', value: 12, color: '#EC4899' },
+    { label: 'This Month', value: user.usageCounts.interviewsThisMonth, color: '#14B8A6' }
+  ];
+
   return (
-    <DashboardLayout title="Dashboard">
-      {/* Welcome Section */}
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-text mb-2">
-          Welcome back, {user.firstName}! 👋
-        </h1>
-        <p className="text-muted-text text-base sm:text-lg">
-          Ready to find your next great hire? Let&apos;s get started.
-        </p>
+    <DashboardLayout>
+      {/* Header Section */}
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 mb-1">
+              Welcome back, {user.firstName}! 👋
+            </h1>
+            <p className="text-sm text-gray-600">
+              Here&apos;s what&apos;s happening with your hiring today
+            </p>
+          </div>
+          <div className="mt-3 sm:mt-0 flex items-center space-x-3">
+            <div className="flex items-center space-x-2 text-xs text-gray-500">
+              <CalendarDaysIcon className="w-4 h-4" />
+              <span>{new Date().toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+              })}</span>
+            </div>
+            <Link href="/dashboard/jobs/new">
+              <Button size="sm" className="text-xs">
+                <PlusIcon className="w-4 h-4 mr-1" />
+                New Job
+              </Button>
+            </Link>
+          </div>
+        </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        {/* Active Jobs */}
-        <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <BriefcaseIcon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-text">Active Jobs</p>
-                <p className="text-xl sm:text-2xl font-bold text-text">{user.usageCounts.activeJobs}</p>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <MetricCard
+          title="Active Jobs"
+          value={user.usageCounts.activeJobs}
+          subtitle={user.subscription?.maxJobs === -1 ? 'Unlimited' : `of ${user.subscription?.maxJobs}`}
+          icon={BriefcaseIcon}
+          progress={{
+            current: user.usageCounts.activeJobs,
+            max: user.subscription?.maxJobs || 1,
+            label: 'Jobs used'
+          }}
+          onClick={() => router.push('/dashboard/jobs')}
+        />
+
+        <MetricCard
+          title="Interviews"
+          value={user.usageCounts.interviewsThisMonth}
+          subtitle="This month"
+          icon={UserGroupIcon}
+          iconColor="text-blue-600"
+          iconBgColor="bg-blue-50"
+          trend={{
+            value: 15,
+            isPositive: true,
+            label: 'vs last month'
+          }}
+          progress={{
+            current: user.usageCounts.interviewsThisMonth,
+            max: user.subscription?.maxInterviewsPerMonth || 1,
+            label: 'Monthly limit'
+          }}
+        />
+
+        <MetricCard
+          title="Candidates"
+          value={79}
+          subtitle="All time"
+          icon={UsersIcon}
+          iconColor="text-purple-600"
+          iconBgColor="bg-purple-50"
+          trend={{
+            value: 8,
+            isPositive: true,
+            label: 'this week'
+          }}
+          onClick={() => router.push('/dashboard/candidates')}
+        />
+
+        <MetricCard
+          title="Avg. Response Time"
+          value="2.3h"
+          subtitle="To complete interview"
+          icon={ClockIcon}
+          iconColor="text-emerald-600"
+          iconBgColor="bg-emerald-50"
+          trend={{
+            value: 12,
+            isPositive: false,
+            label: 'vs last week'
+          }}
+        />
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Left Column - Insights */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Quick Actions */}
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <QuickActionCard
+                title="Create New Job"
+                description="Post a new position and start interviewing candidates"
+                icon={PlusIcon}
+                buttonText="Create Job Post"
+                href="/dashboard/jobs/new"
+              />
+              
+              <QuickActionCard
+                title="Review Candidates"
+                description="View pending candidate evaluations and interviews"
+                icon={EyeIcon}
+                iconColor="text-blue-600"
+                iconBgColor="bg-blue-50"
+                buttonText="Review Applications"
+                buttonVariant="outline"
+                href="/dashboard/candidates"
+              />
+              
+              <QuickActionCard
+                title="Job Performance"
+                description="Analyze your job posting performance and metrics"
+                icon={ChartBarIcon}
+                iconColor="text-purple-600"
+                iconBgColor="bg-purple-50"
+                buttonText="View Reports"
+                buttonVariant="outline"
+                href="/dashboard/reports"
+              />
+              
+              <QuickActionCard
+                title="Share Interview Link"
+                description="Get shareable links for your active job positions"
+                icon={DocumentTextIcon}
+                iconColor="text-emerald-600"
+                iconBgColor="bg-emerald-50"
+                buttonText="Get Links"
+                buttonVariant="outline"
+                href="/dashboard/jobs"
+              />
+            </div>
+          </div>
+
+          {/* Insights Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InsightCard
+              title="Candidate Pipeline"
+              subtitle="Applications by status"
+              data={candidatesByStatus}
+              type="list"
+              icon={ArrowTrendingUpIcon}
+              action={{
+                label: 'View All',
+                onClick: () => router.push('/dashboard/candidates')
+              }}
+            />
+
+            <InsightCard
+              title="Interview Activity"
+              subtitle="Recent interview volume"
+              data={interviewStats}
+              type="chart"
+              icon={ChartBarIcon}
+              action={{
+                label: 'Detailed Report',
+                onClick: () => router.push('/dashboard/reports')
+              }}
+            />
+          </div>
+
+          {/* Getting Started Section for New Users */}
+          {user.usageCounts.activeJobs === 0 && (
+            <div className="bg-gradient-to-br from-primary/5 via-blue-50 to-purple-50 rounded-lg border border-primary/10 p-6">
+              <div className="flex items-start space-x-4">
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <SparklesIcon className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    🚀 Welcome to AI Hiring Agent!
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Get started by creating your first job post. Our AI will handle candidate interviews and provide detailed evaluations.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">1</div>
+                      <span className="text-xs text-gray-700">Create job post</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">2</div>
+                      <span className="text-xs text-gray-700">Share interview link</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">3</div>
+                      <span className="text-xs text-gray-700">Review AI evaluations</span>
+                    </div>
+                  </div>
+
+                  <Link href="/dashboard/jobs/new">
+                    <Button size="sm" className="text-xs">
+                      <PlusIcon className="w-4 h-4 mr-1" />
+                      Create Your First Job
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-text">
-                {user.subscription?.maxJobs === 999 ? 'Unlimited' : `${user.subscription?.maxJobs} max`}
-              </p>
-              {user.subscription && user.subscription.maxJobs !== 999 && (
-                <div className="w-12 sm:w-16 bg-gray-light rounded-full h-2 mt-1">
+          )}
+        </div>
+
+        {/* Right Column - Activity & Plan */}
+        <div className="space-y-6">
+          {/* Recent Activity */}
+          <InsightCard
+            title="Recent Activity"
+            subtitle="Latest hiring events"
+            icon={ClockIcon}
+            action={{
+              label: 'View All',
+              onClick: () => router.push('/dashboard/history')
+            }}
+          >
+            <RecentActivity maxItems={4} />
+          </InsightCard>
+
+          {/* Current Plan */}
+          <div className="bg-white rounded-lg border border-gray-100 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
+                  <SparklesIcon className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Current Plan</h3>
+                  <p className="text-xs text-gray-500 capitalize">
+                    {user.subscription?.name || 'Free'} Tier
+                  </p>
+                </div>
+              </div>
+              {isFreeTier && (
+                <Link href="/dashboard/billing">
+                  <Button variant="outline" size="sm" className="text-xs">
+                    Upgrade
+                  </Button>
+                </Link>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-600">Jobs</span>
+                <span className="font-medium text-gray-900">
+                  {user.usageCounts.activeJobs}/{user.subscription?.maxJobs === -1 ? '∞' : user.subscription?.maxJobs}
+                </span>
+              </div>
+              {user.subscription && user.subscription.maxJobs !== -1 && (
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
                   <div 
-                    className="bg-primary h-2 rounded-full"
+                    className="bg-primary h-1.5 rounded-full transition-all"
                     style={{ width: `${Math.min(usagePercentage, 100)}%` }}
                   />
                 </div>
               )}
-            </div>
-          </div>
-        </div>
 
-        {/* Interviews This Month */}
-        <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent-blue/10 rounded-lg flex items-center justify-center">
-                <UserGroupIcon className="w-4 h-4 sm:w-5 sm:h-5 text-accent-blue" />
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-600">Interviews (Monthly)</span>
+                <span className="font-medium text-gray-900">
+                  {user.usageCounts.interviewsThisMonth}/{user.subscription?.maxInterviewsPerMonth === -1 ? '∞' : user.subscription?.maxInterviewsPerMonth}
+                </span>
               </div>
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-text">Interviews</p>
-                <p className="text-xl sm:text-2xl font-bold text-text">{user.usageCounts.interviewsThisMonth}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-text">This month</p>
-              {user.subscription && user.subscription.maxInterviewsPerMonth !== 999 && (
-                <div className="w-12 sm:w-16 bg-gray-light rounded-full h-2 mt-1">
+              {user.subscription && user.subscription.maxInterviewsPerMonth !== -1 && (
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
                   <div 
-                    className="bg-accent-blue h-2 rounded-full"
+                    className="bg-blue-500 h-1.5 rounded-full transition-all"
                     style={{ width: `${Math.min(interviewUsagePercentage, 100)}%` }}
                   />
                 </div>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Current Plan */}
-        <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent-teal/10 rounded-lg flex items-center justify-center">
-                <SparklesIcon className="w-4 h-4 sm:w-5 sm:h-5 text-accent-teal" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-text">Current Plan</p>
-                <p className="text-base sm:text-lg font-bold text-text capitalize">
-                  {user.subscription?.name || 'Free'} Tier
-                </p>
-              </div>
-            </div>
             {isFreeTier && (
-              <Link href="/dashboard/billing">
-                <Button variant="outline" size="sm">
-                  Upgrade
-                </Button>
-              </Link>
+              <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                <p className="text-xs text-amber-800 mb-2 font-medium">Free Plan Benefits</p>
+                <ul className="text-xs text-amber-700 space-y-1">
+                  <li>• 1 active job</li>
+                  <li>• 5 interviews per month</li>
+                  <li>• Basic AI evaluations</li>
+                </ul>
+                <Link href="/dashboard/billing" className="block mt-2">
+                  <Button size="sm" variant="outline" className="w-full text-xs border-amber-200 text-amber-700 hover:bg-amber-100">
+                    Upgrade for More
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
         </div>
       </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-8 mb-6 sm:mb-8">
-        <h2 className="text-lg sm:text-xl font-bold text-text mb-4 sm:mb-6">Quick Actions</h2>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* Create New Job */}
-          <Link href="/dashboard/jobs/new" className="block">
-            <div className="border border-gray-light rounded-lg p-4 sm:p-6 hover:border-primary transition-colors cursor-pointer">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <PlusIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-text text-sm sm:text-base">Create New Job</h3>
-                    <p className="text-xs sm:text-sm text-muted-text">Start hiring for a new position</p>
-                  </div>
-                </div>
-                <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5 text-muted-text" />
-              </div>
-              <Button className="w-full">
-                Create Job Post
-              </Button>
-            </div>
-          </Link>
-
-          {/* View All Jobs */}
-          <Link href="/dashboard/jobs" className="block">
-            <div className="border border-gray-light rounded-lg p-4 sm:p-6 hover:border-primary transition-colors cursor-pointer">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent-blue/10 rounded-lg flex items-center justify-center">
-                    <BriefcaseIcon className="w-5 h-5 sm:w-6 sm:h-6 text-accent-blue" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-text text-sm sm:text-base">Manage Jobs</h3>
-                    <p className="text-xs sm:text-sm text-muted-text">View and edit your job posts</p>
-                  </div>
-                </div>
-                <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5 text-muted-text" />
-              </div>
-              <Button variant="outline" className="w-full">
-                View All Jobs
-              </Button>
-            </div>
-          </Link>
-        </div>
-      </div>
-
-      {/* Getting Started (for new users) */}
-      {user.usageCounts.activeJobs === 0 && (
-        <div className="bg-gradient-to-r from-primary/5 to-accent-blue/5 rounded-lg border border-primary/20 p-4 sm:p-8 mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-text mb-3 sm:mb-4">🚀 Let&apos;s get you started!</h2>
-          <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">
-            Welcome to AI Hiring Agent! Here&apos;s how to post your first job and start interviewing candidates:
-          </p>
-          
-          <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
-                1
-              </div>
-              <div>
-                <p className="font-medium text-text text-sm sm:text-base">Create your first job post</p>
-                <p className="text-xs sm:text-sm text-muted-text">Add job title, requirements, and preferences</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
-                2
-              </div>
-              <div>
-                <p className="font-medium text-text text-sm sm:text-base">Share your interview link</p>
-                <p className="text-xs sm:text-sm text-muted-text">Send the AI interview link to candidates</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
-                3
-              </div>
-              <div>
-                <p className="font-medium text-text text-sm sm:text-base">Review AI evaluations</p>
-                <p className="text-xs sm:text-sm text-muted-text">Get scored reports and candidate insights</p>
-              </div>
-            </div>
-          </div>
-
-          <Link href="/dashboard/jobs/new">
-            <Button size="lg" className="w-full sm:w-auto">
-              <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Create Your First Job
-            </Button>
-          </Link>
-        </div>
-      )}
-
-      {/* Free Tier Limitation Notice */}
-      {isFreeTier && user.usageCounts.activeJobs > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 sm:p-6">
-          <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-              <SparklesIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-amber-800 mb-2 text-sm sm:text-base">You&apos;re on the Free plan</h3>
-              <p className="text-amber-700 text-xs sm:text-sm mb-3 sm:mb-4">
-                Upgrade to Pro to unlock more jobs, advanced AI features, and detailed analytics.
-              </p>
-              <Link href="/dashboard/billing">
-                <Button variant="outline" size="sm" className="border-amber-300 text-amber-700 hover:bg-amber-100 w-full sm:w-auto">
-                  View Plans
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   );
 } 
