@@ -60,11 +60,56 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
+    // Update candidate progress
+    try {
+      // Get total number of questions for this job
+      const { data: questionsCount, error: countError } = await supabase
+        .from('job_questions')
+        .select('id', { count: 'exact' })
+        .eq('job_id', questionData.job_id);
+
+      if (countError) {
+        console.warn('Failed to get questions count:', countError);
+      }
+
+      // Get total responses from this candidate for this job
+      const { data: responsesCount, error: responsesError } = await supabase
+        .from('responses')
+        .select('id', { count: 'exact' })
+        .eq('candidate_id', candidateId)
+        .eq('job_id', questionData.job_id);
+
+      if (responsesError) {
+        console.warn('Failed to get responses count:', responsesError);
+      }
+
+      const totalQuestions = questionsCount?.length || 0;
+      const totalResponses = responsesCount?.length || 0;
+      const currentStep = Math.min(totalResponses, totalQuestions);
+
+      // Update candidate progress in the candidates table
+      const { error: updateError } = await supabase
+        .from('candidates')
+        .update({
+          current_step: currentStep,
+          total_steps: totalQuestions,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', candidateId);
+
+      if (updateError) {
+        console.warn('Failed to update candidate progress:', updateError);
+        // Don't fail the response save if progress update fails
+      }
+    } catch (progressError) {
+      console.warn('Error updating candidate progress:', progressError);
+    }
+
     return NextResponse.json({
       success: true,
       response: {
         id: savedResponse.id,
-        profileId: savedResponse.profile_id,
+        candidateId: savedResponse.candidate_id,
         jobId: savedResponse.job_id,
         jobQuestionId: savedResponse.job_question_id,
         question: savedResponse.question,

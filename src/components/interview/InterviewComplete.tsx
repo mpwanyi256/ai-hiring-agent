@@ -40,7 +40,7 @@ export default function InterviewComplete({ job }: InterviewCompleteProps) {
           <div className="space-y-3 text-muted-text">
             <div className="flex items-start">
               <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
-              <p>Our AI system will analyze your responses and generate a comprehensive evaluation.</p>
+              <p>Our system will analyze your responses and generate a comprehensive evaluation.</p>
             </div>
             <div className="flex items-start">
               <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>

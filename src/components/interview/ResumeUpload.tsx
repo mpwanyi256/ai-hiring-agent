@@ -366,9 +366,9 @@ Experience Level: ${evaluation.experienceMatch}`;
             <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
               <div className="flex items-center mb-4">
                 <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center mr-3">
-                  <span className="text-indigo-600 font-bold text-lg">🤖</span>
+                  <span className="text-indigo-600 font-bold text-lg">💼</span>
                 </div>
-                <h3 className="text-lg font-semibold text-text">AI Recommendation</h3>
+                <h3 className="text-lg font-semibold text-text">Recommendation</h3>
               </div>
               <div className="flex items-center justify-between">
                 <span className={`px-4 py-2 rounded-lg text-sm font-semibold ${
@@ -381,7 +381,7 @@ Experience Level: ${evaluation.experienceMatch}`;
               </div>
               <p className="text-sm text-muted-text mt-3">
                 {evaluation.recommendation === 'proceed' ? 
-                  'Our AI believes you have strong potential for this role.' :
+                  'Based on your qualifications, you have strong potential for this role.' :
                   'Consider strengthening your profile before applying.'
                 }
               </p>
@@ -617,7 +617,7 @@ Experience Level: ${evaluation.experienceMatch}`;
 
         {/* Info Section */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-          <h3 className="font-semibold text-blue-900 mb-3">Enhanced Resume Analysis</h3>
+          <h3 className="font-semibold text-blue-900 mb-3">Resume Analysis</h3>
           <div className="space-y-2 text-blue-800 text-sm">
             <div className="flex items-center">
               <ChevronRightIcon className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -625,7 +625,7 @@ Experience Level: ${evaluation.experienceMatch}`;
             </div>
             <div className="flex items-center">
               <ChevronRightIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span>AI-powered skill matching and experience evaluation</span>
+              <span>Automated skill matching and experience evaluation</span>
             </div>
             <div className="flex items-center">
               <ChevronRightIcon className="w-4 h-4 mr-2 flex-shrink-0" />

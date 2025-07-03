@@ -21,6 +21,24 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
+    // Update candidate record to mark as completed
+    try {
+      const { error: candidateError } = await supabase
+        .from('candidates')
+        .update({
+          is_completed: true,
+          submitted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', candidateId);
+
+      if (candidateError) {
+        console.warn('Failed to update candidate completion status:', candidateError);
+      }
+    } catch (updateError) {
+      console.warn('Error updating candidate:', updateError);
+    }
+
     // Get all responses for this candidate
     const { data: responses, error: responsesError } = await supabase
       .from('responses')
@@ -48,8 +66,8 @@ export async function POST(request: Request) {
           candidate_id: candidateId,
           job_id: responses[0]?.job_id || null,
           evaluation_type: 'combined',
-          summary: `Combined evaluation: Resume score ${resumeEvaluation.score}/100, Interview completion with ${responses.length} responses. Overall assessment: ${combinedScore}/100.`,
-          score: interviewScore,
+          summary: `Interview completed successfully with ${responses.length} responses. Resume evaluation score: ${resumeEvaluation.score}/100. Combined assessment score: ${combinedScore}/100.`,
+          score: combinedScore,
           resume_score: resumeEvaluation.score,
           resume_summary: resumeEvaluation.summary,
           resume_filename: `${candidateInfo?.firstName || 'candidate'}_resume`,
@@ -58,7 +76,7 @@ export async function POST(request: Request) {
           skills_assessment: {},
           traits_assessment: {},
           recommendation: combinedScore >= 70 ? 'yes' : combinedScore >= 60 ? 'maybe' : 'no',
-          feedback: `Interview completed with ${responses.length} questions answered. ${resumeEvaluation.feedback || ''}`,
+          feedback: `Interview completed with ${responses.length} questions answered in approximately ${Math.round(totalTimeSpent / 60)} minutes. ${resumeEvaluation.feedback || ''}`,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };

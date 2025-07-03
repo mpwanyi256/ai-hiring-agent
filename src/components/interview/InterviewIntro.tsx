@@ -165,30 +165,40 @@ export default function InterviewIntro({ job, onStartInterview }: InterviewIntro
         </div>
 
         {/* Interview Guidelines */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3">Before You Begin</h3>
-          <div className="space-y-2 text-blue-800 text-sm">
-            <div className="flex items-center">
-              <ChevronRightIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span>Have your resume ready in PDF, DOC, DOCX, or TXT format</span>
-            </div>
-            <div className="flex items-center">
-              <ChevronRightIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span>Find a quiet space where you won&apos;t be interrupted</span>
-            </div>
-            {job.interviewFormat === 'video' && (
-              <div className="flex items-center">
-                <ChevronRightIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>Ensure your camera and microphone are working properly</span>
+        <div className="bg-gray-50 rounded-lg p-6 mb-8">
+          <h3 className="text-lg font-semibold text-text mb-4">Interview Guidelines</h3>
+          <div className="grid md:grid-cols-2 gap-6 text-sm text-muted-text">
+            <div className="space-y-3">
+              <div className="flex items-start">
+                <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                <div>
+                  <p className="font-medium text-text">Be Authentic</p>
+                  <p>Answer honestly and let your personality shine through your responses.</p>
+                </div>
               </div>
-            )}
-            <div className="flex items-center">
-              <ChevronRightIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span>Take your time - there&apos;s no rush to complete the interview</span>
+              <div className="flex items-start">
+                <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                <div>
+                  <p className="font-medium text-text">Take Your Time</p>
+                  <p>There's no time pressure. Think through your answers carefully.</p>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center">
-              <ChevronRightIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span>Be honest and authentic in your responses</span>
+            <div className="space-y-3">
+              <div className="flex items-start">
+                <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                <div>
+                  <p className="font-medium text-text">Use Examples</p>
+                  <p>Support your answers with specific examples from your experience.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                <div>
+                  <p className="font-medium text-text">Stay Professional</p>
+                  <p>Maintain a professional tone while being conversational.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
