@@ -149,7 +149,6 @@ export const fetchJobQuestions = createAsyncThunk(
   'jobs/fetchJobQuestions',
   async (jobId: string) => {
     try {
-      console.log('Fetching job questions for job', jobId);
       const response = await apiUtils.get(`/api/jobs/${jobId}/questions`);
       return response;
     } catch (error: any) {
@@ -191,3 +190,40 @@ export const deleteJobTemplate = createAsyncThunk(
     }
   }
 ); 
+
+export const reorderJobQuestions = createAsyncThunk(
+  'jobs/reorderJobQuestions',
+  async ({ questionIdsOrder }: { questionIdsOrder: string[] }, { getState, dispatch }) => {
+    try {
+      const job = (getState() as RootState).jobs.currentJob;
+      if (!job) {
+        throw new Error('Job not found');
+      }
+
+      const jobId = job.id;
+      const response = await apiUtils.put(`/api/jobs/${jobId}/questions/reorder`, { questionIds: questionIdsOrder });
+      await dispatch(fetchJobQuestions(jobId));
+      return response;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to reorder job questions');
+    }
+  }
+);
+
+export const updateJobQuestion = createAsyncThunk(
+  'jobs/updateJobQuestion',
+  async ({ questionId, questionText }: { questionId: string; questionText: string }, { getState, dispatch }) => {
+    try {
+      const job = (getState() as RootState).jobs.currentJob;
+      if (!job) {
+        throw new Error('Job not found');
+      }
+      const jobId = job.id;
+      const response = await apiUtils.put(`/api/jobs/${jobId}/questions/${questionId}`, { questionText });
+      await dispatch(fetchJobQuestions(jobId));
+      return response;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to update job question');
+    }
+  }
+);

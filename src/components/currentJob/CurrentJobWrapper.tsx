@@ -12,6 +12,7 @@ import JobCandidates from '@/components/jobs/JobCandidates';
 import JobEvaluations from '@/components/jobs/JobEvaluations';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { fetchJobById } from '@/store/jobs/jobsThunks';
+import { resetCurrentJob } from '@/store/jobs/jobsSlice';
 import { selectCurrentJob, selectJobsLoading, selectJobsError, selectJobQuestionsCount } from '@/store/jobs/jobsSelectors';
 import { 
   ArrowLeftIcon,
@@ -52,6 +53,10 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
     dispatch(fetchJobById(resolvedParams.id)).unwrap().catch((err) => {
       showError(err instanceof Error ? err.message : 'Failed to fetch job details');
     });
+
+    return () => { // Clean up function to reset the current job when the component unmounts
+      dispatch(resetCurrentJob());
+    }
   }, [resolvedParams.id, dispatch]);
 
 
@@ -172,7 +177,7 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
           )}
           
           {activeTab === 'questions' && (
-            <QuestionManager job={job} />
+            <QuestionManager />
           )}
           
           {activeTab === 'candidates' && (

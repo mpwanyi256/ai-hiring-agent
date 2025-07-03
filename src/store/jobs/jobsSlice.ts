@@ -14,11 +14,8 @@ import {
   saveJobTemplate,
   deleteJobTemplate,
   fetchJobQuestions,
-  generateJobQuestions,
 } from './jobsThunks';
 import { parseJobDetails } from '@/lib/utils';
-import { apiSuccess } from '@/lib/notification';
-
 
 const initialState: ExtendedJobsState = {
   jobs: [],
@@ -55,6 +52,9 @@ const jobsSlice = createSlice({
       if (state.currentJob && state.currentJob.id === action.payload.jobId) {
         state.currentJob.candidateCount = action.payload.count;
       }
+    },
+    resetCurrentJob: (state) => {
+      state.currentJob = null;
     },
     clearJobsData: (state) => {
       state.jobs = [];
@@ -233,7 +233,8 @@ export const {
   setCurrentJob, 
   clearCurrentJob, 
   updateJobCandidateCount,
-  clearJobsData 
+  clearJobsData,
+  resetCurrentJob,
 } = jobsSlice.actions;
 
 export default jobsSlice.reducer; 

@@ -159,3 +159,13 @@ export const formatDuration = (seconds: number) => {
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
+
+export const getQuestionTypeColor = (type: string) => {
+  switch (type) {
+    case 'technical': return 'bg-blue-100 text-blue-700';
+    case 'behavioral': return 'bg-green-100 text-green-700';
+    case 'experience': return 'bg-purple-100 text-purple-700';
+    case 'general': return 'bg-gray-100 text-gray-700';
+    default: return 'bg-orange-100 text-orange-700';
+  }
+};
