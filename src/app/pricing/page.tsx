@@ -122,7 +122,7 @@ export default function PricingPage() {
       <Navigation />
 
       {/* Hero Section */}
-      <section className="relative z-10 pt-24 pb-12">
+      <section className="relative z-10 pt-24 pb-16">
         <Container>
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-4xl lg:text-5xl font-bold mb-6">
@@ -131,13 +131,13 @@ export default function PricingPage() {
                 Your Hiring Needs
               </span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
               Scale your hiring process with our flexible pricing plans. All plans include our core AI interview features with varying levels of customization and support.
             </p>
 
             {/* Billing Toggle */}
-            <div className="flex items-center justify-center space-x-4 mb-12">
-              <span className={`font-medium ${billingPeriod === 'monthly' ? 'text-primary' : 'text-gray-500'}`}>
+            <div className="flex items-center justify-center space-x-4 mb-16 bg-gray-50 p-2 rounded-full max-w-fit mx-auto">
+              <span className={`font-medium px-4 py-2 ${billingPeriod === 'monthly' ? 'text-primary' : 'text-gray-500'}`}>
                 Monthly
               </span>
               <button
@@ -152,9 +152,9 @@ export default function PricingPage() {
                   }`}
                 />
               </button>
-              <span className={`font-medium ${billingPeriod === 'yearly' ? 'text-primary' : 'text-gray-500'}`}>
+              <span className={`font-medium px-4 py-2 ${billingPeriod === 'yearly' ? 'text-primary' : 'text-gray-500'}`}>
                 Yearly
-                <span className="ml-1 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                   Save up to 25%
                 </span>
               </span>

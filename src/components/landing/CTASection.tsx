@@ -43,12 +43,12 @@ export default function CTASection() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button className="bg-white text-primary hover:bg-gray-100 font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 hover-lift">
+                <button className="bg-white text-primary hover:bg-gray-100 font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 hover-lift">
                   Try for Free Now
-                </Button>
-                <Button variant="outline" className="border-2 border-white text-white hover:bg-white/10 font-semibold px-6 py-3 rounded-full transition-all hover-lift">
+                </button>
+                <button className="border-2 border-white text-white hover:bg-white hover:text-primary font-semibold px-6 py-3 rounded-full transition-all hover-lift">
                   Request Demo
-                </Button>
+                </button>
               </div>
 
               <form onSubmit={handleWaitlistSubmit} className="space-y-3 pt-2">
@@ -61,13 +61,23 @@ export default function CTASection() {
                     className="flex-1 px-5 py-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all hover:bg-white/15"
                     required
                   />
-                  <Button 
+                  <button 
                     type="submit" 
-                    isLoading={isSubmitting}
-                    className="bg-white text-primary hover:bg-gray-100 px-6 py-3 font-semibold rounded-full shadow-lg hover:shadow-xl transition-all hover-lift whitespace-nowrap"
+                    disabled={isSubmitting}
+                    className="bg-white text-primary hover:bg-gray-100 px-6 py-3 font-semibold rounded-full shadow-lg hover:shadow-xl transition-all hover-lift whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Join Waitlist
-                  </Button>
+                    {isSubmitting ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Joining...
+                      </span>
+                    ) : (
+                      'Join Waitlist'
+                    )}
+                  </button>
                 </div>
                 <p className="text-sm text-green-100 flex items-center">
                   <span className="mr-2">✨</span>

@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { RootState } from '@/app/store';
+import { RootState } from '@/store';
 import { User } from '@/types';
 import { 
   PlusIcon,
