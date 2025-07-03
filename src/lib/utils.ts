@@ -1,8 +1,8 @@
 import { type ClassValue, clsx } from 'clsx';
 import { JobData } from './services/jobsService';
 import { Job } from '@/types';
-import { JobQuestion } from '@/types/interview';
 import { JobStatus } from './supabase';
+import { apiSuccess } from './notification';
 
 // Utility function to merge classes with Tailwind
 export function cn(...inputs: ClassValue[]) {
@@ -120,6 +120,7 @@ export const parseJobDetails = (jobData: JobData): Job => {
 export const copyInterviewLink = async (interviewLink: string) => {
   try {
     await navigator.clipboard.writeText(interviewLink);
+    apiSuccess('Interview link copied to clipboard');
     return true;
   } catch (error) {
     console.error('Failed to copy link:', error);

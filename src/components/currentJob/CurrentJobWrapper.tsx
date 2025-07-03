@@ -39,7 +39,7 @@ interface CurrentJobWrapperPageProps {
 export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps) {
   // Unwrap params using React.use()
   const resolvedParams = use(params);
-  const { success, error: showError } = useToast();
+  const { error: showError } = useToast();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
@@ -52,18 +52,10 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
 
   // Fetch job details and questions
   useEffect(() => {
-    const fetchJobData = async () => {
-      if (!user?.id || !resolvedParams.id) return;
-
-      try {
-        dispatch(fetchJobById(resolvedParams.id));
-      } catch (err) {
-        showError(err instanceof Error ? err.message : 'Failed to fetch job details');
-      }
-    };
-
-    fetchJobData();
-  }, [user?.id, resolvedParams.id, dispatch]);
+    dispatch(fetchJobById(resolvedParams.id)).unwrap().catch((err) => {
+      showError(err instanceof Error ? err.message : 'Failed to fetch job details');
+    });
+  }, [resolvedParams.id, dispatch]);
 
 
   const shareJob = async () => {

@@ -46,8 +46,6 @@ export const CurrentJobHeader: React.FC<CurrentJobHeaderProps> = ({ onSetActiveT
     }
   }
 
-  console.log('job status', job.status);
-
   return (
     <div className="p-6 border-b border-gray-light">
             <div className="flex items-start justify-between mb-4">
