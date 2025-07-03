@@ -430,7 +430,7 @@ class ResumeService {
 
   // Save resume evaluation to database
   async saveResumeEvaluation(
-    profileId: string,
+    profileId: string | null, // Allow null for anonymous candidates
     jobId: string,
     resumeContent: string,
     resumeFilename: string,
@@ -440,7 +440,7 @@ class ResumeService {
       const supabase = await createClient();
       
       const evaluationData = {
-        profile_id: profileId,
+        profile_id: profileId, // Will be null for anonymous candidates
         job_id: jobId,
         evaluation_type: 'resume',
         summary: evaluation.summary,
@@ -463,7 +463,8 @@ class ResumeService {
         .single();
 
       if (error) {
-        throw new Error(error.message);
+        console.error('Database error saving evaluation:', error);
+        throw new Error(`Database error: ${error.message}`);
       }
 
       return {
@@ -487,7 +488,14 @@ class ResumeService {
       };
     } catch (error) {
       console.error('Error saving resume evaluation:', error);
-      throw error;
+      // Distinguish between different error types
+      if (error instanceof Error) {
+        if (error.message.includes('foreign key constraint') || error.message.includes('violates row-level security')) {
+          throw new Error('Database configuration error - unable to save evaluation');
+        }
+        throw error;
+      }
+      throw new Error('Unknown error occurred while saving evaluation');
     }
   }
 
@@ -581,6 +589,86 @@ class ResumeService {
     }
   }
 
+  // Save resume record to candidate_resumes table
+  async saveResumeRecord(
+    jobId: string,
+    candidateInfo: {
+      email: string;
+      firstName: string;
+      lastName: string;
+    },
+    file: File,
+    storageInfo: { path: string; publicUrl: string },
+    parsedDoc?: { wordCount: number; fileType: string },
+    candidateId?: string
+  ): Promise<string> {
+    try {
+      const supabase = await createClient();
+      
+      const resumeData = {
+        job_id: jobId,
+        candidate_id: candidateId,
+        email: candidateInfo.email,
+        first_name: candidateInfo.firstName,
+        last_name: candidateInfo.lastName,
+        original_filename: file.name,
+        file_path: storageInfo.path,
+        public_url: storageInfo.publicUrl,
+        file_size: file.size,
+        file_type: parsedDoc?.fileType || file.type,
+        word_count: parsedDoc?.wordCount || null,
+        parsing_status: 'success'
+      };
+
+      const { data: savedResume, error } = await supabase
+        .from('candidate_resumes')
+        .insert(resumeData)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return savedResume.id;
+    } catch (error) {
+      console.error('Error saving resume record:', error);
+      throw error;
+    }
+  }
+
+  // Update resume parsing status
+  async updateResumeParsingStatus(
+    resumeId: string,
+    status: 'pending' | 'success' | 'failed',
+    error?: string
+  ): Promise<void> {
+    try {
+      const supabase = await createClient();
+      
+      const updateData: any = {
+        parsing_status: status,
+        updated_at: new Date().toISOString()
+      };
+
+      if (error) {
+        updateData.parsing_error = error;
+      }
+
+      const { error: updateError } = await supabase
+        .from('candidate_resumes')
+        .update(updateData)
+        .eq('id', resumeId);
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+    } catch (error) {
+      console.error('Error updating resume parsing status:', error);
+      throw error;
+    }
+  }
+
   // Enhanced OpenAI evaluation (optional integration)
   async evaluateWithOpenAI(
     resumeContent: string,
@@ -610,9 +698,9 @@ JOB REQUIREMENTS:
 RESUME CONTENT:
 ${resumeContent}
 
-Please provide your evaluation in the following JSON format:
+Please provide your evaluation as a JSON object with the following structure (no markdown formatting):
 {
-  "score": [0-100],
+  "score": [0-100 integer],
   "analysis": "[detailed analysis of fit]",
   "strengths": ["strength1", "strength2", "strength3"],
   "weaknesses": ["weakness1", "weakness2", "weakness3"]
@@ -630,7 +718,7 @@ Please provide your evaluation in the following JSON format:
           messages: [
             {
               role: 'system',
-              content: 'You are an expert HR professional who evaluates candidate resumes objectively and thoroughly.'
+              content: 'You are an expert HR professional who evaluates candidate resumes objectively and thoroughly. Always respond with valid JSON only, no markdown formatting.'
             },
             {
               role: 'user',
@@ -654,10 +742,30 @@ Please provide your evaluation in the following JSON format:
         throw new Error('Invalid response format from OpenAI API');
       }
 
-      const evaluation = JSON.parse(data.choices[0].message.content);
+      let responseContent = data.choices[0].message.content.trim();
+      
+      // Remove markdown code block formatting if present
+      if (responseContent.startsWith('```json')) {
+        responseContent = responseContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (responseContent.startsWith('```')) {
+        responseContent = responseContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+
+      let evaluation;
+      try {
+        evaluation = JSON.parse(responseContent);
+      } catch (parseError) {
+        console.error('Failed to parse OpenAI response as JSON:', responseContent);
+        throw new Error('Invalid JSON response from OpenAI');
+      }
+
+      // Validate the response structure
+      if (typeof evaluation.score !== 'number' || !evaluation.analysis || !Array.isArray(evaluation.strengths) || !Array.isArray(evaluation.weaknesses)) {
+        throw new Error('Invalid evaluation structure from OpenAI');
+      }
 
       return {
-        score: Math.min(100, Math.max(0, evaluation.score)),
+        score: Math.min(100, Math.max(0, Math.round(evaluation.score))),
         analysis: evaluation.analysis,
         strengths: evaluation.strengths || [],
         weaknesses: evaluation.weaknesses || []

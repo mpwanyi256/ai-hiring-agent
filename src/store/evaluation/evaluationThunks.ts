@@ -12,7 +12,7 @@ export const evaluateResume = createAsyncThunk(
       firstName: string;
       lastName: string;
     };
-  }) => {
+  }, { rejectWithValue }) => {
     const formData = new FormData();
     formData.append('resume', data.resumeFile);
     formData.append('jobToken', data.jobToken);
@@ -25,12 +25,27 @@ export const evaluateResume = createAsyncThunk(
       body: formData,
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to evaluate resume');
+      // If there's an evaluation even with an error (e.g., database error), return it with error info
+      if (result.evaluation && result.errorType) {
+        return rejectWithValue({
+          error: result.error,
+          errorType: result.errorType,
+          evaluation: result.evaluation,
+          hasEvaluation: true
+        });
+      }
+      
+      // Normal error case
+      return rejectWithValue({
+        error: result.error || 'Failed to evaluate resume',
+        errorType: 'general_error',
+        hasEvaluation: false
+      });
     }
 
-    const result = await response.json();
     return result.evaluation as ResumeEvaluation;
   }
 );

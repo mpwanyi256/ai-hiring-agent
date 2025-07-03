@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { interviewService } from '@/lib/services/interviewService';
+import { createClient } from '@/lib/supabase/server';
 import { jobsService } from '@/lib/services/jobsService';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
   try {
@@ -22,15 +23,36 @@ export async function POST(request: Request) {
       }, { status: 404 });
     }
 
-    // Create candidate
-    const candidate = await interviewService.createCandidate(
-      job.id, 
-      jobToken, 
-      candidateData
-    );
+    const supabase = await createClient();
 
-    // Start interview session
-    const session = await interviewService.startInterview(candidate.id, job);
+    // Create a temporary candidate session ID
+    const candidateId = uuidv4();
+
+    // For now, we'll track the candidate session in memory/locally
+    // In a full implementation, you might want to create a candidate_sessions table
+    // or use the profiles table with a 'candidate' role
+
+    const session = {
+      candidate: {
+        id: candidateId,
+        jobId: job.id,
+        interviewToken: jobToken,
+        email: candidateData?.email || null,
+        firstName: candidateData?.firstName || null,
+        lastName: candidateData?.lastName || null,
+        currentStep: 1,
+        totalSteps: 0, // Will be determined by number of questions
+        isCompleted: false,
+        submittedAt: null,
+        createdAt: new Date().toISOString()
+      },
+      job: {
+        id: job.id,
+        title: job.title,
+        interviewFormat: job.interviewFormat
+      },
+      startedAt: new Date().toISOString()
+    };
 
     return NextResponse.json({
       success: true,

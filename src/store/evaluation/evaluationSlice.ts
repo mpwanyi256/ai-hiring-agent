@@ -9,13 +9,14 @@ import {
   getInterviewEvaluation,
   getEvaluationHistory,
   deleteEvaluation
-} from './evaluationThunks';
+} from '@/store/evaluation/evaluationThunks';
 
 export interface EvaluationState {
   // Resume evaluation
   currentResumeEvaluation: ResumeEvaluation | null;
   resumeEvaluationLoading: boolean;
   resumeEvaluationError: string | null;
+  resumeEvaluationErrorType?: string;
   
   // Interview evaluation
   currentInterviewEvaluation: InterviewEvaluation | null;
@@ -36,6 +37,7 @@ const initialState: EvaluationState = {
   currentResumeEvaluation: null,
   resumeEvaluationLoading: false,
   resumeEvaluationError: null,
+  resumeEvaluationErrorType: undefined,
   
   currentInterviewEvaluation: null,
   interviewEvaluationLoading: false,
@@ -56,6 +58,7 @@ const evaluationSlice = createSlice({
     // Clear errors
     clearResumeError: (state) => {
       state.resumeEvaluationError = null;
+      state.resumeEvaluationErrorType = undefined;
     },
     clearInterviewError: (state) => {
       state.interviewEvaluationError = null;
@@ -111,9 +114,24 @@ const evaluationSlice = createSlice({
       })
       .addCase(evaluateResume.rejected, (state, action) => {
         state.resumeEvaluationLoading = false;
-        state.resumeEvaluationError = action.error.message || 'Failed to evaluate resume';
         state.isUploading = false;
         state.uploadProgress = 0;
+        
+        // Handle rejectWithValue format that includes evaluation and error type
+        if (action.payload && typeof action.payload === 'object') {
+          const payload = action.payload as any;
+          state.resumeEvaluationError = payload.error;
+          state.resumeEvaluationErrorType = payload.errorType;
+          
+          // If there's an evaluation even with an error (e.g., database error), still store it
+          if (payload.hasEvaluation && payload.evaluation) {
+            state.currentResumeEvaluation = payload.evaluation;
+          }
+        } else {
+          // Fallback for normal error format
+          state.resumeEvaluationError = action.error.message || 'Failed to evaluate resume';
+          state.resumeEvaluationErrorType = 'general_error';
+        }
       })
       
       // Save Resume Evaluation

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { resumeService } from '@/lib/services/resumeService';
 import { jobsService } from '@/lib/services/jobsService';
+import { documentParsingService } from '@/lib/services/documentParsingService';
 import { v4 as uuidv4 } from 'uuid';
 import { ai } from '@/lib/constants';
 
@@ -20,21 +21,12 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Validate file type
-    const allowedTypes = ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (!allowedTypes.includes(resumeFile.type)) {
+    // Validate file using document parsing service
+    const validation = documentParsingService.validateFile(resumeFile);
+    if (!validation.isValid) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Invalid file type. Please upload PDF, DOC, DOCX, or TXT files only.' 
-      }, { status: 400 });
-    }
-
-    // Validate file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (resumeFile.size > maxSize) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'File size too large. Please upload files smaller than 5MB.' 
+        error: validation.error 
       }, { status: 400 });
     }
 
@@ -50,20 +42,59 @@ export async function POST(request: Request) {
     // Generate candidate ID for file organization
     const candidateId = uuidv4();
 
-    // Parse resume content
-    const resumeContent = await resumeService.parseResumeFile(resumeFile);
+    console.log('Starting resume evaluation process...');
+
+    // Parse resume content using enhanced document parsing
+    let resumeContent: string;
+    let parsedDoc: { text: string; metadata: { wordCount: number; fileType: string; fileName: string; fileSize: number; pages?: number } };
+    try {
+      parsedDoc = await documentParsingService.parseDocument(resumeFile);
+      resumeContent = parsedDoc.text;
+      console.log(`Successfully parsed ${parsedDoc.metadata.fileType.toUpperCase()} resume:`, {
+        wordCount: parsedDoc.metadata.wordCount,
+        textLength: resumeContent.length
+      });
+    } catch (parseError) {
+      console.error('Failed to parse resume:', parseError);
+      return NextResponse.json({ 
+        success: false, 
+        error: `Failed to parse resume: ${parseError instanceof Error ? parseError.message : 'Unknown error'}` 
+      }, { status: 400 });
+    }
     
     // Upload resume to Supabase storage
     let resumeStorageInfo = null;
+    let resumeRecordId = null;
     try {
       resumeStorageInfo = await resumeService.uploadResumeToStorage(
         resumeFile,
         candidateId,
         job.id
       );
-      console.log('Resume uploaded to storage:', resumeStorageInfo.path);
+      
+      // Save resume record to database
+      resumeRecordId = await resumeService.saveResumeRecord(
+        job.id,
+        {
+          email: candidateEmail || '',
+          firstName: candidateFirstName || '',
+          lastName: candidateLastName || ''
+        },
+        resumeFile,
+        resumeStorageInfo,
+        {
+          wordCount: parsedDoc.metadata.wordCount,
+          fileType: parsedDoc.metadata.fileType
+        },
+        candidateId
+      );
+      
+      console.log('Resume uploaded and saved:', {
+        path: resumeStorageInfo.path,
+        recordId: resumeRecordId
+      });
     } catch (storageError) {
-      console.warn('Failed to upload resume to storage:', storageError);
+      console.warn('Failed to upload/save resume:', storageError);
       // Continue with evaluation even if storage fails
     }
 
@@ -112,12 +143,8 @@ export async function POST(request: Request) {
     let savedEvaluation = null;
     if (candidateEmail && candidateFirstName && candidateLastName) {
       try {
-        // Create a temporary profile ID for the evaluation
-        // In a real implementation, you might want to create a candidate record first
-        const tempProfileId = candidateId;
-        
         savedEvaluation = await resumeService.saveResumeEvaluation(
-          tempProfileId,
+          null, // Use null for anonymous candidates - they don't have profiles
           job.id,
           resumeContent,
           resumeFile.name,
@@ -125,8 +152,22 @@ export async function POST(request: Request) {
         );
         console.log('Resume evaluation saved to database');
       } catch (saveError) {
-        console.warn('Failed to save evaluation to database:', saveError);
-        // Continue without saving - the evaluation can still be used
+        console.error('Failed to save evaluation to database:', saveError);
+        // Return error info so frontend can handle it properly
+        return NextResponse.json({
+          success: false,
+          error: 'System error occurred while processing your resume. Please try again.',
+          errorType: 'database_error',
+          evaluation, // Still return the evaluation that was computed
+          resumeStorage: resumeStorageInfo,
+          resumeRecordId,
+          candidateId,
+          job: {
+            id: job.id,
+            title: job.title,
+            interviewToken: job.interviewToken
+          }
+        }, { status: 500 });
       }
     }
 
@@ -135,6 +176,7 @@ export async function POST(request: Request) {
       evaluation,
       savedEvaluation,
       resumeStorage: resumeStorageInfo,
+      resumeRecordId,
       candidateId,
       job: {
         id: job.id,

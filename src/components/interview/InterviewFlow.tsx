@@ -1,8 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { JobData } from '@/lib/services/jobsService';
-import { ResumeEvaluation } from '@/types/interview';
+import { ResumeEvaluation, JobQuestion } from '@/types/interview';
+import Button from '@/components/ui/Button';
+import {
+  ChevronRightIcon,
+  ChevronLeftIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  UserIcon,
+  DocumentTextIcon
+} from '@heroicons/react/24/outline';
 
 interface InterviewFlowProps {
   jobToken: string;
@@ -17,31 +26,422 @@ interface InterviewFlowProps {
   onComplete: () => void;
 }
 
-export default function InterviewFlow({ resumeEvaluation, onComplete }: InterviewFlowProps) {
-  // TODO: Update this component to work with the new architecture
-  // For now, show a placeholder that completes immediately
-  
+interface Response {
+  questionId: string;
+  answer: string;
+  timeSpent: number; // in seconds
+}
+
+export default function InterviewFlow({ 
+  jobToken, 
+  job, 
+  candidateInfo, 
+  resumeEvaluation, 
+  resumeContent, 
+  onComplete 
+}: InterviewFlowProps) {
+  const [questions, setQuestions] = useState<JobQuestion[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [responses, setResponses] = useState<Response[]>([]);
+  const [currentAnswer, setCurrentAnswer] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [questionStartTime, setQuestionStartTime] = useState<Date>(new Date());
+  const [error, setError] = useState<string | null>(null);
+  const [candidateId, setCandidateId] = useState<string | null>(null);
+
+  // Fetch questions from the API
   useEffect(() => {
-    // Auto-complete for now since we need to update the entire flow
-    const timer = setTimeout(() => {
+    const fetchQuestions = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Fetch questions for this job
+        const response = await fetch(`/api/interview/questions?jobToken=${jobToken}`);
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to fetch questions');
+        }
+
+        if (!data.questions || data.questions.length === 0) {
+          throw new Error('No questions available for this interview');
+        }
+
+        setQuestions(data.questions);
+        setStartTime(new Date());
+        setQuestionStartTime(new Date());
+
+        // Initialize candidate session
+        const sessionResponse = await fetch('/api/interview/start', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            jobToken,
+            candidateData: candidateInfo
+          }),
+        });
+
+        const sessionData = await sessionResponse.json();
+        if (sessionData.success && sessionData.session?.candidate?.id) {
+          setCandidateId(sessionData.session.candidate.id);
+        }
+
+        console.log(`Loaded ${data.questions.length} questions for interview`);
+      } catch (err) {
+        console.error('Error fetching questions:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load interview questions');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchQuestions();
+  }, [jobToken, candidateInfo]);
+
+  const currentQuestion = questions[currentQuestionIndex];
+  const isLastQuestion = currentQuestionIndex === questions.length - 1;
+  const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
+
+  const handleAnswerSubmit = async () => {
+    if (!currentAnswer.trim()) {
+      setError('Please provide an answer before continuing.');
+      return;
+    }
+
+    if (currentAnswer.trim().length < 10) {
+      setError('Please provide a more detailed answer (at least 10 characters).');
+      return;
+    }
+
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      // Calculate time spent on this question
+      const timeSpent = Math.round((new Date().getTime() - questionStartTime.getTime()) / 1000);
+
+      // Save response to database
+      if (candidateId) {
+        const responseData = {
+          candidateId,
+          questionId: currentQuestion.id,
+          question: currentQuestion.questionText,
+          answer: currentAnswer.trim(),
+          responseTime: timeSpent
+        };
+
+        const saveResponse = await fetch('/api/interview/response', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(responseData),
+        });
+
+        const saveData = await saveResponse.json();
+        if (!saveData.success) {
+          console.warn('Failed to save response to database:', saveData.error);
+          // Continue anyway - we can still store locally
+        }
+      }
+
+      // Save response locally
+      const response: Response = {
+        questionId: currentQuestion.id,
+        answer: currentAnswer.trim(),
+        timeSpent
+      };
+
+      setResponses(prev => [...prev, response]);
+
+      if (isLastQuestion) {
+        await handleInterviewComplete();
+      } else {
+        // Move to next question
+        setCurrentQuestionIndex(prev => prev + 1);
+        setCurrentAnswer('');
+        setQuestionStartTime(new Date());
+      }
+    } catch (err) {
+      console.error('Error submitting answer:', err);
+      setError('Failed to save your answer. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+      
+      // Load previous answer
+      const previousResponse = responses.find(r => r.questionId === questions[currentQuestionIndex - 1].id);
+      setCurrentAnswer(previousResponse?.answer || '');
+      setQuestionStartTime(new Date());
+    }
+  };
+
+  const handleInterviewComplete = async () => {
+    try {
+      // Complete the interview session
+      if (candidateId) {
+        const completeResponse = await fetch('/api/interview/complete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            candidateId,
+            jobToken,
+            candidateInfo,
+            resumeEvaluation,
+            resumeContent,
+            totalTimeSpent: Math.round((new Date().getTime() - (startTime?.getTime() || 0)) / 1000)
+          }),
+        });
+
+        const completeData = await completeResponse.json();
+        if (!completeData.success) {
+          console.warn('Failed to complete interview:', completeData.error);
+        }
+      }
+
+      // Navigate to completion
       onComplete();
-    }, 2000);
-    
-    return () => clearTimeout(timer);
-  }, [onComplete]);
+    } catch (err) {
+      console.error('Error completing interview:', err);
+      // Still proceed to completion even if there's an error
+      onComplete();
+    }
+  };
+
+  // Format question duration for display
+  const formatDuration = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    return `~${minutes} min`;
+  };
+
+  // Get category color
+  const getCategoryColor = (type: string): string => {
+    switch (type) {
+      case 'general': return 'bg-blue-100 text-blue-800';
+      case 'technical': return 'bg-green-100 text-green-800';
+      case 'behavioral': return 'bg-purple-100 text-purple-800';
+      case 'experience': return 'bg-orange-100 text-orange-800';
+      case 'custom': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <h2 className="text-xl font-bold text-text mb-2">Loading Interview Questions</h2>
+          <p className="text-muted-text">
+            Fetching your personalized interview questions...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-red-600 text-2xl">⚠️</span>
+          </div>
+          <h2 className="text-xl font-bold text-text mb-2">Interview Error</h2>
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentQuestion) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+          <p className="text-red-600">No questions available for this interview</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-        <h2 className="text-xl font-bold text-text mb-2">Preparing Interview Questions</h2>
-        <p className="text-muted-text mb-4">
-          Based on your resume evaluation (Score: {resumeEvaluation.score}/100), we&apos;re generating personalized questions...
-        </p>
-        <p className="text-sm text-muted-text">
-          This is a placeholder - the interview flow will be updated to use the new question system.
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                <UserIcon className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-text">{job.title} Interview</h1>
+                <p className="text-sm text-muted-text">
+                  Hi {candidateInfo.firstName}, let&apos;s get to know you better
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4 text-sm text-muted-text">
+              <div className="flex items-center">
+                <ClockIcon className="w-4 h-4 mr-1" />
+                <span>{formatDuration(currentQuestion.expectedDuration)}</span>
+              </div>
+              <div className="flex items-center">
+                <DocumentTextIcon className="w-4 h-4 mr-1" />
+                <span>{currentQuestionIndex + 1}/{questions.length}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="mt-4">
+            <div className="flex justify-between text-xs text-muted-text mb-1">
+              <span>Progress</span>
+              <span>{Math.round(progress)}% Complete</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          {/* Question */}
+          <div className="mb-8">
+            <div className="flex items-start space-x-3 mb-4">
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <span className="text-primary font-semibold text-sm">{currentQuestionIndex + 1}</span>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className={`px-3 py-1 rounded-lg text-xs font-medium ${getCategoryColor(currentQuestion.questionType)}`}>
+                    {currentQuestion.category}
+                  </span>
+                  <span className="text-xs text-muted-text">
+                    Expected: {formatDuration(currentQuestion.expectedDuration)}
+                  </span>
+                  {currentQuestion.isRequired && (
+                    <span className="text-xs text-red-600 font-medium">Required</span>
+                  )}
+                </div>
+                <h2 className="text-xl font-semibold text-text leading-relaxed">
+                  {currentQuestion.questionText}
+                </h2>
+              </div>
+            </div>
+          </div>
+
+          {/* Answer Input */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-text mb-3">
+              Your Answer
+            </label>
+            <textarea
+              value={currentAnswer}
+              onChange={(e) => setCurrentAnswer(e.target.value)}
+              placeholder="Take your time to provide a thoughtful, detailed response..."
+              className="w-full h-40 px-4 py-3 border border-gray-300 rounded-lg text-text placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+              disabled={isSubmitting}
+            />
+            <div className="flex justify-between items-center mt-2">
+              <p className="text-xs text-muted-text">
+                Tip: Be specific and provide examples when possible
+              </p>
+              <span className={`text-xs ${
+                currentAnswer.length < 10 ? 'text-red-500' : 
+                currentAnswer.length < 50 ? 'text-yellow-600' : 'text-green-600'
+              }`}>
+                {currentAnswer.length} characters
+              </span>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div className="flex items-center justify-between">
+            <div>
+              {currentQuestionIndex > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handlePreviousQuestion}
+                  disabled={isSubmitting}
+                  className="flex items-center"
+                >
+                  <ChevronLeftIcon className="w-4 h-4 mr-1" />
+                  Previous
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-muted-text">
+                Question {currentQuestionIndex + 1} of {questions.length}
+              </div>
+              <Button
+                onClick={handleAnswerSubmit}
+                disabled={isSubmitting || !currentAnswer.trim()}
+                isLoading={isSubmitting}
+                className="flex items-center px-6"
+              >
+                {isLastQuestion ? (
+                  <>
+                    <CheckCircleIcon className="w-4 h-4 mr-2" />
+                    Complete Interview
+                  </>
+                ) : (
+                  <>
+                    Next Question
+                    <ChevronRightIcon className="w-4 h-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Interview Info */}
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <div className="w-5 h-5 text-blue-600 mt-0.5">💡</div>
+            <div className="text-blue-800 text-sm">
+              <p className="font-medium mb-1">Interview Tips:</p>
+              <ul className="text-xs space-y-1">
+                <li>• Be honest and authentic in your responses</li>
+                <li>• Use specific examples from your experience</li>
+                <li>• You can go back to edit previous answers</li>
+                <li>• Take your time - there&apos;s no rush</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
-} 
+}

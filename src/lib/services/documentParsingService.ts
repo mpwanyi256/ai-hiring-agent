@@ -12,44 +12,50 @@ export interface ParsedDocument {
 }
 
 class DocumentParsingService {
-  
+  // Main parsing method that routes to specific parsers based on file type
   async parseDocument(file: File): Promise<ParsedDocument> {
     const fileType = this.getFileType(file);
     const buffer = await file.arrayBuffer();
-    
-    let text: string;
-    let pages: number | undefined;
-    
+
     try {
+      let text: string;
+      let pages: number | undefined;
+
+      console.log(`Parsing ${fileType.toUpperCase()} file: ${file.name} (${file.size} bytes)`);
+
       switch (fileType) {
         case 'pdf':
-          const pdfResult = await this.parsePDF(buffer);
+          const pdfResult = await this.parsePDF(buffer, file.name);
           text = pdfResult.text;
           pages = pdfResult.pages;
           break;
-          
         case 'docx':
-        case 'doc':
           text = await this.parseDocx(buffer);
           break;
-          
+        case 'doc':
+          text = await this.parseDocx(buffer); // mammoth handles both DOC and DOCX
+          break;
         case 'txt':
           text = await this.parseText(buffer);
           break;
-          
         default:
-          throw new Error(`Unsupported file type: ${file.type}`);
+          throw new Error(`Unsupported file type: ${fileType}`);
       }
 
-      // Clean and normalize the text
+      // Clean and validate the extracted text
       const cleanedText = this.cleanText(text);
-      
+      const wordCount = this.countWords(cleanedText);
+
+      if (!cleanedText || cleanedText.length < 10) {
+        throw new Error(`Failed to extract meaningful text from ${fileType.toUpperCase()} file`);
+      }
+
       return {
         text: cleanedText,
         metadata: {
           pages,
-          wordCount: this.countWords(cleanedText),
-          fileType,
+          wordCount,
+          fileType: fileType.toUpperCase(),
           fileName: file.name,
           fileSize: file.size,
         }
@@ -60,12 +66,53 @@ class DocumentParsingService {
     }
   }
 
-  private async parsePDF(buffer: ArrayBuffer): Promise<{ text: string; pages: number }> {
+  private async parsePDF(buffer: ArrayBuffer, fileName: string): Promise<{ text: string; pages: number }> {
     try {
-      // Dynamic import to avoid initialization issues
-      const pdfParse = (await import('pdf-parse')).default;
+      console.log(`Starting PDF parsing for: ${fileName}`);
       
-      const data = await pdfParse(Buffer.from(buffer));
+      // Store original console methods
+      const originalError = console.error;
+      const originalWarn = console.warn;
+      const originalLog = console.log;
+      const originalInfo = console.info;
+      
+      // Temporarily suppress all console output
+      console.error = () => {};
+      console.warn = () => {};
+      console.log = () => {};
+      console.info = () => {};
+      
+      let pdfParse;
+      let data;
+      
+      try {
+        // Dynamic import to avoid initialization issues
+        pdfParse = (await import('pdf-parse')).default;
+        
+        // Restore console for our logging
+        console.error = originalError;
+        console.warn = originalWarn;
+        console.log = originalLog;
+        console.info = originalInfo;
+        
+        console.log('PDF parser loaded, processing file...');
+        
+        // Suppress console again for parsing
+        console.error = () => {};
+        console.warn = () => {};
+        
+        data = await pdfParse(Buffer.from(buffer));
+        
+      } finally {
+        // Always restore console output
+        console.error = originalError;
+        console.warn = originalWarn;
+        console.log = originalLog;
+        console.info = originalInfo;
+      }
+      
+      console.log(`PDF parsed successfully: ${data.numpages} pages, ${data.text.length} characters`);
+      
       return {
         text: data.text,
         pages: data.numpages
@@ -74,15 +121,23 @@ class DocumentParsingService {
       console.error('PDF parsing error:', error);
       // Fallback to basic text extraction if pdf-parse fails
       try {
+        console.log('Attempting fallback PDF text extraction...');
         const decoder = new TextDecoder('utf-8');
         const text = decoder.decode(buffer);
-        return {
-          text: this.extractTextFromPDFString(text),
-          pages: 1
-        };
+        const extractedText = this.extractTextFromPDFString(text);
+        
+        if (extractedText && extractedText.length > 10) {
+          console.log('Fallback PDF extraction succeeded');
+          return {
+            text: extractedText,
+            pages: 1
+          };
+        }
       } catch (fallbackError) {
-        throw new Error('Failed to parse PDF file. The file may be corrupted, password-protected, or in an unsupported format.');
+        console.error('Fallback PDF extraction failed:', fallbackError);
       }
+      
+      throw new Error('Failed to parse PDF file. The file may be corrupted, password-protected, or in an unsupported format.');
     }
   }
 
@@ -227,6 +282,7 @@ class DocumentParsingService {
       throw new Error(validation.error);
     }
 
+    console.log(`Starting resume parsing for: ${file.name}`);
     const parsedDoc = await this.parseDocument(file);
     
     // Ensure we have meaningful content
@@ -238,7 +294,7 @@ class DocumentParsingService {
       throw new Error('The resume appears to have very little content. Please ensure the file is readable.');
     }
 
-    console.log(`Successfully parsed ${parsedDoc.metadata.fileType.toUpperCase()} resume:`, {
+    console.log(`Successfully parsed ${parsedDoc.metadata.fileType} resume:`, {
       fileName: parsedDoc.metadata.fileName,
       wordCount: parsedDoc.metadata.wordCount,
       pages: parsedDoc.metadata.pages,
