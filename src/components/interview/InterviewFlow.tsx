@@ -16,6 +16,7 @@ import {
 interface InterviewFlowProps {
   jobToken: string;
   job: JobData;
+  candidateId: string;
   candidateInfo: {
     firstName: string;
     lastName: string;
@@ -35,6 +36,7 @@ interface Response {
 export default function InterviewFlow({ 
   jobToken, 
   job, 
+  candidateId,
   candidateInfo, 
   resumeEvaluation, 
   resumeContent, 
@@ -49,7 +51,6 @@ export default function InterviewFlow({
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [questionStartTime, setQuestionStartTime] = useState<Date>(new Date());
   const [error, setError] = useState<string | null>(null);
-  const [candidateId, setCandidateId] = useState<string | null>(null);
 
   // Fetch questions from the API
   useEffect(() => {
@@ -74,23 +75,6 @@ export default function InterviewFlow({
         setStartTime(new Date());
         setQuestionStartTime(new Date());
 
-        // Initialize candidate session
-        const sessionResponse = await fetch('/api/interview/start', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            jobToken,
-            candidateData: candidateInfo
-          }),
-        });
-
-        const sessionData = await sessionResponse.json();
-        if (sessionData.success && sessionData.session?.candidate?.id) {
-          setCandidateId(sessionData.session.candidate.id);
-        }
-
         console.log(`Loaded ${data.questions.length} questions for interview`);
       } catch (err) {
         console.error('Error fetching questions:', err);
@@ -101,7 +85,7 @@ export default function InterviewFlow({
     };
 
     fetchQuestions();
-  }, [jobToken, candidateInfo]);
+  }, [jobToken]);
 
   const currentQuestion = questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
@@ -126,28 +110,26 @@ export default function InterviewFlow({
       const timeSpent = Math.round((new Date().getTime() - questionStartTime.getTime()) / 1000);
 
       // Save response to database
-      if (candidateId) {
-        const responseData = {
-          candidateId,
-          questionId: currentQuestion.id,
-          question: currentQuestion.questionText,
-          answer: currentAnswer.trim(),
-          responseTime: timeSpent
-        };
+      const responseData = {
+        candidateId,
+        questionId: currentQuestion.id,
+        question: currentQuestion.questionText,
+        answer: currentAnswer.trim(),
+        responseTime: timeSpent
+      };
 
-        const saveResponse = await fetch('/api/interview/response', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(responseData),
-        });
+      const saveResponse = await fetch('/api/interview/response', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(responseData),
+      });
 
-        const saveData = await saveResponse.json();
-        if (!saveData.success) {
-          console.warn('Failed to save response to database:', saveData.error);
-          // Continue anyway - we can still store locally
-        }
+      const saveData = await saveResponse.json();
+      if (!saveData.success) {
+        console.warn('Failed to save response to database:', saveData.error);
+        // Continue anyway - we can still store locally
       }
 
       // Save response locally
@@ -189,26 +171,24 @@ export default function InterviewFlow({
   const handleInterviewComplete = async () => {
     try {
       // Complete the interview session
-      if (candidateId) {
-        const completeResponse = await fetch('/api/interview/complete', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            candidateId,
-            jobToken,
-            candidateInfo,
-            resumeEvaluation,
-            resumeContent,
-            totalTimeSpent: Math.round((new Date().getTime() - (startTime?.getTime() || 0)) / 1000)
-          }),
-        });
+      const completeResponse = await fetch('/api/interview/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          candidateId,
+          jobToken,
+          candidateInfo,
+          resumeEvaluation,
+          resumeContent,
+          totalTimeSpent: Math.round((new Date().getTime() - (startTime?.getTime() || 0)) / 1000)
+        }),
+      });
 
-        const completeData = await completeResponse.json();
-        if (!completeData.success) {
-          console.warn('Failed to complete interview:', completeData.error);
-        }
+      const completeData = await completeResponse.json();
+      if (!completeData.success) {
+        console.warn('Failed to complete interview:', completeData.error);
       }
 
       // Navigate to completion

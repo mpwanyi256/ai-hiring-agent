@@ -167,4 +167,136 @@ export async function GET(request: NextRequest) {
       error: 'Failed to fetch candidates' 
     }, { status: 500 });
   }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const body = await request.json();
+    const { jobToken, email, firstName, lastName } = body;
+
+    if (!jobToken || !firstName) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Job token and first name are required' 
+      }, { status: 400 });
+    }
+
+    // First, get the job info from the token
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('id, title')
+      .eq('interview_token', jobToken)
+      .single();
+
+    if (jobError || !job) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Invalid interview token' 
+      }, { status: 400 });
+    }
+
+    // Check if candidate already exists for this job and email combination
+    if (email) {
+      const { data: existingCandidate } = await supabase
+        .from('candidates')
+        .select('id, first_name, last_name, email, current_step, total_steps, is_completed')
+        .eq('job_id', job.id)
+        .eq('email', email)
+        .single();
+
+      if (existingCandidate) {
+        // Update existing candidate info if needed
+        const updates: any = {};
+        
+        if (existingCandidate.first_name !== firstName) {
+          updates.first_name = firstName;
+        }
+        
+        if (existingCandidate.last_name !== lastName) {
+          updates.last_name = lastName;
+        }
+
+        // Only update if there are changes
+        if (Object.keys(updates).length > 0) {
+          updates.updated_at = new Date().toISOString();
+          
+          const { error: updateError } = await supabase
+            .from('candidates')
+            .update(updates)
+            .eq('id', existingCandidate.id);
+
+          if (updateError) {
+            console.error('Error updating candidate:', updateError);
+          }
+        }
+
+        // Return existing candidate
+        return NextResponse.json({
+          success: true,
+          candidate: {
+            id: existingCandidate.id,
+            jobId: job.id,
+            jobTitle: job.title,
+            email: existingCandidate.email,
+            firstName: updates.first_name || existingCandidate.first_name,
+            lastName: updates.last_name || existingCandidate.last_name,
+            currentStep: existingCandidate.current_step,
+            totalSteps: existingCandidate.total_steps,
+            isCompleted: existingCandidate.is_completed,
+          },
+          isExisting: true,
+        });
+      }
+    }
+
+    // Create new candidate
+    const candidateData = {
+      job_id: job.id,
+      interview_token: jobToken,
+      email: email || null,
+      first_name: firstName,
+      last_name: lastName || null,
+      current_step: 1,
+      total_steps: 3, // info -> resume -> interview
+      is_completed: false,
+    };
+
+    const { data: newCandidate, error: createError } = await supabase
+      .from('candidates')
+      .insert(candidateData)
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Error creating candidate:', createError);
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Failed to create candidate record' 
+      }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      candidate: {
+        id: newCandidate.id,
+        jobId: newCandidate.job_id,
+        jobTitle: job.title,
+        email: newCandidate.email,
+        firstName: newCandidate.first_name,
+        lastName: newCandidate.last_name,
+        currentStep: newCandidate.current_step,
+        totalSteps: newCandidate.total_steps,
+        isCompleted: newCandidate.is_completed,
+      },
+      isExisting: false,
+    });
+
+  } catch (error) {
+    console.error('Error processing candidate:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Failed to process candidate information' 
+    }, { status: 500 });
+  }
 } 

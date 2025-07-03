@@ -28,6 +28,7 @@ import {
 interface ResumeUploadProps {
   jobToken: string;
   job: JobData;
+  candidateId: string;
   candidateInfo: {
     firstName: string;
     lastName: string;
@@ -39,6 +40,7 @@ interface ResumeUploadProps {
 export default function ResumeUpload({ 
   jobToken, 
   job, 
+  candidateId,
   candidateInfo,
   onEvaluationComplete 
 }: ResumeUploadProps) {
