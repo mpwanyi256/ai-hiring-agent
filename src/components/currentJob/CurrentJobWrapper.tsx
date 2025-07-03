@@ -172,10 +172,7 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
           )}
           
           {activeTab === 'questions' && (
-            <QuestionManager 
-              jobId={job.id} 
-              jobTitle={job.title}
-            />
+            <QuestionManager job={job} />
           )}
           
           {activeTab === 'candidates' && (

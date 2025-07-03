@@ -14,8 +14,10 @@ import {
   saveJobTemplate,
   deleteJobTemplate,
   fetchJobQuestions,
+  generateJobQuestions,
 } from './jobsThunks';
 import { parseJobDetails } from '@/lib/utils';
+import { apiSuccess } from '@/lib/notification';
 
 
 const initialState: ExtendedJobsState = {
@@ -63,9 +65,18 @@ const jobsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(generateJobQuestions.fulfilled, (state, action) => {
+        console.log('AI generated questions', action.payload);
+        apiSuccess('AI Questions generated successfully');
+        if (state.currentJob) {
+          state.currentJob.questions = action.payload.questions;
+          state.currentJob.questionStats = action.payload.stats;
+        }
+      })
       .addCase(fetchJobQuestions.fulfilled, (state, action) => {
         if (state.currentJob) {
           state.currentJob.questions = action.payload.questions;
+          state.currentJob.questionStats = action.payload.stats;
         }
       })
       // Fetch Jobs by Profile

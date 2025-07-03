@@ -171,6 +171,7 @@ export const generateJobQuestions = createAsyncThunk(
         includeCustom,
         replaceExisting
       });
+      console.log('Generation response', response);
       return response;
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to generate questions');

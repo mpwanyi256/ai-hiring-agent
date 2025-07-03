@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { JobQuestion } from '@/types/interview';
 import Button from '@/components/ui/Button';
 import {
@@ -12,22 +12,14 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
   ClockIcon,
-  EyeIcon,
-  PlusIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
-  CheckBadgeIcon,
-  ExclamationCircleIcon
+  EyeIcon
 } from '@heroicons/react/24/outline';
 import { useToast } from '@/components/providers/ToastProvider';
-import { useAppSelector } from '@/store';
-import { selectJobQuestions } from '@/store/jobs/jobsSelectors';
-
-interface QuestionManagerProps {
-  jobId: string;
-  jobTitle: string;
-  onQuestionsChange?: (questions: JobQuestion[]) => void;
-}
+import { useAppDispatch, useAppSelector } from '@/store';
+import { selectCurrentJob, selectJobQuestions, selectJobQuestionStats } from '@/store/jobs/jobsSelectors';
+import { CurrentJob } from '@/types';
+import { QuestionsHeader } from './QuestionsHeader';
+import { fetchJobQuestions, generateJobQuestions } from '@/store/jobs/jobsThunks';
 
 interface QuestionStats {
   total: number;
@@ -38,25 +30,24 @@ interface QuestionStats {
   estimatedDuration: number;
 }
 
-export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: QuestionManagerProps) {
+interface QuestionManagerProps {
+  job: CurrentJob;
+}
+
+export default function QuestionManager({ job }: QuestionManagerProps) {
   const { success, error: showError } = useToast();
-  const [stats, setStats] = useState<QuestionStats | null>(null);
+  // const [stats, setStats] = useState<QuestionStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const questions = useAppSelector(selectJobQuestions);
-
+  const stats = useAppSelector(selectJobQuestionStats);
+  const dispatch = useAppDispatch();
+  
   const refreshQuestions = async () => {
     try {
-      const response = await fetch(`/api/jobs/${jobId}/questions`);
-      const data = await response.json();
-
-      if (data.success) {
-        // setQuestions(data.questions || []);
-        setStats(data.stats || null);
-        onQuestionsChange?.(data.questions || []);
-      }
+      dispatch(fetchJobQuestions(job.id));
     } catch (error) {
       console.error('Error fetching questions:', error);
     }
@@ -64,25 +55,32 @@ export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: 
 
   const generateQuestions = async () => {
     try {
+      console.log('Trigger generate questions')
       setIsGenerating(true);
-      const response = await fetch(`/api/jobs/${jobId}/questions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          questionCount: 8,
-          includeCustom: true,
-          replaceExisting: true
-        })
-      });
+      await dispatch(generateJobQuestions({
+        jobId: job.id,
+        questionCount: 8,
+        includeCustom: true,
+        replaceExisting: true
+      })).unwrap()
+      // const response = await fetch(`/api/jobs/${job.id}/questions`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     questionCount: 8,
+      //     includeCustom: true,
+      //     replaceExisting: true
+      //   })
+      // });
 
-      const data = await response.json();
-      if (data.success) {
-        // setQuestions(data.questions);
-        await refreshQuestions(); // Refresh stats
-        success(`Generated ${data.questions.length} AI questions successfully!`);
-      } else {
-        throw new Error(data.error || 'Failed to generate questions');
-      }
+      // const data = await response.json();
+      // if (data.success) {
+      //   // setQuestions(data.questions);
+      //   await refreshQuestions(); // Refresh stats
+      //   success(`Generated ${data.questions.length} AI questions successfully!`);
+      // } else {
+      //   throw new Error(data.error || 'Failed to generate questions');
+      // }
     } catch (error) {
       console.error('Error generating questions:', error);
       showError('Failed to generate questions. Please try again.');
@@ -100,7 +98,7 @@ export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: 
     if (!editingId || !editingText.trim()) return;
 
     try {
-      const response = await fetch(`/api/jobs/${jobId}/questions/${editingId}`, {
+      const response = await fetch(`/api/jobs/${job.id}/questions/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questionText: editingText.trim() })
@@ -125,7 +123,7 @@ export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: 
     if (!confirm('Are you sure you want to delete this question?')) return;
 
     try {
-      const response = await fetch(`/api/jobs/${jobId}/questions/${questionId}`, {
+      const response = await fetch(`/api/jobs/${job.id}/questions/${questionId}`, {
         method: 'DELETE'
       });
 
@@ -151,7 +149,7 @@ export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: 
     const newOrder = reorderedQuestions.map(q => q.id);
     
     try {
-      const response = await fetch(`/api/jobs/${jobId}/questions/reorder`, {
+      const response = await fetch(`/api/jobs/${job.id}/questions/reorder`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questionIds: newOrder })
@@ -195,12 +193,16 @@ export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: 
   return (
     <div className="space-y-6">
       {/* Header & Stats */}
+        <QuestionsHeader />
       <div className="bg-white rounded-lg border border-gray-light p-6">
-        <div className="flex items-center justify-between mb-4">
+        {/* <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold text-text">Interview Questions</h2>
+            <h2 className="text-xl font-semibold text-text flex items-center">
+              <SparklesIcon className="w-5 h-5 mr-1" color="black" />
+              Interview Questions
+            </h2>
             <p className="text-muted-text text-sm">
-              AI-generated questions for <span className="font-medium">{jobTitle}</span>
+              AI-generated questions for <span className="font-medium">{job?.title}</span>
             </p>
           </div>
           
@@ -221,10 +223,10 @@ export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: 
               {isGenerating ? 'Generating...' : questions.length > 0 ? 'Regenerate' : 'Generate Questions'}
             </Button>
           </div>
-        </div>
+        </div> */}
 
         {/* Stats */}
-        {stats && (
+        {/* {stats && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
             <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-2xl font-bold text-text">{stats.total}</div>
@@ -247,7 +249,7 @@ export default function QuestionManager({ jobId, jobTitle, onQuestionsChange }: 
               <div className="text-xs text-muted-text">Est. Duration</div>
             </div>
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Questions List */}

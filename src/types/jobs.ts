@@ -56,8 +56,18 @@ export interface Skill {
     candidateCount?: number;
   }
 
+  export interface QuestionStats {
+    total: number;
+    required: number;
+    optional: number;
+    aiGenerated: number;
+    custom: number;
+    estimatedDuration: number;
+  }
+
   export interface CurrentJob extends Job {
     questions?: JobQuestion[];
+    questionStats?: QuestionStats;
   }
 
   export interface JobsState {
@@ -108,4 +118,9 @@ export interface Skill {
     skillsLoading: boolean;
     traitsLoading: boolean;
     templatesLoading: boolean;
+  }
+
+  export interface AIQuestionsGenerationResponse {
+    questions: Omit<JobQuestion, "jobId" | "id" | "createdAt" | "updatedAt">[];
+    generation: string;
   }

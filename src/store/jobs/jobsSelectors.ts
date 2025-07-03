@@ -10,6 +10,7 @@ export const selectJobsError = (state: RootState) => state.jobs.error;
 export const selectTotalJobs = (state: RootState) => state.jobs.totalJobs;
 export const selectJobQuestions = (state: RootState) => state.jobs.currentJob?.questions || [];
 export const selectJobQuestionsCount = (state: RootState) => state.jobs.currentJob?.questions?.length || 0;
+export const selectJobQuestionStats = (state: RootState) => state.jobs.currentJob?.questionStats || null;
 
 // Memoized selectors
 export const selectActiveJobs = createSelector(
