@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from 'clsx';
 import { JobData } from './services/jobsService';
 import { Job } from '@/types';
 import { JobQuestion } from '@/types/interview';
+import { JobStatus } from './supabase';
 
 // Utility function to merge classes with Tailwind
 export function cn(...inputs: ClassValue[]) {
@@ -115,3 +116,39 @@ export const parseJobDetails = (jobData: JobData): Job => {
     interviewLink: jobData.interviewLink
   };
 }
+
+export const copyInterviewLink = async (interviewLink: string) => {
+  try {
+    await navigator.clipboard.writeText(interviewLink);
+    return true;
+  } catch (error) {
+    console.error('Failed to copy link:', error);
+    return false;
+  }
+}
+
+export const getJobStatusLabel = (status: JobStatus) => {
+  switch (status) {
+    case 'draft':
+      return 'Draft';
+    case 'interviewing':
+      return 'Interviewing';
+    case 'closed':
+      return 'Closed';
+    default:
+      return 'Unknown';
+  }
+};
+
+export const getJobStatusColor = (status: JobStatus) => {
+  switch (status) {
+    case 'draft':
+      return 'bg-gray-100 text-gray-600 border-gray-200';
+    case 'interviewing':
+      return 'bg-blue-100 text-blue-600 border-blue-200';
+    case 'closed':
+      return 'bg-green-100 text-green-600 border-green-200';
+    default:
+      return 'bg-gray-100 text-gray-600 border-gray-200';
+  }
+};
