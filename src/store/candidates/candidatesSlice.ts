@@ -132,6 +132,49 @@ const candidatesSlice = createSlice({
         currentEvaluation: null,
       };
     },
+    updateCandidateRealtime(state, action) {
+      // Update or add candidate in state.candidates
+      const idx = state.candidates.findIndex(c => c.id === action.payload.id);
+      if (idx !== -1) {
+        state.candidates[idx] = { ...state.candidates[idx], ...action.payload };
+      } else {
+        state.candidates.push(action.payload);
+      }
+    },
+    updateResponseRealtime(state, action) {
+      // Find candidate and update responses
+      const candidate = state.candidates.find(c => c.id === action.payload.candidate_id);
+      if (candidate) {
+        candidate.responses = candidate.responses || [];
+        const idx = candidate.responses.findIndex(r => r.id === action.payload.id);
+        if (idx !== -1) {
+          candidate.responses[idx] = action.payload;
+        } else {
+          candidate.responses.push(action.payload);
+        }
+      }
+    },
+    updateEvaluationRealtime(state, action) {
+      // Find candidate and update evaluation
+      const candidate = state.candidates.find(c => c.id === action.payload.candidate_id);
+      if (candidate) {
+        candidate.evaluation = action.payload;
+      }
+    },
+    updateAIEvaluationRealtime(state, action) {
+      // Find candidate and update evaluation (ai_evaluations also update evaluation field)
+      const candidate = state.candidates.find(c => c.id === action.payload.candidate_id);
+      if (candidate) {
+        candidate.evaluation = action.payload;
+      }
+    },
+    updateResumeRealtime(state, action) {
+      // Find candidate and update resume
+      const candidate = state.candidates.find(c => c.id === action.payload.candidate_id);
+      if (candidate) {
+        candidate.resume = action.payload;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -349,7 +392,12 @@ export const {
   setCurrentCandidate, 
   clearCurrentCandidate, 
   addResponse,
-  clearCandidatesData 
+  clearCandidatesData,
+  updateCandidateRealtime,
+  updateResponseRealtime,
+  updateEvaluationRealtime,
+  updateAIEvaluationRealtime,
+  updateResumeRealtime
 } = candidatesSlice.actions;
 
 export default candidatesSlice.reducer; 

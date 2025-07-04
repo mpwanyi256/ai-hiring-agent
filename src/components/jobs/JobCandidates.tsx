@@ -16,6 +16,14 @@ import {
   ArrowDownTrayIcon,
   PaperClipIcon
 } from '@heroicons/react/24/outline';
+import {
+  updateCandidateRealtime,
+  updateResponseRealtime,
+  updateEvaluationRealtime,
+  updateAIEvaluationRealtime,
+  updateResumeRealtime
+} from '@/store/candidates/candidatesSlice';
+import { createClient } from '@/lib/supabase/client';
 
 interface JobCandidatesProps {
   job: CurrentJob;
@@ -39,6 +47,36 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
       dispatch(fetchJobCandidates({ jobId: job.id }));
     }
   }, [dispatch, job.id]);
+
+  // Real-time listeners for candidate data
+  useEffect(() => {
+    if (!job.id) return;
+    const supabase = createClient();
+    const tables = [
+      { table: 'candidates', action: updateCandidateRealtime },
+      { table: 'responses', action: updateResponseRealtime },
+      { table: 'evaluations', action: updateEvaluationRealtime },
+      { table: 'ai_evaluations', action: updateAIEvaluationRealtime },
+      { table: 'candidate_resumes', action: updateResumeRealtime }
+    ];
+    const channels = tables.map(({ table, action }) =>
+      supabase
+        .channel(`realtime:${table}:${job.id}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table, filter: `job_id=eq.${job.id}` },
+          (payload: any) => {
+            if (payload.new) {
+              dispatch(action(payload.new));
+            }
+          }
+        )
+        .subscribe()
+    );
+    return () => {
+      channels.forEach((ch) => supabase.removeChannel(ch));
+    };
+  }, [job.id, dispatch]);
 
   // Filter candidates based on search
   const filteredCandidates = candidates.filter(candidate => {
