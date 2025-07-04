@@ -6,12 +6,14 @@ import CandidatesOverview from './CandidatesOverview';
 import CandidatesList from './CandidatesList';
 import { CurrentJob } from '@/types/jobs';
 import { AppDispatch, RootState } from '@/store';
-import { fetchJobCandidates } from '@/store/candidates/candidatesThunks';
+import { fetchJobCandidates, fetchCandidateResume } from '@/store/candidates/candidatesThunks';
 import { 
   UserCircleIcon,
   DocumentTextIcon,
   ChartBarIcon,
-  CalendarIcon
+  CalendarIcon,
+  ArrowDownTrayIcon,
+  PaperClipIcon
 } from '@heroicons/react/24/outline';
 
 interface JobCandidatesProps {
@@ -24,8 +26,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     candidates, 
     jobCandidatesStats, 
     isLoading, 
-    error,
-    pagination 
+    error
   } = useSelector((state: RootState) => state.candidates);
   
   const [selectedCandidateId, setSelectedCandidateId] = useState<string>();
@@ -72,6 +73,28 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
       createdAt: candidateAny.createdAt || new Date().toISOString()
     };
   });
+
+  // Resume download handler
+  const handleResumeDownload = async (candidateId: string) => {
+    try {
+      const result = await dispatch(fetchCandidateResume(candidateId));
+      if (result.payload?.publicUrl) {
+        // Open the resume in a new tab
+        window.open(result.payload.publicUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Failed to download resume:', error);
+    }
+  };
+
+  // Format file size
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   if (isLoading) {
     return (
@@ -183,14 +206,85 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                   </div>
                 </div>
 
+                {/* Resume Section */}
+                {(selectedCandidate as any).resume && (
+                  <div className="border border-gray-200 rounded-lg p-4 mb-6">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                      <DocumentTextIcon className="w-4 h-4 mr-2" />
+                      Resume
+                    </h3>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
+                            <PaperClipIcon className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {(selectedCandidate as any).resume.filename}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {formatFileSize((selectedCandidate as any).resume.fileSize)} • 
+                              {(selectedCandidate as any).resume.fileType?.toUpperCase()} • 
+                              Uploaded {new Date((selectedCandidate as any).resume.uploadedAt).toLocaleDateString()}
+                            </p>
+                            {(selectedCandidate as any).resume.wordCount && (
+                              <p className="text-xs text-gray-500">
+                                {(selectedCandidate as any).resume.wordCount} words
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleResumeDownload(selectedCandidate.id)}
+                          className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+                        >
+                          <ArrowDownTrayIcon className="w-4 h-4" />
+                          <span>Download</span>
+                        </button>
+                      </div>
+                      
+                      {/* Resume evaluation summary */}
+                      {selectedCandidate.evaluation?.resumeScore && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-700">Resume Match Score</span>
+                            <span className="text-xs font-semibold text-primary">
+                              {selectedCandidate.evaluation.resumeScore}/100
+                            </span>
+                          </div>
+                          {selectedCandidate.evaluation.resumeSummary && (
+                            <p className="text-xs text-gray-600 mt-2">
+                              {selectedCandidate.evaluation.resumeSummary}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Evaluation Summary */}
                 {selectedCandidate.evaluation ? (
                   <div className="border border-gray-200 rounded-lg p-4 mb-6">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Combined Evaluation</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                      {selectedCandidate.evaluation.evaluationType === 'combined' ? 'Combined Evaluation' : 
+                       selectedCandidate.evaluation.evaluationType === 'resume' ? 'Resume Evaluation' : 'Interview Evaluation'}
+                    </h3>
                     <p className="text-sm text-gray-600 mb-3">
-                      Interview score {selectedCandidate.evaluation.score}/100, Interview completion with{' '}
-                      {selectedCandidate.responses?.length || (selectedCandidate as any).responseCount || 0} responses. 
-                      Overall assessment: {selectedCandidate.evaluation.score}/100.
+                      {selectedCandidate.evaluation.evaluationType === 'combined' && (
+                        <>Interview score {selectedCandidate.evaluation.score}/100, Interview completion with{' '}
+                        {selectedCandidate.responses?.length || (selectedCandidate as any).responseCount || 0} responses. 
+                        {selectedCandidate.evaluation.resumeScore && ` Resume match score ${selectedCandidate.evaluation.resumeScore}/100.`}
+                        {' '}Overall assessment: {selectedCandidate.evaluation.score}/100.</>
+                      )}
+                      {selectedCandidate.evaluation.evaluationType === 'resume' && (
+                        <>Resume evaluation with match score {selectedCandidate.evaluation.resumeScore || selectedCandidate.evaluation.score}/100.</>
+                      )}
+                      {selectedCandidate.evaluation.evaluationType === 'interview' && (
+                        <>Interview evaluation with score {selectedCandidate.evaluation.score}/100 based on{' '}
+                        {selectedCandidate.responses?.length || (selectedCandidate as any).responseCount || 0} responses.</>
+                      )}
                     </p>
                     
                     {/* Evaluation highlights */}
@@ -249,13 +343,18 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                   </div>
                 )}
 
-                {/* File Attachments - placeholder for future implementation */}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">File Attachments</h3>
-                  <div className="text-sm text-gray-500 italic">
-                    No file attachments available for this candidate.
+                {/* File Attachments Status */}
+                {!(selectedCandidate as any).resume && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                      <DocumentTextIcon className="w-4 h-4 mr-2" />
+                      Resume
+                    </h3>
+                    <div className="text-sm text-gray-500 italic bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      No resume uploaded for this candidate.
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           ) : (

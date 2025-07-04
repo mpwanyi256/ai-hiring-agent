@@ -1,5 +1,19 @@
 // Candidate Management Types
 
+// Resume information interface
+export interface CandidateResume {
+  id: string;
+  filename: string;
+  filePath: string;
+  publicUrl: string;
+  fileSize: number;
+  fileType: string;
+  wordCount: number | null;
+  parsingStatus: 'pending' | 'success' | 'failed';
+  parsingError: string | null;
+  uploadedAt: string;
+}
+
 export interface CandidateBasic {
   id: string;
   jobId: string;
@@ -18,6 +32,7 @@ export interface CandidateBasic {
   submittedAt: string | null;
   createdAt: string;
   evaluation: CandidateEvaluationSummary | null;
+  resume: CandidateResume | null;
 }
 
 export interface CandidateEvaluationSummary {
@@ -28,6 +43,9 @@ export interface CandidateEvaluationSummary {
   strengths: string[];
   redFlags: string[];
   createdAt: string;
+  resumeScore?: number;
+  resumeSummary?: string;
+  evaluationType?: 'resume' | 'interview' | 'combined';
 }
 
 export interface CandidateDetailed extends CandidateBasic {
@@ -64,6 +82,9 @@ export interface CandidateEvaluationDetailed {
   feedback: string | null;
   createdAt: string;
   updatedAt: string;
+  resumeScore?: number;
+  resumeSummary?: string;
+  evaluationType?: 'resume' | 'interview' | 'combined';
 }
 
 export interface CandidateStats {
@@ -104,6 +125,19 @@ export interface CandidateDetailResponse {
   error?: string;
 }
 
+// Resume download response
+export interface ResumeDownloadResponse {
+  success: boolean;
+  resume: {
+    id: string;
+    filename: string;
+    publicUrl: string;
+    fileSize: number;
+    fileType: string;
+  } | null;
+  error?: string;
+}
+
 // Search and Filter Types
 export interface CandidateFilters {
   jobId?: string;
@@ -122,6 +156,7 @@ export interface Candidate {
   submittedAt?: string;
   evaluation?: Evaluation;
   responses?: Response[];
+  resume?: CandidateResume;
 }
 
 export interface Response {
@@ -146,6 +181,9 @@ export interface Evaluation {
   traitsAssessment?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
+  resumeScore?: number;
+  resumeSummary?: string;
+  evaluationType?: 'resume' | 'interview' | 'combined';
 }
 
 export interface CreateCandidateData {
@@ -165,4 +203,6 @@ export interface SupabaseResponse {
   candidate_id: string;
   question: string;
   answer: string;
+  response_time: number;
+  created_at: string;
 } 

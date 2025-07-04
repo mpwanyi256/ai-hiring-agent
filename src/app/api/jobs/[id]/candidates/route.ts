@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-// Define the candidate type from database function
+// Define the candidate type from database function (updated with resume fields)
 interface CandidateFromDB {
   id: string;
   job_id: string;
@@ -32,6 +32,21 @@ interface CandidateFromDB {
   skills_assessment: any;
   traits_assessment: any;
   evaluation_created_at: string | null;
+  // Resume fields
+  resume_id: string | null;
+  resume_filename: string | null;
+  resume_file_path: string | null;
+  resume_public_url: string | null;
+  resume_file_size: number | null;
+  resume_file_type: string | null;
+  resume_word_count: number | null;
+  resume_parsing_status: string | null;
+  resume_parsing_error: string | null;
+  resume_uploaded_at: string | null;
+  // Resume evaluation fields
+  resume_score: number | null;
+  resume_summary: string | null;
+  evaluation_type: string | null;
 }
 
 export async function GET(
@@ -93,7 +108,7 @@ export async function GET(
       }, { status: 404 });
     }
 
-    // Get candidate details using the database function (fixed parameters)
+    // Get candidate details using the database function (now includes resume data)
     const { data: candidates, error: candidatesError } = await supabase
       .rpc('get_job_candidate_details', {
         p_job_id: jobId,
@@ -129,7 +144,7 @@ export async function GET(
       average_score: 0
     };
 
-    // Format the response data with safer type handling
+    // Format the response data with resume information
     const formattedCandidates = (candidates || []).map((candidate: any) => ({
       id: candidate.id,
       jobId: candidate.job_id,
@@ -159,6 +174,21 @@ export async function GET(
         skillsAssessment: candidate.skills_assessment,
         traitsAssessment: candidate.traits_assessment,
         createdAt: candidate.evaluation_created_at,
+        resumeScore: candidate.resume_score,
+        resumeSummary: candidate.resume_summary,
+        evaluationType: candidate.evaluation_type,
+      } : null,
+      resume: candidate.resume_id ? {
+        id: candidate.resume_id,
+        filename: candidate.resume_filename,
+        filePath: candidate.resume_file_path,
+        publicUrl: candidate.resume_public_url,
+        fileSize: candidate.resume_file_size,
+        fileType: candidate.resume_file_type,
+        wordCount: candidate.resume_word_count,
+        parsingStatus: candidate.resume_parsing_status,
+        parsingError: candidate.resume_parsing_error,
+        uploadedAt: candidate.resume_uploaded_at,
       } : null,
     }));
 

@@ -66,6 +66,19 @@ export const fetchCandidateByToken = createAsyncThunk(
   }
 );
 
+// New thunk for fetching candidate resume with access control
+export const fetchCandidateResume = createAsyncThunk(
+  'candidates/fetchCandidateResume',
+  async (candidateId: string) => {
+    try {
+      const response = await apiUtils.get(`/api/candidates/${candidateId}/resume`);
+      return response.resume;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to fetch candidate resume');
+    }
+  }
+);
+
 export const createCandidate = createAsyncThunk(
   'candidates/createCandidate',
   async (candidateData: CreateCandidateData) => {

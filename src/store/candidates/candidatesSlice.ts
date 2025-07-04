@@ -5,6 +5,7 @@ import {
   fetchJobCandidates,
   fetchCandidateById,
   fetchCandidateByToken,
+  fetchCandidateResume,
   createCandidate,
   submitInterview,
   saveEvaluation,
@@ -158,6 +159,17 @@ const candidatesSlice = createSlice({
       .addCase(fetchCandidateByToken.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch candidate';
+      })
+      // Fetch Candidate Resume
+      .addCase(fetchCandidateResume.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(fetchCandidateResume.fulfilled, (_state, _action) => {
+        // Resume fetching is typically just for download, so we don't need to store it in state
+        // The action payload contains the resume URL which is handled by the component
+      })
+      .addCase(fetchCandidateResume.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to fetch candidate resume';
       })
       // Create Candidate
       .addCase(createCandidate.pending, (state) => {
