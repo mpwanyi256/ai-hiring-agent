@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import MetricCard from '@/components/dashboard/MetricCard';
+import JobsTable from '@/components/jobs/JobsTable';
+import SearchAndFilters from '@/components/jobs/SearchAndFilters';
 import { useToast } from '@/components/providers/ToastProvider';
 import { RootState, useAppSelector } from '@/store';
 import { JobData } from '@/lib/services/jobsService';
@@ -103,6 +106,13 @@ export default function JobsPage() {
     fetchJobs(1, true, searchQuery, status);
   }, [fetchJobs, searchQuery]);
 
+  // Clear filters
+  const handleClearFilters = useCallback(() => {
+    setStatusFilter('');
+    setShowFilters(false);
+    fetchJobs(1, true, searchQuery, '');
+  }, [fetchJobs, searchQuery]);
+
   // Load more for infinite scroll
   const loadMore = useCallback(() => {
     if (pagination?.hasMore && !isLoadingMore) {
@@ -125,14 +135,6 @@ export default function JobsPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMore]);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   const copyInterviewLink = async (job: JobData) => {
     const link = job.interviewLink || `${window.location.origin}/interview/${job.interviewToken}`;
     
@@ -145,51 +147,26 @@ export default function JobsPage() {
     }
   };
 
-  const getStatusColor = (status: JobStatus) => {
-    switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-600 border-gray-200';
-      case 'interviewing':
-        return 'bg-blue-100 text-blue-600 border-blue-200';
-      case 'closed':
-        return 'bg-green-100 text-green-600 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-600 border-gray-200';
-    }
-  };
-
-  const getStatusLabel = (status: JobStatus) => {
-    switch (status) {
-      case 'draft':
-        return 'Draft';
-      case 'interviewing':
-        return 'Interviewing';
-      case 'closed':
-        return 'Closed';
-      default:
-        return 'Unknown';
-    }
-  };
-
-  if (!user) return null; // DashboardLayout handles loading/auth
+  if (!user) return null;
 
   const hasJobs = jobs.length > 0 || (!isLoading && pagination && pagination.total > 0);
+  const totalCandidates = jobs.reduce((total, job) => total + (job.candidateCount || 0), 0);
 
   return (
-    <DashboardLayout title="Jobs">
+    <DashboardLayout>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-text mb-2">Your Jobs</h1>
-              <p className="text-muted-text">
+              <h1 className="text-xl font-bold text-gray-900 mb-1">Job Positions</h1>
+              <p className="text-sm text-gray-600">
                 Manage your job postings and track candidate applications
               </p>
             </div>
-            <div className="mt-4 sm:mt-0">
+            <div className="mt-3 sm:mt-0">
               <Link href="/dashboard/jobs/new">
-                <Button className="flex items-center">
+                <Button size="sm" className="flex items-center text-sm">
                   <PlusIcon className="w-4 h-4 mr-2" />
                   Create New Job
                 </Button>
@@ -199,170 +176,73 @@ export default function JobsPage() {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <BriefcaseIcon className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-text">Total Jobs</p>
-                <p className="text-xl font-bold text-text">{pagination?.total || 0}</p>
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <MetricCard
+            title="Total Jobs"
+            value={pagination?.total || 0}
+            subtitle="All job postings"
+            icon={BriefcaseIcon}
+            iconColor="text-primary"
+            iconBgColor="bg-primary/10"
+          />
           
-          <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-accent-blue/10 rounded-lg flex items-center justify-center">
-                <UserGroupIcon className="w-5 h-5 text-accent-blue" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-text">Total Candidates</p>
-                <p className="text-xl font-bold text-text">
-                  {jobs.reduce((total, job) => total + (job.candidateCount || 0), 0)}
-                </p>
-              </div>
-            </div>
-          </div>
+          <MetricCard
+            title="Candidates"
+            value={totalCandidates}
+            subtitle="Total applications"
+            icon={UserGroupIcon}
+            iconColor="text-blue-600"
+            iconBgColor="bg-blue-50"
+          />
           
-          <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-accent-teal/10 rounded-lg flex items-center justify-center">
-                <CheckBadgeIcon className="w-5 h-5 text-accent-teal" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-text">Usage</p>
-                <p className="text-xl font-bold text-text">
-                  {user.usageCounts.activeJobs}/{user.subscription?.maxJobs === 999 ? '∞' : user.subscription?.maxJobs}
-                </p>
-              </div>
-            </div>
-          </div>
+          <MetricCard
+            title="Active Jobs"
+            value={user.usageCounts.activeJobs}
+            subtitle={`of ${user.subscription?.maxJobs === -1 ? '∞' : user.subscription?.maxJobs} allowed`}
+            icon={CheckBadgeIcon}
+            iconColor="text-emerald-600"
+            iconBgColor="bg-emerald-50"
+            progress={{
+              current: user.usageCounts.activeJobs,
+              max: user.subscription?.maxJobs || 1,
+              label: 'Usage'
+            }}
+          />
         </div>
 
         {/* Search and Filters - Only show when user has jobs */}
         {hasJobs && (
-          <div className="bg-white rounded-lg border border-gray-light p-4 mb-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* Search */}
-              <div className="flex-1">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="w-5 h-5 text-muted-text absolute left-3 top-1/2 transform -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Search jobs by title..."
-                    value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* Filter Toggle */}
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center"
-              >
-                <FunnelIcon className="w-4 h-4 mr-2" />
-                Filters
-                {statusFilter && (
-                  <span className="ml-2 w-2 h-2 bg-primary rounded-full"></span>
-                )}
-              </Button>
-            </div>
-
-            {/* Filter Options */}
-            {showFilters && (
-              <div className="mt-4 pt-4 border-t border-gray-light">
-                <div className="flex flex-wrap gap-2">
-                  <span className="text-sm font-medium text-muted-text">Status:</span>
-                  <button
-                    onClick={() => handleStatusFilter('')}
-                    className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                      statusFilter === '' 
-                        ? 'bg-primary text-white border-primary' 
-                        : 'bg-white text-muted-text border-gray-light hover:border-primary'
-                    }`}
-                  >
-                    All
-                  </button>
-                  <button
-                    onClick={() => handleStatusFilter('draft')}
-                    className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                      statusFilter === 'draft' 
-                        ? 'bg-primary text-white border-primary' 
-                        : 'bg-white text-muted-text border-gray-light hover:border-primary'
-                    }`}
-                  >
-                    Draft
-                  </button>
-                  <button
-                    onClick={() => handleStatusFilter('interviewing')}
-                    className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                      statusFilter === 'interviewing' 
-                        ? 'bg-primary text-white border-primary' 
-                        : 'bg-white text-muted-text border-gray-light hover:border-primary'
-                    }`}
-                  >
-                    Interviewing
-                  </button>
-                  <button
-                    onClick={() => handleStatusFilter('closed')}
-                    className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                      statusFilter === 'closed' 
-                        ? 'bg-primary text-white border-primary' 
-                        : 'bg-white text-muted-text border-gray-light hover:border-primary'
-                    }`}
-                  >
-                    Closed
-                  </button>
-                  
-                  {statusFilter && (
-                    <button
-                      onClick={() => {
-                        setStatusFilter('');
-                        setShowFilters(false);
-                        handleStatusFilter('');
-                      }}
-                      className="px-2 py-1 text-sm text-accent-red hover:bg-accent-red/10 rounded transition-colors flex items-center"
-                    >
-                      <XMarkIcon className="w-3 h-3 mr-1" />
-                      Clear
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
+          <div className="mb-6">
+            <SearchAndFilters
+              searchQuery={searchQuery}
+              statusFilter={statusFilter}
+              showFilters={showFilters}
+              onSearchChange={handleSearch}
+              onStatusFilterChange={handleStatusFilter}
+              onToggleFilters={() => setShowFilters(!showFilters)}
+              onClearFilters={handleClearFilters}
+            />
           </div>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-accent-red/10 border border-accent-red/20 rounded-lg">
-            <p className="text-accent-red text-sm">{error}</p>
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{error}</p>
           </div>
         )}
 
-        {/* Jobs List */}
-        {isLoading ? (
-          <div className="bg-white rounded-lg border border-gray-light p-8">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
-              <span className="ml-3 text-muted-text">Loading jobs...</span>
-            </div>
-          </div>
-        ) : jobs.length === 0 ? (
+        {/* Jobs Table */}
+        {!hasJobs && !isLoading ? (
           // Empty State
-          <div className="bg-white rounded-lg border border-gray-light p-8 text-center">
+          <div className="bg-white rounded-lg border border-gray-100 p-8 text-center">
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <BriefcaseIcon className="w-8 h-8 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold text-text mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {searchQuery || statusFilter ? 'No jobs found' : 'No jobs yet'}
             </h3>
-            <p className="text-muted-text mb-6">
+            <p className="text-sm text-gray-600 mb-6">
               {searchQuery || statusFilter 
                 ? 'Try adjusting your search criteria or filters' 
                 : 'Create your first job posting to start interviewing candidates with AI'
@@ -378,130 +258,36 @@ export default function JobsPage() {
             )}
           </div>
         ) : (
-          // Jobs Grid
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {jobs.map((job) => (
-                <div key={job.id} className="bg-white rounded-lg border border-gray-light p-6 hover:border-primary transition-colors">
-                  {/* Job Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-text mb-2">{job.title}</h3>
-                      <div className="flex items-center space-x-4 text-sm text-muted-text">
-                        <div className="flex items-center space-x-1">
-                          <CalendarIcon className="w-4 h-4" />
-                          <span>Created {formatDate(job.createdAt)}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <UserGroupIcon className="w-4 h-4" />
-                          <span>{job.candidateCount || 0} candidates</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end space-y-2">
-                      <span className={`px-3 py-1 text-xs rounded-full border ${getStatusColor(job.status)}`}>
-                        {getStatusLabel(job.status)}
-                      </span>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        job.isActive 
-                          ? 'bg-primary/10 text-primary' 
-                          : 'bg-gray-light text-muted-text'
-                      }`}>
-                        {job.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Job Details */}
-                  <div className="mb-4">
-                    {job.fields?.experienceLevel && (
-                      <div className="mb-2">
-                        <span className="text-sm text-muted-text">Experience: </span>
-                        <span className="text-sm text-text capitalize">
-                          {job.fields.experienceLevel.replace(/([A-Z])/g, ' $1').trim()}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {job.fields?.skills && job.fields.skills.length > 0 && (
-                      <div className="mb-2">
-                        <span className="text-sm text-muted-text mb-1 block">Skills:</span>
-                        <div className="flex flex-wrap gap-1">
-                          {job.fields.skills.slice(0, 3).map((skill, index) => (
-                            <span key={index} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded">
-                              {skill}
-                            </span>
-                          ))}
-                          {job.fields.skills.length > 3 && (
-                            <span className="px-2 py-1 bg-gray-light text-muted-text text-xs rounded">
-                              +{job.fields.skills.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mb-2">
-                      <span className="text-sm text-muted-text">Format: </span>
-                      <span className="text-sm text-text capitalize">
-                        {job.interviewFormat === 'text' ? 'Text-based' : 'Video'} Interview
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-2">
-                    <Link href={`/dashboard/jobs/${job.id}`}>
-                      <Button variant="outline" size="sm" className="flex items-center">
-                        <EyeIcon className="w-4 h-4 mr-1" />
-                        View
-                      </Button>
-                    </Link>
-                    
-                    <Link href={`/dashboard/jobs/${job.id}/edit`}>
-                      <Button variant="outline" size="sm" className="flex items-center">
-                        <PencilIcon className="w-4 h-4 mr-1" />
-                        Edit
-                      </Button>
-                    </Link>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex items-center"
-                      onClick={() => copyInterviewLink(job)}
-                    >
-                      <LinkIcon className="w-4 h-4 mr-1" />
-                      Copy Link
-                    </Button>
-                    
-                    {job.candidateCount && job.candidateCount > 0 && (
-                      <Link href={`/dashboard/candidates?job=${job.id}`}>
-                        <Button size="sm" className="flex items-center">
-                          <UserGroupIcon className="w-4 h-4 mr-1" />
-                          View Candidates
-                        </Button>
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <JobsTable 
+              jobs={jobs} 
+              onCopyLink={copyInterviewLink}
+              isLoading={isLoading}
+            />
 
             {/* Loading more indicator */}
             {isLoadingMore && (
-              <div className="mt-8 flex items-center justify-center">
-                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
-                <span className="ml-3 text-muted-text">Loading more jobs...</span>
+              <div className="mt-6 flex items-center justify-center">
+                <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full"></div>
+                <span className="ml-3 text-sm text-gray-500">Loading more jobs...</span>
               </div>
             )}
 
             {/* Load more button (backup for infinite scroll) */}
             {pagination?.hasMore && !isLoadingMore && (
-              <div className="mt-8 text-center">
-                <Button variant="outline" onClick={loadMore}>
+              <div className="mt-6 text-center">
+                <Button variant="outline" size="sm" onClick={loadMore} className="text-sm">
                   Load More Jobs
                 </Button>
+              </div>
+            )}
+
+            {/* Results summary */}
+            {pagination && (
+              <div className="mt-4 text-center">
+                <p className="text-xs text-gray-500">
+                  Showing {jobs.length} of {pagination.total} jobs
+                </p>
               </div>
             )}
           </>

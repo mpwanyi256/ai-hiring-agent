@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import Button from '@/components/ui/Button';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import TabNavigation from '@/components/ui/TabNavigation';
+import JobDetailsLayout from '@/components/jobs/JobDetailsLayout';
 import JobOverview from '@/components/jobs/JobOverview';
 import QuestionManager from '@/components/questions/QuestionManager';
 import JobCandidates from '@/components/jobs/JobCandidates';
@@ -13,19 +9,8 @@ import JobEvaluations from '@/components/jobs/JobEvaluations';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { fetchJobById } from '@/store/jobs/jobsThunks';
 import { resetCurrentJob } from '@/store/jobs/jobsSlice';
-import { selectCurrentJob, selectJobsLoading, selectJobsError, selectJobQuestionsCount } from '@/store/jobs/jobsSelectors';
-import { 
-  ArrowLeftIcon,
-  BriefcaseIcon,
-  PencilIcon,
-  UserGroupIcon,
-  EyeIcon,
-  ShareIcon,
-  ClipboardDocumentListIcon,
-  ChartBarIcon
-} from '@heroicons/react/24/outline';
+import { selectCurrentJob, selectJobsLoading, selectJobsError } from '@/store/jobs/jobsSelectors';
 import { copyInterviewLink } from '@/lib/utils';
-import { CurrentJobHeader } from '@/components/currentJob/CurrentJobHeader';
 import { Loading } from '@/components/ui/Loading';
 import { DashboardError } from '../ui/DashboardError';
 import { useToast } from '../providers/ToastProvider';
@@ -40,13 +25,11 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
   // Unwrap params using React.use()
   const resolvedParams = use(params);
   const { error: showError } = useToast();
-  const router = useRouter();
   const dispatch = useAppDispatch();
   const isLoading = useAppSelector(selectJobsLoading);
   const error = useAppSelector(selectJobsError);
   const [activeTab, setActiveTab] = useState('overview');
   const job = useAppSelector(selectCurrentJob);
-  const questionsCount = useAppSelector(selectJobQuestionsCount);
 
   // Fetch job details and questions
   useEffect(() => {
@@ -57,8 +40,7 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
     return () => { // Clean up function to reset the current job when the component unmounts
       dispatch(resetCurrentJob());
     }
-  }, [resolvedParams.id, dispatch]);
-
+  }, [resolvedParams.id, dispatch, showError]);
 
   const shareJob = async () => {
     if (!job) return;
@@ -80,115 +62,46 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
     }
   };
 
-
-  // Define tabs
-  const tabs = [
-    {
-      id: 'overview',
-      label: 'Overview',
-      icon: <BriefcaseIcon />
-    },
-    {
-      id: 'questions',
-      label: 'Questions',
-      icon: <ClipboardDocumentListIcon />,
-      count: questionsCount
-    },
-    {
-      id: 'candidates',
-      label: 'Candidates',
-      icon: <UserGroupIcon />,
-      count: job?.candidateCount || 0
-    },
-    {
-      id: 'evaluations',
-      label: 'Evaluations',
-      icon: <ChartBarIcon />,
-      count: 0 // TODO: Add evaluation count
-    }
-  ];
-  
   if (isLoading) {
     return (
-      <DashboardLayout title="Job Details">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loading message="Loading job details..." />
-      </DashboardLayout>
+      </div>
     );
   }
 
   if (error || !job) {
-    return (<DashboardError title="Job Not Found" message={error || 'The job you are looking for does not exist or you do not have permission to view it.'} />);
+    return (
+      <DashboardError 
+        title="Job Not Found" 
+        message={error || 'The job you are looking for does not exist or you do not have permission to view it.'} 
+      />
+    );
   }
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return <JobOverview job={job} />;
+      case 'questions':
+        return <QuestionManager />;
+      case 'candidates':
+        return <JobCandidates job={job} />;
+      case 'evaluations':
+        return <JobEvaluations job={job} />;
+      default:
+        return <JobOverview job={job} />;
+    }
+  };
+
   return (
-    <DashboardLayout title={job.title}>
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-            <Button
-              variant="outline"
-              onClick={() => router.push('/dashboard/jobs')}
-              className="flex items-center mb-4 sm:mb-0"
-            >
-              <ArrowLeftIcon className="w-4 h-4 mr-2" />
-              Back to Jobs
-            </Button>
-            
-            <div className="flex flex-wrap gap-2">
-              <Link href={`/dashboard/jobs/${job.id}/edit`}>
-                <Button variant="outline" size="sm" className="flex items-center">
-                  <PencilIcon className="w-4 h-4 mr-1" />
-                  Edit Job
-                </Button>
-              </Link>
-              
-              <Button variant="outline" size="sm" onClick={shareJob} className="flex items-center">
-                <ShareIcon className="w-4 h-4 mr-1" />
-                Share
-              </Button>
-              
-              <Link href={job.interviewLink || `/interview/${job.interviewToken}`} target="_blank">
-                <Button size="sm" className="flex items-center">
-                  <EyeIcon className="w-4 h-4 mr-1" />
-                  Preview Interview
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Job Header Card */}
-        <div className="bg-white rounded-lg border border-gray-light mb-6">
-          <CurrentJobHeader onSetActiveTab={setActiveTab} />
-
-          {/* Tab Navigation */}
-          <TabNavigation 
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        </div>
-
-        {/* Tab Content */}
-        <div className="min-h-96">
-          {activeTab === 'overview' && (
-            <JobOverview job={job} />
-          )}
-          
-          {activeTab === 'questions' && (
-            <QuestionManager />
-          )}
-          
-          {activeTab === 'candidates' && (
-            <JobCandidates job={job} />
-          )}
-          
-          {activeTab === 'evaluations' && (
-            <JobEvaluations job={job} />
-          )}
-        </div>
-      </div>
-    </DashboardLayout>
+    <JobDetailsLayout
+      job={job}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      onShareJob={shareJob}
+    >
+      {renderTabContent()}
+    </JobDetailsLayout>
   );
 }

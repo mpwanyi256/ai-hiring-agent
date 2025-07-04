@@ -1,4 +1,3 @@
-import { JobData } from "@/lib/services/jobsService";
 import { JobQuestion } from "./interview";
 
 export interface Skill {
