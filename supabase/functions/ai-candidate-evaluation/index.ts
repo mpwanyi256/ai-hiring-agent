@@ -1,82 +1,173 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'npm:@supabase/supabase-js@^2'
-import { ChatOpenAI } from "npm:@langchain/openai@^0.3.0"
-import { PromptTemplate } from "npm:@langchain/core@^0.3.0/prompts"
-import { z } from "npm:zod@^3.22.4"
+import { createClient } from "npm:@supabase/supabase-js@2.39.3"
 
 // Environment variables
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!
 
-// Initialize clients
+// Initialize Supabase client
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-// Zod schema for structured AI evaluation output
-const evaluationSchema = z.object({
-  overall_score: z.number().min(0).max(100).describe("Overall candidate score from 0-100"),
-  overall_status: z.enum(['excellent', 'good', 'average', 'poor', 'very_poor']).describe("Overall status based on score"),
-  recommendation: z.enum(['strong_yes', 'yes', 'maybe', 'no', 'strong_no']).describe("Hiring recommendation"),
-  evaluation_summary: z.string().describe("Brief summary of the candidate's evaluation"),
-  evaluation_explanation: z.string().describe("Detailed explanation of the evaluation reasoning"),
-  radar_metrics: z.object({
-    skills: z.number().min(0).max(100).describe("Technical and job-relevant skills score"),
-    growth_mindset: z.number().min(0).max(100).describe("Learning ability and adaptability score"),
-    team_work: z.number().min(0).max(100).describe("Collaboration and teamwork score"),
-    culture: z.number().min(0).max(100).describe("Cultural fit and values alignment score"),
-    communication: z.number().min(0).max(100).describe("Communication and interpersonal skills score")
-  }).describe("Radar chart metrics for key competencies"),
-  category_scores: z.record(z.object({
-    score: z.number().min(0).max(100),
-    explanation: z.string(),
-    strengths: z.array(z.string()),
-    areas_for_improvement: z.array(z.string())
-  })).describe("Detailed category breakdowns"),
-  key_strengths: z.array(z.string()).describe("Top 3-5 key strengths of the candidate"),
-  areas_for_improvement: z.array(z.string()).describe("Top 3-5 areas where candidate could improve"),
-  red_flags: z.array(z.string()).describe("Any concerning issues or red flags")
-})
+// Evaluation schema interface (simplified without Zod)
+interface EvaluationResult {
+  overall_score: number;
+  overall_status: 'excellent' | 'good' | 'average' | 'poor' | 'very_poor';
+  recommendation: 'strong_yes' | 'yes' | 'maybe' | 'no' | 'strong_no';
+  evaluation_summary: string;
+  evaluation_explanation: string;
+  radar_metrics: {
+    skills: number;
+    growth_mindset: number;
+    team_work: number;
+    culture: number;
+    communication: number;
+  };
+  category_scores: Record<string, {
+    score: number;
+    explanation: string;
+    strengths: string[];
+    areas_for_improvement: string[];
+  }>;
+  key_strengths: string[];
+  areas_for_improvement: string[];
+  red_flags: string[];
+}
 
-// AI Evaluation prompt template
-const evaluationPrompt = PromptTemplate.fromTemplate(`
-You are an expert HR professional and hiring manager. You will evaluate a candidate based on their resume, interview responses, and job requirements to provide a comprehensive assessment.
+// Direct OpenAI API call
+async function callOpenAI(prompt: string): Promise<string> {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openaiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert HR professional and hiring manager. You evaluate candidates based on their resume, interview responses, and job requirements to provide comprehensive assessments.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`OpenAI API error: ${error}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0]?.message?.content || '';
+}
+
+// Parse AI response (similar to aiQuestionService.ts)
+function parseAIResponse(response: string): EvaluationResult {
+  try {
+    // Extract JSON from response
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON found in AI response');
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    
+    // Validate and clean the response
+    return {
+      overall_score: Math.max(0, Math.min(100, parsed.overall_score || 0)),
+      overall_status: parsed.overall_status || 'average',
+      recommendation: parsed.recommendation || 'maybe',
+      evaluation_summary: parsed.evaluation_summary || 'No summary provided',
+      evaluation_explanation: parsed.evaluation_explanation || 'No explanation provided',
+      radar_metrics: {
+        skills: Math.max(0, Math.min(100, parsed.radar_metrics?.skills || 50)),
+        growth_mindset: Math.max(0, Math.min(100, parsed.radar_metrics?.growth_mindset || 50)),
+        team_work: Math.max(0, Math.min(100, parsed.radar_metrics?.team_work || 50)),
+        culture: Math.max(0, Math.min(100, parsed.radar_metrics?.culture || 50)),
+        communication: Math.max(0, Math.min(100, parsed.radar_metrics?.communication || 50)),
+      },
+      category_scores: parsed.category_scores || {},
+      key_strengths: Array.isArray(parsed.key_strengths) ? parsed.key_strengths : [],
+      areas_for_improvement: Array.isArray(parsed.areas_for_improvement) ? parsed.areas_for_improvement : [],
+      red_flags: Array.isArray(parsed.red_flags) ? parsed.red_flags : []
+    };
+  } catch (error) {
+    console.error('Error parsing AI response:', error);
+    throw new Error('Failed to parse AI evaluation response');
+  }
+}
+
+// Create evaluation prompt (simplified)
+function createEvaluationPrompt(params: {
+  jobTitle: string;
+  jobDescription: string;
+  requiredSkills: string;
+  requiredTraits: string;
+  experienceLevel: string;
+  interviewResponses: string;
+  resumeContent: string;
+}): string {
+  return `
+Evaluate this candidate for the ${params.jobTitle} position and provide a comprehensive assessment.
 
 **Job Information:**
-Position: {job_title}
-Experience Level: {experience_level}
-Required Skills: {required_skills}
-Required Traits: {required_traits}
-Job Description: {job_description}
+- Position: ${params.jobTitle}
+- Experience Level: ${params.experienceLevel}
+- Required Skills: ${params.requiredSkills}
+- Required Traits: ${params.requiredTraits}
+- Job Description: ${params.jobDescription}
 
 **Candidate Data:**
-Resume Summary: {resume_summary}
-Resume Skills: {resume_skills}
-Resume Experience: {resume_experience}
+Resume Summary: ${params.resumeContent}
 
 **Interview Responses:**
-{interview_responses}
+${params.interviewResponses}
 
-**Evaluation Guidelines:**
+**Instructions:**
 1. Score each area from 0-100 based on job requirements
-2. Consider both technical competency and cultural fit
-3. Be objective and evidence-based in your assessment
-4. Highlight specific strengths and areas for improvement
-5. Note any red flags or concerning patterns
+2. Be objective and evidence-based
+3. Highlight specific strengths and areas for improvement
+4. Note any red flags or concerning patterns
 
-**Radar Metrics Definitions:**
-- Skills: Technical competencies and job-relevant expertise
-- Growth Mindset: Learning ability, adaptability, and continuous improvement
-- Team Work: Collaboration, interpersonal skills, and team contribution
-- Culture: Values alignment, work style fit, and company culture match
-- Communication: Verbal/written communication, clarity, and professionalism
+**Response Format:**
+Return ONLY a valid JSON object with this exact structure:
+{
+  "overall_score": 75,
+  "overall_status": "good",
+  "recommendation": "yes",
+  "evaluation_summary": "Brief summary of the candidate's evaluation",
+  "evaluation_explanation": "Detailed explanation of the evaluation reasoning",
+  "radar_metrics": {
+    "skills": 80,
+    "growth_mindset": 75,
+    "team_work": 70,
+    "culture": 85,
+    "communication": 75
+  },
+  "category_scores": {
+    "Technical Skills": {
+      "score": 80,
+      "explanation": "Strong technical foundation",
+      "strengths": ["Good problem solving", "Relevant experience"],
+      "areas_for_improvement": ["Could improve in advanced topics"]
+    }
+  },
+  "key_strengths": ["Strong communication", "Good technical skills", "Cultural fit"],
+  "areas_for_improvement": ["Could improve technical depth", "More leadership experience needed"],
+  "red_flags": []
+}
 
-Evaluate this candidate thoroughly and provide a structured assessment.
+Evaluate this candidate thoroughly and provide the JSON response.
+`;
+}
 
-Please respond with a valid JSON object that matches this schema:
-{schema_description}
-`)
-
-// Helper function to extract resume content
 async function getResumeContent(candidateId: string): Promise<string> {
   try {
     const { data: resumeData } = await supabase
@@ -87,8 +178,6 @@ async function getResumeContent(candidateId: string): Promise<string> {
 
     if (!resumeData) return "No resume available"
 
-    // In a real implementation, you'd parse the resume file content
-    // For now, we'll use available metadata
     return `
 Resume: ${resumeData.original_filename}
 File Type: ${resumeData.file_type}
@@ -102,26 +191,26 @@ Parsing Status: ${resumeData.parsing_status}
   }
 }
 
-// Helper function to gather candidate data
 async function gatherCandidateData(candidateId: string) {
   try {
-    // Get candidate details with job information
     const { data: candidate, error: candidateError } = await supabase
-      .rpc('get_job_candidate_details', {
-        p_job_id: null, // We'll filter by candidate_id in the view
-        p_profile_id: null,
-        p_search: null,
-        p_status: null,
-        p_limit: 1,
-        p_offset: 0
-      })
+      .from('candidates')
+      .select(`
+        *,
+        jobs!inner(
+          id,
+          title,
+          description,
+          fields,
+          profile_id
+        )
+      `)
+      .eq('id', candidateId)
+      .single()
 
     if (candidateError) throw candidateError
+    if (!candidate) throw new Error('Candidate not found')
 
-    const candidateData = candidate?.find((c: any) => c.id === candidateId)
-    if (!candidateData) throw new Error('Candidate not found')
-
-    // Get interview responses
     const { data: responses, error: responsesError } = await supabase
       .from('responses')
       .select('*')
@@ -130,21 +219,11 @@ async function gatherCandidateData(candidateId: string) {
 
     if (responsesError) throw responsesError
 
-    // Get job details
-    const { data: job, error: jobError } = await supabase
-      .from('jobs')
-      .select('*')
-      .eq('id', candidateData.job_id)
-      .single()
-
-    if (jobError) throw jobError
-
-    // Get resume content
     const resumeContent = await getResumeContent(candidateId)
 
     return {
-      candidate: candidateData,
-      job,
+      candidate,
+      job: candidate.jobs,
       responses: responses || [],
       resumeContent
     }
@@ -154,94 +233,46 @@ async function gatherCandidateData(candidateId: string) {
   }
 }
 
-// Main evaluation function
-async function evaluateCandidate(candidateId: string, jobId: string, profileId: string) {
+async function evaluateCandidate(candidateId: string) {
   const startTime = Date.now()
 
   try {
-    // Gather all candidate data
     const { candidate, job, responses, resumeContent } = await gatherCandidateData(candidateId)
 
-    // Format interview responses
     const formattedResponses = responses
       .map((r: any, index: number) => `Q${index + 1}: ${r.question}\nA${index + 1}: ${r.answer}`)
       .join('\n\n')
 
-    // Extract job requirements
     const jobFields = job.fields || {}
     const requiredSkills = jobFields.skills ? jobFields.skills.join(', ') : 'Not specified'
     const requiredTraits = jobFields.traits ? jobFields.traits.join(', ') : 'Not specified'
     const experienceLevel = jobFields.experienceLevel || 'Not specified'
 
-    // Prepare schema description for the prompt
-    const schemaDescription = `
-    {
-      "overall_score": number (0-100),
-      "overall_status": "excellent" | "good" | "average" | "poor" | "very_poor",
-      "recommendation": "strong_yes" | "yes" | "maybe" | "no" | "strong_no",
-      "evaluation_summary": string,
-      "evaluation_explanation": string,
-      "radar_metrics": {
-        "skills": number (0-100),
-        "growth_mindset": number (0-100),
-        "team_work": number (0-100),
-        "culture": number (0-100),
-        "communication": number (0-100)
-      },
-      "category_scores": {
-        "category_name": {
-          "score": number (0-100),
-          "explanation": string,
-          "strengths": string[],
-          "areas_for_improvement": string[]
-        }
-      },
-      "key_strengths": string[],
-      "areas_for_improvement": string[],
-      "red_flags": string[]
-    }`
-
-    // Create the evaluation prompt
-    const formattedPrompt = await evaluationPrompt.format({
-      job_title: job.title,
-      experience_level: experienceLevel,
-      required_skills: requiredSkills,
-      required_traits: requiredTraits,
-      job_description: job.description || 'No description provided',
-      resume_summary: resumeContent,
-      resume_skills: 'Extract from resume content',
-      resume_experience: 'Extract from resume content',
-      interview_responses: formattedResponses || 'No interview responses available',
-      schema_description: schemaDescription
+    const prompt = createEvaluationPrompt({
+      jobTitle: job.title,
+      jobDescription: job.description || 'No description provided',
+      requiredSkills,
+      requiredTraits,
+      experienceLevel,
+      interviewResponses: formattedResponses || 'No interview responses available',
+      resumeContent
     })
 
-    // Initialize LLM with structured output
-    const llm = new ChatOpenAI({
-      openAIApiKey: openaiApiKey,
-      modelName: "gpt-4",
-      temperature: 0.3,
-    }).withStructuredOutput(evaluationSchema)
-
-    // Get AI evaluation
-    console.log('Generating AI evaluation for candidate:', candidateId)
-    const evaluationResult = await llm.invoke(formattedPrompt)
-
+    const aiResponse = await callOpenAI(prompt)
+    const evaluationResult = parseAIResponse(aiResponse)
     const processingDuration = Date.now() - startTime
 
-    // Determine evaluation sources
     const evaluationSources = {
       resume: !!candidate.resume_id,
       interview: responses.length > 0,
       previous_evaluations: false
     }
 
-    // Save AI evaluation to database
     const { data: aiEvaluation, error: saveError } = await supabase
       .from('ai_evaluations')
       .insert({
         candidate_id: candidateId,
-        job_id: jobId,
-        profile_id: profileId,
+        job_id: job.id,
         overall_score: evaluationResult.overall_score,
         overall_status: evaluationResult.overall_status,
         recommendation: evaluationResult.recommendation,
@@ -262,7 +293,7 @@ async function evaluateCandidate(candidateId: string, jobId: string, profileId: 
 
     if (saveError) throw saveError
 
-    // Update the existing evaluations table for backwards compatibility
+    // Update evaluations table for backwards compatibility
     await supabase
       .from('evaluations')
       .upsert({
@@ -278,8 +309,6 @@ async function evaluateCandidate(candidateId: string, jobId: string, profileId: 
         evaluation_type: 'combined'
       })
 
-    console.log('AI evaluation completed successfully for candidate:', candidateId)
-    
     return {
       success: true,
       evaluation: aiEvaluation,
@@ -292,35 +321,26 @@ async function evaluateCandidate(candidateId: string, jobId: string, profileId: 
   }
 }
 
-// Main Edge Function handler
-serve(async (req) => {
+serve(async (req: Request) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   }
 
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { candidateId, jobId, profileId } = await req.json()
+    const { candidateId } = await req.json()
 
-    if (!candidateId || !jobId || !profileId) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Missing required parameters: candidateId, jobId, profileId' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+    if (!candidateId) {
+      return new Response(JSON.stringify({ success: false, error: 'Missing required parameter: candidateId' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    // Check if evaluation already exists
     const { data: existingEvaluation } = await supabase
       .from('ai_evaluations')
       .select('id')
@@ -328,19 +348,12 @@ serve(async (req) => {
       .single()
 
     if (existingEvaluation) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'AI evaluation already exists for this candidate' 
-        }),
-        { 
-          status: 409, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+      return new Response(JSON.stringify({ success: false, error: 'AI evaluation already exists for this candidate' }), {
+        status: 409,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    // Verify candidate is completed
     const { data: candidate } = await supabase
       .from('candidates')
       .select('is_completed')
@@ -348,41 +361,24 @@ serve(async (req) => {
       .single()
 
     if (!candidate?.is_completed) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Candidate interview not completed yet' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+      return new Response(JSON.stringify({ success: false, error: 'Candidate interview not completed yet' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    // Perform AI evaluation
-    const result = await evaluateCandidate(candidateId, jobId, profileId)
+    const result = await evaluateCandidate(candidateId)
 
-    return new Response(
-      JSON.stringify(result),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Edge Function error:', error)
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message || 'Internal server error' 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    return new Response(JSON.stringify({ success: false, error: error?.message || 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
-}) 
+})

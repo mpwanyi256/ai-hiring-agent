@@ -12,7 +12,7 @@ export async function POST(
     const resolvedParams = await params;
     const candidateId = resolvedParams.id;
     
-    // Get current user profile
+    // Get current user profile for access control
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ 
@@ -21,138 +21,83 @@ export async function POST(
       }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', user.id)
+    // Verify user has access to this candidate through job ownership
+    const { data: candidate, error: candidateError } = await supabase
+      .from('candidates')
+      .select(`
+        id,
+        job_id,
+        is_completed,
+        jobs!inner(
+          id,
+          profile_id
+        )
+      `)
+      .eq('id', candidateId)
+      .eq('jobs.profile_id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    if (candidateError || !candidate) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Profile not found' 
+        error: 'Candidate not found or access denied' 
       }, { status: 404 });
     }
 
-    const profileId = profile.id;
-    
-    // Get request body for options
-    const body = await request.json().catch(() => ({}));
-    const { force = false } = body;
-
-    // Use the manual trigger function to validate and get parameters
-    const { data: triggerResult, error: triggerError } = await supabase
-      .rpc('manual_trigger_ai_evaluation', {
-        p_candidate_id: candidateId,
-        p_force: force
-      });
-
-    if (triggerError) {
-      console.error('Trigger validation error:', triggerError);
+    if (!candidate.is_completed) {
       return NextResponse.json({ 
         success: false, 
-        error: triggerError.message 
+        error: 'Candidate interview not completed yet' 
       }, { status: 400 });
     }
 
-    if (!triggerResult.success) {
-      return NextResponse.json({ 
-        success: false, 
-        error: triggerResult.error 
-      }, { status: 400 });
-    }
-
-    // Verify user owns this job
-    const { data: job, error: jobError } = await supabase
-      .from('jobs')
-      .select('id, title, profile_id')
-      .eq('id', triggerResult.jobId)
-      .eq('profile_id', profileId)
+    // Check if AI evaluation already exists
+    const { data: existingEvaluation } = await supabase
+      .from('ai_evaluations')
+      .select('id')
+      .eq('candidate_id', candidateId)
       .single();
 
-    if (jobError || !job) {
+    const { force } = await request.json().catch(() => ({ force: false }));
+
+    if (existingEvaluation && !force) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Job not found or access denied' 
-      }, { status: 403 });
+        error: 'AI evaluation already exists. Use force=true to regenerate.' 
+      }, { status: 409 });
     }
 
-    // Call the AI evaluation Edge Function
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('Missing Supabase environment variables');
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Server configuration error' 
-      }, { status: 500 });
+    // If forcing regeneration, delete existing evaluation
+    if (existingEvaluation && force) {
+      await supabase
+        .from('ai_evaluations')
+        .delete()
+        .eq('candidate_id', candidateId);
     }
 
-    const functionUrl = `${supabaseUrl}/functions/v1/ai-candidate-evaluation`;
-    
-    const functionPayload = {
-      candidateId: triggerResult.candidateId,
-      jobId: triggerResult.jobId,
-      profileId: triggerResult.profileId
-    };
-
-    // Call the Edge Function
-    console.log('Calling AI evaluation Edge Function for candidate:', candidateId);
-    
+    // Call the Edge Function with simplified parameters
+    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-candidate-evaluation`;
     const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
       },
-      body: JSON.stringify(functionPayload)
+      body: JSON.stringify({
+        candidateId: candidateId
+      })
     });
 
-    const functionResult = await response.json();
+    const result = await response.json();
 
     if (!response.ok) {
-      console.error('Edge Function error:', functionResult);
-      
-      // Update function log with error
-      await supabase
-        .from('function_logs')
-        .update({
-          status: 'failed',
-          error_message: functionResult.error || 'Unknown error',
-          completed_at: new Date().toISOString()
-        })
-        .eq('candidate_id', candidateId)
-        .eq('function_name', 'ai-candidate-evaluation-manual')
-        .order('triggered_at', { ascending: false })
-        .limit(1);
-
-      return NextResponse.json({ 
-        success: false, 
-        error: functionResult.error || 'AI evaluation failed' 
-      }, { status: 500 });
+      throw new Error(result.error || 'Failed to evaluate candidate');
     }
-
-    // Update function log with success
-    await supabase
-      .from('function_logs')
-      .update({
-        status: 'success',
-        completed_at: new Date().toISOString()
-      })
-      .eq('candidate_id', candidateId)
-      .eq('function_name', 'ai-candidate-evaluation-manual')
-      .order('triggered_at', { ascending: false })
-      .limit(1);
-
-    console.log('AI evaluation completed successfully for candidate:', candidateId);
 
     return NextResponse.json({
       success: true,
-      message: 'AI evaluation completed successfully',
-      evaluation: functionResult.evaluation,
-      processingDurationMs: functionResult.processingDurationMs
+      evaluation: result.evaluation,
+      processingDurationMs: result.processingDurationMs
     });
 
   } catch (error) {
