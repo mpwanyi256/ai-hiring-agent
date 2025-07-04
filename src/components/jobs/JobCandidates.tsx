@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import CandidatesOverview from './CandidatesOverview';
 import CandidatesList from './CandidatesList';
+import CandidateEvaluationSection from '@/components/evaluations/CandidateEvaluationSection';
 import { CurrentJob } from '@/types/jobs';
 import { AppDispatch, RootState } from '@/store';
 import { fetchJobCandidates, fetchCandidateResume } from '@/store/candidates/candidatesThunks';
@@ -264,64 +265,13 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                   </div>
                 )}
 
-                {/* Evaluation Summary */}
-                {selectedCandidate.evaluation ? (
-                  <div className="border border-gray-200 rounded-lg p-4 mb-6">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                      {selectedCandidate.evaluation.evaluationType === 'combined' ? 'Combined Evaluation' : 
-                       selectedCandidate.evaluation.evaluationType === 'resume' ? 'Resume Evaluation' : 'Interview Evaluation'}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      {selectedCandidate.evaluation.evaluationType === 'combined' && (
-                        <>Interview score {selectedCandidate.evaluation.score}/100, Interview completion with{' '}
-                        {selectedCandidate.responses?.length || (selectedCandidate as any).responseCount || 0} responses. 
-                        {selectedCandidate.evaluation.resumeScore && ` Resume match score ${selectedCandidate.evaluation.resumeScore}/100.`}
-                        {' '}Overall assessment: {selectedCandidate.evaluation.score}/100.</>
-                      )}
-                      {selectedCandidate.evaluation.evaluationType === 'resume' && (
-                        <>Resume evaluation with match score {selectedCandidate.evaluation.resumeScore || selectedCandidate.evaluation.score}/100.</>
-                      )}
-                      {selectedCandidate.evaluation.evaluationType === 'interview' && (
-                        <>Interview evaluation with score {selectedCandidate.evaluation.score}/100 based on{' '}
-                        {selectedCandidate.responses?.length || (selectedCandidate as any).responseCount || 0} responses.</>
-                      )}
-                    </p>
-                    
-                    {/* Evaluation highlights */}
-                    <div className="space-y-2">
-                      {selectedCandidate.evaluation.strengths?.map((strength, index) => (
-                        <div key={index} className="bg-green-50 border border-green-200 rounded p-3">
-                          <p className="text-sm text-green-800">{strength}</p>
-                        </div>
-                      ))}
-                      
-                      {selectedCandidate.evaluation.redFlags?.map((redFlag, index) => (
-                        <div key={index} className="bg-red-50 border border-red-200 rounded p-3">
-                          <p className="text-sm text-red-800">{redFlag}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex space-x-2 mt-4">
-                      <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
-                        View Details
-                      </button>
-                      <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
-                        View Evaluation
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="border border-gray-200 rounded-lg p-4 mb-6">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Evaluation Status</h3>
-                    <p className="text-sm text-gray-600">
-                      {(selectedCandidate as any).isCompleted 
-                        ? 'Interview completed. Evaluation pending.'
-                        : 'Interview in progress. Evaluation will be available once completed.'
-                      }
-                    </p>
-                  </div>
-                )}
+                {/* AI Evaluation Section */}
+                <div className="mb-6">
+                  <CandidateEvaluationSection 
+                    candidateId={selectedCandidate.id}
+                    candidateName={(selectedCandidate as any).name || (selectedCandidate as any).fullName || 'Anonymous Candidate'}
+                  />
+                </div>
 
                 {/* Interview Responses */}
                 {selectedCandidate.responses && selectedCandidate.responses.length > 0 && (

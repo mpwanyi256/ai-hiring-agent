@@ -131,6 +131,18 @@ export const evaluationUtils = {
     if (finalValue >= 40) return 'maybe';
     if (finalValue >= 20) return 'no';
     return 'strong_no';
+  },
+
+  // Get status text based on evaluation status
+  getStatusText: (status: EvaluationStatus): string => {
+    const statusTextMap: Record<EvaluationStatus, string> = {
+      excellent: 'Excellent',
+      good: 'Good',
+      average: 'Average',
+      poor: 'Poor',
+      very_poor: 'Very Poor'
+    };
+    return statusTextMap[status] || 'Unknown';
   }
 };
 

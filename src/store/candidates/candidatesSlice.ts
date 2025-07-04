@@ -1,11 +1,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Candidate, Response } from '@/types';
+import { AIEvaluation, TeamAssessment } from '@/types/evaluations';
 import {
   fetchCandidatesByJob,
   fetchJobCandidates,
   fetchCandidateById,
   fetchCandidateByToken,
   fetchCandidateResume,
+  fetchAIEvaluation,
   triggerAIEvaluation,
   createCandidate,
   submitInterview,
@@ -41,6 +43,13 @@ interface CandidatesState {
     isEvaluating: boolean;
     evaluatingCandidateId: string | null;
     lastEvaluationDuration: number | null;
+    isLoadingEvaluation: boolean;
+    currentEvaluation: {
+      candidateId: string | null;
+      aiEvaluation: AIEvaluation | null;
+      teamAssessments: TeamAssessment[];
+      computedValues: any;
+    } | null;
   };
 }
 
@@ -70,6 +79,8 @@ const initialState: CandidatesState = {
     isEvaluating: false,
     evaluatingCandidateId: null,
     lastEvaluationDuration: null,
+    isLoadingEvaluation: false,
+    currentEvaluation: null,
   },
 };
 
@@ -117,6 +128,8 @@ const candidatesSlice = createSlice({
         isEvaluating: false,
         evaluatingCandidateId: null,
         lastEvaluationDuration: null,
+        isLoadingEvaluation: false,
+        currentEvaluation: null,
       };
     },
   },
@@ -188,6 +201,19 @@ const candidatesSlice = createSlice({
       })
       .addCase(fetchCandidateResume.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to fetch candidate resume';
+      })
+      // Fetch AI Evaluation
+      .addCase(fetchAIEvaluation.pending, (state) => {
+        state.aiEvaluation.isLoadingEvaluation = true;
+        state.error = null;
+      })
+      .addCase(fetchAIEvaluation.fulfilled, (state, action) => {
+        state.aiEvaluation.isLoadingEvaluation = false;
+        state.aiEvaluation.currentEvaluation = action.payload;
+      })
+      .addCase(fetchAIEvaluation.rejected, (state, action) => {
+        state.aiEvaluation.isLoadingEvaluation = false;
+        state.error = action.error.message || 'Failed to fetch AI evaluation';
       })
       // Trigger AI Evaluation
       .addCase(triggerAIEvaluation.pending, (state, action) => {

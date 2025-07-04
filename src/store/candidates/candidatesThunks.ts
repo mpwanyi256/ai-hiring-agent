@@ -79,6 +79,25 @@ export const fetchCandidateResume = createAsyncThunk(
   }
 );
 
+// New thunk for fetching AI evaluation with team assessments
+export const fetchAIEvaluation = createAsyncThunk(
+  'candidates/fetchAIEvaluation',
+  async (candidateId: string) => {
+    try {
+      const response = await apiUtils.get(`/api/candidates/${candidateId}/ai-evaluation`);
+      return {
+        candidateId,
+        aiEvaluation: response.aiEvaluation,
+        teamAssessments: response.teamAssessments,
+        computedValues: response.computedValues,
+        candidateInfo: response.candidateInfo
+      };
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to fetch AI evaluation');
+    }
+  }
+);
+
 // New thunk for triggering AI evaluation
 export const triggerAIEvaluation = createAsyncThunk(
   'candidates/triggerAIEvaluation',
