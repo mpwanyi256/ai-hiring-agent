@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db_push": "supabase db push"
+    "db_push": "supabase db push",
+    "functions_deploy": "supabase functions deploy ai-candidate-evaluation --use-api"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

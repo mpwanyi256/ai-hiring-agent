@@ -1,8 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'npm:@supabase/supabase-js@^2'
-import { ChatOpenAI } from "npm:@langchain/openai@^0.0.14"
-import { PromptTemplate } from "npm:@langchain/core@^0.1.17/prompts"
-import { StructuredOutputParser } from "npm:langchain@^0.1.25/output_parsers"
+import { ChatOpenAI } from "npm:@langchain/openai@^0.3.0"
+import { PromptTemplate } from "npm:@langchain/core@^0.3.0/prompts"
 import { z } from "npm:zod@^3.22.4"
 
 // Environment variables
@@ -12,11 +11,6 @@ const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!
 
 // Initialize clients
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
-const llm = new ChatOpenAI({
-  openAIApiKey: openaiApiKey,
-  modelName: "gpt-4",
-  temperature: 0.3,
-})
 
 // Zod schema for structured AI evaluation output
 const evaluationSchema = z.object({
@@ -42,9 +36,6 @@ const evaluationSchema = z.object({
   areas_for_improvement: z.array(z.string()).describe("Top 3-5 areas where candidate could improve"),
   red_flags: z.array(z.string()).describe("Any concerning issues or red flags")
 })
-
-// Create structured output parser
-const parser = StructuredOutputParser.fromZodSchema(evaluationSchema)
 
 // AI Evaluation prompt template
 const evaluationPrompt = PromptTemplate.fromTemplate(`
@@ -81,7 +72,8 @@ Resume Experience: {resume_experience}
 
 Evaluate this candidate thoroughly and provide a structured assessment.
 
-{format_instructions}
+Please respond with a valid JSON object that matches this schema:
+{schema_description}
 `)
 
 // Helper function to extract resume content
@@ -181,6 +173,34 @@ async function evaluateCandidate(candidateId: string, jobId: string, profileId: 
     const requiredTraits = jobFields.traits ? jobFields.traits.join(', ') : 'Not specified'
     const experienceLevel = jobFields.experienceLevel || 'Not specified'
 
+    // Prepare schema description for the prompt
+    const schemaDescription = `
+    {
+      "overall_score": number (0-100),
+      "overall_status": "excellent" | "good" | "average" | "poor" | "very_poor",
+      "recommendation": "strong_yes" | "yes" | "maybe" | "no" | "strong_no",
+      "evaluation_summary": string,
+      "evaluation_explanation": string,
+      "radar_metrics": {
+        "skills": number (0-100),
+        "growth_mindset": number (0-100),
+        "team_work": number (0-100),
+        "culture": number (0-100),
+        "communication": number (0-100)
+      },
+      "category_scores": {
+        "category_name": {
+          "score": number (0-100),
+          "explanation": string,
+          "strengths": string[],
+          "areas_for_improvement": string[]
+        }
+      },
+      "key_strengths": string[],
+      "areas_for_improvement": string[],
+      "red_flags": string[]
+    }`
+
     // Create the evaluation prompt
     const formattedPrompt = await evaluationPrompt.format({
       job_title: job.title,
@@ -192,13 +212,19 @@ async function evaluateCandidate(candidateId: string, jobId: string, profileId: 
       resume_skills: 'Extract from resume content',
       resume_experience: 'Extract from resume content',
       interview_responses: formattedResponses || 'No interview responses available',
-      format_instructions: parser.getFormatInstructions()
+      schema_description: schemaDescription
     })
+
+    // Initialize LLM with structured output
+    const llm = new ChatOpenAI({
+      openAIApiKey: openaiApiKey,
+      modelName: "gpt-4",
+      temperature: 0.3,
+    }).withStructuredOutput(evaluationSchema)
 
     // Get AI evaluation
     console.log('Generating AI evaluation for candidate:', candidateId)
-    const response = await llm.invoke(formattedPrompt)
-    const evaluationResult = await parser.parse(response.content as string)
+    const evaluationResult = await llm.invoke(formattedPrompt)
 
     const processingDuration = Date.now() - startTime
 
