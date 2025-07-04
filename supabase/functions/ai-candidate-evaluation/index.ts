@@ -107,25 +107,34 @@ function parseAIResponse(response: string): EvaluationResult {
 // Create evaluation prompt (simplified)
 function createEvaluationPrompt(params: {
   jobTitle: string;
-  jobDescription: string;
-  requiredSkills: string;
-  requiredTraits: string;
+  jobFields: any;
   experienceLevel: string;
   interviewResponses: string;
-  resumeContent: string;
+  resumeUrl?: string;
+  previousEvaluation?: any;
 }): string {
+
+  const requiredSkills = params.jobFields?.skills ? params.jobFields.skills.value.join(', ') : 'Not specified';
+  const requiredTraits = params.jobFields?.traits ? params.jobFields.traits.value.join(', ') : 'Not specified';
+  
   return `
 Evaluate this candidate for the ${params.jobTitle} position and provide a comprehensive assessment.
 
 **Job Information:**
 - Position: ${params.jobTitle}
 - Experience Level: ${params.experienceLevel}
-- Required Skills: ${params.requiredSkills}
-- Required Traits: ${params.requiredTraits}
-- Job Description: ${params.jobDescription}
+- Required Skills: ${requiredSkills}
+- Required Traits: ${requiredTraits}
 
 **Candidate Data:**
-Resume Summary: ${params.resumeContent}
+${params.resumeUrl ? `Resume URL: ${params.resumeUrl}` : 'No resume available'}
+
+**Previous Evaluation (if any):**
+${params.previousEvaluation ? `
+- Previous Score: ${params.previousEvaluation.score || 'N/A'}
+- Previous Recommendation: ${params.previousEvaluation.recommendation || 'N/A'}
+- Previous Summary: ${params.previousEvaluation.summary || 'N/A'}
+` : 'No previous evaluation'}
 
 **Interview Responses:**
 ${params.interviewResponses}
@@ -135,6 +144,7 @@ ${params.interviewResponses}
 2. Be objective and evidence-based
 3. Highlight specific strengths and areas for improvement
 4. Note any red flags or concerning patterns
+5. Consider previous evaluation if available
 
 **Response Format:**
 Return ONLY a valid JSON object with this exact structure:
@@ -168,64 +178,66 @@ Evaluate this candidate thoroughly and provide the JSON response.
 `;
 }
 
-async function getResumeContent(candidateId: string): Promise<string> {
+async function getResumeUrl(candidateId: string): Promise<string | null> {
   try {
     const { data: resumeData } = await supabase
       .from('candidate_resumes')
-      .select('*')
+      .select('public_url')
       .eq('candidate_id', candidateId)
       .single()
 
-    if (!resumeData) return "No resume available"
-
-    return `
-Resume: ${resumeData.original_filename}
-File Type: ${resumeData.file_type}
-Word Count: ${resumeData.word_count || 'N/A'}
-Upload Date: ${resumeData.created_at}
-Parsing Status: ${resumeData.parsing_status}
-`
+    return resumeData?.public_url || null;
   } catch (error) {
-    console.error('Error fetching resume:', error)
-    return "Resume data unavailable"
+    console.error('Error fetching resume URL:', error)
+    return null;
   }
 }
 
 async function gatherCandidateData(candidateId: string) {
   try {
-    const { data: candidate, error: candidateError } = await supabase
-      .from('candidates')
-      .select(`
-        *,
-        jobs!inner(
-          id,
-          title,
-          description,
-          fields,
-          profile_id
-        )
-      `)
+    // Get candidate details from the view (includes job info and previous evaluation)
+    const { data: candidateDetails, error: candidateError } = await supabase
+      .from('candidate_details')
+      .select('*')
       .eq('id', candidateId)
       .single()
 
     if (candidateError) throw candidateError
-    if (!candidate) throw new Error('Candidate not found')
+    if (!candidateDetails) throw new Error('Candidate not found')
 
+    // Get interview responses
     const { data: responses, error: responsesError } = await supabase
       .from('responses')
-      .select('*')
+      .select('question, answer') // We might need the response_time later
       .eq('candidate_id', candidateId)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: true });
 
-    if (responsesError) throw responsesError
+    if (responsesError) throw new Error('Failed to fetch interview responses')
 
-    const resumeContent = await getResumeContent(candidateId)
+    // Get resume URL
+    const resumeUrl = await getResumeUrl(candidateId)
+
+    // Get previous evaluation data (if exists)
+    const previousEvaluation = candidateDetails.evaluation_id ? {
+      score: candidateDetails.score,
+      recommendation: candidateDetails.recommendation,
+      summary: candidateDetails.summary,
+      strengths: candidateDetails.strengths,
+      red_flags: candidateDetails.red_flags,
+      skills_assessment: candidateDetails.skills_assessment,
+      traits_assessment: candidateDetails.traits_assessment
+    } : null;
 
     return {
-      candidate,
-      job: candidate.jobs,
+      candidate: candidateDetails,
+      job: {
+        id: candidateDetails.job_id,
+        title: candidateDetails.job_title,
+        fields: candidateDetails.job_fields
+      },
       responses: responses || [],
-      resumeContent
+      resumeUrl,
+      previousEvaluation
     }
   } catch (error) {
     console.error('Error gathering candidate data:', error)
@@ -237,25 +249,21 @@ async function evaluateCandidate(candidateId: string) {
   const startTime = Date.now()
 
   try {
-    const { candidate, job, responses, resumeContent } = await gatherCandidateData(candidateId)
+    const { candidate, job, responses, resumeUrl, previousEvaluation } = await gatherCandidateData(candidateId)
 
     const formattedResponses = responses
       .map((r: any, index: number) => `Q${index + 1}: ${r.question}\nA${index + 1}: ${r.answer}`)
       .join('\n\n')
 
-    const jobFields = job.fields || {}
-    const requiredSkills = jobFields.skills ? jobFields.skills.join(', ') : 'Not specified'
-    const requiredTraits = jobFields.traits ? jobFields.traits.join(', ') : 'Not specified'
-    const experienceLevel = jobFields.experienceLevel || 'Not specified'
+    const experienceLevel = job.fields?.experienceLevel || 'Not specified'
 
     const prompt = createEvaluationPrompt({
       jobTitle: job.title,
-      jobDescription: job.description || 'No description provided',
-      requiredSkills,
-      requiredTraits,
+      jobFields: job.fields,
       experienceLevel,
       interviewResponses: formattedResponses || 'No interview responses available',
-      resumeContent
+      resumeUrl: resumeUrl || undefined,
+      previousEvaluation
     })
 
     const aiResponse = await callOpenAI(prompt)
@@ -263,9 +271,9 @@ async function evaluateCandidate(candidateId: string) {
     const processingDuration = Date.now() - startTime
 
     const evaluationSources = {
-      resume: !!candidate.resume_id,
+      resume: !!resumeUrl,
       interview: responses.length > 0,
-      previous_evaluations: false
+      previous_evaluations: !!previousEvaluation
     }
 
     const { data: aiEvaluation, error: saveError } = await supabase
@@ -345,7 +353,7 @@ serve(async (req: Request) => {
       .from('ai_evaluations')
       .select('id')
       .eq('candidate_id', candidateId)
-      .single()
+      .maybeSingle()
 
     if (existingEvaluation) {
       return new Response(JSON.stringify({ success: false, error: 'AI evaluation already exists for this candidate' }), {
@@ -358,7 +366,7 @@ serve(async (req: Request) => {
       .from('candidates')
       .select('is_completed')
       .eq('id', candidateId)
-      .single()
+      .maybeSingle()
 
     if (!candidate?.is_completed) {
       return new Response(JSON.stringify({ success: false, error: 'Candidate interview not completed yet' }), {
