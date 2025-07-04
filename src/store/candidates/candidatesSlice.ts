@@ -6,6 +6,7 @@ import {
   fetchCandidateById,
   fetchCandidateByToken,
   fetchCandidateResume,
+  triggerAIEvaluation,
   createCandidate,
   submitInterview,
   saveEvaluation,
@@ -35,6 +36,12 @@ interface CandidatesState {
     totalPages: number;
     hasMore: boolean;
   };
+  // AI evaluation state
+  aiEvaluation: {
+    isEvaluating: boolean;
+    evaluatingCandidateId: string | null;
+    lastEvaluationDuration: number | null;
+  };
 }
 
 const initialState: CandidatesState = {
@@ -57,6 +64,12 @@ const initialState: CandidatesState = {
     total: 0,
     totalPages: 0,
     hasMore: false,
+  },
+  // AI evaluation state
+  aiEvaluation: {
+    isEvaluating: false,
+    evaluatingCandidateId: null,
+    lastEvaluationDuration: null,
   },
 };
 
@@ -99,6 +112,11 @@ const candidatesSlice = createSlice({
         total: 0,
         totalPages: 0,
         hasMore: false,
+      };
+      state.aiEvaluation = {
+        isEvaluating: false,
+        evaluatingCandidateId: null,
+        lastEvaluationDuration: null,
       };
     },
   },
@@ -170,6 +188,35 @@ const candidatesSlice = createSlice({
       })
       .addCase(fetchCandidateResume.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to fetch candidate resume';
+      })
+      // Trigger AI Evaluation
+      .addCase(triggerAIEvaluation.pending, (state, action) => {
+        state.aiEvaluation.isEvaluating = true;
+        state.aiEvaluation.evaluatingCandidateId = action.meta.arg.candidateId;
+        state.error = null;
+      })
+      .addCase(triggerAIEvaluation.fulfilled, (state, action) => {
+        state.aiEvaluation.isEvaluating = false;
+        state.aiEvaluation.evaluatingCandidateId = null;
+        state.aiEvaluation.lastEvaluationDuration = action.payload.processingDurationMs;
+        
+        // Update candidate in the list with new evaluation
+        const candidateIndex = state.candidates.findIndex(
+          (candidate: Candidate) => candidate.id === action.payload.candidateId
+        );
+        if (candidateIndex !== -1) {
+          // The evaluation will be fetched in the next refresh, so we can mark it as updated
+          // In a real app, you might want to transform the AI evaluation to the candidate format
+        }
+        
+        if (state.currentCandidate && state.currentCandidate.id === action.payload.candidateId) {
+          // Mark that this candidate has been evaluated
+        }
+      })
+      .addCase(triggerAIEvaluation.rejected, (state, action) => {
+        state.aiEvaluation.isEvaluating = false;
+        state.aiEvaluation.evaluatingCandidateId = null;
+        state.error = action.error.message || 'Failed to trigger AI evaluation';
       })
       // Create Candidate
       .addCase(createCandidate.pending, (state) => {

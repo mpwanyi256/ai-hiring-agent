@@ -79,6 +79,24 @@ export const fetchCandidateResume = createAsyncThunk(
   }
 );
 
+// New thunk for triggering AI evaluation
+export const triggerAIEvaluation = createAsyncThunk(
+  'candidates/triggerAIEvaluation',
+  async (params: { candidateId: string; force?: boolean }) => {
+    try {
+      const { candidateId, force = false } = params;
+      const response = await apiUtils.post(`/api/candidates/${candidateId}/evaluate`, { force });
+      return {
+        candidateId,
+        evaluation: response.evaluation,
+        processingDurationMs: response.processingDurationMs
+      };
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to trigger AI evaluation');
+    }
+  }
+);
+
 export const createCandidate = createAsyncThunk(
   'candidates/createCandidate',
   async (candidateData: CreateCandidateData) => {
