@@ -77,9 +77,9 @@ export default function CandidatesList({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-100">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-100">
+    <div className="bg-white rounded-lg border border-gray-100 h-full flex flex-col">
+      {/* Header - Fixed */}
+      <div className="p-4 border-b border-gray-100 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">
             Candidates ({candidates.length})
@@ -115,8 +115,8 @@ export default function CandidatesList({
         </div>
       </div>
 
-      {/* Candidates List */}
-      <div className="max-h-96 overflow-y-auto">
+      {/* Candidates List - Scrollable */}
+      <div className="flex-1 overflow-y-auto">
         {candidates.length === 0 ? (
           <div className="p-8 text-center">
             <div className="text-gray-400 mb-2">

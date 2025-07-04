@@ -15,6 +15,33 @@ export const fetchCandidatesByJob = createAsyncThunk(
   }
 );
 
+// New thunk for fetching job candidates with stats using the dedicated endpoint
+export const fetchJobCandidates = createAsyncThunk(
+  'candidates/fetchJobCandidates',
+  async (params: {
+    jobId: string;
+    search?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    try {
+      const { jobId, search, status, page = 1, limit = 50 } = params;
+      const queryParams = new URLSearchParams({
+        ...(search && { search }),
+        ...(status && { status }),
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+      
+      const response = await apiUtils.get(`/api/jobs/${jobId}/candidates?${queryParams}`);
+      return response;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to fetch job candidates');
+    }
+  }
+);
+
 export const fetchCandidateById = createAsyncThunk(
   'candidates/fetchCandidateById',
   async (candidateId: string) => {
