@@ -1,7 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import api, { apiUtils } from '../api';
+import { apiUtils } from '../api';
 import { JobData } from "@/lib/services/jobsService";
-import { APIResponse, CandidateBasic, getCandidateDetailsPayload } from "@/types";
+import { APIResponse, CandidateBasic } from "@/types";
 import { createCandidateAccountPayload } from "@/types/interview";
 
 export const fetchInterview = createAsyncThunk(

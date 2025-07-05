@@ -29,9 +29,13 @@ const interviewSlice = createSlice({
       })
       .addCase(getCandidateDetails.fulfilled, (state, { payload }) => {
         state.candidate = payload
-        if (payload.currentStep > state.interviewStep) {
-          state.interviewStep = payload.currentStep;
+        console.log('Candidate details fetched', payload);
+        state.interviewStep = payload.currentStep;
+        if (payload.isCompleted) {
+          console.log('Candidate completed interview');
+          state.interviewStep = 5;
         }
+        console.log('Interview step set to', state.interviewStep);
         state.isLoading = false
       })
       .addCase(getCandidateDetails.rejected, (state, action) => {
