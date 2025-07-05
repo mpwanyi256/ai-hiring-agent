@@ -213,11 +213,12 @@ async function getResumeUrl(candidateId: string, jobId: string): Promise<string 
 
 async function gatherCandidateData(candidateId: string, jobId: string) {
   try {
+    console.log('Gathering candidate data for candidate', candidateId, 'and job', jobId)
     // Get candidate details from the view (includes job info and previous evaluation)
     const { data: candidateDetails, error: candidateError } = await supabase
       .from('candidate_details')
       .select('*')
-      .eq('id', candidateId)
+      .eq('candidate_info_id', candidateId)
       .eq('job_id', jobId)
       .single()
 
@@ -454,7 +455,7 @@ serve(async (req: Request) => {
     const { data: candidate } = await supabase
       .from('candidates')
       .select('is_completed, job_id')
-      .eq('id', candidateId)
+      .eq('candidate_info_id', candidateId)
       .eq('job_id', jobId)
       .maybeSingle()
 
