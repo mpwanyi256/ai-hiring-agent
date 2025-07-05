@@ -197,15 +197,32 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if candidate already exists for this job and email combination
-    if (email) {
       const { data: existingCandidate } = await supabase
         .from('candidates')
         .select('id, first_name, last_name, email, current_step, total_steps, is_completed')
         .eq('job_id', job.id)
         .eq('email', email)
-        .single();
+        .maybeSingle();
+
+      console.log('Found candidate');
 
       if (existingCandidate) {
+        if (existingCandidate.is_completed) {
+          return NextResponse.json({ 
+            success: true, 
+            data: {
+              id: existingCandidate.id,
+              jobId: job.id,
+              jobTitle: job.title,
+              email: existingCandidate.email,
+              firstName: existingCandidate.first_name,
+              lastName: existingCandidate.last_name,
+              currentStep: existingCandidate.current_step,
+            },
+            isExisting: true,
+          });
+        }
+        
         // Update existing candidate info if needed
         const updates: any = {};
         
@@ -234,7 +251,7 @@ export async function POST(request: NextRequest) {
         // Return existing candidate
         return NextResponse.json({
           success: true,
-          candidate: {
+          data: {
             id: existingCandidate.id,
             jobId: job.id,
             jobTitle: job.title,
@@ -248,7 +265,6 @@ export async function POST(request: NextRequest) {
           isExisting: true,
         });
       }
-    }
 
     // Create new candidate
     const candidateData = {
@@ -257,11 +273,12 @@ export async function POST(request: NextRequest) {
       email: email || null,
       first_name: firstName,
       last_name: lastName || null,
-      current_step: 1,
-      total_steps: 3, // info -> resume -> interview
+      current_step: 3,
+      total_steps: 5, // intro -> info -> resume -> interview -> complete
       is_completed: false,
     };
 
+    // TODO: Move candidate details to profiles table
     const { data: newCandidate, error: createError } = await supabase
       .from('candidates')
       .insert(candidateData)
@@ -278,7 +295,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      candidate: {
+      data: {
         id: newCandidate.id,
         jobId: newCandidate.job_id,
         jobTitle: job.title,

@@ -1,28 +1,33 @@
 'use client';
 
-import { JobData } from '@/lib/services/jobsService';
 import { 
   BriefcaseIcon, 
   ClockIcon,
   VideoCameraIcon,
   DocumentTextIcon,
   SparklesIcon,
-  ChevronRightIcon,
   PlayIcon
 } from '@heroicons/react/24/outline';
-import { useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
 import { loadedInterview } from '@/store/interview/interviewSelectors';
 import { apiSuccess } from '@/lib/notification';
+import { setInterviewStep } from '@/store/interview/interviewSlice';
 
 export default function InterviewIntro() {
   const job = useAppSelector(loadedInterview);
+  const dispatch = useAppDispatch();
 
   const handleStartInterview = () => {
-    apiSuccess('Interview started');
+    dispatch(setInterviewStep(2));
   }
 
   if (!job) {
-    return <div>Loading...</div>;
+    return (<div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-muted-text">Loading interview...</p>
+      </div>
+    </div>)
   }
 
   return (

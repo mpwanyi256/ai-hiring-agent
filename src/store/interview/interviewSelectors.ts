@@ -22,3 +22,8 @@ export const loadedInterview = createSelector(
   [selectInterview],
   (interview) => interview.interview
 )
+
+export const selectCandidate = createSelector(
+  [selectInterview],
+  (interview) => interview.candidate
+)

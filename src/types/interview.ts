@@ -157,3 +157,12 @@ export interface InterviewState {
   isLoading: boolean;
   error: string | null;
 }
+
+export interface createCandidateAccountPayload {
+  jobToken: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+export type InterviewStep = 'intro' | 'info' | 'resume' | 'interview' | 'complete';

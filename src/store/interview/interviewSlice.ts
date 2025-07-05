@@ -17,6 +17,9 @@ const interviewSlice = createSlice({
   reducers: {
     setInterview: (state, action: PayloadAction<JobData>) => {
       state.interview = action.payload
+    },
+    setInterviewStep: (state, action: PayloadAction<number>) => {
+      state.interviewStep = action.payload
     }
   },
   extraReducers: (builder) => {
@@ -24,8 +27,11 @@ const interviewSlice = createSlice({
       .addCase(getCandidateDetails.pending, (state) => {
         state.isLoading = true
       })
-      .addCase(getCandidateDetails.fulfilled, (state, action) => {
-        state.candidate = action.payload
+      .addCase(getCandidateDetails.fulfilled, (state, { payload }) => {
+        state.candidate = payload
+        if (payload.currentStep > state.interviewStep) {
+          state.interviewStep = payload.currentStep;
+        }
         state.isLoading = false
       })
       .addCase(getCandidateDetails.rejected, (state, action) => {
@@ -47,6 +53,6 @@ const interviewSlice = createSlice({
   }
 })
 
-export const { setInterview } = interviewSlice.actions
+export const { setInterview, setInterviewStep } = interviewSlice.actions
 
 export default interviewSlice.reducer

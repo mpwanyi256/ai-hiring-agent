@@ -17,6 +17,9 @@ export const inputTypes = [
 
 export const app = {
     baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    name: 'Intervio',
+    domain: 'intervio.com',
+    description: 'AI Hiring Platform',
 }
 
 export const ai = {
@@ -24,4 +27,10 @@ export const ai = {
     model: 'gpt-4o-mini', // Cost-effective model for question generation
     maxTokens: 2000,
     temperature: 0.7, // Balanced creativity for question generation
+}
+
+export const domainEmails = {
+    support: `support@${app.domain}`,
+    noReply: `no-reply@${app.domain}`,
+    developer: `developer@${app.domain}`,
 }

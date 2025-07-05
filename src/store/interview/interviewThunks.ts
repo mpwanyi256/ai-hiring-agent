@@ -2,6 +2,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api, { apiUtils } from '../api';
 import { JobData } from "@/lib/services/jobsService";
 import { APIResponse, CandidateBasic, getCandidateDetailsPayload } from "@/types";
+import { createCandidateAccountPayload } from "@/types/interview";
 
 export const fetchInterview = createAsyncThunk(
   'interview/fetchInterview',
@@ -25,21 +26,19 @@ export const getCandidateDetails = createAsyncThunk(
     email,
     firstName,
     lastName
-  }: getCandidateDetailsPayload): Promise<CandidateBasic> => {
-    const response = await apiUtils.post(`/api/candidates`, {
+  }: createCandidateAccountPayload): Promise<CandidateBasic> => {
+    const { data, success } = await apiUtils.post<APIResponse<CandidateBasic>>(`/api/candidates`, {
       jobToken,
       email,
       firstName,
       lastName,
     });
 
-    console.log('candidate details', response);
+    console.log('Candidate data returned', data);
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch candidate details')
+    if (!success) {
+      throw new Error('Failed to create candidate account')
     }
-
-    const { data } = await response.json() as APIResponse<CandidateBasic>
 
     return data
   }

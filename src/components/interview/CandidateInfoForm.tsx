@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 import { BriefcaseIcon } from '@heroicons/react/24/outline';
+import { useAppDispatch } from '@/store';
+import { getCandidateDetails } from '@/store/interview/interviewThunks';
+import { setInterviewStep } from '@/store/interview/interviewSlice';
+import { apiError } from '@/lib/notification';
 
 interface CandidateInfo {
   firstName: string;
@@ -10,27 +14,29 @@ interface CandidateInfo {
 }
 
 interface CandidateInfoFormProps {
-  candidateInfo: CandidateInfo;
-  setCandidateInfo: (info: CandidateInfo) => void;
   jobToken: string;
-  onSubmit: (candidateId: string) => void;
-  onBack: () => void;
 }
 
-export default function CandidateInfoForm({ 
-  candidateInfo, 
-  setCandidateInfo, 
-  jobToken,
-  onSubmit,
-  onBack 
+export default function CandidateInfoForm({
+  jobToken
 }: CandidateInfoFormProps) {
+  const dispatch = useAppDispatch();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [candidateInfo, setCandidateInfo] = useState<CandidateInfo>({
+    firstName: '',
+    lastName: '',
+    email: '',
+  });
+
+  const handleBack = () => {
+    dispatch(setInterviewStep(1));
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!candidateInfo.firstName.trim()) {
-      setError('Please enter your first name');
+    if (!candidateInfo.firstName.trim() || !candidateInfo.lastName.trim() || !candidateInfo.email.trim()) {
+      setError('Please enter your first name, last name, and email');
       return;
     }
 
@@ -38,32 +44,16 @@ export default function CandidateInfoForm({
     setIsLoading(true);
 
     try {
-      // Check if candidate already exists and create/update candidate record
-      const response = await fetch(`/api/candidates`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jobToken,
-          email: candidateInfo.email,
-          firstName: candidateInfo.firstName,
-          lastName: candidateInfo.lastName,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        setError(data.error || 'Failed to save candidate information');
-        return;
-      }
-
-      // Pass the candidate ID to continue the flow
-      onSubmit(data.candidate.id);
+      await dispatch(getCandidateDetails({
+        jobToken,
+        email: candidateInfo.email,
+        firstName: candidateInfo.firstName,
+        lastName: candidateInfo.lastName,
+      })).unwrap();
     } catch (err) {
       console.error('Error saving candidate info:', err);
-      setError('Failed to save candidate information');
+      setError('Something went wrong. Please try again.');
+      apiError('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -139,14 +129,14 @@ export default function CandidateInfoForm({
                 Saving...
               </>
             ) : (
-              'Continue to Resume Upload'
+              'Continue'
             )}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <button
-            onClick={onBack}
+            onClick={handleBack}
             disabled={isLoading}
             className="text-primary hover:text-primary/80 text-sm disabled:text-primary/50"
           >

@@ -1,27 +1,44 @@
 'use client';
 
 import Button from '@/components/ui/Button';
-import { JobData } from '@/lib/services/jobsService';
 import {
-  CheckCircleIcon,
-  ClockIcon,
   DocumentTextIcon,
   EnvelopeIcon,
   BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
+import { useAppSelector } from '@/store';
+import { loadedInterview } from '@/store/interview/interviewSelectors';
+import Image from 'next/image';
+import { domainEmails } from '@/lib/constants';
 
-interface InterviewCompleteProps {
-  job: JobData;
-}
+export default function InterviewComplete() {
+  const job = useAppSelector(loadedInterview);
 
-export default function InterviewComplete({ job }: InterviewCompleteProps) {
+  if (!job) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-text mb-2">
+            Interview Complete!
+          </h1>
+          <p className="text-muted-text text-lg">
+            Thank you for taking the time to complete the interview for <strong>Job Title</strong>.
+          </p>
+          <p className="text-muted-text text-lg">
+            We will review your interview and get back to you soon. Thank you for your patience.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
         {/* Success Icon */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircleIcon className="w-8 h-8 text-primary" />
+          <div className="w-[200px] h-[200px] bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Image src="/illustrations/success.svg" alt="Success" width={150} height={150} objectFit='contain' />
           </div>
           <h1 className="text-3xl font-bold text-text mb-2">
             Interview Complete!
@@ -29,28 +46,6 @@ export default function InterviewComplete({ job }: InterviewCompleteProps) {
           <p className="text-muted-text text-lg">
             Thank you for taking the time to complete the interview for <strong>{job.title}</strong>.
           </p>
-        </div>
-
-        {/* What happens next */}
-        <div className="bg-gray-50 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold text-text mb-4 flex items-center">
-            <ClockIcon className="w-5 h-5 mr-2 text-primary" />
-            What happens next?
-          </h2>
-          <div className="space-y-3 text-muted-text">
-            <div className="flex items-start">
-              <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
-              <p>Our system will analyze your responses and generate a comprehensive evaluation.</p>
-            </div>
-            <div className="flex items-start">
-              <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
-              <p>The hiring team will review your interview within 2-3 business days.</p>
-            </div>
-            <div className="flex items-start">
-              <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
-              <p>You&apos;ll be contacted directly if there&apos;s a mutual fit for the next steps.</p>
-            </div>
-          </div>
         </div>
 
         {/* Interview Details */}
@@ -75,12 +70,12 @@ export default function InterviewComplete({ job }: InterviewCompleteProps) {
         </div>
 
         {/* Additional Information */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
           <div className="flex items-start">
-            <EnvelopeIcon className="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
+            <EnvelopeIcon className="w-5 h-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
             <div>
-              <h3 className="font-semibold text-blue-900 mb-1">Stay Connected</h3>
-              <p className="text-blue-700 text-sm">
+              <h3 className="font-semibold text-green-900 mb-1">Stay Connected</h3>
+              <p className="text-green-700 text-sm">
                 Make sure to check your email regularly for updates. If you provided an email address during the interview, 
                 we&apos;ll send you confirmation and any follow-up communications there.
               </p>
@@ -108,7 +103,7 @@ export default function InterviewComplete({ job }: InterviewCompleteProps) {
         {/* Footer */}
         <div className="text-center mt-8 pt-6 border-t border-gray-light">
           <p className="text-sm text-muted-text">
-            Questions about your interview? Feel free to reach out to our support team.
+            Questions about your interview? Feel free to reach out to our support team at <a href={`mailto:${domainEmails.support}`} className="text-primary hover:text-primary/80">{domainEmails.support}</a>
           </p>
         </div>
       </div>
