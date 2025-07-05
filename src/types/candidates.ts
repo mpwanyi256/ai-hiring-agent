@@ -206,3 +206,10 @@ export interface SupabaseResponse {
   response_time: number;
   created_at: string;
 } 
+
+export interface getCandidateDetailsPayload {
+  jobToken: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}

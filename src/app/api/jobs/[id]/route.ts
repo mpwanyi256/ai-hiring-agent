@@ -3,10 +3,11 @@ import { jobsService } from '@/lib/services/jobsService';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const jobId = params.id;
+    const resolvedParams = await params;
+    const jobId = resolvedParams.id;
 
     if (!jobId) {
       return NextResponse.json(

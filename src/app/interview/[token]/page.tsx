@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { JobData } from '@/lib/services/jobsService';
 import InterviewFlow from '@/components/interview/InterviewFlow';
 import InterviewComplete from '@/components/interview/InterviewComplete';
@@ -10,13 +10,15 @@ import InterviewIntro from '@/components/interview/InterviewIntro';
 import CandidateInfoForm from '@/components/interview/CandidateInfoForm';
 import { ResumeEvaluation } from '@/types/interview';
 
-interface PageProps {
-  params: Promise<{ token: string }>;
+type pageParams = {
+  token: string;
 }
 
 type InterviewStep = 'intro' | 'info' | 'resume' | 'interview' | 'complete';
 
-export default function InterviewPage({ params }: PageProps) {
+export default function InterviewPage() {
+  const pageParams = useParams<pageParams>();
+  console.log(pageParams);
   const [job, setJob] = useState<JobData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,19 +33,14 @@ export default function InterviewPage({ params }: PageProps) {
   const [resumeContent, setResumeContent] = useState<string>('');
   const [resolvedParams, setResolvedParams] = useState<{ token: string } | null>(null);
 
-  // Resolve params
-  useEffect(() => {
-    params.then(setResolvedParams);
-  }, [params]);
-
   // Fetch job data
   useEffect(() => {
-    if (!resolvedParams?.token) return;
+    if (!pageParams.token) return;
 
     const fetchJob = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/jobs/interview/${resolvedParams.token}`);
+        const response = await fetch(`/api/jobs/interview/${pageParams.token}`);
         const data = await response.json();
         
         if (!data.success) {
@@ -61,7 +58,7 @@ export default function InterviewPage({ params }: PageProps) {
     };
 
     fetchJob();
-  }, [resolvedParams]);
+  }, [pageParams.token]);
 
   const handleStartInterview = () => {
     setCurrentStep('info');
@@ -103,7 +100,7 @@ export default function InterviewPage({ params }: PageProps) {
     return notFound();
   }
 
-  if (!job || !resolvedParams) return null;
+  if (!job) return null;
 
   // Show interview completion
   if (currentStep === 'complete') {
@@ -114,7 +111,7 @@ export default function InterviewPage({ params }: PageProps) {
   if (currentStep === 'interview' && resumeEvaluation?.passesThreshold && candidateId) {
     return (
       <InterviewFlow 
-        jobToken={resolvedParams.token}
+        jobToken={pageParams.token}
         job={job}
         candidateId={candidateId}
         candidateInfo={candidateInfo}
@@ -129,7 +126,7 @@ export default function InterviewPage({ params }: PageProps) {
   if (currentStep === 'resume' && candidateId) {
     return (
       <ResumeUpload
-        jobToken={resolvedParams.token}
+        jobToken={pageParams.token}
         job={job}
         candidateId={candidateId}
         candidateInfo={candidateInfo}
@@ -144,7 +141,7 @@ export default function InterviewPage({ params }: PageProps) {
       <CandidateInfoForm
         candidateInfo={candidateInfo}
         setCandidateInfo={setCandidateInfo}
-        jobToken={resolvedParams.token}
+        jobToken={pageParams.token}
         onSubmit={handleCandidateInfoSubmit}
         onBack={() => setCurrentStep('intro')}
       />

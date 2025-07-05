@@ -1,4 +1,5 @@
 import { JobData } from "@/lib/services/jobsService";
+import { CandidateBasic } from "./candidates";
 
 export interface JobQuestion {
   id: string;
@@ -151,6 +152,7 @@ export interface QuestionGenerationResponse {
 
 export interface InterviewState {
   job: JobData | null;
+  candidate: CandidateBasic | null;
   isLoading: boolean;
   error: string | null;
 }
