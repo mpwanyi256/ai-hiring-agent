@@ -1,6 +1,6 @@
 'use client';
 
-import { DocumentTextIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import { JobData } from '@/lib/services/jobsService';
 import { InterviewEvaluation } from '@/types/interview';
@@ -16,17 +16,33 @@ export default function ExistingEvaluationDisplay({
   job,
   onProceedToInterview
 }: ExistingEvaluationDisplayProps) {
+  const resumeScore = evaluation.resumeScore || evaluation.score || 0;
+  const passesThreshold = resumeScore >= 60;
+  const isNewEvaluation = evaluation.createdAt && 
+    (new Date().getTime() - new Date(evaluation.createdAt).getTime()) < 5 * 60 * 1000; // Within 5 minutes
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="max-w-2xl mx-auto px-4 border border-gray-200 rounded-lg p-8 flex flex-col gap-8">
         {/* Header */}
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-green-100">
-            <CheckCircleIcon className="w-8 h-8 text-green-600" />
+          <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+            passesThreshold ? 'bg-green-100' : 'bg-yellow-100'
+          }`}>
+            {passesThreshold ? (
+              <CheckCircleIcon className="w-8 h-8 text-green-600" />
+            ) : (
+              <ExclamationTriangleIcon className="w-8 h-8 text-yellow-600" />
+            )}
           </div>
-          <h1 className="text-2xl font-bold text-text mb-2">Resume Already Evaluated</h1>
+          <h1 className="text-2xl font-bold text-text mb-2">
+            {isNewEvaluation ? 'Resume Evaluation Complete' : 'Resume Already Evaluated'}
+          </h1>
           <p className="text-muted-text">
-            We found an existing resume evaluation for the {job.title} position
+            {isNewEvaluation 
+              ? `Your resume has been evaluated for the ${job.title} position`
+              : `We found an existing resume evaluation for the ${job.title} position`
+            }
           </p>
         </div>
 
@@ -34,14 +50,29 @@ export default function ExistingEvaluationDisplay({
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center mb-4">
             <DocumentTextIcon className="w-6 h-6 text-primary mr-2" />
-            <h3 className="text-lg font-semibold text-text">Previous Evaluation</h3>
+            <h3 className="text-lg font-semibold text-text">
+              {isNewEvaluation ? 'Evaluation Results' : 'Previous Evaluation'}
+            </h3>
           </div>
           
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-muted-text">Resume Score:</span>
-              <span className="font-semibold text-text">
-                {evaluation.resumeScore || evaluation.score}/100
+              <span className={`font-semibold ${
+                passesThreshold ? 'text-green-600' : 'text-yellow-600'
+              }`}>
+                {resumeScore}/100
+              </span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-muted-text">Status:</span>
+              <span className={`font-medium px-2 py-1 rounded-full text-xs ${
+                passesThreshold 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}>
+                {passesThreshold ? 'Passed' : 'Below Threshold'}
               </span>
             </div>
             
@@ -55,7 +86,8 @@ export default function ExistingEvaluationDisplay({
             <div className="flex justify-between items-center">
               <span className="text-muted-text">Evaluated:</span>
               <span className="font-medium text-text">
-                {new Date(evaluation.createdAt).toLocaleDateString()}
+                {new Date(evaluation.createdAt).toLocaleDateString()} at{' '}
+                {new Date(evaluation.createdAt).toLocaleTimeString()}
               </span>
             </div>
           </div>
@@ -63,25 +95,70 @@ export default function ExistingEvaluationDisplay({
           {evaluation.resumeSummary && (
             <div className="mt-4 p-4 bg-gray-50 rounded-md">
               <h4 className="font-medium text-text mb-2">Summary:</h4>
-              <p className="text-sm text-muted-text line-clamp-3">
+              <p className="text-sm text-muted-text">
                 {evaluation.resumeSummary}
               </p>
+            </div>
+          )}
+
+          {evaluation.strengths && evaluation.strengths.length > 0 && (
+            <div className="mt-4 p-4 bg-green-50 rounded-md">
+              <h4 className="font-medium text-green-800 mb-2">Key Strengths:</h4>
+              <ul className="text-sm text-green-700 space-y-1">
+                {evaluation.strengths.map((strength, index) => (
+                  <li key={index} className="flex items-center">
+                    <span className="w-1 h-1 bg-green-600 rounded-full mr-2"></span>
+                    {strength}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {evaluation.redFlags && evaluation.redFlags.length > 0 && (
+            <div className="mt-4 p-4 bg-yellow-50 rounded-md">
+              <h4 className="font-medium text-yellow-800 mb-2">Areas for Improvement:</h4>
+              <ul className="text-sm text-yellow-700 space-y-1">
+                {evaluation.redFlags.map((flag, index) => (
+                  <li key={index} className="flex items-center">
+                    <span className="w-1 h-1 bg-yellow-600 rounded-full mr-2"></span>
+                    {flag}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
 
         {/* Action Buttons */}
         <div className="text-center space-y-4">
-          <Button
-            onClick={onProceedToInterview}
-            className="w-full sm:w-auto"
-          >
-            Continue to Interview Questions
-          </Button>
-          
-          <p className="text-sm text-muted-text">
-            You can proceed directly to the interview questions since your resume has already been evaluated.
-          </p>
+          {passesThreshold ? (
+            <>
+              <Button
+                onClick={onProceedToInterview}
+                className="w-full sm:w-auto"
+              >
+                Continue to Interview Questions
+              </Button>
+              
+              <p className="text-sm text-muted-text">
+                Great! Your resume meets our requirements. You can now proceed to the interview questions.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-yellow-800 text-sm">
+                  Your resume score is below the 60% threshold required to proceed. 
+                  Consider updating your resume with more relevant experience and skills for this position.
+                </p>
+              </div>
+              
+              <p className="text-sm text-muted-text">
+                Unfortunately, you cannot proceed to the interview questions at this time.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>

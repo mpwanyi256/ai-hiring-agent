@@ -1,18 +1,47 @@
 'use client';
 
+import { useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import {
   DocumentTextIcon,
   EnvelopeIcon,
   BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
-import { useAppSelector } from '@/store';
-import { loadedInterview } from '@/store/interview/interviewSelectors';
+import { useAppSelector, useAppDispatch } from '@/store';
+import { loadedInterview, selectCandidate } from '@/store/interview/interviewSelectors';
+import { setInterviewStep } from '@/store/interview/interviewSlice';
 import Image from 'next/image';
 import { domainEmails } from '@/lib/constants';
 
 export default function InterviewComplete() {
   const job = useAppSelector(loadedInterview);
+  const candidate = useAppSelector(selectCandidate);
+  const dispatch = useAppDispatch();
+
+  // Update candidate progress to completed
+  useEffect(() => {
+    if (candidate?.id) {
+      const updateCandidateProgress = async () => {
+        try {
+          await fetch(`/api/candidates/${candidate.id}/complete`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              isCompleted: true,
+              currentStep: 5,
+              totalSteps: 5
+            }),
+          });
+        } catch (error) {
+          console.error('Error updating candidate progress:', error);
+        }
+      };
+
+      updateCandidateProgress();
+    }
+  }, [candidate?.id]);
 
   if (!job) {
     return (

@@ -9,6 +9,7 @@ import UploadProgress from './UploadProgress';
 import ExistingEvaluationDisplay from './ExistingEvaluationDisplay';
 import { loadedInterview, selectCandidate } from '@/store/interview/interviewSelectors';
 import { useAppSelector } from '@/store';
+import { useEffect } from 'react';
 
 interface ResumeUploadProps {
   jobToken: string;
@@ -34,6 +35,7 @@ export default function ResumeUpload({
     uploadAndEvaluateResume,
     clearError,
     proceedToInterview,
+    handleEvaluationComplete,
     hasExistingEvaluation,
     canProceed
   } = useResumeEvaluation({
@@ -42,11 +44,54 @@ export default function ResumeUpload({
     jobId: job?.id || ''
   });
 
+  // Handle evaluation completion
+  useEffect(() => {
+    if (evaluation) {
+      console.log('New evaluation received:', evaluation);
+      handleEvaluationComplete(evaluation);
+    }
+  }, [evaluation, handleEvaluationComplete]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('ResumeUpload state:', {
+      candidateInfo: !!candidateInfo,
+      job: !!job,
+      isCheckingExisting,
+      existingEvaluation: !!existingEvaluation,
+      evaluation: !!evaluation,
+      hasExistingEvaluation,
+      canProceed
+    });
+  }, [candidateInfo, job, isCheckingExisting, existingEvaluation, evaluation, hasExistingEvaluation, canProceed]);
+
   if (!job) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-text">Loading job details...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Show evaluation results if we have any evaluation (new or existing)
+  // Show loading state while checking for existing evaluation
+  if (isCheckingExisting) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <h2 className="text-xl font-bold text-text mb-2">Checking Resume Status</h2>
+          <p className="text-muted-text">
+            Checking if you have an existing resume evaluation...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show existing evaluation results if we have any evaluation (new or existing)
   if (evaluation || existingEvaluation) {
     const displayEvaluation = evaluation || existingEvaluation;
     return (
@@ -55,6 +100,30 @@ export default function ResumeUpload({
         job={job}
         onProceedToInterview={proceedToInterview}
       />
+    );
+  }
+
+  // Show message if no candidate info is available
+  if (!candidateInfo) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-red-600 text-2xl">⚠️</span>
+          </div>
+          <h2 className="text-xl font-bold text-text mb-2">Missing Information</h2>
+          <p className="text-muted-text mb-4">
+            Please complete the previous step to provide your information before uploading a resume.
+          </p>
+          <Button
+            onClick={() => window.history.back()}
+            variant="outline"
+            className="w-full"
+          >
+            Go Back
+          </Button>
+        </div>
+      </div>
     );
   }
 
@@ -70,6 +139,9 @@ export default function ResumeUpload({
           <h1 className="text-2xl font-bold text-text mb-2">Upload Your Resume</h1>
           <p className="text-muted-text">
             Upload your resume to get an AI evaluation for the {job.title} position
+          </p>
+          <p className="text-sm text-muted-text mt-2">
+            Hi {candidateInfo.firstName}, let's evaluate your resume against the job requirements.
           </p>
         </div>
 
@@ -92,24 +164,40 @@ export default function ResumeUpload({
           onFileSelect={handleFileSelect}
           selectedFile={selectedFile}
           isLoading={isLoading}
-          disabled={isLoading}
+          disabled={isLoading || isUploading}
         />
 
         {/* Upload Button */}
         <div className="text-center">
           <Button
             onClick={uploadAndEvaluateResume}
-            disabled={!selectedFile || isLoading || !!validationError}
-            isLoading={isLoading}
+            disabled={!selectedFile || isLoading || isUploading || !!validationError}
+            isLoading={isLoading || isUploading}
             className="w-full sm:w-auto"
           >
-            {isLoading ? 'Evaluating Resume...' : 'Evaluate Resume'}
+            {isLoading || isUploading ? 'Evaluating Resume...' : 'Evaluate Resume'}
           </Button>
           {selectedFile && !validationError && (
             <p className="text-sm text-muted-text mt-4">
               Processing time varies by document size and complexity
             </p>
           )}
+        </div>
+
+        {/* Additional Info */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <div className="w-5 h-5 text-blue-600 mt-0.5">💡</div>
+            <div className="text-blue-800 text-sm">
+              <p className="font-medium mb-1">Resume Evaluation Process:</p>
+              <ul className="text-xs space-y-1">
+                <li>• Your resume will be analyzed against the job requirements</li>
+                <li>• You need a score of 60% or higher to proceed to interview questions</li>
+                <li>• The evaluation takes about 30-60 seconds to complete</li>
+                <li>• You can only upload one resume per application</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>

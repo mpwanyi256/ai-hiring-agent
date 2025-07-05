@@ -50,6 +50,9 @@ export default function CandidateInfoForm({
         firstName: candidateInfo.firstName,
         lastName: candidateInfo.lastName,
       })).unwrap();
+
+      // Automatically progress to step 3 (resume upload)
+      dispatch(setInterviewStep(3));
     } catch (err) {
       console.error('Error saving candidate info:', err);
       setError('Something went wrong. Please try again.');

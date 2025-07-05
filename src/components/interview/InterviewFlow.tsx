@@ -1,7 +1,8 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAppDispatch } from '@/store';
+import { setInterviewStep } from '@/store/interview/interviewSlice';
 import { JobData } from '@/lib/services/jobsService';
 import { ResumeEvaluation, JobQuestion } from '@/types/interview';
 import Button from '@/components/ui/Button';
@@ -23,7 +24,7 @@ interface InterviewFlowProps {
     lastName: string;
     email: string;
   };
-  resumeEvaluation: ResumeEvaluation;
+  resumeEvaluation?: ResumeEvaluation | null;
   resumeContent: string;
   onComplete: () => void;
 }
@@ -52,6 +53,8 @@ export default function InterviewFlow({
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [questionStartTime, setQuestionStartTime] = useState<Date>(new Date());
   const [error, setError] = useState<string | null>(null);
+
+  const dispatch = useAppDispatch();
 
   // Fetch questions from the API
   useEffect(() => {
@@ -181,7 +184,7 @@ export default function InterviewFlow({
           candidateId,
           jobToken,
           candidateInfo,
-          resumeEvaluation,
+          resumeEvaluation: resumeEvaluation || null,
           resumeContent,
           totalTimeSpent: Math.round((new Date().getTime() - (startTime?.getTime() || 0)) / 1000)
         }),
@@ -192,11 +195,13 @@ export default function InterviewFlow({
         console.warn('Failed to complete interview:', completeData.error);
       }
 
-      // Navigate to completion
+      // Navigate to completion step
+      dispatch(setInterviewStep(5));
       onComplete();
     } catch (err) {
       console.error('Error completing interview:', err);
       // Still proceed to completion even if there's an error
+      dispatch(setInterviewStep(5));
       onComplete();
     }
   };
