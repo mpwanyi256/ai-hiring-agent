@@ -151,7 +151,8 @@ export interface QuestionGenerationResponse {
 } 
 
 export interface InterviewState {
-  job: JobData | null;
+  interview: JobData | null;
+  interviewStep: number;
   candidate: CandidateBasic | null;
   isLoading: boolean;
   error: string | null;

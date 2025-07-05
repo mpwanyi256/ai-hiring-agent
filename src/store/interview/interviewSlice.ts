@@ -4,7 +4,8 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { fetchInterview, getCandidateDetails } from "./interviewThunks";
 
 const initialState: InterviewState = {
-  job: null,
+  interview: null,
+  interviewStep: 1,
   isLoading: false,
   error: null,
   candidate: null,
@@ -14,8 +15,8 @@ const interviewSlice = createSlice({
   name: 'interview',
   initialState,
   reducers: {
-    setJob: (state, action: PayloadAction<JobData>) => {
-      state.job = action.payload
+    setInterview: (state, action: PayloadAction<JobData>) => {
+      state.interview = action.payload
     }
   },
   extraReducers: (builder) => {
@@ -35,7 +36,8 @@ const interviewSlice = createSlice({
         state.isLoading = true
       })
       .addCase(fetchInterview.fulfilled, (state, action) => {
-        state.job = action.payload
+        console.log('fetchInterview.fulfilled', action.payload);
+        state.interview = action.payload
         state.isLoading = false
       })
       .addCase(fetchInterview.rejected, (state, action) => {
@@ -45,6 +47,6 @@ const interviewSlice = createSlice({
   }
 })
 
-export const { setJob } = interviewSlice.actions
+export const { setInterview } = interviewSlice.actions
 
 export default interviewSlice.reducer

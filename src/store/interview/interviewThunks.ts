@@ -12,9 +12,9 @@ export const fetchInterview = createAsyncThunk(
       throw new Error('Failed to fetch interview')
     }
 
-    const { data } = await response.json() as APIResponse<JobData>
+    const data = await response.json() as APIResponse<JobData>
 
-    return data
+    return data.data;
   }
 )
 

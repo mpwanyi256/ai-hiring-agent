@@ -73,7 +73,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      job: publicJobInfo,
+      data: publicJobInfo,
     });
   } catch (error) {
     console.error('Error fetching job by token:', error);

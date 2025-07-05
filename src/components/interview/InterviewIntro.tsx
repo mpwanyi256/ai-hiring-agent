@@ -10,13 +10,21 @@ import {
   ChevronRightIcon,
   PlayIcon
 } from '@heroicons/react/24/outline';
+import { useAppSelector } from '@/store';
+import { loadedInterview } from '@/store/interview/interviewSelectors';
+import { apiSuccess } from '@/lib/notification';
 
-interface InterviewIntroProps {
-  job: JobData;
-  onStartInterview: () => void;
-}
+export default function InterviewIntro() {
+  const job = useAppSelector(loadedInterview);
 
-export default function InterviewIntro({ job, onStartInterview }: InterviewIntroProps) {
+  const handleStartInterview = () => {
+    apiSuccess('Interview started');
+  }
+
+  if (!job) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -206,7 +214,7 @@ export default function InterviewIntro({ job, onStartInterview }: InterviewIntro
         {/* Start Interview Button */}
         <div className="text-center">
           <button
-            onClick={onStartInterview}
+            onClick={handleStartInterview}
             className="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors duration-200 flex items-center mx-auto"
           >
             <PlayIcon className="w-5 h-5 mr-2" />
