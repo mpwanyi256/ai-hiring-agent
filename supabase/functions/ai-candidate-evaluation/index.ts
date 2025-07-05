@@ -6,6 +6,11 @@ declare const EdgeRuntime: {
   waitUntil(promise: Promise<any>): void;
 }
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 // Environment variables
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -265,17 +270,6 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
   
   try {
     console.log(`Starting background evaluation for candidate ${candidateId} and job ${jobId}`)
-    
-    // Update function logs to show processing started
-    await supabase
-      .from('function_logs')
-      .insert({
-        function_name: 'ai_evaluation_background',
-        status: 'processing',
-        message: 'AI evaluation processing started',
-        candidate_id: candidateId,
-        job_id: jobId
-      })
 
     const { job, responses, resumeUrl, previousEvaluation } = await gatherCandidateData(candidateId, jobId)
 
@@ -357,10 +351,11 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
       console.log(`Created new evaluation for candidate ${candidateId}`)
     }
 
+    console.log('Updating evaluations table for backwards compatibility')
     // Update evaluations table for backwards compatibility
-    await supabase
+    const { error: updateError } = await supabase
       .from('evaluations')
-      .upsert({
+      .update({
         candidate_id: candidateId,
         score: evaluationResult.overall_score,
         recommendation: evaluationResult.recommendation,
@@ -372,6 +367,27 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
         feedback: evaluationResult.evaluation_explanation,
         evaluation_type: 'combined'
       })
+      .eq('candidate_id', candidateId)
+      .eq('job_id', jobId);
+
+    if (updateError) {
+      console.error('Error updating evaluations table for backwards compatibility:', updateError)
+
+      await supabase
+        .from('function_logs')
+        .insert({
+          function_name: 'ai_evaluation_background',
+          status: 'failed',
+          message: `Error updating evaluations table for backwards compatibility`,
+          candidate_id: candidateId,
+          job_id: jobId,
+          error_message: updateError.message
+        })
+
+      throw updateError
+    }
+
+    console.log('Updating evaluations table for backwards compatibility')
 
     // Update function logs to show success
     await supabase
@@ -412,12 +428,18 @@ addEventListener('beforeunload', (ev) => {
   // Could add cleanup logic here if needed
 })
 
-serve(async (req: Request) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const validateInput = (candidateId: string, jobId: string): Response | null => {
+  if (!candidateId || !jobId) {
+    return new Response(JSON.stringify({ success: false, error: 'Missing required parameter: candidateId or jobId' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
+  return null
+}
+
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -425,20 +447,10 @@ serve(async (req: Request) => {
   try {
     const { candidateId, jobId } = await req.json()
 
-    if (!candidateId) {
-      return new Response(JSON.stringify({ success: false, error: 'Missing required parameter: candidateId' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
+    const validationResponse = validateInput(candidateId, jobId)
+    if (validationResponse) return validationResponse
 
-    if (!jobId) {
-      return new Response(JSON.stringify({ success: false, error: 'Missing required parameter: jobId' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
+    // Check if the candidate exists and is completed
     const { data: candidate } = await supabase
       .from('candidates')
       .select('is_completed, job_id')
@@ -468,31 +480,23 @@ serve(async (req: Request) => {
       })
     }
 
-    // Disable this to enable retry for now: Check if evaluation already exists for this specific candidate-job combination
-    // const { data: existingEvaluation } = await supabase
-    //   .from('ai_evaluations')
-    //   .select('id')
-    //   .eq('candidate_id', candidateId)
-    //   .eq('job_id', jobId)
-    //   .maybeSingle()
-
-    // if (existingEvaluation) {
-    //   return new Response(JSON.stringify({ success: false, error: 'AI evaluation already exists for this candidate-job combination' }), {
-    //     status: 409,
-    //     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    //   })
-    // }
-
     // Log the trigger execution
     await supabase
       .from('function_logs')
-      .insert({
+      .insert([{
         function_name: 'ai_evaluation_trigger',
         status: 'triggered',
         message: 'AI evaluation request received, starting background processing',
         candidate_id: candidateId,
         job_id: jobId
-      })
+      },
+      {
+        function_name: 'ai_evaluation_background',
+        status: 'processing',
+        message: 'AI evaluation processing started',
+        candidate_id: candidateId,
+        job_id: jobId
+      }])
 
     // Start the background evaluation task
     // This will not block the response and will continue running after the response is sent
