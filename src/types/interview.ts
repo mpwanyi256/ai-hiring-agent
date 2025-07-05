@@ -1,3 +1,5 @@
+import { JobData } from "@/lib/services/jobsService";
+
 export interface JobQuestion {
   id: string;
   jobId: string;
@@ -146,3 +148,9 @@ export interface QuestionGenerationResponse {
   totalGenerated: number;
   estimatedDuration: number; // total estimated interview duration
 } 
+
+export interface InterviewState {
+  job: JobData | null;
+  isLoading: boolean;
+  error: string | null;
+}

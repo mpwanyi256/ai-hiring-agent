@@ -9,3 +9,9 @@ export * from './candidates';
 
 // Export all common types
 export * from './common'; 
+
+export interface APIResponse<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
