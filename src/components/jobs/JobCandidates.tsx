@@ -14,7 +14,8 @@ import {
   ChartBarIcon,
   CalendarIcon,
   ArrowDownTrayIcon,
-  PaperClipIcon
+  PaperClipIcon,
+  BriefcaseIcon
 } from '@heroicons/react/24/outline';
 import {
   updateCandidateRealtime,
@@ -24,6 +25,8 @@ import {
   updateResumeRealtime
 } from '@/store/candidates/candidatesSlice';
 import { createClient } from '@/lib/supabase/client';
+import { CandidateDetailsHeader } from '../evaluations/CandidateDetailsHeader';
+import { CandidateBasic } from '@/types';
 
 interface JobCandidatesProps {
   job: CurrentJob;
@@ -163,9 +166,9 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
       <CandidatesOverview {...overviewData} />
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-24rem)]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Candidates List - Fixed height with internal scroll */}
-        <div className="lg:col-span-4 h-full">
+        <div className="lg:col-span-4 h-full max-h-[800px] overflow-y-auto">
           <CandidatesList
             candidates={transformedCandidates}
             selectedCandidateId={selectedCandidateId}
@@ -176,37 +179,11 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
         </div>
 
         {/* Candidate Details - Fixed height with internal scroll */}
-        <div className="lg:col-span-8 h-full">
+        <div className="lg:col-span-8 h-full max-h-[800px] overflow-y-auto">
           {selectedCandidate ? (
             <div className="bg-white rounded-lg border border-gray-100 h-full flex flex-col">
               {/* Header with gradient background - using app theme colors */}
-              <div className="bg-gradient-to-r from-primary via-green-600 to-primary rounded-t-lg p-6 text-white relative overflow-hidden flex-shrink-0">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-green-500/20"></div>
-                <div className="relative">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                      <span className="text-2xl font-bold">
-                        {((selectedCandidate as any).name || (selectedCandidate as any).fullName)?.charAt(0).toUpperCase() || 
-                         selectedCandidate.email?.charAt(0).toUpperCase() || 'A'}
-                      </span>
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold">
-                        {(selectedCandidate as any).name || (selectedCandidate as any).fullName || 'Anonymous Candidate'}
-                      </h2>
-                      <p className="text-green-100">{selectedCandidate.email}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex space-x-4">
-                    <button className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                      Move Draft
-                    </button>
-                    <button className="bg-primary hover:bg-primary/90 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                      Schedule Interview
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <CandidateDetailsHeader candidate={selectedCandidate as unknown as CandidateBasic} />
 
               {/* Scrollable content area */}
               <div className="flex-1 overflow-y-auto p-6">
@@ -214,8 +191,8 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                   <div className="bg-primary/5 border border-primary/10 rounded-lg p-4">
                     <div className="flex items-center space-x-2 mb-2">
-                      <UserCircleIcon className="w-5 h-5 text-primary" />
-                      <span className="text-sm font-medium text-gray-700">Applied For</span>
+                      <BriefcaseIcon className="w-5 h-5 text-primary" />
+                      <span className="text-sm font-medium text-gray-700">Position</span>
                     </div>
                     <p className="text-sm text-gray-900 font-medium">{job.title}</p>
                   </div>
@@ -227,7 +204,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                     </div>
                     <p className="text-sm text-gray-900 font-medium">
                       {new Date((selectedCandidate as any).createdAt || new Date()).toLocaleDateString('en-US', {
-                        month: 'short',
+                        month: 'long',
                         day: 'numeric',
                         year: 'numeric'
                       })}
@@ -304,12 +281,10 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                 )}
 
                 {/* AI Evaluation Section */}
-                <div className="mb-6">
-                  <CandidateEvaluationSection 
-                    candidateId={selectedCandidate.id}
-                    candidateName={(selectedCandidate as any).name || (selectedCandidate as any).fullName || 'Anonymous Candidate'}
-                  />
-                </div>
+                <CandidateEvaluationSection
+                  candidateId={selectedCandidate.id}
+                  candidateName={(selectedCandidate as any).name || (selectedCandidate as any).fullName || 'Anonymous Candidate'}
+                />
 
                 {/* Interview Responses */}
                 {selectedCandidate.responses && selectedCandidate.responses.length > 0 && (

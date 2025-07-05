@@ -17,6 +17,9 @@ import {
   ExclamationTriangleIcon,
   ArrowTrendingUpIcon
 } from '@heroicons/react/24/outline';
+import { NoAIEvaluations } from './NoAIEvaluations';
+import { LoadingAIEvaluations } from './LoadingAIEvaluations';
+import { ErrorLoadingAIEvaluations } from './ErrorLoadingAIEvaluations';
 
 interface CandidateEvaluationSectionProps {
   candidateId: string;
@@ -47,70 +50,20 @@ export default function CandidateEvaluationSection({
     }
   }, [candidateId, dispatch]);
 
-  const handleTriggerAIEvaluation = () => {
-    dispatch(triggerAIEvaluation({ candidateId, force: false }));
-  };
-
   const handleForceAIEvaluation = () => {
     dispatch(triggerAIEvaluation({ candidateId, force: true }));
   };
 
   if (aiEvaluationState.isLoadingEvaluation || isLoading) {
-    return (
-      <div className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}>
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded mb-4 w-1/3"></div>
-          <div className="h-32 bg-gray-200 rounded mb-4"></div>
-          <div className="h-20 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
+    return (<LoadingAIEvaluations className={className} />);
   }
 
   if (error) {
-    return (
-      <div className={`bg-white rounded-lg border border-red-200 p-6 ${className}`}>
-        <div className="flex items-center space-x-3 text-red-600 mb-4">
-          <ExclamationTriangleIcon className="w-5 h-5" />
-          <h3 className="text-lg font-semibold">Error Loading Evaluation</h3>
-        </div>
-        <p className="text-red-600 mb-4">{error}</p>
-        <Button onClick={() => dispatch(fetchAIEvaluation(candidateId))} variant="outline">
-          Retry
-        </Button>
-      </div>
-    );
+    return (<ErrorLoadingAIEvaluations error={error} candidateId={candidateId} className={className} />);
   }
 
   if (!aiEvaluation) {
-    return (
-      <div className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}>
-        <div className="text-center py-8">
-          <SparklesIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No AI Evaluation Yet</h3>
-          <p className="text-gray-600 mb-6">
-            Generate an AI evaluation to see comprehensive candidate insights and scoring.
-          </p>
-          <Button 
-            onClick={handleTriggerAIEvaluation}
-            className="px-6 py-2"
-            disabled={aiEvaluationState.isEvaluating}
-          >
-            {aiEvaluationState.isEvaluating ? (
-              <>
-                <ClockIcon className="w-4 h-4 mr-2 animate-spin" />
-                Evaluating...
-              </>
-            ) : (
-              <>
-                <SparklesIcon className="w-4 h-4 mr-2" />
-                Generate AI Evaluation
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    );
+    return (<NoAIEvaluations candidateId={candidateId} />);
   }
 
   const overallStatusColor = evaluationUtils.getStatusColor(aiEvaluation.overallStatus);
@@ -118,7 +71,7 @@ export default function CandidateEvaluationSection({
   const averageTeamRating = computedValues?.averageTeamRating || 0;
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 mb-6 ${className}`}>
       {/* Overall Score Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
