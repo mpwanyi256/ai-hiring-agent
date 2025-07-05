@@ -13,6 +13,7 @@ export async function POST(request: Request) {
     const candidateEmail = formData.get('email') as string;
     const candidateFirstName = formData.get('firstName') as string;
     const candidateLastName = formData.get('lastName') as string;
+    const candidateId = formData.get('candidateId') as string;
 
     if (!resumeFile || !jobToken) {
       return NextResponse.json({ 
@@ -38,9 +39,6 @@ export async function POST(request: Request) {
         error: 'Invalid interview link' 
       }, { status: 404 });
     }
-
-    // Generate candidate ID for file organization
-    const candidateId = uuidv4();
 
     console.log('Starting resume evaluation process...');
 

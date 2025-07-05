@@ -20,9 +20,9 @@ export interface CandidateBasic {
   jobTitle: string;
   jobStatus: string;
   interviewToken: string;
-  email: string | null;
-  firstName: string | null;
-  lastName: string | null;
+  email: string;
+  firstName: string;
+  lastName: string;
   fullName: string;
   currentStep: number;
   totalSteps: number;

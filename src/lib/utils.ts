@@ -3,6 +3,7 @@ import { JobData } from './services/jobsService';
 import { Job } from '@/types';
 import { JobStatus } from './supabase';
 import { apiSuccess } from './notification';
+import { CheckCircleIcon, ExclamationTriangleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 // Utility function to merge classes with Tailwind
 export function cn(...inputs: ClassValue[]) {
@@ -168,4 +169,61 @@ export const getQuestionTypeColor = (type: string) => {
     case 'general': return 'bg-gray-100 text-gray-700';
     default: return 'bg-orange-100 text-orange-700';
   }
+};
+
+export const validateFile = (file: File): { isValid: boolean; error?: string } => {
+  const maxSize = 10 * 1024 * 1024; // 10MB limit
+  const allowedTypes = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword',
+    'text/plain'
+  ];
+  
+  const allowedExtensions = ['pdf', 'docx', 'doc', 'txt'];
+  const extension = file.name.split('.').pop()?.toLowerCase();
+
+  if (file.size > maxSize) {
+    return {
+      isValid: false,
+      error: 'File size exceeds 10MB limit. Please upload a smaller file.'
+    };
+  }
+
+  if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension || '')) {
+    return {
+      isValid: false,
+      error: 'Unsupported file type. Please upload PDF, DOC, DOCX, or TXT files only.'
+    };
+  }
+
+  if (file.size < 100) {
+    return {
+      isValid: false,
+      error: 'File appears to be empty. Please upload a valid resume file.'
+    };
+  }
+
+  return { isValid: true };
+};
+
+export const getFileIcon = (filename: string) => {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'pdf':
+      return '📄';
+    case 'doc':
+    case 'docx':
+      return '📝';
+    case 'txt':
+      return '📋';
+    default:
+      return '📎';
+  }
+};
+
+export const getScoreColor = (score: number) => {
+  if (score >= 80) return 'text-green-600';
+  if (score >= 60) return 'text-yellow-600';
+  return 'text-red-600';
 };

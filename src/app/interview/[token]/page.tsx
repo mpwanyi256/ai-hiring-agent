@@ -8,6 +8,7 @@ import InterviewIntro from "@/components/interview/InterviewIntro";
 import CandidateInfoForm from "@/components/interview/CandidateInfoForm";
 import { InterviewStep } from "@/types/interview";
 import InterviewComplete from "@/components/interview/InterviewComplete";
+import ResumeUpload from "@/components/interview/ResumeUpload";
 
 interface InterviewPageProps {
   params: Promise<{
@@ -34,8 +35,8 @@ export default function InterviewPage({ params }: InterviewPageProps) {
         return <InterviewIntro />;
       case 2:
         return <CandidateInfoForm jobToken={token} />;
-      // case 3:
-      //   return <InterviewResume />;
+      case 3:
+        return <ResumeUpload jobToken={token} />;
       // case 4:
       //   return <InterviewInterview />;
       case 5:

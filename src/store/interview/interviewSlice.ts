@@ -42,7 +42,6 @@ const interviewSlice = createSlice({
         state.isLoading = true
       })
       .addCase(fetchInterview.fulfilled, (state, action) => {
-        console.log('fetchInterview.fulfilled', action.payload);
         state.interview = action.payload
         state.isLoading = false
       })

@@ -8,6 +8,7 @@ export const evaluateResume = createAsyncThunk(
     resumeFile: File;
     jobToken: string;
     candidateInfo: {
+      id: string;
       email: string;
       firstName: string;
       lastName: string;
@@ -19,6 +20,7 @@ export const evaluateResume = createAsyncThunk(
     formData.append('email', data.candidateInfo.email);
     formData.append('firstName', data.candidateInfo.firstName);
     formData.append('lastName', data.candidateInfo.lastName);
+    formData.append('candidateId', data.candidateInfo.id);
 
     const response = await fetch('/api/interview/resume/evaluate', {
       method: 'POST',
