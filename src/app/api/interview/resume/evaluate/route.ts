@@ -139,16 +139,30 @@ export async function POST(request: Request) {
 
     // Save evaluation to database if candidate info is provided
     let savedEvaluation = null;
-    if (candidateEmail && candidateFirstName && candidateLastName) {
+    if (candidateId && candidateEmail && candidateFirstName && candidateLastName) {
       try {
-        savedEvaluation = await resumeService.saveResumeEvaluation(
-          null, // Use null for anonymous candidates - they don't have profiles
-          job.id,
-          resumeContent,
-          resumeFile.name,
-          evaluation
-        );
-        console.log('Resume evaluation saved to database');
+        // Use the new save API that properly handles candidate_id
+        const saveResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/evaluation/resume/save`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            candidateId,
+            jobId: job.id,
+            resumeContent,
+            resumeFilename: resumeFile.name,
+            evaluation
+          }),
+        });
+
+        if (saveResponse.ok) {
+          const saveResult = await saveResponse.json();
+          savedEvaluation = saveResult.evaluation;
+          console.log('Resume evaluation saved to database');
+        } else {
+          throw new Error('Failed to save evaluation');
+        }
       } catch (saveError) {
         console.error('Failed to save evaluation to database:', saveError);
         // Return error info so frontend can handle it properly

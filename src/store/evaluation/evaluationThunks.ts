@@ -55,7 +55,7 @@ export const evaluateResume = createAsyncThunk(
 export const saveResumeEvaluation = createAsyncThunk(
   'evaluation/saveResumeEvaluation',
   async (data: {
-    profileId: string;
+    candidateId: string;
     jobId: string;
     resumeContent: string;
     resumeFilename: string;
@@ -81,8 +81,8 @@ export const saveResumeEvaluation = createAsyncThunk(
 
 export const getResumeEvaluation = createAsyncThunk(
   'evaluation/getResumeEvaluation',
-  async (data: { profileId: string; jobId: string }) => {
-    const response = await fetch(`/api/evaluation/resume?profileId=${data.profileId}&jobId=${data.jobId}`);
+  async (data: { candidateId: string; jobId: string }) => {
+    const response = await fetch(`/api/evaluation/resume?candidateId=${data.candidateId}&jobId=${data.jobId}`);
 
     if (!response.ok) {
       if (response.status === 404) {
