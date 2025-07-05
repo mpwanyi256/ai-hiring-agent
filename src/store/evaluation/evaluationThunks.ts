@@ -175,14 +175,14 @@ export const getEvaluationHistory = createAsyncThunk(
   'evaluation/getEvaluationHistory',
   async (data: { 
     jobId?: string; 
-    profileId?: string; 
+    candidateId?: string; 
     limit?: number; 
     offset?: number;
     evaluationType?: 'resume' | 'interview' | 'combined';
   }) => {
     const params = new URLSearchParams();
     if (data.jobId) params.append('jobId', data.jobId);
-    if (data.profileId) params.append('profileId', data.profileId);
+    if (data.candidateId) params.append('candidateId', data.candidateId);
     if (data.limit) params.append('limit', data.limit.toString());
     if (data.offset) params.append('offset', data.offset.toString());
     if (data.evaluationType) params.append('evaluationType', data.evaluationType);

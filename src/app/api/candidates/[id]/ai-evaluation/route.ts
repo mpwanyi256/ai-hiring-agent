@@ -37,30 +37,54 @@ export async function GET(
 
     const profileId = profile.id;
 
-    // Verify user has access to this candidate through job ownership
+    // Fetch the candidate with candidate_info
     const { data: candidate, error: candidateError } = await supabase
       .from('candidates')
       .select(`
-        id,
+        id, 
         job_id,
-        jobs!inner(
+        current_step,
+        total_steps,
+        is_completed,
+        candidates_info!inner(
           id,
-          title,
-          profile_id
+          first_name,
+          last_name,
+          email
         )
       `)
       .eq('id', candidateId)
-      .eq('jobs.profile_id', profileId)
       .single();
 
     if (candidateError || !candidate) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Candidate not found or access denied' 
+        error: 'Candidate not found' 
       }, { status: 404 });
     }
 
-    // Get AI evaluation
+    // Fetch the job and check ownership
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('id, title, profile_id')
+      .eq('id', candidate.job_id)
+      .single();
+
+    if (jobError || !job) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Job not found' 
+      }, { status: 404 });
+    }
+
+    if (job.profile_id !== profileId) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Access denied: you do not own this job' 
+      }, { status: 403 });
+    }
+
+    // Get AI evaluation (this can be null if candidate hasn't completed interview)
     const { data: aiEvaluation, error: aiEvaluationError } = await supabase
       .from('ai_evaluations')
       .select('*')
@@ -120,25 +144,7 @@ export async function GET(
       updatedAt: aiEvaluation.updated_at
     } : null;
 
-    const formattedTeamAssessments = (teamAssessments || []).map((assessment: {
-      id: string;
-      candidate_id: string;
-      job_id: string;
-      ai_evaluation_id: string | null;
-      assessor_profile_id: string;
-      assessor_name: string;
-      assessor_role: string;
-      overall_rating: number;
-      overall_rating_status: string;
-      category_ratings: Record<string, unknown>;
-      assessment_comments: string | null;
-      private_notes: string | null;
-      assessment_type: string;
-      interview_duration_minutes: number | null;
-      created_at: string;
-      updated_at: string;
-      profiles: { first_name: string; last_name: string } | null;
-    }) => ({
+    const formattedTeamAssessments = (teamAssessments || []).map((assessment: any) => ({
       id: assessment.id,
       candidateId: assessment.candidate_id,
       jobId: assessment.job_id,
@@ -171,17 +177,10 @@ export async function GET(
       finalRecommendation: formattedAIEvaluation.recommendation // TODO: Calculate weighted recommendation
     } : null;
 
-    // Get job title from the nested jobs relationship
-    const jobData = candidate.jobs as unknown;
-    let jobTitle = 'Unknown Position';
-    
-    if (Array.isArray(jobData) && jobData.length > 0) {
-      jobTitle = (jobData[0] as { title: string }).title;
-    } else if (jobData && typeof jobData === 'object' && 'title' in jobData) {
-      jobTitle = (jobData as { title: string }).title;
-    }
+    // Get candidate info
+    const candidateInfo = Array.isArray(candidate.candidates_info) ? candidate.candidates_info[0] : candidate.candidates_info;
 
-    return NextResponse.json({
+    const response = {
       success: true,
       aiEvaluation: formattedAIEvaluation,
       teamAssessments: formattedTeamAssessments,
@@ -189,9 +188,17 @@ export async function GET(
       candidateInfo: {
         id: candidate.id,
         jobId: candidate.job_id,
-        jobTitle: jobTitle
+        jobTitle: job.title,
+        firstName: candidateInfo?.first_name,
+        lastName: candidateInfo?.last_name,
+        email: candidateInfo?.email,
+        currentStep: candidate.current_step,
+        totalSteps: candidate.total_steps,
+        isCompleted: candidate.is_completed
       }
-    });
+    };
+
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error('Error fetching AI evaluation:', error);

@@ -19,21 +19,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }, { status: 400 });
     }
 
-    // Get candidate details with job and evaluation information
+    // Get candidate details with job and evaluation information, including candidates_info
     const { data: candidate, error: candidateError } = await supabase
       .from('candidates')
       .select(`
         id,
         job_id,
         interview_token,
-        email,
-        first_name,
-        last_name,
         current_step,
         total_steps,
         is_completed,
         submitted_at,
         created_at,
+        candidates_info!inner(
+          id,
+          first_name,
+          last_name,
+          email,
+          phone,
+          linkedin_url,
+          portfolio_url
+        ),
         jobs!inner(
           id,
           title,
@@ -85,18 +91,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       console.error('Error fetching responses:', responsesError);
     }
 
-    // Handle the jobs relation
+    // Handle the jobs and candidates_info relations
     const job = Array.isArray(candidate.jobs) ? candidate.jobs[0] : candidate.jobs;
+    const candidateInfo = Array.isArray(candidate.candidates_info) ? candidate.candidates_info[0] : candidate.candidates_info;
 
     // Format the candidate data
     const formattedCandidate = {
       id: candidate.id,
       jobId: candidate.job_id,
       interviewToken: candidate.interview_token,
-      email: candidate.email,
-      firstName: candidate.first_name,
-      lastName: candidate.last_name,
-      fullName: `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim() || 'Anonymous',
+      email: candidateInfo?.email,
+      firstName: candidateInfo?.first_name,
+      lastName: candidateInfo?.last_name,
+      fullName: `${candidateInfo?.first_name || ''} ${candidateInfo?.last_name || ''}`.trim() || 'Anonymous',
+      phone: candidateInfo?.phone,
+      linkedinUrl: candidateInfo?.linkedin_url,
+      portfolioUrl: candidateInfo?.portfolio_url,
       currentStep: candidate.current_step,
       totalSteps: candidate.total_steps,
       isCompleted: candidate.is_completed,

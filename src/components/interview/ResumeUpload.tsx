@@ -7,7 +7,6 @@ import FileUploadArea from './FileUploadArea';
 import ErrorDisplay from './ErrorDisplay';
 import UploadProgress from './UploadProgress';
 import ExistingEvaluationDisplay from './ExistingEvaluationDisplay';
-import { CandidateResumeEvaluation } from '../resumeStep/CandidateResumeEvaluation';
 import { loadedInterview, selectCandidate } from '@/store/interview/interviewSelectors';
 import { useAppSelector } from '@/store';
 
@@ -47,20 +46,16 @@ export default function ResumeUpload({
     return <div>Loading...</div>;
   }
 
-  // Show existing evaluation if found
-  if (hasExistingEvaluation && existingEvaluation) {
+  // Show evaluation results if we have any evaluation (new or existing)
+  if (evaluation || existingEvaluation) {
+    const displayEvaluation = evaluation || existingEvaluation;
     return (
       <ExistingEvaluationDisplay
-        evaluation={existingEvaluation}
+        evaluation={displayEvaluation}
         job={job}
         onProceedToInterview={proceedToInterview}
       />
     );
-  }
-
-  // Show evaluation results if we have a new evaluation
-  if (evaluation) {
-    return <CandidateResumeEvaluation evaluation={evaluation} resumeContent={selectedFile?.name || ''} job={job} />
   }
 
   // Main upload interface
