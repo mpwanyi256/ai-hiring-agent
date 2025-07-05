@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "npm:@supabase/supabase-js@2.39.3"
 
+// Type declaration for EdgeRuntime (Supabase Edge Functions)
+declare const EdgeRuntime: {
+  waitUntil(promise: Promise<any>): void;
+}
+
 // Environment variables
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -254,10 +259,24 @@ async function gatherCandidateData(candidateId: string, jobId: string) {
   }
 }
 
-async function evaluateCandidate(candidateId: string, jobId: string) {
+// Background task function that performs the actual evaluation
+async function performEvaluationInBackground(candidateId: string, jobId: string) {
   const startTime = Date.now()
-
+  
   try {
+    console.log(`Starting background evaluation for candidate ${candidateId} and job ${jobId}`)
+    
+    // Update function logs to show processing started
+    await supabase
+      .from('function_logs')
+      .insert({
+        function_name: 'ai_evaluation_background',
+        status: 'processing',
+        message: 'AI evaluation processing started',
+        candidate_id: candidateId,
+        job_id: jobId
+      })
+
     const { job, responses, resumeUrl, previousEvaluation } = await gatherCandidateData(candidateId, jobId)
 
     const formattedResponses = responses
@@ -275,6 +294,7 @@ async function evaluateCandidate(candidateId: string, jobId: string) {
       previousEvaluation
     })
 
+    console.log(`Calling OpenAI API for candidate ${candidateId}`)
     const aiResponse = await callOpenAI(prompt)
     const evaluationResult = parseAIResponse(aiResponse)
     const processingDuration = Date.now() - startTime
@@ -312,7 +332,7 @@ async function evaluateCandidate(candidateId: string, jobId: string) {
       
     if (existingEvaluation) {
       // Update the existing evaluation
-      const { data: updatedEvaluation, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('ai_evaluations')
         .update({
           ...candidateEvaluation
@@ -321,25 +341,21 @@ async function evaluateCandidate(candidateId: string, jobId: string) {
 
       if (updateError) throw updateError
 
-      return {
-        success: true,
-        updated: true,
-        evaluation: candidateEvaluation,
-        processingDurationMs: processingDuration
-      }
+      console.log(`Updated existing evaluation for candidate ${candidateId}`)
+    } else {
+      // Create new evaluation
+      const { error: saveError } = await supabase
+        .from('ai_evaluations')
+        .insert({
+          candidate_id: candidateId,
+          job_id: jobId,
+          ...candidateEvaluation
+        })
+
+      if (saveError) throw saveError
+
+      console.log(`Created new evaluation for candidate ${candidateId}`)
     }
-
-    const { data: aiEvaluation, error: saveError } = await supabase
-      .from('ai_evaluations')
-      .insert({
-        candidate_id: candidateId,
-        job_id: jobId,
-        ...candidateEvaluation
-      })
-      .select()
-      .single()
-
-    if (saveError) throw saveError
 
     // Update evaluations table for backwards compatibility
     await supabase
@@ -357,17 +373,44 @@ async function evaluateCandidate(candidateId: string, jobId: string) {
         evaluation_type: 'combined'
       })
 
-    return {
-      success: true,
-      evaluation: aiEvaluation,
-      processingDurationMs: processingDuration
-    }
+    // Update function logs to show success
+    await supabase
+      .from('function_logs')
+      .insert({
+        function_name: 'ai_evaluation_background',
+        status: 'success',
+        message: `AI evaluation completed successfully in ${processingDuration}ms`,
+        candidate_id: candidateId,
+        job_id: jobId,
+        payload: { processingDurationMs: processingDuration }
+      })
 
-  } catch (error) {
-    console.error('Error in AI evaluation:', error)
+    console.log(`Background evaluation completed successfully for candidate ${candidateId} in ${processingDuration}ms`)
+
+  } catch (error: any) {
+    console.error(`Error in background evaluation for candidate ${candidateId}:`, error)
+    
+    // Update function logs to show error
+    await supabase
+      .from('function_logs')
+      .insert({
+        function_name: 'ai_evaluation_background',
+        status: 'failed',
+        message: `AI evaluation failed: ${error?.message || 'Unknown error'}`,
+        candidate_id: candidateId,
+        job_id: jobId,
+        error_message: error?.message || 'Unknown error'
+      })
+    
     throw error
   }
 }
+
+// Listen for function shutdown to handle cleanup
+addEventListener('beforeunload', (ev) => {
+  console.log('Function will be shutdown')
+  // Could add cleanup logic here if needed
+})
 
 serve(async (req: Request) => {
   const corsHeaders = {
@@ -425,10 +468,45 @@ serve(async (req: Request) => {
       })
     }
 
-    const result = await evaluateCandidate(candidateId, jobId)
+    // Disable this to enable retry for now: Check if evaluation already exists for this specific candidate-job combination
+    // const { data: existingEvaluation } = await supabase
+    //   .from('ai_evaluations')
+    //   .select('id')
+    //   .eq('candidate_id', candidateId)
+    //   .eq('job_id', jobId)
+    //   .maybeSingle()
 
-    return new Response(JSON.stringify(result), {
-      status: 200,
+    // if (existingEvaluation) {
+    //   return new Response(JSON.stringify({ success: false, error: 'AI evaluation already exists for this candidate-job combination' }), {
+    //     status: 409,
+    //     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    //   })
+    // }
+
+    // Log the trigger execution
+    await supabase
+      .from('function_logs')
+      .insert({
+        function_name: 'ai_evaluation_trigger',
+        status: 'triggered',
+        message: 'AI evaluation request received, starting background processing',
+        candidate_id: candidateId,
+        job_id: jobId
+      })
+
+    // Start the background evaluation task
+    // This will not block the response and will continue running after the response is sent
+    EdgeRuntime.waitUntil(performEvaluationInBackground(candidateId, jobId))
+
+    // Immediately return success response
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'AI evaluation started in background',
+      candidateId,
+      jobId,
+      status: 'processing'
+    }), {
+      status: 202, // Accepted
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
