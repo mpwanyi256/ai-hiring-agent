@@ -178,12 +178,20 @@ Evaluate this candidate thoroughly and provide the JSON response.
 `;
 }
 
-async function getResumeUrl(candidateId: string): Promise<string | null> {
+/**
+ * Get the resume URL for a candidate for a specific job
+ * @param candidateId - The ID of the candidate
+ * @param jobId - The ID of the job
+ * @returns The resume URL or null if not found
+ * @deprecated - This function is not used anymore
+ */
+async function getResumeUrl(candidateId: string, jobId: string): Promise<string | null> {
   try {
     const { data: resumeData } = await supabase
       .from('candidate_resumes')
       .select('public_url')
       .eq('candidate_id', candidateId)
+      .eq('job_id', jobId)
       .single()
 
     return resumeData?.public_url || null;
@@ -193,29 +201,30 @@ async function getResumeUrl(candidateId: string): Promise<string | null> {
   }
 }
 
-async function gatherCandidateData(candidateId: string) {
+async function gatherCandidateData(candidateId: string, jobId: string) {
   try {
     // Get candidate details from the view (includes job info and previous evaluation)
     const { data: candidateDetails, error: candidateError } = await supabase
       .from('candidate_details')
       .select('*')
       .eq('id', candidateId)
+      .eq('job_id', jobId)
       .single()
 
     if (candidateError) throw candidateError
     if (!candidateDetails) throw new Error('Candidate not found')
 
-    // Get interview responses
+    // Get interview responses for the specific job
     const { data: responses, error: responsesError } = await supabase
       .from('responses')
       .select('question, answer') // We might need the response_time later
       .eq('candidate_id', candidateId)
+      .eq('job_id', jobId)
       .order('created_at', { ascending: true });
 
     if (responsesError) throw new Error('Failed to fetch interview responses')
-
-    // Get resume URL
-    const resumeUrl = await getResumeUrl(candidateId)
+      
+    console.log('Found candidate details', candidateDetails)
 
     // Get previous evaluation data (if exists)
     const previousEvaluation = candidateDetails.evaluation_id ? {
@@ -236,7 +245,7 @@ async function gatherCandidateData(candidateId: string) {
         fields: candidateDetails.job_fields
       },
       responses: responses || [],
-      resumeUrl,
+      resumeUrl: candidateDetails.resume_public_url,
       previousEvaluation
     }
   } catch (error) {
@@ -245,11 +254,11 @@ async function gatherCandidateData(candidateId: string) {
   }
 }
 
-async function evaluateCandidate(candidateId: string) {
+async function evaluateCandidate(candidateId: string, jobId: string) {
   const startTime = Date.now()
 
   try {
-    const { candidate, job, responses, resumeUrl, previousEvaluation } = await gatherCandidateData(candidateId)
+    const { job, responses, resumeUrl, previousEvaluation } = await gatherCandidateData(candidateId, jobId)
 
     const formattedResponses = responses
       .map((r: any, index: number) => `Q${index + 1}: ${r.question}\nA${index + 1}: ${r.answer}`)
@@ -276,25 +285,56 @@ async function evaluateCandidate(candidateId: string) {
       previous_evaluations: !!previousEvaluation
     }
 
+    const candidateEvaluation = {
+      overall_score: evaluationResult.overall_score,
+      overall_status: evaluationResult.overall_status,
+      recommendation: evaluationResult.recommendation,  
+      evaluation_summary: evaluationResult.evaluation_summary,
+      evaluation_explanation: evaluationResult.evaluation_explanation,
+      radar_metrics: evaluationResult.radar_metrics,
+      category_scores: evaluationResult.category_scores,
+      key_strengths: evaluationResult.key_strengths,
+      areas_for_improvement: evaluationResult.areas_for_improvement,
+      red_flags: evaluationResult.red_flags,
+      evaluation_sources: evaluationSources,
+      processing_duration_ms: processingDuration,
+      ai_model_version: 'gpt-4',
+      evaluation_version: '1.0'
+    }
+
+    // Check if the candidate has already been evaluated for this specific job
+    const { data: existingEvaluation } = await supabase
+      .from('ai_evaluations')
+      .select('id')
+      .eq('candidate_id', candidateId)
+      .eq('job_id', jobId)
+      .maybeSingle()
+      
+    if (existingEvaluation) {
+      // Update the existing evaluation
+      const { data: updatedEvaluation, error: updateError } = await supabase
+        .from('ai_evaluations')
+        .update({
+          ...candidateEvaluation
+        })
+        .eq('id', existingEvaluation.id);
+
+      if (updateError) throw updateError
+
+      return {
+        success: true,
+        updated: true,
+        evaluation: candidateEvaluation,
+        processingDurationMs: processingDuration
+      }
+    }
+
     const { data: aiEvaluation, error: saveError } = await supabase
       .from('ai_evaluations')
       .insert({
         candidate_id: candidateId,
-        job_id: job.id,
-        overall_score: evaluationResult.overall_score,
-        overall_status: evaluationResult.overall_status,
-        recommendation: evaluationResult.recommendation,
-        evaluation_summary: evaluationResult.evaluation_summary,
-        evaluation_explanation: evaluationResult.evaluation_explanation,
-        radar_metrics: evaluationResult.radar_metrics,
-        category_scores: evaluationResult.category_scores,
-        key_strengths: evaluationResult.key_strengths,
-        areas_for_improvement: evaluationResult.areas_for_improvement,
-        red_flags: evaluationResult.red_flags,
-        evaluation_sources: evaluationSources,
-        processing_duration_ms: processingDuration,
-        ai_model_version: 'gpt-4',
-        evaluation_version: '1.0'
+        job_id: jobId,
+        ...candidateEvaluation
       })
       .select()
       .single()
@@ -340,7 +380,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { candidateId } = await req.json()
+    const { candidateId, jobId } = await req.json()
 
     if (!candidateId) {
       return new Response(JSON.stringify({ success: false, error: 'Missing required parameter: candidateId' }), {
@@ -349,33 +389,43 @@ serve(async (req: Request) => {
       })
     }
 
-    const { data: existingEvaluation } = await supabase
-      .from('ai_evaluations')
-      .select('id')
-      .eq('candidate_id', candidateId)
-      .maybeSingle()
-
-    if (existingEvaluation) {
-      return new Response(JSON.stringify({ success: false, error: 'AI evaluation already exists for this candidate' }), {
-        status: 409,
+    if (!jobId) {
+      return new Response(JSON.stringify({ success: false, error: 'Missing required parameter: jobId' }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
     const { data: candidate } = await supabase
       .from('candidates')
-      .select('is_completed')
+      .select('is_completed, job_id')
       .eq('id', candidateId)
+      .eq('job_id', jobId)
       .maybeSingle()
 
-    if (!candidate?.is_completed) {
+    if (!candidate) {
+      return new Response(JSON.stringify({ success: false, error: 'Candidate not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (!candidate.is_completed) {
       return new Response(JSON.stringify({ success: false, error: 'Candidate interview not completed yet' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const result = await evaluateCandidate(candidateId)
+    // Verify that the provided jobId matches the candidate's job_id (for security)
+    if (candidate.job_id !== jobId) {
+      return new Response(JSON.stringify({ success: false, error: 'Job ID does not match candidate\'s assigned job' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const result = await evaluateCandidate(candidateId, jobId)
 
     return new Response(JSON.stringify(result), {
       status: 200,
