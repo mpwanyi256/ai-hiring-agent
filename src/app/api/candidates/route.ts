@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
         is_completed,
         submitted_at,
         created_at,
+        candidate_info_id,
         candidates_info!inner(
           id,
           first_name,
@@ -204,7 +205,7 @@ export async function POST(request: Request) {
     const { data: candidateResult, error: candidateError } = await supabase
       .rpc('create_candidate_info_and_record', {
         p_first_name: firstName,
-        p_last_name: lastName,
+        p_last_name: lastName, 
         p_email: email,
         p_job_id: job.id,
         p_interview_token: interviewToken

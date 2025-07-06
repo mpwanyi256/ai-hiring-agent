@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { v4 as uuidv4 } from 'uuid';
 import { apiError } from '@/lib/notification';
 
 export async function POST(request: Request) {

@@ -211,31 +211,40 @@ async function getResumeUrl(candidateId: string, jobId: string): Promise<string 
   }
 }
 
-async function gatherCandidateData(candidateId: string, jobId: string) {
+async function gatherCandidateData(candidateInfoId: string, jobId: string) {
   try {
-    console.log('Gathering candidate data for candidate', candidateId, 'and job', jobId)
+    // First, resolve the actual candidate application row for this person/job
+    const { data: candidateRow, error: candidateRowError } = await supabase
+      .from('candidates')
+      .select('id, is_completed, job_id')
+      .eq('candidate_info_id', candidateInfoId)
+      .eq('job_id', jobId)
+      .maybeSingle();
+
+    if (candidateRowError) throw candidateRowError;
+    if (!candidateRow) throw new Error('Candidate application not found');
+    const candidateId = candidateInfoId;
+
     // Get candidate details from the view (includes job info and previous evaluation)
     const { data: candidateDetails, error: candidateError } = await supabase
       .from('candidate_details')
       .select('*')
-      .eq('candidate_info_id', candidateId)
+      .eq('id', candidateId)
       .eq('job_id', jobId)
-      .single()
+      .single();
 
-    if (candidateError) throw candidateError
-    if (!candidateDetails) throw new Error('Candidate not found')
+    if (candidateError) throw candidateError;
+    if (!candidateDetails) throw new Error('Candidate not found');
 
     // Get interview responses for the specific job
     const { data: responses, error: responsesError } = await supabase
       .from('responses')
-      .select('question, answer') // We might need the response_time later
+      .select('question, answer')
       .eq('candidate_id', candidateId)
       .eq('job_id', jobId)
       .order('created_at', { ascending: true });
 
-    if (responsesError) throw new Error('Failed to fetch interview responses')
-      
-    console.log('Found candidate details', candidateDetails)
+    if (responsesError) throw new Error('Failed to fetch interview responses');
 
     // Get previous evaluation data (if exists)
     const previousEvaluation = candidateDetails.evaluation_id ? {
@@ -257,11 +266,12 @@ async function gatherCandidateData(candidateId: string, jobId: string) {
       },
       responses: responses || [],
       resumeUrl: candidateDetails.resume_public_url,
-      previousEvaluation
-    }
+      previousEvaluation,
+      candidateId // pass the resolved application id for downstream use
+    };
   } catch (error) {
-    console.error('Error gathering candidate data:', error)
-    throw error
+    console.error('Error gathering candidate data:', error);
+    throw error;
   }
 }
 
@@ -446,80 +456,80 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { candidateId, jobId } = await req.json()
+    const { candidateId: candidateInfoId, jobId } = await req.json();
 
-    const validationResponse = validateInput(candidateId, jobId)
-    if (validationResponse) return validationResponse
+    const validationResponse = validateInput(candidateInfoId, jobId);
+    if (validationResponse) return validationResponse;
 
-    // Check if the candidate exists and is completed
-    const { data: candidate } = await supabase
+    // Look up the candidate application row
+    const { data: candidateRow, error: candidateRowError } = await supabase
       .from('candidates')
-      .select('is_completed, job_id')
-      .eq('candidate_info_id', candidateId)
+      .select('id, is_completed, job_id')
+      .eq('candidate_info_id', candidateInfoId)
       .eq('job_id', jobId)
-      .maybeSingle()
+      .maybeSingle();
 
-    if (!candidate) {
+    if (candidateRowError) throw candidateRowError;
+    if (!candidateRow) {
       return new Response(JSON.stringify({ success: false, error: 'Candidate not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      });
     }
 
-    if (!candidate.is_completed) {
+    if (!candidateRow.is_completed) {
       return new Response(JSON.stringify({ success: false, error: 'Candidate interview not completed yet' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      });
     }
 
-    // Verify that the provided jobId matches the candidate's job_id (for security)
-    if (candidate.job_id !== jobId) {
+    if (candidateRow.job_id !== jobId) {
       return new Response(JSON.stringify({ success: false, error: 'Job ID does not match candidate\'s assigned job' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      });
     }
 
     // Log the trigger execution
     await supabase
       .from('function_logs')
-      .insert([{
-        function_name: 'ai_evaluation_trigger',
-        status: 'triggered',
-        message: 'AI evaluation request received, starting background processing',
-        candidate_id: candidateId,
-        job_id: jobId
-      },
-      {
-        function_name: 'ai_evaluation_background',
-        status: 'processing',
-        message: 'AI evaluation processing started',
-        candidate_id: candidateId,
-        job_id: jobId
-      }])
+      .insert([
+        {
+          function_name: 'ai_evaluation_trigger',
+          status: 'triggered',
+          message: 'AI evaluation request received, starting background processing',
+          candidate_id: candidateInfoId,
+          job_id: jobId
+        },
+        {
+          function_name: 'ai_evaluation_background',
+          status: 'processing',
+          message: 'AI evaluation processing started',
+          candidate_id: candidateInfoId,
+          job_id: jobId
+        }
+      ]);
 
-    // Start the background evaluation task
-    // This will not block the response and will continue running after the response is sent
-    EdgeRuntime.waitUntil(performEvaluationInBackground(candidateId, jobId))
+    // Start the background evaluation task with the resolved application id
+    EdgeRuntime.waitUntil(performEvaluationInBackground(candidateInfoId, jobId));
 
     // Immediately return success response
     return new Response(JSON.stringify({
       success: true,
       message: 'AI evaluation started in background',
-      candidateId,
+      candidateId: candidateInfoId,
       jobId,
       status: 'processing'
     }), {
-      status: 202, // Accepted
+      status: 202,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-
+    });
   } catch (error: any) {
-    console.error('Edge Function error:', error)
+    console.error('Edge Function error:', error);
     return new Response(JSON.stringify({ success: false, error: error?.message || 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    });
   }
-})
+});

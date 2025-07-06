@@ -16,6 +16,7 @@ export interface CandidateResume {
 
 export interface CandidateBasic {
   id: string;
+  candidate_info_id: string;
   jobId: string;
   jobTitle: string;
   jobStatus: string;

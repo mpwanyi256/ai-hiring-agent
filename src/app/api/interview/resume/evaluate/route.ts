@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { resumeService } from '@/lib/services/resumeService';
 import { jobsService } from '@/lib/services/jobsService';
 import { documentParsingService } from '@/lib/services/documentParsingService';
-import { v4 as uuidv4 } from 'uuid';
 import { ai } from '@/lib/constants';
 
 export async function POST(request: Request) {
