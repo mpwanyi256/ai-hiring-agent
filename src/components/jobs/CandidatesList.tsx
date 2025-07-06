@@ -19,6 +19,7 @@ interface Candidate {
   status: 'in_progress' | 'completed' | 'pending';
   createdAt: string;
   profileImage?: string;
+  resumeScore: number;
 }
 
 interface CandidatesListProps {
@@ -164,7 +165,7 @@ export default function CandidatesList({
                       </div>
                       <div className="flex items-center space-x-1">
                         <ClockIcon className="w-3 h-3" />
-                        <span>{candidate.responses} responses</span>
+                        <span>{candidate.resumeScore} score</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <CalendarIcon className="w-3 h-3" />

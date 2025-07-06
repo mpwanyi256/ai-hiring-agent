@@ -16,7 +16,8 @@ import {
   CalendarIcon,
   ArrowDownTrayIcon,
   PaperClipIcon,
-  BriefcaseIcon
+  BriefcaseIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
 import {
   updateCandidateRealtime,
@@ -120,7 +121,8 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
       responses: candidateAny.responses || candidateAny.responseCount || 0,
       score: candidate.evaluation?.score || 0,
       status: (candidateAny.isCompleted ? 'completed' : 'in_progress') as 'in_progress' | 'completed' | 'pending',
-      createdAt: candidateAny.createdAt || new Date().toISOString()
+      createdAt: candidateAny.createdAt || new Date().toISOString(),
+      resumeScore: candidateAny.evaluation?.resumeScore || 0,
     };
   });
 
@@ -285,15 +287,15 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                               onClick={() => handleResumeDownload(selectedCandidate.id)}
                               className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors"
                             >
-                              <ArrowDownTrayIcon className="w-4 h-4" />
-                              <span>Download</span>
+                              <EyeIcon className="w-4 h-4" />
+                              <span>View</span>
                             </button>
                           </div>
                           {/* Resume evaluation summary - visually prominent */}
                           {selectedCandidate.evaluation?.resumeScore && (
                             <div className="mt-6 flex items-center gap-4">
                               <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-4 border-primary">
-                                <span className="text-3xl font-bold text-primary">
+                                <span className="text-lg font-bold text-primary">
                                   {selectedCandidate.evaluation.resumeScore}
                                   <span className="text-base font-semibold">/100</span>
                                 </span>
