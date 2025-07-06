@@ -7,11 +7,9 @@ export async function GET(
 ) {
   try {
     const supabase = await createClient();
-    
-    // Await params before accessing properties (Next.js 15 requirement)
     const resolvedParams = await params;
     const candidateId = resolvedParams.id;
-    
+
     // Get current user profile
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -37,7 +35,7 @@ export async function GET(
 
     const profileId = profile.id;
 
-    // Fetch the candidate with candidate_info
+    // Fetch the candidate (do not require candidates_info join for existence)
     const { data: candidate, error: candidateError } = await supabase
       .from('candidates')
       .select(`
@@ -46,12 +44,7 @@ export async function GET(
         current_step,
         total_steps,
         is_completed,
-        candidates_info!inner(
-          id,
-          first_name,
-          last_name,
-          email
-        )
+        candidate_info_id
       `)
       .eq('id', candidateId)
       .single();
@@ -61,6 +54,19 @@ export async function GET(
         success: false, 
         error: 'Candidate not found' 
       }, { status: 404 });
+    }
+
+    // Fetch candidate info (optional)
+    let candidateInfo = null;
+    if (candidate.candidate_info_id) {
+      const { data: info, error: infoError } = await supabase
+        .from('candidates_info')
+        .select('id, first_name, last_name, email')
+        .eq('id', candidate.candidate_info_id)
+        .single();
+      if (!infoError && info) {
+        candidateInfo = info;
+      }
     }
 
     // Fetch the job and check ownership
@@ -84,14 +90,15 @@ export async function GET(
       }, { status: 403 });
     }
 
-    // Get AI evaluation (this can be null if candidate hasn't completed interview)
+    // Get AI evaluation (return null if not found)
     const { data: aiEvaluation, error: aiEvaluationError } = await supabase
       .from('ai_evaluations')
       .select('*')
       .eq('candidate_id', candidateId)
       .single();
 
-    if (aiEvaluationError && aiEvaluationError.code !== 'PGRST116') {
+    if (aiEvaluationError && aiEvaluationError.code !== 'PGRST116' && aiEvaluationError.code !== '406') {
+      // 406 is "No rows found" for some Supabase versions
       console.error('AI evaluation error:', aiEvaluationError);
       return NextResponse.json({ 
         success: false, 
@@ -177,12 +184,9 @@ export async function GET(
       finalRecommendation: formattedAIEvaluation.recommendation // TODO: Calculate weighted recommendation
     } : null;
 
-    // Get candidate info
-    const candidateInfo = Array.isArray(candidate.candidates_info) ? candidate.candidates_info[0] : candidate.candidates_info;
-
     const response = {
       success: true,
-      aiEvaluation: formattedAIEvaluation,
+      aiEvaluation: formattedAIEvaluation, // can be null
       teamAssessments: formattedTeamAssessments,
       computedValues,
       candidateInfo: {
