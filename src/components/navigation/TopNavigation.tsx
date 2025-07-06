@@ -18,6 +18,8 @@ import {
   ChevronRightIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import Image from 'next/image';
+import { app } from '@/lib/constants';
 
 interface TopNavigationProps {
   showAuthButtons?: boolean;
@@ -117,10 +119,12 @@ export default function TopNavigation({
 
             {/* Logo - Compact for dashboard */}
             <Link href="/" className="flex items-center space-x-2 ml-2">
-              <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
-                <SparklesIcon className="w-4 h-4 text-white" />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
+                <Image src="/images/logo.png" alt="Intervio Logo" width={40} height={40} />
               </div>
-              <span className="text-base font-bold text-primary hidden sm:block">Intervio</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent text-2xl">
+                {app.name}
+              </span>
             </Link>
           </div>
 
@@ -205,11 +209,11 @@ export default function TopNavigation({
           <div className="flex items-center justify-between h-18">
             {/* Logo */}
             <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center space-x-3 hover-lift">
-              <div className="w-9 h-9 bg-gradient-to-br from-primary to-green-600 rounded-xl flex items-center justify-center shadow-lg">
-                <SparklesIcon className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
+                <Image src="/images/logo.png" alt="Intervio Logo" width={40} height={40} />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
-                Intervio
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent text-2xl">
+                {app.name}
               </span>
             </Link>
 

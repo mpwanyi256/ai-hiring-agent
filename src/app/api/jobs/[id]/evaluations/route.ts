@@ -34,9 +34,7 @@ export async function GET(
         created_at,
         candidates!inner(
           id,
-          email,
-          first_name,
-          last_name
+          candidate_info_id
         )
       `)
       .eq('job_id', jobId)

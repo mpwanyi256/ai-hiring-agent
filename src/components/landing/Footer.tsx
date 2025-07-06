@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { SparklesIcon } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
+import Image from 'next/image';
+import { app } from '@/lib/constants';
 
 export default function Footer() {
   return (
@@ -11,10 +12,12 @@ export default function Footer() {
           {/* Company Info */}
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center">
-                <SparklesIcon className="w-4 h-4 text-white" />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
+                <Image src="/images/logo.png" alt="Intervio Logo" width={40} height={40} />
               </div>
-              <span className="text-lg font-bold text-primary">Intervio</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent text-2xl">
+                {app.name}
+              </span>
             </div>
             <p className="text-gray-400 mb-5 max-w-md text-sm">
               Our advanced artificial intelligence platform combines cutting-edge technologies to streamline your talent selection process, making hiring faster and more accurate than ever before.
@@ -52,7 +55,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-6 text-center text-gray-400 text-sm">
-          <p>© 2024 Intervio. All rights reserved.</p>
+          <p>© {`${new Date().getFullYear()}`} {app.name}. All rights reserved.</p>
         </div>
       </Container>
     </footer>

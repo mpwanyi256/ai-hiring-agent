@@ -5,6 +5,7 @@ import { SparklesIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import { useAppSelector } from '@/store';
+import Image from 'next/image';
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -41,10 +42,10 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-18">
           {/* Logo */}
           <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center space-x-3 hover-lift">
-            <div className="w-9 h-9 bg-gradient-to-br from-primary to-green-600 rounded-xl flex items-center justify-center shadow-lg">
-              <SparklesIcon className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
+              <Image src="/images/logo.png" alt="Intervio Logo" width={40} height={40} />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
+            <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent text-2xl">
               Intervio
             </span>
           </Link>
