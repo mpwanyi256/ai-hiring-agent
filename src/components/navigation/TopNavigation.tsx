@@ -120,7 +120,7 @@ export default function TopNavigation({
             {/* Logo - Compact for dashboard */}
             <Link href="/" className="flex items-center space-x-2 ml-2">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
-                <Image src="/illustrations/logo.svg" alt="Intervio Logo" width={40} height={40} />
+                <Image src="/images/logo.png" alt="Intervio Logo" width={40} height={40} objectFit="contain" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent text-2xl">
                 {app.name}
@@ -210,7 +210,7 @@ export default function TopNavigation({
             {/* Logo */}
             <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center space-x-3 hover-lift">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
-                <Image src="/illustrations/logo.svg" alt="Intervio Logo" width={40} height={40} />
+                <Image src="/images/logo.png" alt="Intervio Logo" width={40} height={40} objectFit="contain" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent text-2xl">
                 {app.name}

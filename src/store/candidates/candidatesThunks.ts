@@ -202,4 +202,21 @@ export const generateAIEvaluation = createAsyncThunk(
       throw new Error(error.response?.data?.error || 'Failed to generate AI evaluation');
     }
   }
+);
+
+// New thunk for fetching candidate responses
+export const fetchCandidateResponses = createAsyncThunk(
+  'candidates/fetchCandidateResponses',
+  async (params: { candidateId: string; jobId: string }) => {
+    try {
+      const { candidateId, jobId } = params;
+      const response = await apiUtils.get(`/api/candidates/${candidateId}/responses?jobId=${jobId}`);
+      return {
+        candidateId,
+        responses: response.responses || []
+      };
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to fetch candidate responses');
+    }
+  }
 ); 

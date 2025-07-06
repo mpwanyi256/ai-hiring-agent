@@ -16,6 +16,7 @@ import {
   EyeIcon,
   EyeSlashIcon
 } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 
 // Form validation schema
 const signinSchema = z.object({
@@ -80,8 +81,12 @@ export default function SigninPage() {
           <div className="max-w-md mx-auto">
             <div className="bg-white p-4 sm:p-8 rounded-lg shadow-sm border border-gray-light">
               <div className="text-center mb-6 sm:mb-8">
+                {/* Logo */}
+                <div className="w-full h-64 flex items-center justify-center">
+                  <Image src="/images/logo.png" alt="Intervio Logo" width={200} height={200} objectFit="contain" />
+                </div>
                 <h1 className="text-xl sm:text-2xl font-bold text-text mb-2">Welcome Back</h1>
-                <p className="text-sm sm:text-base text-muted-text">Sign in to your AI Hiring Agent account</p>
+                <p className="text-sm sm:text-base text-muted-text">Sign in to your account</p>
               </div>
 
               {/* Error Display */}

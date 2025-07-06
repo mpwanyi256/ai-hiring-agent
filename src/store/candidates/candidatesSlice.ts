@@ -15,6 +15,7 @@ import {
   updateEvaluation,
   deleteCandidate,
   generateAIEvaluation,
+  fetchCandidateResponses,
 } from './candidatesThunks';
 
 // Define the candidates state interface
@@ -51,6 +52,14 @@ interface CandidatesState {
       computedValues: any;
     } | null;
   };
+  // Candidate responses state
+  candidateResponses: {
+    [candidateId: string]: {
+      responses: any[];
+      isLoading: boolean;
+      error: string | null;
+    };
+  };
 }
 
 const initialState: CandidatesState = {
@@ -82,6 +91,8 @@ const initialState: CandidatesState = {
     isLoadingEvaluation: false,
     currentEvaluation: null,
   },
+  // Candidate responses state
+  candidateResponses: {},
 };
 
 const candidatesSlice = createSlice({
@@ -383,6 +394,31 @@ const candidatesSlice = createSlice({
       .addCase(generateAIEvaluation.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Failed to generate AI evaluation';
+      })
+      // Fetch Candidate Responses
+      .addCase(fetchCandidateResponses.pending, (state, action) => {
+        const candidateId = action.meta.arg.candidateId;
+        state.candidateResponses[candidateId] = {
+          responses: [],
+          isLoading: true,
+          error: null,
+        };
+      })
+      .addCase(fetchCandidateResponses.fulfilled, (state, action) => {
+        const candidateId = action.payload.candidateId;
+        state.candidateResponses[candidateId] = {
+          responses: action.payload.responses,
+          isLoading: false,
+          error: null,
+        };
+      })
+      .addCase(fetchCandidateResponses.rejected, (state, action) => {
+        const candidateId = action.meta.arg.candidateId;
+        state.candidateResponses[candidateId] = {
+          responses: [],
+          error: action.error.message || 'Failed to fetch candidate responses',
+          isLoading: false,
+        };
       });
   },
 });

@@ -17,26 +17,10 @@ export async function GET(
 
     const supabase = await createClient();
 
-    // Fetch evaluations for the job with candidate information
+    // Use the new job_evaluations view instead of complex join
     const { data: evaluations, error } = await supabase
-      .from('evaluations')
-      .select(`
-        id,
-        candidate_id,
-        evaluation_type,
-        summary,
-        score,
-        resume_score,
-        strengths,
-        red_flags,
-        recommendation,
-        feedback,
-        created_at,
-        candidates!inner(
-          id,
-          candidate_info_id
-        )
-      `)
+      .from('job_evaluations')
+      .select('*')
       .eq('job_id', jobId)
       .order('score', { ascending: false });
 
@@ -52,8 +36,8 @@ export async function GET(
     const transformedEvaluations = (evaluations || []).map((evaluation: any) => ({
       id: evaluation.id,
       candidateId: evaluation.candidate_id,
-      candidateName: `${evaluation.candidates.first_name} ${evaluation.candidates.last_name || ''}`.trim(),
-      candidateEmail: evaluation.candidates.email,
+      candidateName: evaluation.candidate_name,
+      candidateEmail: evaluation.candidate_email,
       evaluationType: evaluation.evaluation_type,
       summary: evaluation.summary,
       score: evaluation.score,
