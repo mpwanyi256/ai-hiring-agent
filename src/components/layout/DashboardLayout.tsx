@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import TopNavigation from '@/components/navigation/TopNavigation';
@@ -13,19 +12,10 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
-  const router = useRouter();
   const { user, isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  useEffect(() => {
-    // Redirect to signin if not authenticated and not loading
-    if (!isLoading && !isAuthenticated) {
-      router.push('/signin');
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  // Show loading state while checking auth or if no user data
   if (isLoading || (!isAuthenticated && !user)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
