@@ -72,11 +72,6 @@ export async function POST(request: Request) {
       // Save resume record to database
       resumeRecordId = await resumeService.saveResumeRecord(
         job.id,
-        {
-          email: candidateEmail || '',
-          firstName: candidateFirstName || '',
-          lastName: candidateLastName || ''
-        },
         resumeFile,
         resumeStorageInfo,
         {

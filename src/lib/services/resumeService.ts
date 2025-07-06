@@ -592,11 +592,6 @@ class ResumeService {
   // Save resume record to candidate_resumes table
   async saveResumeRecord(
     jobId: string,
-    candidateInfo: {
-      email: string;
-      firstName: string;
-      lastName: string;
-    },
     file: File,
     storageInfo: { path: string; publicUrl: string },
     parsedDoc?: { wordCount: number; fileType: string },
@@ -608,9 +603,6 @@ class ResumeService {
       const resumeData = {
         job_id: jobId,
         candidate_id: candidateId,
-        email: candidateInfo.email,
-        first_name: candidateInfo.firstName,
-        last_name: candidateInfo.lastName,
         original_filename: file.name,
         file_path: storageInfo.path,
         public_url: storageInfo.publicUrl,
