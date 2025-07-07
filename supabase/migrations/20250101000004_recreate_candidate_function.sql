@@ -1,4 +1,6 @@
--- Update the get_job_candidate_details function to support new filters
+-- Drop and recreate the get_job_candidate_details function with correct types
+DROP FUNCTION IF EXISTS get_job_candidate_details(UUID, UUID, TEXT, TEXT, INTEGER, INTEGER, INTEGER, INTEGER, TEXT, TEXT, TEXT, TEXT, TEXT);
+
 CREATE OR REPLACE FUNCTION get_job_candidate_details(
   p_job_id UUID,
   p_profile_id UUID,
@@ -30,7 +32,7 @@ RETURNS TABLE (
   updated_at TIMESTAMP WITH TIME ZONE,
   progress_percentage INTEGER,
   status TEXT,
-  response_count INTEGER,
+  response_count BIGINT,
   job_title TEXT,
   job_status TEXT,
   profile_id UUID,
@@ -39,8 +41,8 @@ RETURNS TABLE (
   score INTEGER,
   recommendation TEXT,
   summary TEXT,
-  strengths TEXT[],
-  red_flags TEXT[],
+  strengths JSONB,  -- Changed from TEXT[] to JSONB
+  red_flags JSONB,  -- Changed from TEXT[] to JSONB
   skills_assessment JSONB,
   traits_assessment JSONB,
   evaluation_created_at TIMESTAMP WITH TIME ZONE,
@@ -48,7 +50,7 @@ RETURNS TABLE (
   resume_filename TEXT,
   resume_file_path TEXT,
   resume_public_url TEXT,
-  resume_file_size INTEGER,
+  resume_file_size BIGINT,
   resume_file_type TEXT,
   resume_word_count INTEGER,
   resume_parsing_status TEXT,
@@ -86,16 +88,16 @@ BEGIN
       ELSE 'pending'
     END as status,
     COALESCE(response_counts.response_count, 0) as response_count,
-    j.title as job_title,
-    j.status as job_status,
+    j.title::TEXT as job_title,
+    j.status::TEXT as job_status,
     j.profile_id,
     j.fields as job_fields,
     e.id as evaluation_id,
     e.score,
     e.recommendation,
     e.summary,
-    e.strengths,
-    e.red_flags,
+    e.strengths,  -- Now expecting JSONB
+    e.red_flags,  -- Now expecting JSONB
     e.skills_assessment,
     e.traits_assessment,
     e.created_at as evaluation_created_at,
@@ -156,4 +158,4 @@ BEGIN
     END || ' ' || p_sort_order
   LIMIT p_limit OFFSET p_offset;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER; 
+$$ LANGUAGE plpgsql SECURITY DEFINER;
