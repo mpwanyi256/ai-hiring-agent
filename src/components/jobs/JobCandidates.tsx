@@ -53,27 +53,41 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
   const [selectedCandidateId, setSelectedCandidateId] = useState<string>();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
+  const [filters, setFilters] = useState({
+    minScore: undefined as number | undefined,
+    maxScore: undefined as number | undefined,
+    startDate: undefined as string | undefined,
+    endDate: undefined as string | undefined,
+    candidateStatus: undefined as string | undefined,
+    sortBy: 'created_at' as string,
+    sortOrder: 'desc' as 'asc' | 'desc'
+  });
+
+  const handleFiltersChange = (newFilters: {
+    minScore?: number;
+    maxScore?: number;
+    startDate?: string;
+    endDate?: string;
+    candidateStatus?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => {
+    setFilters(prev => ({
+      ...prev,
+      ...newFilters
+    }));
+  };
 
   // Fetch candidates when component mounts or job changes
   useEffect(() => {
     if (job.id) {
-      dispatch(fetchJobCandidates({ jobId: job.id }));
+      dispatch(fetchJobCandidates({ 
+        jobId: job.id,
+        search: searchQuery.trim() || undefined,
+        ...filters
+      }));
     }
-  }, [dispatch, job.id]);
-
-  // Fetch candidates when search query changes (debounced)
-  useEffect(() => {
-    if (job.id) {
-      const timeoutId = setTimeout(() => {
-        dispatch(fetchJobCandidates({ 
-          jobId: job.id, 
-          search: searchQuery.trim() || undefined 
-        }));
-      }, 300); // Debounce search by 300ms
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [searchQuery, job.id, dispatch]);
+  }, [dispatch, job.id, searchQuery, filters]);
 
   // Real-time listeners for candidate data
   useEffect(() => {
@@ -196,6 +210,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
             }}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
+            onFiltersChange={handleFiltersChange}
           />
         </div>
 

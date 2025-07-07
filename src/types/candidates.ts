@@ -16,23 +16,31 @@ export interface CandidateResume {
 
 export interface CandidateBasic {
   id: string;
-  candidate_info_id: string;
   jobId: string;
   jobTitle: string;
   jobStatus: string;
   interviewToken: string;
-  email: string;
-  firstName: string;
-  lastName: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
   fullName: string;
   currentStep: number;
   totalSteps: number;
   isCompleted: boolean;
   completionPercentage: number;
   responseCount: number;
-  submittedAt: string | null;
+  submittedAt?: string;
   createdAt: string;
-  evaluation: CandidateEvaluationSummary | null;
+  status: CandidateStatus;
+  evaluation?: {
+    id: string;
+    score: number;
+    recommendation: string;
+    summary: string;
+    strengths: string[];
+    redFlags: string[];
+    createdAt: string;
+  };
   resume: CandidateResume | null;
 }
 
@@ -49,17 +57,30 @@ export interface CandidateEvaluationSummary {
   evaluationType?: 'resume' | 'interview' | 'combined';
 }
 
-export interface CandidateDetailed extends CandidateBasic {
+export interface CandidateDetailed extends Omit<CandidateBasic, 'evaluation'> {
   job: {
     id: string;
     title: string;
     status: string;
     fields: Record<string, any>;
-    interviewFormat: 'text' | 'video';
+    interviewFormat: string;
   };
-  responses: CandidateResponse[];
+  responses: {
+    id: string;
+    questionId: string;
+    question: string;
+    answer: string;
+    responseTime: number;
+    createdAt: string;
+  }[];
   evaluation: CandidateEvaluationDetailed | null;
-  stats: CandidateStats;
+  stats: {
+    totalQuestions: number;
+    answeredQuestions: number;
+    averageResponseTime: number;
+    totalInterviewTime: number;
+    completionPercentage: number;
+  };
 }
 
 export interface CandidateResponse {
@@ -99,6 +120,18 @@ export interface CandidateStats {
 export type RecommendationType = 'strong_yes' | 'yes' | 'maybe' | 'no' | 'strong_no';
 
 export type CandidateStatusFilter = 'all' | 'completed' | 'in_progress';
+
+// Database enum values - must match the PostgreSQL enum exactly
+export type CandidateStatus = 
+  | 'under_review'
+  | 'interview_scheduled'
+  | 'shortlisted'
+  | 'reference_check'
+  | 'offer_extended'
+  | 'offer_accepted'
+  | 'hired'
+  | 'rejected'
+  | 'withdrawn';
 
 // API Response Types
 export interface CandidatesListResponse {

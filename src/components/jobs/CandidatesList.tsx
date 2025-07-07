@@ -1,13 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   MagnifyingGlassIcon,
   FunnelIcon,
   ChartBarIcon,
   ClockIcon,
-  CalendarIcon
+  CalendarIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
+import { CandidateStatus } from '@/types/candidates';
 
 interface Candidate {
   id: string;
@@ -20,6 +22,7 @@ interface Candidate {
   createdAt: string;
   profileImage?: string;
   resumeScore: number;
+  candidateStatus?: CandidateStatus;
 }
 
 interface CandidatesListProps {
@@ -28,15 +31,48 @@ interface CandidatesListProps {
   onCandidateSelect: (candidateId: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onFiltersChange?: (filters: {
+    minScore?: number;
+    maxScore?: number;
+    startDate?: string;
+    endDate?: string;
+    candidateStatus?: CandidateStatus;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => void;
 }
+
+const statusOptions: { value: CandidateStatus; label: string; color: string }[] = [
+  { value: 'under_review', label: 'Under Review', color: 'bg-gray-100 text-gray-800' },
+  { value: 'interview_scheduled', label: 'Interview Scheduled', color: 'bg-blue-100 text-blue-800' },
+  { value: 'shortlisted', label: 'Shortlisted', color: 'bg-green-100 text-green-800' },
+  { value: 'reference_check', label: 'Reference Check', color: 'bg-purple-100 text-purple-800' },
+  { value: 'offer_extended', label: 'Offer Extended', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'offer_accepted', label: 'Offer Accepted', color: 'bg-green-100 text-green-800' },
+  { value: 'hired', label: 'Hired', color: 'bg-green-100 text-green-800' },
+  { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-800' },
+  { value: 'withdrawn', label: 'Withdrawn', color: 'bg-gray-100 text-gray-800' },
+];
 
 export default function CandidatesList({
   candidates,
   selectedCandidateId,
   onCandidateSelect,
   searchQuery,
-  onSearchChange
+  onSearchChange,
+  onFiltersChange
 }: CandidatesListProps) {
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    minScore: '',
+    maxScore: '',
+    startDate: '',
+    endDate: '',
+    candidateStatus: '' as CandidateStatus | '',
+    sortBy: 'created_at',
+    sortOrder: 'desc' as 'asc' | 'desc'
+  });
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -77,6 +113,42 @@ export default function CandidatesList({
     return 'text-red-600 bg-red-50';
   };
 
+  const handleFilterChange = (key: string, value: string | number) => {
+    const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
+    
+    if (onFiltersChange) {
+      onFiltersChange({
+        minScore: newFilters.minScore ? parseInt(newFilters.minScore) : undefined,
+        maxScore: newFilters.maxScore ? parseInt(newFilters.maxScore) : undefined,
+        startDate: newFilters.startDate || undefined,
+        endDate: newFilters.endDate || undefined,
+        candidateStatus: newFilters.candidateStatus || undefined,
+        sortBy: newFilters.sortBy,
+        sortOrder: newFilters.sortOrder
+      });
+    }
+  };
+
+  const clearFilters = () => {
+    const clearedFilters = {
+      minScore: '',
+      maxScore: '',
+      startDate: '',
+      endDate: '',
+      candidateStatus: '' as CandidateStatus | '',
+      sortBy: 'created_at',
+      sortOrder: 'desc' as 'asc' | 'desc'
+    };
+    setFilters(clearedFilters);
+    
+    if (onFiltersChange) {
+      onFiltersChange({});
+    }
+  };
+
+  const hasActiveFilters = filters.minScore || filters.maxScore || filters.startDate || filters.endDate || filters.candidateStatus;
+
   return (
     <div className="bg-white rounded-lg border border-gray-100 h-full flex flex-col">
       {/* Header - Fixed */}
@@ -85,9 +157,19 @@ export default function CandidatesList({
           <h3 className="text-lg font-semibold text-gray-900">
             Candidates ({candidates.length})
           </h3>
-          <button className="flex items-center space-x-1 text-sm text-gray-500 hover:text-gray-700">
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center space-x-1 text-sm transition-colors ${
+              showFilters || hasActiveFilters 
+                ? 'text-primary' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
             <FunnelIcon className="w-4 h-4" />
             <span>Filters</span>
+            {hasActiveFilters && (
+              <span className="w-2 h-2 bg-primary rounded-full"></span>
+            )}
           </button>
         </div>
 
@@ -103,17 +185,111 @@ export default function CandidatesList({
           />
         </div>
 
-        {/* Sort options */}
-        <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
-          <span>Select All</span>
-          <select className="border border-gray-200 rounded px-2 py-1 text-xs">
-            <option>Sort By</option>
-            <option>Score (High to Low)</option>
-            <option>Score (Low to High)</option>
-            <option>Date Applied</option>
-            <option>Name</option>
-          </select>
-        </div>
+        {/* Filters Panel */}
+        {showFilters && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Score Range */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Score Range</label>
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    min="0"
+                    max="100"
+                    value={filters.minScore}
+                    onChange={(e) => handleFilterChange('minScore', e.target.value)}
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    min="0"
+                    max="100"
+                    value={filters.maxScore}
+                    onChange={(e) => handleFilterChange('maxScore', e.target.value)}
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              {/* Date Range */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Date Applied</label>
+                <div className="flex space-x-2">
+                  <input
+                    type="date"
+                    value={filters.startDate}
+                    onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                  />
+                  <input
+                    type="date"
+                    value={filters.endDate}
+                    onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  value={filters.candidateStatus}
+                  onChange={(e) => handleFilterChange('candidateStatus', e.target.value)}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                >
+                  <option value="">All Statuses</option>
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sort Options */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Sort By</label>
+                <div className="flex space-x-2">
+                  <select
+                    value={filters.sortBy}
+                    onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="created_at">Date Applied</option>
+                    <option value="score">Score</option>
+                    <option value="full_name">Name</option>
+                    <option value="candidate_status">Status</option>
+                  </select>
+                  <select
+                    value={filters.sortOrder}
+                    onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="desc">Desc</option>
+                    <option value="asc">Asc</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center space-x-1 text-xs text-gray-500 hover:text-gray-700"
+                >
+                  <XMarkIcon className="w-3 h-3" />
+                  <span>Clear Filters</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Candidates List - Scrollable */}

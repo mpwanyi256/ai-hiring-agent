@@ -24,12 +24,40 @@ export const fetchJobCandidates = createAsyncThunk(
     status?: string;
     page?: number;
     limit?: number;
+    minScore?: number;
+    maxScore?: number;
+    startDate?: string;
+    endDate?: string;
+    candidateStatus?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }) => {
     try {
-      const { jobId, search, status, page = 1, limit = 50 } = params;
+      const { 
+        jobId, 
+        search, 
+        status, 
+        page = 1, 
+        limit = 50,
+        minScore,
+        maxScore,
+        startDate,
+        endDate,
+        candidateStatus,
+        sortBy,
+        sortOrder
+      } = params;
+      
       const queryParams = new URLSearchParams({
         ...(search && { search }),
         ...(status && { status }),
+        ...(minScore && { minScore: minScore.toString() }),
+        ...(maxScore && { maxScore: maxScore.toString() }),
+        ...(startDate && { startDate }),
+        ...(endDate && { endDate }),
+        ...(candidateStatus && { candidateStatus }),
+        ...(sortBy && { sortBy }),
+        ...(sortOrder && { sortOrder }),
         page: page.toString(),
         limit: limit.toString(),
       });

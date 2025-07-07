@@ -16,6 +16,16 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
+    // Advanced filters
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const minScore = searchParams.get('minScore');
+    const maxScore = searchParams.get('maxScore');
+    const recommendation = searchParams.get('recommendation');
+    const candidateStatus = searchParams.get('candidateStatus'); // New filter for candidate_status
+    const sortBy = searchParams.get('sortBy') || 'created_at';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
+
     if (!profileId) {
       return NextResponse.json({ 
         success: false, 
@@ -23,43 +33,11 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Build the query with candidates_info join
+    // Build the query using candidate_details view
     let query = supabase
-      .from('candidates')
-      .select(`
-        id,
-        job_id,
-        interview_token,
-        current_step,
-        total_steps,
-        is_completed,
-        submitted_at,
-        created_at,
-        candidate_info_id,
-        candidates_info!inner(
-          id,
-          first_name,
-          last_name,
-          email
-        ),
-        jobs!inner(
-          id,
-          title,
-          profile_id,
-          status
-        ),
-        evaluations(
-          id,
-          score,
-          recommendation,
-          summary,
-          strengths,
-          red_flags,
-          created_at
-        )
-      `)
-      .eq('jobs.profile_id', profileId)
-      .order('created_at', { ascending: false });
+      .from('candidate_details')
+      .select('*')
+      .eq('profile_id', profileId);
 
     // Apply filters
     if (jobId) {
@@ -72,15 +50,40 @@ export async function GET(request: NextRequest) {
       query = query.eq('is_completed', false);
     }
 
+    if (candidateStatus && candidateStatus !== 'all') {
+      query = query.eq('candidate_status', candidateStatus);
+    }
+
     if (search) {
-      query = query.or(`candidates_info.first_name.ilike.%${search}%,candidates_info.last_name.ilike.%${search}%,candidates_info.email.ilike.%${search}%`);
+      query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+    }
+
+    // Date range filter
+    if (startDate) {
+      query = query.gte('created_at', startDate);
+    }
+    if (endDate) {
+      query = query.lte('created_at', endDate + 'T23:59:59');
+    }
+
+    // Apply sorting
+    if (sortBy === 'score') {
+      query = query.order('score', { ascending: sortOrder === 'asc' });
+    } else if (sortBy === 'full_name') {
+      query = query.order('full_name', { ascending: sortOrder === 'asc' });
+    } else if (sortBy === 'completion_percentage') {
+      query = query.order('progress_percentage', { ascending: sortOrder === 'asc' });
+    } else if (sortBy === 'candidate_status') {
+      query = query.order('candidate_status', { ascending: sortOrder === 'asc' });
+    } else {
+      query = query.order('created_at', { ascending: sortOrder === 'asc' });
     }
 
     // Get total count for pagination
     const { count } = await supabase
-      .from('candidates')
-      .select('*, jobs!inner(profile_id)', { count: 'exact', head: true })
-      .eq('jobs.profile_id', profileId);
+      .from('candidate_details')
+      .select('*', { count: 'exact', head: true })
+      .eq('profile_id', profileId);
 
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
@@ -91,66 +94,59 @@ export async function GET(request: NextRequest) {
       throw new Error(error.message);
     }
 
-    // Get candidate response counts
-    const candidateIds = candidates?.map(c => c.id) || [];
-    let responseCounts: Record<string, number> = {};
+    // Format the response data to match the expected interface
+    const formattedCandidates = candidates?.map(candidate => ({
+      id: candidate.id,
+      jobId: candidate.job_id,
+      jobTitle: candidate.job_title || 'Unknown Job',
+      jobStatus: candidate.job_status || 'unknown',
+      interviewToken: candidate.interview_token,
+      email: candidate.email,
+      firstName: candidate.first_name,
+      lastName: candidate.last_name,
+      fullName: candidate.full_name,
+      currentStep: candidate.current_step,
+      totalSteps: candidate.total_steps,
+      isCompleted: candidate.is_completed,
+      completionPercentage: candidate.progress_percentage || 0,
+      responseCount: candidate.response_count || 0,
+      submittedAt: candidate.submitted_at,
+      createdAt: candidate.created_at,
+      status: candidate.candidate_status || 'under_review',
+      evaluation: candidate.evaluation_id ? {
+        id: candidate.evaluation_id,
+        score: candidate.score,
+        recommendation: candidate.recommendation,
+        summary: candidate.summary,
+        strengths: candidate.strengths || [],
+        redFlags: candidate.red_flags || [],
+        createdAt: candidate.evaluation_created_at,
+      } : null,
+    })) || [];
 
-    if (candidateIds.length > 0) {
-      const { data: responses } = await supabase
-        .from('responses')
-        .select('candidate_id')
-        .in('candidate_id', candidateIds);
-
-      if (responses) {
-        responseCounts = responses.reduce((acc, r) => {
-          acc[r.candidate_id] = (acc[r.candidate_id] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-      }
+    // Apply score and recommendation filters after formatting
+    let filteredCandidates = formattedCandidates;
+    
+    if (minScore || maxScore || recommendation) {
+      filteredCandidates = formattedCandidates.filter(candidate => {
+        if (minScore && candidate.evaluation?.score < parseInt(minScore)) {
+          return false;
+        }
+        if (maxScore && candidate.evaluation?.score > parseInt(maxScore)) {
+          return false;
+        }
+        if (recommendation && recommendation !== 'all' && candidate.evaluation?.recommendation !== recommendation) {
+          return false;
+        }
+        return true;
+      });
     }
-
-    // Format the response data
-    const formattedCandidates = candidates?.map(candidate => {
-      // Handle the jobs relation - it's returned as an array but we know there's only one
-      const job = Array.isArray(candidate.jobs) ? candidate.jobs[0] : candidate.jobs;
-      const candidateInfo = Array.isArray(candidate.candidates_info) ? candidate.candidates_info[0] : candidate.candidates_info;
-      
-      return {
-        id: candidate.id,
-        jobId: candidate.job_id,
-        jobTitle: job?.title || 'Unknown Job',
-        jobStatus: job?.status || 'unknown',
-        interviewToken: candidate.interview_token,
-        email: candidateInfo?.email,
-        firstName: candidateInfo?.first_name,
-        lastName: candidateInfo?.last_name,
-        fullName: `${candidateInfo?.first_name || ''} ${candidateInfo?.last_name || ''}`.trim() || 'Anonymous',
-        currentStep: candidate.current_step,
-        totalSteps: candidate.total_steps,
-        isCompleted: candidate.is_completed,
-        completionPercentage: candidate.total_steps > 0 
-          ? Math.round((candidate.current_step / candidate.total_steps) * 100) 
-          : 0,
-        responseCount: responseCounts[candidate.id] || 0,
-        submittedAt: candidate.submitted_at,
-        createdAt: candidate.created_at,
-        evaluation: candidate.evaluations?.[0] ? {
-          id: candidate.evaluations[0].id,
-          score: candidate.evaluations[0].score,
-          recommendation: candidate.evaluations[0].recommendation,
-          summary: candidate.evaluations[0].summary,
-          strengths: candidate.evaluations[0].strengths,
-          redFlags: candidate.evaluations[0].red_flags,
-          createdAt: candidate.evaluations[0].created_at,
-        } : null,
-      };
-    }) || [];
 
     const totalPages = Math.ceil((count || 0) / limit);
 
     return NextResponse.json({
       success: true,
-      candidates: formattedCandidates,
+      candidates: filteredCandidates,
       pagination: {
         page,
         limit,

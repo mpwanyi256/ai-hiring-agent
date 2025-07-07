@@ -5,6 +5,7 @@ import JobDetailsLayout from '@/components/jobs/JobDetailsLayout';
 import JobOverview from '@/components/jobs/JobOverview';
 import QuestionManager from '@/components/questions/QuestionManager';
 import JobCandidates from '@/components/jobs/JobCandidates';
+import JobShortlisted from '@/components/jobs/JobShortlisted';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { fetchJobById, fetchJobQuestions } from '@/store/jobs/jobsThunks';
 import { resetCurrentJob } from '@/store/jobs/jobsSlice';
@@ -95,6 +96,8 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
         return <QuestionManager />;
       case 'candidates':
         return <JobCandidates job={job} />;
+      case 'shortlisted':
+        return <JobShortlisted jobId={job.id} />;
       default:
         return <JobOverview job={job} />;
     }

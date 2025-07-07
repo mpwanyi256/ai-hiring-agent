@@ -44,7 +44,8 @@ interface JobDetailsLayoutProps {
 const tabs = [
   { id: 'overview', label: 'Overview', icon: BriefcaseIcon },
   { id: 'questions', label: 'Questions', icon: ClipboardDocumentListIcon },
-  { id: 'candidates', label: 'Candidates', icon: UserGroupIcon }
+  { id: 'candidates', label: 'Candidates', icon: UserGroupIcon },
+  { id: 'shortlisted', label: 'Shortlisted', icon: ChartBarIcon }
 ];
 
 export default function JobDetailsLayout({ 
