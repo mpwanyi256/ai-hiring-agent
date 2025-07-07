@@ -6,7 +6,7 @@ import JobOverview from '@/components/jobs/JobOverview';
 import QuestionManager from '@/components/questions/QuestionManager';
 import JobCandidates from '@/components/jobs/JobCandidates';
 import { useAppSelector, useAppDispatch } from '@/store';
-import { fetchJobById } from '@/store/jobs/jobsThunks';
+import { fetchJobById, fetchJobQuestions } from '@/store/jobs/jobsThunks';
 import { resetCurrentJob } from '@/store/jobs/jobsSlice';
 import { selectCurrentJob, selectJobsLoading, selectJobsError } from '@/store/jobs/jobsSelectors';
 import { copyInterviewLink } from '@/lib/utils';
@@ -40,6 +40,15 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
       dispatch(resetCurrentJob());
     }
   }, [resolvedParams.id, dispatch, showError]);
+
+  // Fetch questions when switching to Questions tab
+  useEffect(() => {
+    if (activeTab === 'questions' && job?.id) {
+      dispatch(fetchJobQuestions(job.id)).unwrap().catch((err) => {
+        showError(err instanceof Error ? err.message : 'Failed to fetch questions');
+      });
+    }
+  }, [activeTab, job?.id, dispatch, showError]);
 
   const shareJob = async () => {
     if (!job) return;

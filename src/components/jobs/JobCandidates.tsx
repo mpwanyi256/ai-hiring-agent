@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import CandidatesOverview from './CandidatesOverview';
 import CandidatesList from './CandidatesList';
 import CandidateEvaluationSection from '@/components/evaluations/CandidateEvaluationSection';
+import CandidateAnalytics from '@/components/evaluations/CandidateAnalytics';
 import CandidateResponses from '@/components/candidates/CandidateResponses';
 import { CurrentJob } from '@/types/jobs';
 import { AppDispatch, RootState } from '@/store';
@@ -60,6 +61,20 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     }
   }, [dispatch, job.id]);
 
+  // Fetch candidates when search query changes (debounced)
+  useEffect(() => {
+    if (job.id) {
+      const timeoutId = setTimeout(() => {
+        dispatch(fetchJobCandidates({ 
+          jobId: job.id, 
+          search: searchQuery.trim() || undefined 
+        }));
+      }, 300); // Debounce search by 300ms
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchQuery, job.id, dispatch]);
+
   // Real-time listeners for candidate data
   useEffect(() => {
     if (!job.id) return;
@@ -90,14 +105,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     };
   }, [job.id, dispatch]);
 
-  // Filter candidates based on search
-  const filteredCandidates = candidates.filter(candidate => {
-    const candidateName = (candidate as any).name || (candidate as any).fullName || '';
-    const candidateEmail = candidate.email || '';
-    return candidateName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           candidateEmail.toLowerCase().includes(searchQuery.toLowerCase());
-  });
-
+  // Use candidates directly from state (no frontend filtering)
   const selectedCandidate = selectedCandidateId 
     ? candidates.find(c => c.id === selectedCandidateId)
     : null;
@@ -111,7 +119,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
   };
 
   // Transform candidates for the list component
-  const transformedCandidates = filteredCandidates.map(candidate => {
+  const transformedCandidates = candidates.map(candidate => {
     const candidateAny = candidate as any;
     return {
       id: candidate.id,
@@ -327,9 +335,10 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                   />
                 )}
                 {activeTab === 'analytics' && (
-                  <CandidateEvaluationSection
+                  <CandidateAnalytics
                     candidateId={selectedCandidate.id}
                     candidateName={(selectedCandidate as any).name || (selectedCandidate as any).fullName || 'Anonymous Candidate'}
+                    jobId={job.id}
                   />
                 )}
               </div>
