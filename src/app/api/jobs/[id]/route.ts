@@ -130,12 +130,6 @@ export async function PUT(
       );
     }
 
-    console.log('Updated job:', {
-      id: updatedJob.id,
-      title: updatedJob.title,
-      changes: Object.keys(updateData)
-    });
-
     return NextResponse.json({
       success: true,
       job: updatedJob,
