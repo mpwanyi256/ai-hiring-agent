@@ -299,8 +299,14 @@ export default function CandidateAnalytics({
       {/* Response Analytics */}
       {response_analytics.length > 0 && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Response Analytics</h3>
-          <div className="space-y-4">
+          <div className="flex flex-col mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 mr-2">Response Analytics</h3>
+            <span className='flex bg-primary/10 rounded-lg p-2'>
+            <ExclamationTriangleIcon className="w-4 h-4 text-blue-400 mr-1" />
+            <span className="text-xs text-gray-700">Each response's quality % reflects how well the answer meets the question's requirements, based on the question estimated response time versus the actual response time.</span>
+            </span>
+          </div>
+          <div className="space-y-4 mt-2">
             {response_analytics.map((response, index) => (
               <div key={response.response_id} className="border border-gray-100 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
@@ -358,8 +364,14 @@ export default function CandidateAnalytics({
 
       {/* Performance Insights */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Insights</h3>
-        <div className="space-y-4">
+        <div className="flex flex-col mb-1">
+          <h3 className="text-lg font-semibold text-gray-900 mr-2">Performance Insights</h3>
+          <span className='flex bg-primary/10 rounded-lg p-2'>
+            <ExclamationTriangleIcon className="w-4 h-4 text-blue-400 mr-1" />
+            <span className="text-xs text-gray-700">These figures compare the candidate's performance to the average of all candidates for this job. Positive values mean above average; negative means below average.</span>
+          </span>
+        </div>
+        <div className="space-y-4 mt-2">
           {/* Score Comparison */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center">
@@ -378,7 +390,6 @@ export default function CandidateAnalytics({
               <span className="text-gray-500 ml-1">vs {comparative_data.average_score.toFixed(1)}% average</span>
             </div>
           </div>
-
           {/* Completion Comparison */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center">
@@ -397,7 +408,6 @@ export default function CandidateAnalytics({
               <span className="text-gray-500 ml-1">vs {comparative_data.completion_rate.toFixed(1)}% average</span>
             </div>
           </div>
-
           {/* Time Spent Comparison */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center">
