@@ -57,8 +57,7 @@ export async function GET(
     const supabase = await createClient();
     
     // Await params before accessing properties (Next.js 15 requirement)
-    const resolvedParams = await params;
-    const jobId = resolvedParams.id;
+    const { id: jobId } = await params;
     const searchParams = request.nextUrl.searchParams;
     
     // Get current user profile

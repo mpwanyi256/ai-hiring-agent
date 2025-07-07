@@ -6,8 +6,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = await params;
-    const jobId = resolvedParams.id;
+    const { id: jobId } = await params;
 
     if (!jobId) {
       return NextResponse.json(
@@ -49,10 +48,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const jobId = params.id;
+    const { id: jobId } = await params;
     const body = await request.json();
 
     if (!jobId) {
@@ -103,12 +102,22 @@ export async function PUT(
     }
 
     const updateData: UpdateData = {};
+
+    // Add fields to update data if they exist in the request body
     if (body.title) updateData.title = body.title;
     if (body.fields) updateData.fields = body.fields;
     if (body.interviewFormat) updateData.interviewFormat = body.interviewFormat;
     if (body.status) updateData.status = body.status;
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
 
+    // Special handling for status changes
+    if (body.status === 'closed') {
+      updateData.isActive = false; // Automatically set is_active to false when job is closed
+    } else {
+      updateData.isActive = true;
+    }
+
+    // Update the job using the Supabase service
     const updatedJob = await jobsService.updateJob(jobId, updateData);
 
     if (!updatedJob) {
@@ -124,7 +133,7 @@ export async function PUT(
     console.log('Updated job:', {
       id: updatedJob.id,
       title: updatedJob.title,
-      changes: Object.keys(body),
+      changes: Object.keys(updateData)
     });
 
     return NextResponse.json({
@@ -145,10 +154,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const jobId = params.id;
+    const { id: jobId } = await params;
 
     if (!jobId) {
       return NextResponse.json(

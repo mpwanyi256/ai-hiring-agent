@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect } from "react";
+import { use, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchInterview } from "@/store/interview/interviewThunks";
 import { selectInterviewStep, selectCandidate, loadedInterview } from "@/store/interview/interviewSelectors";
@@ -10,6 +10,7 @@ import { InterviewStep } from "@/types/interview";
 import InterviewComplete from "@/components/interview/InterviewComplete";
 import ResumeUpload from "@/components/interview/ResumeUpload";
 import InterviewFlow from "@/components/interview/InterviewFlow";
+import { XCircleIcon } from "@heroicons/react/24/outline";
 
 interface InterviewPageProps {
   params: Promise<{
@@ -31,6 +32,8 @@ export default function InterviewPage({ params }: InterviewPageProps) {
   const interviewStep = useAppSelector(selectInterviewStep);
   const candidate = useAppSelector(selectCandidate);
   const job = useAppSelector(loadedInterview);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const renderStep = () => {
     switch (interviewStep) {
@@ -71,8 +74,51 @@ export default function InterviewPage({ params }: InterviewPageProps) {
   }
 
   useEffect(() => {
-    dispatch(fetchInterview(token));
+    const loadInterview = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        await dispatch(fetchInterview(token)).unwrap();
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load interview';
+        setError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInterview();
   }, [token, dispatch]);
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <XCircleIcon className="w-8 h-8 text-red-600" />
+          </div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Interview Not Available</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="text-sm text-gray-500">
+            <p>If you believe this is an error, please contact the hiring team.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading interview...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">

@@ -1,4 +1,4 @@
-import { EyeIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { EyeIcon, SparklesIcon, PlusIcon } from "@heroicons/react/24/outline";
 import Button from "../ui/Button";
 import { useAppSelector } from "@/store";
 import { selectCurrentJob, selectJobQuestions } from "@/store/jobs/jobsSelectors";
@@ -7,9 +7,11 @@ import { QuestionStats } from "./QuestionStats";
 import { generateJobQuestions } from "@/store/jobs/jobsThunks";
 import { useAppDispatch } from "@/store";
 import { apiError, apiSuccess } from "@/lib/notification";
+import AddQuestionModal from "./AddQuestionModal";
 
 export const QuestionsHeader = () => {
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const job = useAppSelector(selectCurrentJob);
     const questions = useAppSelector(selectJobQuestions);
     const dispatch = useAppDispatch();
@@ -31,6 +33,8 @@ export const QuestionsHeader = () => {
       }
     }
 
+    const isJobInDraft = job?.status === 'draft';
+
   return (
     <div className="bg-white rounded-lg border border-gray-light p-6">
         <div className="flex items-center justify-between mb-4">
@@ -42,9 +46,24 @@ export const QuestionsHeader = () => {
             <p className="text-muted-text text-sm">
               AI-generated questions for <span className="font-medium">{job?.title}</span>
             </p>
+            {!isJobInDraft && (
+              <p className="text-amber-600 text-sm mt-1">
+                ⚠️ Questions can only be modified when the job is in draft state
+              </p>
+            )}
           </div>
           
           <div className="flex gap-3">
+            {isJobInDraft && (
+              <Button 
+                onClick={() => setIsAddModalOpen(true)}
+                variant="outline"
+                className="flex items-center"
+              >
+                <PlusIcon className="w-4 h-4 mr-2" />
+                Add Question
+              </Button>
+            )}
             <Button 
               onClick={handleGenerateQuestions}
               disabled={isGenerating}
@@ -56,6 +75,11 @@ export const QuestionsHeader = () => {
           </div>
         </div>
         <QuestionStats />
+        
+        <AddQuestionModal 
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+        />
     </div>
   );
 };

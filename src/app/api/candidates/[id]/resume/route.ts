@@ -9,8 +9,7 @@ export async function GET(
     const supabase = await createClient();
     
     // Await params before accessing properties (Next.js 15 requirement)
-    const resolvedParams = await params;
-    const candidateId = resolvedParams.id;
+    const { id: candidateId } = await params;
     
     // Get current user profile
     const { data: { user }, error: authError } = await supabase.auth.getUser();

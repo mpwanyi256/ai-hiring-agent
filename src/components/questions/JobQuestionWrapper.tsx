@@ -10,17 +10,19 @@ interface JobQuestionWrapperProps {
     questionsCount: number;
     onDeleteQuestion: (questionId: string) => void;
     onMoveQuestion: (questionId: string, direction: 'up' | 'down') => void;
+    isEditingDisabled?: boolean;
 }   
 
-export const JobQuestionWrapper = ({ question, onMoveQuestion, questionsCount, onDeleteQuestion }: JobQuestionWrapperProps) => {
+export const JobQuestionWrapper = ({ question, onMoveQuestion, questionsCount, onDeleteQuestion, isEditingDisabled = false }: JobQuestionWrapperProps) => {
     const [isEditing, setIsEditing] = useState(false);
 
     const startEditing = () => {
+        if (isEditingDisabled) return;
         setIsEditing(true);
     }
     
     return (
-        <div className="p-4 hover:bg-gray-50">
+        <div className={`p-4 hover:bg-gray-50 ${isEditingDisabled ? 'opacity-75' : ''}`}>
             <div className="flex items-start gap-4">
                 {/* Question Number */}
                 <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium text-primary">
@@ -62,30 +64,36 @@ export const JobQuestionWrapper = ({ question, onMoveQuestion, questionsCount, o
                 <div className="flex-shrink-0 flex items-center gap-1">
                     <button
                     onClick={() => onMoveQuestion(question.id, 'up')}
-                    disabled={question.orderIndex === 0}
+                    disabled={question.orderIndex === 0 || isEditingDisabled}
                     className="p-1 text-muted-text hover:text-text disabled:opacity-30 disabled:cursor-not-allowed"
+                    title={isEditingDisabled ? 'Editing disabled' : 'Move up'}
                     >
                     <ArrowUpIcon className="w-4 h-4" />
                     </button>
                     
                     <button
                     onClick={() => onMoveQuestion(question.id, 'down')}
-                    disabled={question.orderIndex === questionsCount - 1}
+                    disabled={question.orderIndex === questionsCount - 1 || isEditingDisabled}
                     className="p-1 text-muted-text hover:text-text disabled:opacity-30 disabled:cursor-not-allowed"
+                    title={isEditingDisabled ? 'Editing disabled' : 'Move down'}
                     >
                     <ArrowDownIcon className="w-4 h-4" />
                     </button>
                     
                     <button
                     onClick={() => startEditing()}
-                    className="p-1 text-muted-text hover:text-text"
+                    disabled={isEditingDisabled}
+                    className="p-1 text-muted-text hover:text-text disabled:opacity-30 disabled:cursor-not-allowed"
+                    title={isEditingDisabled ? 'Editing disabled' : 'Edit question'}
                     >
                     <PencilIcon className="w-4 h-4" />
                     </button>
                     
                     <button
                     onClick={() => onDeleteQuestion(question.id)}
-                    className="p-1 text-muted-text hover:text-red-600"
+                    disabled={isEditingDisabled}
+                    className="p-1 text-muted-text hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title={isEditingDisabled ? 'Editing disabled' : 'Delete question'}
                     >
                     <TrashIcon className="w-4 h-4" />
                     </button>

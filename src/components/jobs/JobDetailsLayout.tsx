@@ -18,9 +18,13 @@ import {
   ClipboardDocumentListIcon,
   ChartBarIcon,
   PlayIcon,
-  PauseIcon
+  PauseIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import DashboardLayout from '../layout/DashboardLayout';
+import { useAppDispatch } from '@/store';
+import { updateJobStatus } from '@/store/jobs/jobsThunks';
+import { apiError, apiSuccess } from '@/lib/notification';
 
 interface JobDetailsLayoutProps {
   job: CurrentJob;
@@ -44,7 +48,10 @@ export default function JobDetailsLayout({
   onShareJob 
 }: JobDetailsLayoutProps) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [isToggling, setIsToggling] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -72,7 +79,7 @@ export default function JobDetailsLayout({
       case 'draft':
         return 'Draft';
       case 'interviewing':
-        return 'Active';
+        return 'Interviewing';
       case 'closed':
         return 'Closed';
       default:
@@ -84,6 +91,24 @@ export default function JobDetailsLayout({
     setIsToggling(true);
     // TODO: Implement job status toggle
     setTimeout(() => setIsToggling(false), 1000);
+  };
+
+  const handleStatusUpdate = async (newStatus: 'draft' | 'interviewing' | 'closed') => {
+    if (newStatus === job.status) {
+      setShowStatusDropdown(false);
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    try {
+      await dispatch(updateJobStatus({ jobId: job.id, status: newStatus })).unwrap();
+      apiSuccess(`Job status updated to ${getStatusLabel(newStatus)}`);
+      setShowStatusDropdown(false);
+    } catch (error) {
+      apiError(error instanceof Error ? error.message : 'Failed to update job status');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
   };
 
   return (
@@ -130,9 +155,36 @@ export default function JobDetailsLayout({
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(job.status)}`}>
-                    {getStatusLabel(job.status)}
-                  </span>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                      disabled={isUpdatingStatus}
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(job.status)} hover:bg-opacity-80 transition-colors disabled:opacity-50`}
+                    >
+                      {getStatusLabel(job.status)}
+                      <ChevronDownIcon className="w-3 h-3 ml-1" />
+                    </button>
+                    
+                    {showStatusDropdown && (
+                      <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[120px]">
+                        <div className="py-1">
+                          {['draft', 'interviewing', 'closed'].map((status) => (
+                            <button
+                              key={status}
+                              onClick={() => handleStatusUpdate(status as 'draft' | 'interviewing' | 'closed')}
+                              disabled={isUpdatingStatus}
+                              className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 disabled:opacity-50 ${
+                                status === job.status ? 'bg-primary/10 text-primary font-medium' : 'text-gray-700'
+                              }`}
+                            >
+                              {getStatusLabel(status)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
                   <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                     job.isActive 
                       ? 'bg-green-100 text-green-700' 
@@ -168,7 +220,13 @@ export default function JobDetailsLayout({
             </Button>
 
             <Link href={`/dashboard/jobs/${job.id}/edit`}>
-              <Button variant="outline" size="sm" className="flex items-center text-sm">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center text-sm"
+                disabled={job.status !== 'draft'}
+                title={job.status !== 'draft' ? 'Job must be in draft state to edit' : 'Edit job'}
+              >
                 <PencilIcon className="w-4 h-4 mr-1" />
                 Edit
               </Button>
@@ -231,42 +289,6 @@ export default function JobDetailsLayout({
 
         {/* Sidebar */}
         <div className="space-y-4">
-          {/* Quick Actions */}
-          <div className="bg-white rounded-lg border border-gray-100 p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
-            <div className="space-y-2">
-              <Link 
-                href={job.interviewLink || `/interview/${job.interviewToken}`}
-                target="_blank"
-                className="block"
-              >
-                <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                  <LinkIcon className="w-4 h-4 mr-2" />
-                  Copy Interview Link
-                </Button>
-              </Link>
-              
-              {(job.candidateCount || 0) > 0 && (
-                <Link href={`/dashboard/candidates?job=${job.id}`}>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    <UserGroupIcon className="w-4 h-4 mr-2" />
-                    View All Candidates
-                  </Button>
-                </Link>
-              )}
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onTabChange('questions')}
-                className="w-full justify-start text-xs"
-              >
-                <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
-                Manage Questions
-              </Button>
-            </div>
-          </div>
-
           {/* Job Info */}
           <div className="bg-white rounded-lg border border-gray-100 p-4">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Job Information</h3>

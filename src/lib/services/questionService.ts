@@ -349,6 +349,69 @@ class QuestionService {
     }
   }
 
+  // Add a single manual question to a job
+  async addManualQuestion(jobId: string, questionData: {
+    questionText: string;
+    questionType: 'general' | 'technical' | 'behavioral' | 'experience';
+    category?: string;
+    expectedDuration?: number;
+    isRequired?: boolean;
+  }): Promise<JobQuestion> {
+    try {
+      const supabase = await createClient();
+      
+      // Get the next order index
+      const { data: existingQuestions } = await supabase
+        .from('job_questions')
+        .select('order_index')
+        .eq('job_id', jobId)
+        .order('order_index', { ascending: false })
+        .limit(1);
+
+      const nextOrderIndex = (existingQuestions?.[0]?.order_index || 0) + 1;
+
+      const questionToInsert = {
+        job_id: jobId,
+        question_text: questionData.questionText,
+        question_type: questionData.questionType,
+        category: questionData.category || 'Custom',
+        expected_duration: questionData.expectedDuration || 120,
+        is_required: questionData.isRequired !== false, // Default to true
+        order_index: nextOrderIndex,
+        is_ai_generated: false, // Manual questions are not AI generated
+        metadata: { generationType: 'manual', addedBy: 'user' }
+      };
+
+      const { data: savedQuestion, error } = await supabase
+        .from('job_questions')
+        .insert(questionToInsert)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return {
+        id: savedQuestion.id,
+        jobId: savedQuestion.job_id,
+        questionText: savedQuestion.question_text,
+        questionType: savedQuestion.question_type,
+        category: savedQuestion.category,
+        expectedDuration: savedQuestion.expected_duration,
+        isRequired: savedQuestion.is_required,
+        orderIndex: savedQuestion.order_index,
+        isAiGenerated: savedQuestion.is_ai_generated,
+        metadata: savedQuestion.metadata,
+        createdAt: savedQuestion.created_at,
+        updatedAt: savedQuestion.updated_at
+      };
+    } catch (error) {
+      console.error('Error adding manual question:', error);
+      throw error;
+    }
+  }
+
   // Get questions for a job
   async getQuestionsForJob(jobId: string): Promise<JobQuestion[]> {
     try {

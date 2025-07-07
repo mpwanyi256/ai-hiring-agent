@@ -3,10 +3,10 @@ import { jobsService } from '@/lib/services/jobsService';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const jobId = params.id;
+    const { id: jobId } = await params;
     const body = await request.json();
     const { isActive } = body;
 
@@ -30,7 +30,7 @@ export async function PATCH(
       );
     }
 
-    const updatedJob = await jobsService.updateJobStatus(jobId, isActive);
+    const updatedJob = await jobsService.toggleJobActiveStatus(jobId, isActive);
 
     if (!updatedJob) {
       return NextResponse.json(

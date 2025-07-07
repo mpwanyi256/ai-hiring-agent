@@ -10,7 +10,11 @@ export const JobQuestions = () => {
     const questions = useAppSelector(selectJobQuestions);
     const dispatch = useAppDispatch();
     
+    const isJobInDraft = job?.status === 'draft';
+    
     const handleMoveQuestion = async (questionId: string, direction: 'up' | 'down') => {
+        if (!isJobInDraft) return;
+        
         const currentIndex = questions.findIndex(q => q.id === questionId);
         if (currentIndex === -1) return;
         
@@ -32,6 +36,8 @@ export const JobQuestions = () => {
       };
 
     const handleDeleteQuestion = async (questionId: string) => {
+        if (!isJobInDraft) return;
+        
         if (!confirm('Are you sure you want to delete this question?')) return;
     
         try {
@@ -55,7 +61,14 @@ export const JobQuestions = () => {
     return (
         <div className="flex-1 bg-white rounded-lg border border-gray-light">
             <div className="p-4 border-b border-gray-light">
-                <h3 className="font-medium text-text">Questions ({questions.length})</h3>
+                <div className="flex items-center justify-between">
+                    <h3 className="font-medium text-text">Questions ({questions.length})</h3>
+                    {!isJobInDraft && (
+                        <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                            Read-only mode
+                        </span>
+                    )}
+                </div>
             </div>
 
             <div className="divide-y divide-gray-light">
@@ -66,6 +79,7 @@ export const JobQuestions = () => {
                         questionsCount={questions.length}
                         onMoveQuestion={handleMoveQuestion}
                         onDeleteQuestion={handleDeleteQuestion}
+                        isEditingDisabled={!isJobInDraft}
                     />
                 ))}
             </div>

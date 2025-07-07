@@ -44,13 +44,13 @@ export async function GET(request: Request, { params }: RouteParams) {
   }
 }
 
-// POST /api/jobs/[id]/questions - Generate and save questions for a job
+// POST /api/jobs/[id]/questions - Generate and save questions for a job OR add manual question
 export async function POST(request: Request, { params }: RouteParams) {
   try {
     const { id: jobId } = await params;
     
     // Handle optional request body
-    let requestData = { questionCount: 8, includeCustom: true, replaceExisting: false };
+    let requestData: any = { type: 'generate', questionCount: 8, includeCustom: true, replaceExisting: false };
     try {
       const body = await request.text();
       if (body.trim()) {
@@ -62,9 +62,16 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
     
     const { 
+      type = 'generate',
       questionCount = 8, 
       includeCustom = true, 
-      replaceExisting = false 
+      replaceExisting = false,
+      // Manual question fields
+      questionText,
+      questionType,
+      category,
+      expectedDuration,
+      isRequired
     } = requestData;
 
     if (!jobId) {
@@ -83,40 +90,74 @@ export async function POST(request: Request, { params }: RouteParams) {
       }, { status: 404 });
     }
 
-    // If replacing existing questions, delete them first
-    if (replaceExisting) {
-      await questionService.deleteAllQuestionsForJob(jobId);
+    // Check if job is in draft state for manual operations
+    if (type === 'manual' && job.status !== 'draft') {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Cannot add questions to a job that is not in draft state' 
+      }, { status: 400 });
     }
 
-    // Generate questions
-    const generationResponse = await questionService.generateQuestionsForJob({
-      jobId,
-      jobTitle: job.title,
-      jobDescription: job.fields?.jobDescription,
-      skills: job.fields?.skills,
-      experienceLevel: job.fields?.experienceLevel,
-      traits: job.fields?.traits,
-      customFields: job.fields?.customFields,
-      questionCount,
-      includeCustom,
-    });
+    if (type === 'manual') {
+      // Add manual question
+      if (!questionText || !questionType) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Question text and type are required for manual questions' 
+        }, { status: 400 });
+      }
 
-    // Save questions to database
-    const savedQuestions = await questionService.saveQuestionsForJob(
-      jobId, 
-      generationResponse.questions
-    );
+      const savedQuestion = await questionService.addManualQuestion(jobId, {
+        questionText,
+        questionType,
+        category,
+        expectedDuration,
+        isRequired
+      });
 
-    return NextResponse.json({
-      success: true,
-      questions: savedQuestions,
-      generation: generationResponse,
-    });
+      return NextResponse.json({
+        success: true,
+        question: savedQuestion,
+        type: 'manual'
+      });
+    } else {
+      // Generate AI questions (existing logic)
+      // If replacing existing questions, delete them first
+      if (replaceExisting) {
+        await questionService.deleteAllQuestionsForJob(jobId);
+      }
+
+      // Generate questions
+      const generationResponse = await questionService.generateQuestionsForJob({
+        jobId,
+        jobTitle: job.title,
+        jobDescription: job.fields?.jobDescription,
+        skills: job.fields?.skills,
+        experienceLevel: job.fields?.experienceLevel,
+        traits: job.fields?.traits,
+        customFields: job.fields?.customFields,
+        questionCount,
+        includeCustom,
+      });
+
+      // Save questions to database
+      const savedQuestions = await questionService.saveQuestionsForJob(
+        jobId, 
+        generationResponse.questions
+      );
+
+      return NextResponse.json({
+        success: true,
+        questions: savedQuestions,
+        generation: generationResponse,
+        type: 'generate'
+      });
+    }
   } catch (error) {
-    console.error('Error generating questions:', error);
+    console.error('Error processing questions:', error);
     return NextResponse.json({ 
       success: false, 
-      error: 'Failed to generate questions' 
+      error: 'Failed to process questions' 
     }, { status: 500 });
   }
 }

@@ -7,8 +7,7 @@ export async function GET(
 ) {
   try {
     const supabase = await createClient();
-    const resolvedParams = await params;
-    const candidateId = resolvedParams.id;
+    const { id: candidateId } = await params;
 
     // Get current user profile
     const { data: { user }, error: authError } = await supabase.auth.getUser();

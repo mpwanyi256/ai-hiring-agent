@@ -179,6 +179,31 @@ export const generateJobQuestions = createAsyncThunk(
   }
 );
 
+export const addManualQuestion = createAsyncThunk(
+  'jobs/addManualQuestion',
+  async ({ jobId, questionData }: {
+    jobId: string;
+    questionData: {
+      questionText: string;
+      questionType: 'general' | 'technical' | 'behavioral' | 'experience';
+      category?: string;
+      expectedDuration?: number;
+      isRequired?: boolean;
+    };
+  }, { dispatch }) => {
+    try {
+      const response = await apiUtils.post(`/api/jobs/${jobId}/questions`, {
+        type: 'manual',
+        ...questionData
+      });
+      dispatch(fetchJobQuestions(jobId));
+      return response;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to add manual question');
+    }
+  }
+);
+
 export const deleteJobTemplate = createAsyncThunk(
   'jobs/deleteJobTemplate',
   async (templateId: string) => {
