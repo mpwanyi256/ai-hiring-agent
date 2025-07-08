@@ -10,19 +10,11 @@ import SearchAndFilters from '@/components/jobs/SearchAndFilters';
 import { useToast } from '@/components/providers/ToastProvider';
 import { RootState, useAppSelector } from '@/store';
 import { JobData } from '@/lib/services/jobsService';
-import { JobStatus } from '@/lib/supabase';
-import { 
+import {
   PlusIcon,
   BriefcaseIcon,
-  EyeIcon,
-  PencilIcon,
-  LinkIcon,
-  CalendarIcon,
   UserGroupIcon,
   CheckBadgeIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  XMarkIcon,
 } from '@heroicons/react/24/outline';
 
 interface JobsPagination {
@@ -36,58 +28,61 @@ interface JobsPagination {
 export default function JobsPage() {
   const { user } = useAppSelector((state: RootState) => state.auth);
   const { success, error: showError } = useToast();
-  
+
   // State for jobs and pagination
   const [jobs, setJobs] = useState<JobData[]>([]);
   const [pagination, setPagination] = useState<JobsPagination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
 
   // Fetch jobs function
-  const fetchJobs = useCallback(async (page = 1, reset = false, search = '', status = '') => {
-    if (!user?.id) return;
+  const fetchJobs = useCallback(
+    async (page = 1, reset = false, search = '', status = '') => {
+      if (!user?.id) return;
 
-    const loadState = page === 1 ? setIsLoading : setIsLoadingMore;
-    loadState(true);
-    setError(null);
+      const loadState = page === 1 ? setIsLoading : setIsLoadingMore;
+      loadState(true);
+      setError(null);
 
-    try {
-      const params = new URLSearchParams({
-        profileId: user.id,
-        page: page.toString(),
-        limit: '10',
-      });
+      try {
+        const params = new URLSearchParams({
+          profileId: user.id,
+          page: page.toString(),
+          limit: '10',
+        });
 
-      if (search) params.append('search', search);
-      if (status) params.append('status', status);
+        if (search) params.append('search', search);
+        if (status) params.append('status', status);
 
-      const response = await fetch(`/api/jobs?${params}`);
-      const data = await response.json();
+        const response = await fetch(`/api/jobs?${params}`);
+        const data = await response.json();
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch jobs');
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to fetch jobs');
+        }
+
+        if (reset || page === 1) {
+          setJobs(data.jobs);
+        } else {
+          setJobs((prev) => [...prev, ...data.jobs]);
+        }
+
+        setPagination(data.pagination);
+      } catch (err) {
+        console.error('Error fetching jobs:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
+      } finally {
+        loadState(false);
       }
-
-      if (reset || page === 1) {
-        setJobs(data.jobs);
-      } else {
-        setJobs(prev => [...prev, ...data.jobs]);
-      }
-      
-      setPagination(data.pagination);
-    } catch (err) {
-      console.error('Error fetching jobs:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
-    } finally {
-      loadState(false);
-    }
-  }, [user?.id]);
+    },
+    [user?.id],
+  );
 
   // Initial load
   useEffect(() => {
@@ -95,16 +90,22 @@ export default function JobsPage() {
   }, [fetchJobs]);
 
   // Search handler
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-    fetchJobs(1, true, query, statusFilter);
-  }, [fetchJobs, statusFilter]);
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+      fetchJobs(1, true, query, statusFilter);
+    },
+    [fetchJobs, statusFilter],
+  );
 
   // Filter handler
-  const handleStatusFilter = useCallback((status: string) => {
-    setStatusFilter(status);
-    fetchJobs(1, true, searchQuery, status);
-  }, [fetchJobs, searchQuery]);
+  const handleStatusFilter = useCallback(
+    (status: string) => {
+      setStatusFilter(status);
+      fetchJobs(1, true, searchQuery, status);
+    },
+    [fetchJobs, searchQuery],
+  );
 
   // Clear filters
   const handleClearFilters = useCallback(() => {
@@ -137,7 +138,7 @@ export default function JobsPage() {
 
   const copyInterviewLink = async (job: JobData) => {
     const link = job.interviewLink || `${window.location.origin}/interview/${job.interviewToken}`;
-    
+
     try {
       await navigator.clipboard.writeText(link);
       success('Interview link copied to clipboard!');
@@ -185,7 +186,7 @@ export default function JobsPage() {
             iconColor="text-primary"
             iconBgColor="bg-primary/10"
           />
-          
+
           <MetricCard
             title="Candidates"
             value={totalCandidates}
@@ -194,7 +195,7 @@ export default function JobsPage() {
             iconColor="text-blue-600"
             iconBgColor="bg-blue-50"
           />
-          
+
           <MetricCard
             title="Active Jobs"
             value={user.usageCounts.activeJobs}
@@ -205,7 +206,7 @@ export default function JobsPage() {
             progress={{
               current: user.usageCounts.activeJobs,
               max: user.subscription?.maxJobs || 1,
-              label: 'Usage'
+              label: 'Usage',
             }}
           />
         </div>
@@ -243,10 +244,9 @@ export default function JobsPage() {
               {searchQuery || statusFilter ? 'No jobs found' : 'No jobs yet'}
             </h3>
             <p className="text-sm text-gray-600 mb-6">
-              {searchQuery || statusFilter 
-                ? 'Try adjusting your search criteria or filters' 
-                : 'Create your first job posting to start interviewing candidates with AI'
-              }
+              {searchQuery || statusFilter
+                ? 'Try adjusting your search criteria or filters'
+                : 'Create your first job posting to start interviewing candidates with AI'}
             </p>
             {!searchQuery && !statusFilter && (
               <Link href="/dashboard/jobs/new">
@@ -259,11 +259,7 @@ export default function JobsPage() {
           </div>
         ) : (
           <>
-            <JobsTable 
-              jobs={jobs} 
-              onCopyLink={copyInterviewLink}
-              isLoading={isLoading}
-            />
+            <JobsTable jobs={jobs} onCopyLink={copyInterviewLink} isLoading={isLoading} />
 
             {/* Loading more indicator */}
             {isLoadingMore && (
@@ -295,4 +291,4 @@ export default function JobsPage() {
       </div>
     </DashboardLayout>
   );
-} 
+}

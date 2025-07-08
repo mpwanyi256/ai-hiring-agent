@@ -1,16 +1,15 @@
 'use client';
 
-import { 
-  BriefcaseIcon, 
+import {
+  BriefcaseIcon,
   ClockIcon,
   VideoCameraIcon,
   DocumentTextIcon,
   SparklesIcon,
-  PlayIcon
+  PlayIcon,
 } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { loadedInterview } from '@/store/interview/interviewSelectors';
-import { apiSuccess } from '@/lib/notification';
 import { setInterviewStep } from '@/store/interview/interviewSlice';
 
 export default function InterviewIntro() {
@@ -19,15 +18,17 @@ export default function InterviewIntro() {
 
   const handleStartInterview = () => {
     dispatch(setInterviewStep(2));
-  }
+  };
 
   if (!job) {
-    return (<div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p className="text-muted-text">Loading interview...</p>
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-text">Loading interview...</p>
+        </div>
       </div>
-    </div>)
+    );
   }
 
   return (
@@ -70,7 +71,7 @@ export default function InterviewIntro() {
           {job.fields?.jobDescription && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-text mb-3">About this role</h3>
-              <div 
+              <div
                 className="prose prose-sm max-w-none text-muted-text"
                 dangerouslySetInnerHTML={{ __html: job.fields.jobDescription }}
               />
@@ -153,7 +154,10 @@ export default function InterviewIntro() {
               </div>
               <div>
                 <h4 className="font-medium text-text">Resume Evaluation</h4>
-                <p className="text-muted-text text-sm">Upload your resume for analysis against job requirements (60% minimum score required).</p>
+                <p className="text-muted-text text-sm">
+                  Upload your resume for analysis against job requirements (60% minimum score
+                  required).
+                </p>
               </div>
             </div>
             <div className="flex items-start">
@@ -162,7 +166,9 @@ export default function InterviewIntro() {
               </div>
               <div>
                 <h4 className="font-medium text-text">Interview Questions</h4>
-                <p className="text-muted-text text-sm">Answer personalized questions based on the job requirements and your background.</p>
+                <p className="text-muted-text text-sm">
+                  Answer personalized questions based on the job requirements and your background.
+                </p>
               </div>
             </div>
             <div className="flex items-start">
@@ -171,7 +177,9 @@ export default function InterviewIntro() {
               </div>
               <div>
                 <h4 className="font-medium text-text">Evaluation & Review</h4>
-                <p className="text-muted-text text-sm">Your responses are evaluated and insights are provided to the hiring team.</p>
+                <p className="text-muted-text text-sm">
+                  Your responses are evaluated and insights are provided to the hiring team.
+                </p>
               </div>
             </div>
           </div>
@@ -193,7 +201,7 @@ export default function InterviewIntro() {
                 <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
                 <div>
                   <p className="font-medium text-text">Take Your Time</p>
-                  <p>There's no time pressure. Think through your answers carefully.</p>
+                  <p>There&apos;s no time pressure. Think through your answers carefully.</p>
                 </div>
               </div>
             </div>
@@ -232,4 +240,4 @@ export default function InterviewIntro() {
       </div>
     </div>
   );
-} 
+}

@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { TeamAssessment } from '@/types/evaluations';
+
+type AssessmentWithProfile = TeamAssessment & {
+  profiles?: {
+    first_name: string;
+    last_name: string;
+  };
+};
 
 export async function GET(
   request: NextRequest,
@@ -150,23 +158,23 @@ export async function GET(
       updatedAt: aiEvaluation.updated_at
     } : null;
 
-    const formattedTeamAssessments = (teamAssessments || []).map((assessment: any) => ({
+    const formattedTeamAssessments = (teamAssessments || []).map((assessment: AssessmentWithProfile) => ({
       id: assessment.id,
-      candidateId: assessment.candidate_id,
-      jobId: assessment.job_id,
-      aiEvaluationId: assessment.ai_evaluation_id,
-      assessorProfileId: assessment.assessor_profile_id,
-      assessorName: assessment.assessor_name,
-      assessorRole: assessment.assessor_role,
-      overallRating: assessment.overall_rating,
-      overallRatingStatus: assessment.overall_rating_status,
-      categoryRatings: assessment.category_ratings,
-      assessmentComments: assessment.assessment_comments,
-      privateNotes: assessment.private_notes,
-      assessmentType: assessment.assessment_type,
-      interviewDurationMinutes: assessment.interview_duration_minutes,
-      createdAt: assessment.created_at,
-      updatedAt: assessment.updated_at,
+      candidateId: assessment.candidateId,
+      jobId: assessment.jobId,
+      aiEvaluationId: assessment.aiEvaluationId,
+      assessorProfileId: assessment.assessorProfileId,
+      assessorName: assessment.assessorName,
+      assessorRole: assessment.assessorRole,
+      overallRating: assessment.overallRating,
+      overallRatingStatus: assessment.overallRatingStatus,
+      categoryRatings: assessment.categoryRatings,
+      assessmentComments: assessment.assessmentComments,
+      privateNotes: assessment.privateNotes,
+      assessmentType: assessment.assessmentType,
+      interviewDurationMinutes: assessment.interviewDurationMinutes,
+      createdAt: assessment.createdAt,
+      updatedAt: assessment.updatedAt,
       assessorProfile: assessment.profiles ? {
         firstName: assessment.profiles.first_name,
         lastName: assessment.profiles.last_name

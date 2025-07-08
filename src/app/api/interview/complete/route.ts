@@ -5,10 +5,8 @@ export async function POST(request: Request) {
   try {
     const { 
       candidateId, 
-      jobToken, 
       candidateInfo, 
       resumeEvaluation, 
-      resumeContent, 
       totalTimeSpent 
     } = await request.json();
 
@@ -54,14 +52,11 @@ export async function POST(request: Request) {
     if (resumeEvaluation && responses && responses.length > 0) {
       try {
         // Calculate interview score based on responses
-        // This is a simplified scoring - in a real implementation you'd want more sophisticated evaluation
-        const interviewScore = Math.min(100, 60 + (responses.length * 5)); // Base 60 + 5 per response, max 100
-
+        const interviewScore = Math.min(100, 60 + (responses.length * 5));
         // Combine resume and interview scores (70% resume, 30% interview for now)
         const combinedScore = Math.round(
           (resumeEvaluation.score * 0.7) + (interviewScore * 0.3)
         );
-
         const evaluationData = {
           candidate_id: candidateId,
           job_id: responses[0]?.job_id || null,
@@ -80,13 +75,11 @@ export async function POST(request: Request) {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
-
         const { data: evaluation, error: evalError } = await supabase
           .from('evaluations')
           .insert(evaluationData)
           .select()
           .single();
-
         if (evalError) {
           console.warn('Failed to save evaluation:', evalError);
         } else {
@@ -96,7 +89,6 @@ export async function POST(request: Request) {
         console.error('Error creating evaluation:', evalError);
       }
     }
-
     return NextResponse.json({
       success: true,
       message: 'Interview completed successfully',

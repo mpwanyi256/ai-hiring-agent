@@ -6,25 +6,43 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+interface QuestionRequestData {
+  type?: string;
+  questionCount?: number;
+  includeCustom?: boolean;
+  replaceExisting?: boolean;
+  questionText?: string;
+  questionType?: 'general' | 'technical' | 'behavioral' | 'experience';
+  category?: string;
+  expectedDuration?: number;
+  isRequired?: boolean;
+}
+
 // GET /api/jobs/[id]/questions - Get questions for a job
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { id: jobId } = await params;
 
     if (!jobId) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Job ID is required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Job ID is required',
+        },
+        { status: 400 },
+      );
     }
 
     // Verify job exists and user has access
     const job = await jobsService.getJobById(jobId);
     if (!job) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Job not found' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Job not found',
+        },
+        { status: 404 },
+      );
     }
 
     const questions = await questionService.getQuestionsForJob(jobId);
@@ -37,10 +55,13 @@ export async function GET(request: Request, { params }: RouteParams) {
     });
   } catch (error) {
     console.error('Error fetching questions:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to fetch questions' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch questions',
+      },
+      { status: 500 },
+    );
   }
 }
 
@@ -48,9 +69,14 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function POST(request: Request, { params }: RouteParams) {
   try {
     const { id: jobId } = await params;
-    
+
     // Handle optional request body
-    let requestData: any = { type: 'generate', questionCount: 8, includeCustom: true, replaceExisting: false };
+    let requestData: QuestionRequestData = {
+      type: 'generate',
+      questionCount: 8,
+      includeCustom: true,
+      replaceExisting: false,
+    };
     try {
       const body = await request.text();
       if (body.trim()) {
@@ -60,65 +86,77 @@ export async function POST(request: Request, { params }: RouteParams) {
       // Use defaults if no body or invalid JSON
       console.log('Using default question generation parameters');
     }
-    
-    const { 
+
+    const {
       type = 'generate',
-      questionCount = 8, 
-      includeCustom = true, 
+      questionCount = 8,
+      includeCustom = true,
       replaceExisting = false,
       // Manual question fields
       questionText,
       questionType,
       category,
       expectedDuration,
-      isRequired
+      isRequired,
     } = requestData;
 
     if (!jobId) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Job ID is required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Job ID is required',
+        },
+        { status: 400 },
+      );
     }
 
     // Verify job exists and user has access
     const job = await jobsService.getJobById(jobId);
     if (!job) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Job not found' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Job not found',
+        },
+        { status: 404 },
+      );
     }
 
     // Check if job is in draft state for manual operations
     if (type === 'manual' && job.status !== 'draft') {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Cannot add questions to a job that is not in draft state' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Cannot add questions to a job that is not in draft state',
+        },
+        { status: 400 },
+      );
     }
 
     if (type === 'manual') {
       // Add manual question
       if (!questionText || !questionType) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Question text and type are required for manual questions' 
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Question text and type are required for manual questions',
+          },
+          { status: 400 },
+        );
       }
 
       const savedQuestion = await questionService.addManualQuestion(jobId, {
-        questionText,
-        questionType,
-        category,
-        expectedDuration,
-        isRequired
+        questionText: questionText as string,
+        questionType: questionType as 'general' | 'technical' | 'behavioral' | 'experience',
+        category: category as string | undefined,
+        expectedDuration: expectedDuration as number | undefined,
+        isRequired: isRequired as boolean | undefined,
       });
 
       return NextResponse.json({
         success: true,
         question: savedQuestion,
-        type: 'manual'
+        type: 'manual',
       });
     } else {
       // Generate AI questions (existing logic)
@@ -135,30 +173,33 @@ export async function POST(request: Request, { params }: RouteParams) {
         skills: job.fields?.skills,
         experienceLevel: job.fields?.experienceLevel,
         traits: job.fields?.traits,
-        customFields: job.fields?.customFields,
-        questionCount,
-        includeCustom,
+        customFields: job.fields?.customFields as Record<string, unknown>,
+        questionCount: questionCount as number | undefined,
+        includeCustom: includeCustom as boolean | undefined,
       });
 
       // Save questions to database
       const savedQuestions = await questionService.saveQuestionsForJob(
-        jobId, 
-        generationResponse.questions
+        jobId,
+        generationResponse.questions,
       );
 
       return NextResponse.json({
         success: true,
         questions: savedQuestions,
         generation: generationResponse,
-        type: 'generate'
+        type: 'generate',
       });
     }
   } catch (error) {
     console.error('Error processing questions:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to process questions' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to process questions',
+      },
+      { status: 500 },
+    );
   }
 }
 
@@ -168,19 +209,25 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     const { id: jobId } = await params;
 
     if (!jobId) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Job ID is required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Job ID is required',
+        },
+        { status: 400 },
+      );
     }
 
     // Verify job exists and user has access
     const job = await jobsService.getJobById(jobId);
     if (!job) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Job not found' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Job not found',
+        },
+        { status: 404 },
+      );
     }
 
     await questionService.deleteAllQuestionsForJob(jobId);
@@ -191,9 +238,12 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     });
   } catch (error) {
     console.error('Error deleting questions:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to delete questions' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to delete questions',
+      },
+      { status: 500 },
+    );
   }
-} 
+}

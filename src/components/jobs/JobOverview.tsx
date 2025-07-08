@@ -23,10 +23,10 @@ export default function JobOverview({ job }: JobOverviewProps) {
   return (
     <div className="space-y-6">
       {/* Job Info Summary */}
-      <div className="bg-white rounded-lg border border-gray-light p-6">
-        <h2 className="text-lg font-semibold text-text mb-4">Job Information</h2>
+      <div className="bg-white rounded-lg border border-gray-light p-6 md:p-4">
+        <h2 className="text-lg md:text-base font-semibold text-text mb-4 md:mb-2">Job Information</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-2 text-sm md:text-xs">
           <div className="flex items-center space-x-2">
             <CalendarIcon className="w-4 h-4 text-muted-text" />
             <span className="text-muted-text">Created:</span>
@@ -58,10 +58,10 @@ export default function JobOverview({ job }: JobOverviewProps) {
       </div>
 
       {/* Job Requirements */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-4">
         {/* Skills & Experience */}
-        <div className="bg-white rounded-lg border border-gray-light p-6">
-          <h2 className="text-lg font-semibold text-text mb-4">Requirements</h2>
+        <div className="bg-white rounded-lg border border-gray-light p-6 md:p-4">
+          <h2 className="text-lg md:text-base font-semibold text-text mb-4 md:mb-2">Requirements</h2>
           
           {job.fields?.experienceLevel && (
             <div className="mb-4">
@@ -145,23 +145,23 @@ export default function JobOverview({ job }: JobOverviewProps) {
       </div>
 
       {/* Interview Process */}
-      <div className="bg-white rounded-lg border border-gray-light p-6">
-        <h2 className="text-lg font-semibold text-text mb-4">Interview Process</h2>
+      <div className="bg-white rounded-lg border border-gray-light p-6 md:p-4">
+        <h2 className="text-lg md:text-base font-semibold text-text mb-4 md:mb-2">Interview Process</h2>
         
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <BriefcaseIcon className="w-5 h-5 text-primary" />
+        <div className="bg-gray-50 rounded-lg p-4 md:p-3">
+          <div className="flex items-center space-x-3 mb-3 md:mb-2">
+            <div className="w-10 h-10 md:w-8 md:h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <BriefcaseIcon className="w-5 h-5 md:w-4 md:h-4 text-primary" />
             </div>
             <div>
-              <h3 className="font-medium text-text">AI-Powered Interview</h3>
-              <p className="text-sm text-muted-text">
+              <h3 className="font-medium text-text md:text-sm">AI-Powered Interview</h3>
+              <p className="text-sm md:text-xs text-muted-text">
                 Candidates will participate in an automated {job.interviewFormat === 'text' ? 'text-based' : 'video'} interview
               </p>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-2 text-sm md:text-xs">
             <div>
               <span className="font-medium text-muted-text">Format:</span>
               <span className="ml-2 text-text">

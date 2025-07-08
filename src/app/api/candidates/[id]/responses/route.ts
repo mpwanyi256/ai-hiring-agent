@@ -54,17 +54,32 @@ export async function GET(
     }
 
     // Sort responses by order_index in JS
+    type SupabaseResponse = {
+      id: string;
+      job_question_id: string;
+      answer: string;
+      response_time: number;
+      created_at: string;
+      job_questions?: Array<{
+        question_text?: string;
+        question_type?: string;
+        order_index?: number;
+      }>;
+    };
     const transformedResponses = (responses || [])
-      .map((response: any) => ({
-        id: response.id,
-        questionId: response.job_question_id,
-        questionText: response.job_questions?.question_text,
-        questionType: response.job_questions?.question_type,
-        responseText: response.answer,
-        responseTime: response.response_time,
-        orderIndex: response.job_questions?.order_index,
-        createdAt: response.created_at
-      }))
+      .map((response: SupabaseResponse) => {
+        const jobQuestion = response.job_questions?.[0];
+        return {
+          id: response.id,
+          questionId: response.job_question_id,
+          questionText: jobQuestion?.question_text,
+          questionType: jobQuestion?.question_type,
+          responseText: response.answer,
+          responseTime: response.response_time,
+          orderIndex: jobQuestion?.order_index,
+          createdAt: response.created_at
+        };
+      })
       .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
 
     return NextResponse.json({

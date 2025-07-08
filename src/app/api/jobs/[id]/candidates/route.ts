@@ -1,54 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-// Define the candidate type from database function (updated with resume fields)
-interface CandidateFromDB {
-  id: string;
-  job_id: string;
-  interview_token: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  full_name: string;
-  current_step: number;
-  total_steps: number;
-  is_completed: boolean;
-  submitted_at: string | null;
-  created_at: string;
-  updated_at: string;
-  progress_percentage: number;
-  status: string;
-  response_count: number;
-  job_title: string;
-  job_status: string;
-  profile_id: string;
-  job_fields: any;
-  evaluation_id: string | null;
-  score: number | null;
-  recommendation: string | null;
-  summary: string | null;
-  strengths: string[] | null;
-  red_flags: string[] | null;
-  skills_assessment: any;
-  traits_assessment: any;
-  evaluation_created_at: string | null;
-  // Resume fields
-  resume_id: string | null;
-  resume_filename: string | null;
-  resume_file_path: string | null;
-  resume_public_url: string | null;
-  resume_file_size: number | null;
-  resume_file_type: string | null;
-  resume_word_count: number | null;
-  resume_parsing_status: string | null;
-  resume_parsing_error: string | null;
-  resume_uploaded_at: string | null;
-  // Resume evaluation fields
-  resume_score: number | null;
-  resume_summary: string | null;
-  evaluation_type: string | null;
-}
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -91,6 +43,15 @@ export async function GET(
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = (page - 1) * limit;
+    
+    // New filter parameters
+    const minScore = searchParams.get('minScore');
+    const maxScore = searchParams.get('maxScore');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const candidateStatus = searchParams.get('candidateStatus');
+    const sortBy = searchParams.get('sortBy') || 'created_at';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     // Verify job ownership
     const { data: job, error: jobError } = await supabase
@@ -115,7 +76,14 @@ export async function GET(
         p_search: search,
         p_status: status,
         p_limit: limit,
-        p_offset: offset
+        p_offset: offset,
+        p_min_score: minScore ? parseInt(minScore) : null,
+        p_max_score: maxScore ? parseInt(maxScore) : null,
+        p_start_date: startDate,
+        p_end_date: endDate,
+        p_candidate_status: candidateStatus,
+        p_sort_by: sortBy,
+        p_sort_order: sortOrder
       });
 
     if (candidatesError) {
@@ -144,50 +112,50 @@ export async function GET(
     };
 
     // Format the response data with resume information
-    const formattedCandidates = (candidates || []).map((candidate: any) => ({
-      id: candidate.id,
-      jobId: candidate.job_id,
-      jobTitle: candidate.job_title,
-      jobStatus: candidate.job_status,
-      interviewToken: candidate.interview_token,
-      email: candidate.email,
-      firstName: candidate.first_name,
-      lastName: candidate.last_name,
-      name: candidate.full_name,
-      currentStep: candidate.current_step,
-      totalSteps: candidate.total_steps,
-      isCompleted: candidate.is_completed,
-      progress: Math.round(candidate.progress_percentage || 0),
-      responses: candidate.response_count || 0,
-      status: candidate.status,
-      submittedAt: candidate.submitted_at,
-      createdAt: candidate.created_at,
-      updatedAt: candidate.updated_at,
+    const formattedCandidates = (candidates || []).map((candidate: Record<string, unknown>) => ({
+      id: candidate.id as string,
+      jobId: candidate.job_id as string,
+      jobTitle: candidate.job_title as string,
+      jobStatus: candidate.job_status as string,
+      interviewToken: candidate.interview_token as string,
+      email: candidate.email as string,
+      firstName: candidate.first_name as string,
+      lastName: candidate.last_name as string,
+      name: candidate.full_name as string,
+      currentStep: candidate.current_step as number,
+      totalSteps: candidate.total_steps as number,
+      isCompleted: candidate.is_completed as boolean,
+      progress: Math.round((candidate.progress_percentage as number) || 0),
+      responses: (candidate.response_count as number) || 0,
+      status: candidate.status as string,
+      submittedAt: candidate.submitted_at as string,
+      createdAt: candidate.created_at as string,
+      updatedAt: candidate.updated_at as string,
       evaluation: candidate.evaluation_id ? {
-        id: candidate.evaluation_id,
-        score: candidate.score || 0,
-        recommendation: candidate.recommendation,
-        summary: candidate.summary,
-        strengths: candidate.strengths || [],
-        redFlags: candidate.red_flags || [],
-        skillsAssessment: candidate.skills_assessment,
-        traitsAssessment: candidate.traits_assessment,
-        createdAt: candidate.evaluation_created_at,
-        resumeScore: candidate.resume_score,
-        resumeSummary: candidate.resume_summary,
-        evaluationType: candidate.evaluation_type,
+        id: candidate.evaluation_id as string,
+        score: (candidate.score as number) || 0,
+        recommendation: candidate.recommendation as string,
+        summary: candidate.summary as string,
+        strengths: (candidate.strengths as string[]) || [],
+        redFlags: (candidate.red_flags as string[]) || [],
+        skillsAssessment: candidate.skills_assessment as Record<string, unknown>,
+        traitsAssessment: candidate.traits_assessment as Record<string, unknown>,
+        createdAt: candidate.evaluation_created_at as string,
+        resumeScore: candidate.resume_score as number,
+        resumeSummary: candidate.resume_summary as string,
+        evaluationType: candidate.evaluation_type as string,
       } : null,
       resume: candidate.resume_id ? {
-        id: candidate.resume_id,
-        filename: candidate.resume_filename,
-        filePath: candidate.resume_file_path,
-        publicUrl: candidate.resume_public_url,
-        fileSize: candidate.resume_file_size,
-        fileType: candidate.resume_file_type,
-        wordCount: candidate.resume_word_count,
-        parsingStatus: candidate.resume_parsing_status,
-        parsingError: candidate.resume_parsing_error,
-        uploadedAt: candidate.resume_uploaded_at,
+        id: candidate.resume_id as string,
+        filename: candidate.resume_filename as string,
+        filePath: candidate.resume_file_path as string,
+        publicUrl: candidate.resume_public_url as string,
+        fileSize: candidate.resume_file_size as number,
+        fileType: candidate.resume_file_type as string,
+        wordCount: candidate.resume_word_count as number,
+        parsingStatus: candidate.resume_parsing_status as string,
+        parsingError: candidate.resume_parsing_error as string,
+        uploadedAt: candidate.resume_uploaded_at as string,
       } : null,
     }));
 

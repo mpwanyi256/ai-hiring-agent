@@ -15,9 +15,7 @@ interface ResumeUploadProps {
   jobToken: string;
 }
 
-export default function ResumeUpload({ 
-  jobToken
-}: ResumeUploadProps) {
+export default function ResumeUpload({ jobToken }: ResumeUploadProps) {
   const job = useAppSelector(loadedInterview);
   const candidateInfo = useAppSelector(selectCandidate);
 
@@ -37,11 +35,16 @@ export default function ResumeUpload({
     proceedToInterview,
     handleEvaluationComplete,
     hasExistingEvaluation,
-    canProceed
+    canProceed,
   } = useResumeEvaluation({
     jobToken,
-    candidateInfo,
-    jobId: job?.id || ''
+    candidateInfo: {
+      id: candidateInfo?.id || '',
+      email: candidateInfo?.email || '',
+      firstName: candidateInfo?.firstName || '',
+      lastName: candidateInfo?.lastName || '',
+    },
+    jobId: job?.id || '',
   });
 
   // Handle evaluation completion
@@ -61,9 +64,22 @@ export default function ResumeUpload({
       existingEvaluation: !!existingEvaluation,
       evaluation: !!evaluation,
       hasExistingEvaluation,
-      canProceed
+      canProceed,
     });
-  }, [candidateInfo, job, isCheckingExisting, existingEvaluation, evaluation, hasExistingEvaluation, canProceed]);
+
+    if (canProceed) {
+      proceedToInterview();
+    }
+  }, [
+    candidateInfo,
+    job,
+    isCheckingExisting,
+    existingEvaluation,
+    evaluation,
+    hasExistingEvaluation,
+    canProceed,
+    proceedToInterview,
+  ]);
 
   if (!job) {
     return (
@@ -83,9 +99,7 @@ export default function ResumeUpload({
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
           <h2 className="text-xl font-bold text-text mb-2">Checking Resume Status</h2>
-          <p className="text-muted-text">
-            Checking if you have an existing resume evaluation...
-          </p>
+          <p className="text-muted-text">Checking if you have an existing resume evaluation...</p>
         </div>
       </div>
     );
@@ -115,11 +129,7 @@ export default function ResumeUpload({
           <p className="text-muted-text mb-4">
             Please complete the previous step to provide your information before uploading a resume.
           </p>
-          <Button
-            onClick={() => window.history.back()}
-            variant="outline"
-            className="w-full"
-          >
+          <Button onClick={() => window.history.back()} variant="outline" className="w-full">
             Go Back
           </Button>
         </div>
@@ -141,7 +151,8 @@ export default function ResumeUpload({
             Upload your resume to get an AI evaluation for the {job.title} position
           </p>
           <p className="text-sm text-muted-text mt-2">
-            Hi {candidateInfo.firstName}, let's evaluate your resume against the job requirements.
+            Hi {candidateInfo.firstName}, let&apos;s evaluate your resume against the job
+            requirements.
           </p>
         </div>
 
@@ -154,10 +165,7 @@ export default function ResumeUpload({
         />
 
         {/* Upload Progress */}
-        <UploadProgress
-          isUploading={isUploading}
-          uploadProgress={uploadProgress}
-        />
+        <UploadProgress isUploading={isUploading} uploadProgress={uploadProgress} />
 
         {/* File Upload Area */}
         <FileUploadArea
@@ -199,7 +207,9 @@ export default function ResumeUpload({
             </div>
           </div>
         </div>
+
+        <div>Don&apos;t see what you&apos;re looking for? Here&apos;s what you can do:</div>
       </div>
     </div>
   );
-} 
+}

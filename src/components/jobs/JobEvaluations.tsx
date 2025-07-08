@@ -1,7 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ChartBarIcon, StarIcon, DocumentTextIcon, UserIcon, TrophyIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  ChartBarIcon,
+  StarIcon,
+  DocumentTextIcon,
+  UserIcon,
+  TrophyIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import { CurrentJob } from '@/types';
 
@@ -38,16 +45,12 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
     totalEvaluated: 0,
     averageScore: 0,
     recommended: 0,
-    needReview: 0
+    needReview: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchEvaluations();
-  }, [job.id]);
-
-  const fetchEvaluations = async () => {
+  const fetchEvaluations = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -60,25 +63,30 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
       }
 
       setEvaluations(data.evaluations || []);
-      
+
       // Calculate stats
       const evaluationsList = data.evaluations || [];
       const totalEvaluated = evaluationsList.length;
-      const averageScore = totalEvaluated > 0 
-        ? Math.round(evaluationsList.reduce((sum: number, evaluation: any) => sum + evaluation.score, 0) / totalEvaluated)
-        : 0;
-      const recommended = evaluationsList.filter((evaluation: any) => 
-        evaluation.recommendation === 'yes' || evaluation.recommendation === 'strong_yes'
+      const averageScore =
+        totalEvaluated > 0
+          ? Math.round(
+              evaluationsList.reduce((sum: number, evaluation: any) => sum + evaluation.score, 0) /
+                totalEvaluated,
+            )
+          : 0;
+      const recommended = evaluationsList.filter(
+        (evaluation: any) =>
+          evaluation.recommendation === 'yes' || evaluation.recommendation === 'strong_yes',
       ).length;
-      const needReview = evaluationsList.filter((evaluation: any) => 
-        evaluation.recommendation === 'maybe'
+      const needReview = evaluationsList.filter(
+        (evaluation: any) => evaluation.recommendation === 'maybe',
       ).length;
 
       setStats({
         totalEvaluated,
         averageScore,
         recommended,
-        needReview
+        needReview,
       });
     } catch (err) {
       console.error('Error fetching evaluations:', err);
@@ -86,27 +94,43 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [job.id]);
+
+  useEffect(() => {
+    fetchEvaluations();
+  }, [fetchEvaluations, job.id]);
 
   const getRecommendationColor = (recommendation: string) => {
     switch (recommendation) {
-      case 'strong_yes': return 'bg-green-100 text-green-700 border-green-300';
-      case 'yes': return 'bg-green-50 text-green-600 border-green-200';
-      case 'maybe': return 'bg-yellow-50 text-yellow-600 border-yellow-200';
-      case 'no': return 'bg-red-50 text-red-600 border-red-200';
-      case 'strong_no': return 'bg-red-100 text-red-700 border-red-300';
-      default: return 'bg-gray-50 text-gray-600 border-gray-200';
+      case 'strong_yes':
+        return 'bg-green-100 text-green-700 border-green-300';
+      case 'yes':
+        return 'bg-green-50 text-green-600 border-green-200';
+      case 'maybe':
+        return 'bg-yellow-50 text-yellow-600 border-yellow-200';
+      case 'no':
+        return 'bg-red-50 text-red-600 border-red-200';
+      case 'strong_no':
+        return 'bg-red-100 text-red-700 border-red-300';
+      default:
+        return 'bg-gray-50 text-gray-600 border-gray-200';
     }
   };
 
   const getRecommendationLabel = (recommendation: string) => {
     switch (recommendation) {
-      case 'strong_yes': return 'Strong Yes';
-      case 'yes': return 'Yes';
-      case 'maybe': return 'Maybe';
-      case 'no': return 'No';
-      case 'strong_no': return 'Strong No';
-      default: return 'Pending';
+      case 'strong_yes':
+        return 'Strong Yes';
+      case 'yes':
+        return 'Yes';
+      case 'maybe':
+        return 'Maybe';
+      case 'no':
+        return 'No';
+      case 'strong_no':
+        return 'Strong No';
+      default:
+        return 'Pending';
     }
   };
 
@@ -156,7 +180,7 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
         <p className="text-muted-text mb-6">
           Candidate evaluations will appear here once they complete their interviews.
         </p>
-        
+
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <h4 className="font-medium text-blue-800 mb-2">Evaluation Features</h4>
           <ul className="text-blue-700 text-sm space-y-1 text-left max-w-md mx-auto">
@@ -166,7 +190,7 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
             <li>• Hiring recommendations</li>
           </ul>
         </div>
-        
+
         <Button variant="outline" className="flex items-center mx-auto">
           <DocumentTextIcon className="w-4 h-4 mr-2" />
           Learn About Evaluations
@@ -180,7 +204,7 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
       {/* Evaluation Analytics */}
       <div className="bg-white rounded-lg border border-gray-light p-6">
         <h2 className="text-lg font-semibold text-text mb-4">Evaluation Analytics</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="text-2xl font-bold text-text">{stats.totalEvaluated}</div>
@@ -212,12 +236,15 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
             Refresh
           </Button>
         </div>
-        
+
         <div className="space-y-4">
           {evaluations
             .sort((a, b) => b.score - a.score) // Sort by score descending
             .map((evaluation) => (
-              <div key={evaluation.id} className="border border-gray-200 rounded-lg p-4 hover:border-primary transition-colors">
+              <div
+                key={evaluation.id}
+                className="border border-gray-200 rounded-lg p-4 hover:border-primary transition-colors"
+              >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -231,7 +258,7 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-2">
                       {getScoreIcon(evaluation.score)}
@@ -239,7 +266,9 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
                         {evaluation.score}/100
                       </span>
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getRecommendationColor(evaluation.recommendation)}`}>
+                    <div
+                      className={`px-3 py-1 rounded-full text-sm font-medium border ${getRecommendationColor(evaluation.recommendation)}`}
+                    >
                       {getRecommendationLabel(evaluation.recommendation)}
                     </div>
                   </div>
@@ -255,7 +284,10 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
                       <h4 className="font-medium text-text text-sm mb-2">Strengths</h4>
                       <div className="flex flex-wrap gap-1">
                         {evaluation.strengths.slice(0, 4).map((strength, index) => (
-                          <span key={index} className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded"
+                          >
                             {strength}
                           </span>
                         ))}
@@ -273,7 +305,10 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
                       <h4 className="font-medium text-text text-sm mb-2">Areas for Improvement</h4>
                       <div className="flex flex-wrap gap-1">
                         {evaluation.redFlags.slice(0, 3).map((flag, index) => (
-                          <span key={index} className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded">
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded"
+                          >
                             {flag}
                           </span>
                         ))}
@@ -289,17 +324,16 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
 
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                   <div className="flex items-center space-x-4 text-sm text-muted-text">
-                    {evaluation.resumeScore && (
-                      <span>Resume: {evaluation.resumeScore}/100</span>
-                    )}
+                    {evaluation.resumeScore && <span>Resume: {evaluation.resumeScore}/100</span>}
                     <span className="capitalize">{evaluation.evaluationType} evaluation</span>
                   </div>
-                  
+
                   <div className="flex space-x-2">
                     <Button variant="outline" size="sm">
                       View Details
                     </Button>
-                    {evaluation.recommendation === 'yes' || evaluation.recommendation === 'strong_yes' ? (
+                    {evaluation.recommendation === 'yes' ||
+                    evaluation.recommendation === 'strong_yes' ? (
                       <Button size="sm" className="flex items-center">
                         <TrophyIcon className="w-3 h-3 mr-1" />
                         Shortlist
@@ -315,7 +349,7 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
       {/* Export & Actions */}
       <div className="bg-white rounded-lg border border-gray-light p-6">
         <h2 className="text-lg font-semibold text-text mb-4">Export & Reports</h2>
-        
+
         <div className="flex flex-wrap gap-3">
           <Button variant="outline" disabled={evaluations.length === 0}>
             <DocumentTextIcon className="w-4 h-4 mr-2" />
@@ -326,14 +360,13 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
             Generate Report
           </Button>
         </div>
-        
+
         <p className="text-muted-text text-sm mt-3">
-          {evaluations.length > 0 
+          {evaluations.length > 0
             ? 'Export evaluation data and generate reports for hiring decisions.'
-            : 'Export and reporting features will be available once evaluations are completed.'
-          }
+            : 'Export and reporting features will be available once evaluations are completed.'}
         </p>
       </div>
     </div>
   );
-} 
+}

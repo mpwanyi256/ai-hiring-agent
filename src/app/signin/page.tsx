@@ -12,11 +12,7 @@ import TopNavigation from '@/components/navigation/TopNavigation';
 import { signIn } from '@/store/auth/authThunks';
 import { clearError } from '@/store/auth/authSlice';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { 
-  EyeIcon,
-  EyeSlashIcon
-} from '@heroicons/react/24/outline';
-import Image from 'next/image';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 // Form validation schema
 const signinSchema = z.object({
@@ -49,18 +45,24 @@ export default function SigninPage() {
       router.push('/dashboard');
     } catch (error: unknown) {
       // Check if it's an email not confirmed error from the rejection
-      if (error && typeof error === 'object' && 'type' in error && error.type === 'EMAIL_NOT_CONFIRMED' && 'email' in error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'type' in error &&
+        error.type === 'EMAIL_NOT_CONFIRMED' &&
+        'email' in error
+      ) {
         router.push(`/verify-email?email=${encodeURIComponent(error.email as string)}`);
         return;
       }
-      
+
       // For other errors, check if it's a string message
       if (error instanceof Error && error.message.startsWith('EMAIL_NOT_CONFIRMED:')) {
         const email = error.message.split(':')[1];
         router.push(`/verify-email?email=${encodeURIComponent(email)}`);
         return;
       }
-      
+
       // Other errors are handled by Redux
       console.error('Signin failed:', error);
     }
@@ -161,11 +163,7 @@ export default function SigninPage() {
                   </Link>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  isLoading={isLoading}
-                >
+                <Button type="submit" className="w-full" isLoading={isLoading}>
                   Sign In
                 </Button>
               </form>
@@ -173,7 +171,10 @@ export default function SigninPage() {
               <div className="mt-4 sm:mt-6 text-center">
                 <p className="text-sm text-muted-text">
                   Don&apos;t have an account?{' '}
-                  <Link href="/signup" className="text-primary hover:text-primary-light font-medium">
+                  <Link
+                    href="/signup"
+                    className="text-primary hover:text-primary-light font-medium"
+                  >
                     Get started for free
                   </Link>
                 </p>
@@ -194,4 +195,4 @@ export default function SigninPage() {
       </div>
     </div>
   );
-} 
+}

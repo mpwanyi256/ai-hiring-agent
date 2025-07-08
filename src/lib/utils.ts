@@ -3,11 +3,11 @@ import { JobData } from './services/jobsService';
 import { Job } from '@/types';
 import { JobStatus } from './supabase';
 import { apiSuccess } from './notification';
-import { CheckCircleIcon, ExclamationTriangleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { twMerge } from 'tailwind-merge';
 
 // Utility function to merge classes with Tailwind
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs);
+  return twMerge(clsx(inputs));
 }
 
 // Date formatting utilities
@@ -16,7 +16,7 @@ export function formatDate(date: Date | string): string {
   return d.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   });
 }
 
@@ -27,7 +27,7 @@ export function formatDateTime(date: Date | string): string {
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   });
 }
 
@@ -52,8 +52,7 @@ export function formatRelativeTime(date: Date | string): string {
 
 // Generate random tokens for interview links
 export function generateInterviewToken(): string {
-  return Math.random().toString(36).substring(2, 15) + 
-         Math.random().toString(36).substring(2, 15);
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
 // Email validation
@@ -80,7 +79,7 @@ export function formatScore(score: number): string {
 
 // Sleep utility for delays
 export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // Generate initials from name
@@ -89,7 +88,7 @@ export function getInitials(firstName: string, lastName?: string): string {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   }
   return firstName.substring(0, 2).toUpperCase();
-} 
+}
 
 export const parseJobFields = (jobFields: JobData['fields']): Job['fields'] => {
   return {
@@ -97,9 +96,16 @@ export const parseJobFields = (jobFields: JobData['fields']): Job['fields'] => {
     experienceLevel: jobFields.experienceLevel,
     traits: jobFields.traits,
     jobDescription: jobFields.jobDescription,
-    customFields: jobFields.customFields ? Object.fromEntries(Object.entries(jobFields.customFields).map(([key, value]) => [key, typeof value === 'string' ? { value, inputType: 'text' } : value])) : undefined
+    customFields: jobFields.customFields
+      ? Object.fromEntries(
+          Object.entries(jobFields.customFields).map(([key, value]) => [
+            key,
+            typeof value === 'string' ? { value, inputType: 'text' } : value,
+          ]),
+        )
+      : undefined,
   };
-}
+};
 
 export const parseJobDetails = (jobData: JobData): Job => {
   return {
@@ -114,9 +120,9 @@ export const parseJobDetails = (jobData: JobData): Job => {
     createdAt: jobData.createdAt,
     updatedAt: jobData.updatedAt,
     candidateCount: jobData.candidateCount,
-    interviewLink: jobData.interviewLink
+    interviewLink: jobData.interviewLink,
   };
-}
+};
 
 export const copyInterviewLink = async (interviewLink: string) => {
   try {
@@ -127,7 +133,7 @@ export const copyInterviewLink = async (interviewLink: string) => {
     console.error('Failed to copy link:', error);
     return false;
   }
-}
+};
 
 export const getJobStatusLabel = (status: JobStatus) => {
   switch (status) {
@@ -159,15 +165,20 @@ export const formatDuration = (seconds: number) => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
+};
 
 export const getQuestionTypeColor = (type: string) => {
   switch (type) {
-    case 'technical': return 'bg-blue-100 text-blue-700';
-    case 'behavioral': return 'bg-green-100 text-green-700';
-    case 'experience': return 'bg-purple-100 text-purple-700';
-    case 'general': return 'bg-gray-100 text-gray-700';
-    default: return 'bg-orange-100 text-orange-700';
+    case 'technical':
+      return 'bg-blue-100 text-blue-700';
+    case 'behavioral':
+      return 'bg-green-100 text-green-700';
+    case 'experience':
+      return 'bg-purple-100 text-purple-700';
+    case 'general':
+      return 'bg-gray-100 text-gray-700';
+    default:
+      return 'bg-orange-100 text-orange-700';
   }
 };
 
@@ -177,30 +188,30 @@ export const validateFile = (file: File): { isValid: boolean; error?: string } =
     'application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/msword',
-    'text/plain'
+    'text/plain',
   ];
-  
+
   const allowedExtensions = ['pdf', 'docx', 'doc', 'txt'];
   const extension = file.name.split('.').pop()?.toLowerCase();
 
   if (file.size > maxSize) {
     return {
       isValid: false,
-      error: 'File size exceeds 10MB limit. Please upload a smaller file.'
+      error: 'File size exceeds 10MB limit. Please upload a smaller file.',
     };
   }
 
   if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension || '')) {
     return {
       isValid: false,
-      error: 'Unsupported file type. Please upload PDF, DOC, DOCX, or TXT files only.'
+      error: 'Unsupported file type. Please upload PDF, DOC, DOCX, or TXT files only.',
     };
   }
 
   if (file.size < 100) {
     return {
       isValid: false,
-      error: 'File appears to be empty. Please upload a valid resume file.'
+      error: 'File appears to be empty. Please upload a valid resume file.',
     };
   }
 

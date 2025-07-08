@@ -10,12 +10,11 @@ import { evaluationUtils } from '@/lib/utils/evaluationUtils';
 import { TeamAssessment, CategoryScore } from '@/types/evaluations';
 import {
   StarIcon,
-  SparklesIcon,
   UserGroupIcon,
   ClockIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  ArrowTrendingUpIcon
+  ArrowTrendingUpIcon,
 } from '@heroicons/react/24/outline';
 import { NoAIEvaluations } from './NoAIEvaluations';
 import { LoadingAIEvaluations } from './LoadingAIEvaluations';
@@ -27,16 +26,16 @@ interface CandidateEvaluationSectionProps {
   className?: string;
 }
 
-export default function CandidateEvaluationSection({ 
-  candidateId, 
-  className = '' 
+export default function CandidateEvaluationSection({
+  candidateId,
+  className = '',
 }: CandidateEvaluationSectionProps) {
   const dispatch = useDispatch<AppDispatch>();
-  
-  const { 
+
+  const {
     aiEvaluation: aiEvaluationState,
     error,
-    isLoading 
+    isLoading,
   } = useSelector((state: RootState) => state.candidates);
 
   const currentEvaluation = aiEvaluationState.currentEvaluation;
@@ -55,15 +54,17 @@ export default function CandidateEvaluationSection({
   };
 
   if (aiEvaluationState.isLoadingEvaluation || isLoading) {
-    return (<LoadingAIEvaluations className={className} />);
+    return <LoadingAIEvaluations className={className} />;
   }
 
   if (error) {
-    return (<ErrorLoadingAIEvaluations error={error} candidateId={candidateId} className={className} />);
+    return (
+      <ErrorLoadingAIEvaluations error={error} candidateId={candidateId} className={className} />
+    );
   }
 
   if (!aiEvaluation) {
-    return (<NoAIEvaluations candidateId={candidateId} />);
+    return <NoAIEvaluations candidateId={candidateId} />;
   }
 
   const overallStatusColor = evaluationUtils.getStatusColor(aiEvaluation.overallStatus);
@@ -77,8 +78,8 @@ export default function CandidateEvaluationSection({
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">AI Evaluation Results</h2>
           <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={handleForceAIEvaluation}
               disabled={aiEvaluationState.isEvaluating}
@@ -109,20 +110,19 @@ export default function CandidateEvaluationSection({
                   {overallStatusText}
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-4">
-                <div className="text-4xl font-bold text-gray-900">
-                  {aiEvaluation.overallScore}%
-                </div>
+                <div className="text-4xl font-bold text-gray-900">{aiEvaluation.overallScore}%</div>
                 <div className="flex-1">
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
+                    <div
                       className="bg-primary h-3 rounded-full transition-all"
                       style={{ width: `${aiEvaluation.overallScore}%` }}
                     />
                   </div>
                   <p className="text-sm text-gray-600 mt-2">
-                    AI Recommendation: <span className="font-medium capitalize">
+                    AI Recommendation:{' '}
+                    <span className="font-medium capitalize">
                       {aiEvaluation.recommendation.replace('_', ' ')}
                     </span>
                   </p>
@@ -136,28 +136,32 @@ export default function CandidateEvaluationSection({
                 <h3 className="text-lg font-semibold text-gray-900">Team Assessment</h3>
                 <UserGroupIcon className="w-5 h-5 text-gray-500" />
               </div>
-              
+
               {teamAssessments.length > 0 ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <StarIcon className="w-5 h-5 text-yellow-500" />
-                      <span className="text-2xl font-bold">
-                        {averageTeamRating.toFixed(1)}/5
-                      </span>
+                      <span className="text-2xl font-bold">{averageTeamRating.toFixed(1)}/5</span>
                     </div>
                     <span className="text-sm text-gray-600">
                       {teamAssessments.length} assessor{teamAssessments.length !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  
+
                   <div className="space-y-2">
                     {teamAssessments.slice(0, 3).map((assessment: TeamAssessment) => (
-                      <div key={assessment.id} className="flex items-center justify-between text-sm">
+                      <div
+                        key={assessment.id}
+                        className="flex items-center justify-between text-sm"
+                      >
                         <div className="flex items-center space-x-2">
                           <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                             <span className="text-xs font-medium text-primary">
-                              {assessment.assessorName?.split(' ').map(n => n[0]).join('') || 'A'}
+                              {assessment.assessorName
+                                ?.split(' ')
+                                .map((n) => n[0])
+                                .join('') || 'A'}
                             </span>
                           </div>
                           <div>
@@ -167,7 +171,7 @@ export default function CandidateEvaluationSection({
                         </div>
                         <div className="flex items-center space-x-1">
                           {[...Array(5)].map((_, i) => (
-                            <StarIcon 
+                            <StarIcon
                               key={i}
                               className={`w-4 h-4 ${
                                 i < assessment.overallRating ? 'text-yellow-500' : 'text-gray-300'
@@ -199,33 +203,35 @@ export default function CandidateEvaluationSection({
       {/* Detailed Breakdown Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Detailed Analysis</h3>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Category Scores */}
           <div>
             <h4 className="text-md font-semibold text-gray-900 mb-4">Category Breakdown</h4>
             <div className="space-y-4">
-              {Object.entries(aiEvaluation.categoryScores || {}).map(([category, data]) => {
-                if (!data) return null;
-                const categoryData = data as CategoryScore;
-                return (
-                  <div key={category} className="border-l-4 border-primary/20 pl-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h5 className="font-medium text-gray-900 capitalize">
-                        {category.replace('_', ' ')}
-                      </h5>
-                      <span className="font-bold text-primary">{categoryData.score}%</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-2">{categoryData.explanation}</p>
-                    {categoryData.strengths && categoryData.strengths.length > 0 && (
-                      <div className="text-xs">
-                        <span className="text-green-600 font-medium">Strengths: </span>
-                        <span className="text-gray-600">{categoryData.strengths.join(', ')}</span>
+              {Object.entries(aiEvaluation.categoryScores || {})
+                .map(([category, data]) => {
+                  if (!data) return null;
+                  const categoryData = data as CategoryScore;
+                  return (
+                    <div key={category} className="border-l-4 border-primary/20 pl-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-gray-900 capitalize">
+                          {category.replace('_', ' ')}
+                        </h5>
+                        <span className="font-bold text-primary">{categoryData.score}%</span>
                       </div>
-                    )}
-                  </div>
-                );
-              }).filter(Boolean)}
+                      <p className="text-sm text-gray-600 mb-2">{categoryData.explanation}</p>
+                      {categoryData.strengths && categoryData.strengths.length > 0 && (
+                        <div className="text-xs">
+                          <span className="text-green-600 font-medium">Strengths: </span>
+                          <span className="text-gray-600">{categoryData.strengths.join(', ')}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+                .filter(Boolean)}
             </div>
           </div>
 
@@ -286,29 +292,21 @@ export default function CandidateEvaluationSection({
         {/* Summary */}
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
           <h4 className="text-md font-semibold text-gray-900 mb-2">AI Summary</h4>
-          <p className="text-gray-700 text-sm leading-relaxed">
-            {aiEvaluation.evaluationSummary}
-          </p>
+          <p className="text-gray-700 text-sm leading-relaxed">{aiEvaluation.evaluationSummary}</p>
         </div>
 
         {/* Processing Info */}
         <div className="mt-6 pt-4 border-t border-gray-200">
           <div className="flex items-center justify-between text-xs text-gray-500">
             <div className="flex items-center space-x-4">
-              <span>
-                Processed in {aiEvaluation.processingDurationMs || 0}ms
-              </span>
+              <span>Processed in {aiEvaluation.processingDurationMs || 0}ms</span>
               <span>•</span>
-              <span>
-                Model: {aiEvaluation.aiModelVersion || 'gpt-4'}
-              </span>
+              <span>Model: {aiEvaluation.aiModelVersion || 'gpt-4'}</span>
             </div>
-            <span>
-              Evaluated on {new Date(aiEvaluation.createdAt).toLocaleDateString()}
-            </span>
+            <span>Evaluated on {new Date(aiEvaluation.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}

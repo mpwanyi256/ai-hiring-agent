@@ -4,12 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import { fetchCandidateResponses } from '@/store/candidates/candidatesThunks';
-import { 
-  ChatBubbleLeftRightIcon,
-  ClockIcon,
-  DocumentTextIcon,
-  ChartBarIcon
-} from '@heroicons/react/24/outline';
+import { ChatBubbleLeftRightIcon, ClockIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 
 interface CandidateResponsesProps {
   candidateId: string;
@@ -19,17 +14,17 @@ interface CandidateResponsesProps {
 
 type TabType = 'responses' | 'analytics';
 
-export default function CandidateResponses({ 
-  candidateId, 
-  jobId, 
-  candidateName 
+export default function CandidateResponses({
+  candidateId,
+  jobId,
+  candidateName,
 }: CandidateResponsesProps) {
   const dispatch = useDispatch<AppDispatch>();
   const [activeTab, setActiveTab] = useState<TabType>('responses');
-  
+
   const { candidateResponses } = useSelector((state: RootState) => state.candidates);
   const candidateData = candidateResponses[candidateId];
-  
+
   const isLoading = candidateData?.isLoading || false;
   const responses = candidateData?.responses || [];
   const error = candidateData?.error;
@@ -53,7 +48,7 @@ export default function CandidateResponses({
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -62,14 +57,14 @@ export default function CandidateResponses({
       id: 'responses' as TabType,
       name: 'Interview Responses',
       icon: ChatBubbleLeftRightIcon,
-      count: responses.length
+      count: responses.length,
     },
     {
       id: 'analytics' as TabType,
       name: 'Analytics',
       icon: ChartBarIcon,
-      count: null
-    }
+      count: null,
+    },
   ];
 
   if (isLoading) {
@@ -99,7 +94,7 @@ export default function CandidateResponses({
       {/* Header */}
       <div className="border-b border-gray-200 px-6 py-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          {candidateName}'s Interview Data
+          {candidateName}&apos;s Interview Data
         </h3>
         <p className="text-sm text-gray-600 mt-1">
           {responses.length} response{responses.length !== 1 ? 's' : ''} recorded
@@ -117,9 +112,10 @@ export default function CandidateResponses({
                 onClick={() => setActiveTab(tab.id)}
                 className={`
                   flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm
-                  ${activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ${
+                    activeTab === tab.id
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }
                 `}
               >
@@ -145,7 +141,7 @@ export default function CandidateResponses({
                 <ChatBubbleLeftRightIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No responses yet</h3>
                 <p className="text-gray-600">
-                  This candidate hasn't completed the interview questions yet.
+                  This candidate hasn&apos;t completed the interview questions yet.
                 </p>
               </div>
             ) : (
@@ -169,13 +165,13 @@ export default function CandidateResponses({
                         <span>{formatDate(response.createdAt)}</span>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <h4 className="font-medium text-gray-900 mb-2">Question:</h4>
                         <p className="text-gray-700 text-sm">{response.questionText}</p>
                       </div>
-                      
+
                       <div>
                         <h4 className="font-medium text-gray-900 mb-2">Response:</h4>
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
@@ -201,22 +197,22 @@ export default function CandidateResponses({
                 Detailed analytics and insights for this candidate will be available here.
               </p>
             </div>
-            
+
             {/* Placeholder for future analytics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h4 className="font-medium text-blue-900 mb-2">Response Time</h4>
                 <p className="text-2xl font-bold text-blue-600">
-                  {responses.length > 0 
+                  {responses.length > 0
                     ? formatResponseTime(
-                        responses.reduce((acc, r) => acc + (r.responseTime || 0), 0) / responses.length
+                        responses.reduce((acc, r) => acc + (r.responseTime || 0), 0) /
+                          responses.length,
                       )
-                    : 'N/A'
-                  }
+                    : 'N/A'}
                 </p>
                 <p className="text-xs text-blue-700 mt-1">Average per question</p>
               </div>
-              
+
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h4 className="font-medium text-green-900 mb-2">Completion</h4>
                 <p className="text-2xl font-bold text-green-600">
@@ -224,14 +220,13 @@ export default function CandidateResponses({
                 </p>
                 <p className="text-xs text-green-700 mt-1">Questions answered</p>
               </div>
-              
+
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                 <h4 className="font-medium text-purple-900 mb-2">Last Activity</h4>
                 <p className="text-sm font-medium text-purple-600">
-                  {responses.length > 0 
+                  {responses.length > 0
                     ? formatDate(responses[responses.length - 1].createdAt)
-                    : 'N/A'
-                  }
+                    : 'N/A'}
                 </p>
                 <p className="text-xs text-purple-700 mt-1">Most recent response</p>
               </div>
@@ -241,4 +236,4 @@ export default function CandidateResponses({
       </div>
     </div>
   );
-} 
+}

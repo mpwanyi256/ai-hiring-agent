@@ -1,10 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { JobData } from '@/lib/services/jobsService';
 import { documentParsingService } from '@/lib/services/documentParsingService';
-import {
-  ResumeEvaluation,
-  InterviewEvaluation
-} from '@/types/interview';
+import { ResumeEvaluation, InterviewEvaluation } from '@/types/interview';
 import { ai } from '../constants';
 
 // Note: Enhanced with OpenAI integration, Supabase storage, and advanced document parsing
@@ -17,7 +14,9 @@ class ResumeService {
       return await documentParsingService.parseResume(file);
     } catch (error) {
       console.error('Error parsing resume file:', error);
-      throw new Error(`Failed to parse resume file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to parse resume file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -25,17 +24,17 @@ class ResumeService {
   async evaluateResume(
     resumeContent: string,
     resumeFilename: string,
-    job: JobData
+    job: JobData,
   ): Promise<ResumeEvaluation> {
     try {
       const evaluation = await this.performResumeAnalysis(resumeContent, job);
-      
+
       // Determine if candidate passes the threshold
       const passesThreshold = evaluation.score >= this.MINIMUM_SCORE_THRESHOLD;
-      
+
       return {
         ...evaluation,
-        passesThreshold
+        passesThreshold,
       };
     } catch (error) {
       console.error('Error evaluating resume:', error);
@@ -45,44 +44,54 @@ class ResumeService {
 
   private async performResumeAnalysis(
     resumeContent: string,
-    job: JobData
+    job: JobData,
   ): Promise<Omit<ResumeEvaluation, 'passesThreshold'>> {
     const resumeLower = resumeContent.toLowerCase();
-    
+
     // Ensure skills is always an array
     const skills = Array.isArray(job.fields?.skills) ? job.fields.skills : [];
     const traits = Array.isArray(job.fields?.traits) ? job.fields.traits : [];
-    
+
     // 1. Skills Analysis
     const skillsAnalysis = this.analyzeSkills(resumeLower, skills);
-    
+
     // 2. Experience Level Analysis
-    const experienceAnalysis = this.analyzeExperienceLevel(resumeLower, job.fields?.experienceLevel);
-    
+    const experienceAnalysis = this.analyzeExperienceLevel(
+      resumeLower,
+      job.fields?.experienceLevel,
+    );
+
     // 3. Traits Analysis
     const traitsAnalysis = this.analyzeTraits(resumeLower, traits);
-    
+
     // 4. Job Description Match
-    const jobDescriptionMatch = this.analyzeJobDescriptionMatch(resumeLower, job.fields?.jobDescription || '');
-    
+    const jobDescriptionMatch = this.analyzeJobDescriptionMatch(
+      resumeLower,
+      job.fields?.jobDescription || '',
+    );
+
     // 5. Calculate overall score
     const overallScore = this.calculateOverallScore({
       skillsScore: skillsAnalysis.score,
       experienceScore: experienceAnalysis.score,
       traitsScore: traitsAnalysis.score,
-      jobMatchScore: jobDescriptionMatch.score
+      jobMatchScore: jobDescriptionMatch.score,
     });
 
     // 6. Generate recommendation
-    const recommendation = this.generateRecommendation(overallScore, skillsAnalysis, experienceAnalysis);
-    
+    const recommendation = this.generateRecommendation(
+      overallScore,
+      skillsAnalysis,
+      experienceAnalysis,
+    );
+
     // 7. Create feedback summary
     const feedback = this.generateFeedback({
       score: overallScore,
       skillsAnalysis,
       experienceAnalysis,
       traitsAnalysis,
-      jobDescriptionMatch
+      jobDescriptionMatch,
     });
 
     return {
@@ -92,11 +101,14 @@ class ResumeService {
       missingSkills: skillsAnalysis.missingSkills,
       experienceMatch: experienceAnalysis.match,
       recommendation,
-      feedback
+      feedback,
     };
   }
 
-  private analyzeSkills(resumeContent: string, requiredSkills: string[]): {
+  private analyzeSkills(
+    resumeContent: string,
+    requiredSkills: string[],
+  ): {
     score: number;
     matchingSkills: string[];
     missingSkills: string[];
@@ -109,13 +121,13 @@ class ResumeService {
     const matchingSkills: string[] = [];
     const missingSkills: string[] = [];
 
-    requiredSkills.forEach(skill => {
+    requiredSkills.forEach((skill) => {
       // Ensure skill is a string
       if (typeof skill !== 'string') return;
-      
+
       const skillVariations = this.getSkillVariations(skill);
-      const hasSkill = skillVariations.some(variation => 
-        resumeContent.includes(variation.toLowerCase())
+      const hasSkill = skillVariations.some((variation) =>
+        resumeContent.includes(variation.toLowerCase()),
       );
 
       if (hasSkill) {
@@ -133,10 +145,10 @@ class ResumeService {
 
   private getSkillVariations(skill: string): string[] {
     const variations = [skill];
-    
+
     // Add common variations
     const skillLower = skill.toLowerCase();
-    
+
     // Programming languages
     if (skillLower.includes('javascript')) variations.push('js', 'node.js', 'nodejs');
     if (skillLower.includes('typescript')) variations.push('ts');
@@ -144,7 +156,7 @@ class ResumeService {
     if (skillLower.includes('react')) variations.push('reactjs', 'react.js');
     if (skillLower.includes('angular')) variations.push('angularjs');
     if (skillLower.includes('vue')) variations.push('vuejs', 'vue.js');
-    
+
     // Frameworks and technologies
     if (skillLower.includes('next.js')) variations.push('nextjs', 'next');
     if (skillLower.includes('express')) variations.push('expressjs', 'express.js');
@@ -155,7 +167,10 @@ class ResumeService {
     return variations;
   }
 
-  private analyzeExperienceLevel(resumeContent: string, requiredLevel?: string): {
+  private analyzeExperienceLevel(
+    resumeContent: string,
+    requiredLevel?: string,
+  ): {
     score: number;
     match: 'under' | 'match' | 'over';
   } {
@@ -168,15 +183,15 @@ class ResumeService {
     const estimatedYears = this.estimateYearsOfExperience(experienceIndicators);
 
     const levelMap: Record<string, { min: number; max: number }> = {
-      'entry': { min: 0, max: 2 },
-      'mid': { min: 2, max: 5 },
-      'senior': { min: 5, max: 15 },
-      'lead': { min: 7, max: 20 },
-      'principal': { min: 10, max: 25 }
+      entry: { min: 0, max: 2 },
+      mid: { min: 2, max: 5 },
+      senior: { min: 5, max: 15 },
+      lead: { min: 7, max: 20 },
+      principal: { min: 10, max: 25 },
     };
 
     const targetRange = levelMap[requiredLevel.toLowerCase()] || levelMap['mid'];
-    
+
     let match: 'under' | 'match' | 'over';
     let score: number;
 
@@ -185,7 +200,7 @@ class ResumeService {
       score = Math.max(30, (estimatedYears / targetRange.min) * 70);
     } else if (estimatedYears > targetRange.max) {
       match = 'over';
-      score = Math.max(60, 100 - ((estimatedYears - targetRange.max) * 5));
+      score = Math.max(60, 100 - (estimatedYears - targetRange.max) * 5);
     } else {
       match = 'match';
       score = 90;
@@ -196,15 +211,15 @@ class ResumeService {
 
   private extractExperienceIndicators(resumeContent: string): string[] {
     const indicators: string[] = [];
-    
+
     // Look for years of experience mentions
     const yearPatterns = [
       /(\d+)\+?\s*years?\s*of\s*experience/gi,
       /(\d+)\+?\s*years?\s*experience/gi,
-      /experience:\s*(\d+)\+?\s*years?/gi
+      /experience:\s*(\d+)\+?\s*years?/gi,
     ];
 
-    yearPatterns.forEach(pattern => {
+    yearPatterns.forEach((pattern) => {
       const matches = resumeContent.match(pattern);
       if (matches) {
         indicators.push(...matches);
@@ -220,7 +235,7 @@ class ResumeService {
       return 3; // Default assumption
     }
 
-    const years = indicators.map(indicator => {
+    const years = indicators.map((indicator) => {
       const match = indicator.match(/(\d+)/);
       return match ? parseInt(match[1]) : 0;
     });
@@ -228,7 +243,10 @@ class ResumeService {
     return Math.max(...years, 0);
   }
 
-  private analyzeTraits(resumeContent: string, requiredTraits: string[]): {
+  private analyzeTraits(
+    resumeContent: string,
+    requiredTraits: string[],
+  ): {
     score: number;
     foundTraits: string[];
   } {
@@ -239,25 +257,37 @@ class ResumeService {
 
     const foundTraits: string[] = [];
     const traitKeywords: Record<string, string[]> = {
-      'leadership': ['led', 'lead', 'managed', 'supervised', 'coordinated', 'directed', 'mentored'],
-      'teamwork': ['team', 'collaborated', 'cooperation', 'worked with', 'cross-functional'],
-      'communication': ['presented', 'communicated', 'wrote', 'documented', 'explained', 'training'],
-      'problem-solving': ['solved', 'resolved', 'troubleshooting', 'debugging', 'analyzed', 'optimized'],
-      'creativity': ['created', 'designed', 'innovative', 'developed', 'built', 'invented'],
-      'adaptability': ['adapted', 'flexible', 'changed', 'learned', 'transitioned', 'diverse'],
+      leadership: ['led', 'lead', 'managed', 'supervised', 'coordinated', 'directed', 'mentored'],
+      teamwork: ['team', 'collaborated', 'cooperation', 'worked with', 'cross-functional'],
+      communication: ['presented', 'communicated', 'wrote', 'documented', 'explained', 'training'],
+      'problem-solving': [
+        'solved',
+        'resolved',
+        'troubleshooting',
+        'debugging',
+        'analyzed',
+        'optimized',
+      ],
+      creativity: ['created', 'designed', 'innovative', 'developed', 'built', 'invented'],
+      adaptability: ['adapted', 'flexible', 'changed', 'learned', 'transitioned', 'diverse'],
       'attention-to-detail': ['accurate', 'precise', 'thorough', 'detailed', 'quality', 'testing'],
-      'time-management': ['deadline', 'scheduled', 'prioritized', 'organized', 'efficient', 'timely']
+      'time-management': [
+        'deadline',
+        'scheduled',
+        'prioritized',
+        'organized',
+        'efficient',
+        'timely',
+      ],
     };
 
-    requiredTraits.forEach(trait => {
+    requiredTraits.forEach((trait) => {
       // Ensure trait is a string
       if (typeof trait !== 'string') return;
-      
+
       const keywords = traitKeywords[trait.toLowerCase()] || [trait.toLowerCase()];
-      const hasEvidence = keywords.some(keyword => 
-        resumeContent.toLowerCase().includes(keyword)
-      );
-      
+      const hasEvidence = keywords.some((keyword) => resumeContent.toLowerCase().includes(keyword));
+
       if (hasEvidence) {
         foundTraits.push(trait);
       }
@@ -269,7 +299,10 @@ class ResumeService {
     return { score, foundTraits };
   }
 
-  private analyzeJobDescriptionMatch(resumeContent: string, jobDescription: string): {
+  private analyzeJobDescriptionMatch(
+    resumeContent: string,
+    jobDescription: string,
+  ): {
     score: number;
     relevantKeywords: string[];
   } {
@@ -282,7 +315,7 @@ class ResumeService {
     const jobKeywords = this.extractKeywords(jobDescription);
     const relevantKeywords: string[] = [];
 
-    jobKeywords.forEach(keyword => {
+    jobKeywords.forEach((keyword) => {
       if (resumeContent.toLowerCase().includes(keyword.toLowerCase())) {
         relevantKeywords.push(keyword);
       }
@@ -305,12 +338,12 @@ class ResumeService {
       .toLowerCase()
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/)
-      .filter(word => word.length > 3)
-      .filter(word => !this.isCommonWord(word));
+      .filter((word) => word.length > 3)
+      .filter((word) => !this.isCommonWord(word));
 
     // Get unique words with frequency > 1
     const wordCounts: Record<string, number> = {};
-    words.forEach(word => {
+    words.forEach((word) => {
       wordCounts[word] = (wordCounts[word] || 0) + 1;
     });
 
@@ -322,9 +355,30 @@ class ResumeService {
 
   private isCommonWord(word: string): boolean {
     const commonWords = new Set([
-      'the', 'and', 'for', 'are', 'with', 'will', 'this', 'that', 'from',
-      'they', 'have', 'been', 'were', 'said', 'each', 'which', 'their',
-      'time', 'work', 'team', 'role', 'position', 'company', 'experience'
+      'the',
+      'and',
+      'for',
+      'are',
+      'with',
+      'will',
+      'this',
+      'that',
+      'from',
+      'they',
+      'have',
+      'been',
+      'were',
+      'said',
+      'each',
+      'which',
+      'their',
+      'time',
+      'work',
+      'team',
+      'role',
+      'position',
+      'company',
+      'experience',
     ]);
     return commonWords.has(word);
   }
@@ -337,18 +391,17 @@ class ResumeService {
   }): number {
     // Weighted scoring
     const weights = {
-      skills: 0.4,      // 40% - most important
-      experience: 0.3,  // 30% - very important
-      traits: 0.2,     // 20% - important
-      jobMatch: 0.1     // 10% - nice to have
+      skills: 0.4, // 40% - most important
+      experience: 0.3, // 30% - very important
+      traits: 0.2, // 20% - important
+      jobMatch: 0.1, // 10% - nice to have
     };
 
-    const weightedScore = (
+    const weightedScore =
       scores.skillsScore * weights.skills +
       scores.experienceScore * weights.experience +
       scores.traitsScore * weights.traits +
-      scores.jobMatchScore * weights.jobMatch
-    );
+      scores.jobMatchScore * weights.jobMatch;
 
     return Math.round(weightedScore);
   }
@@ -356,7 +409,7 @@ class ResumeService {
   private generateRecommendation(
     score: number,
     skillsAnalysis: { score: number; matchingSkills: string[]; missingSkills: string[] },
-    experienceAnalysis: { score: number; match: 'under' | 'match' | 'over' }
+    experienceAnalysis: { score: number; match: 'under' | 'match' | 'over' },
   ): 'proceed' | 'reject' {
     // Strong rejection criteria
     if (score < 40) return 'reject';
@@ -372,15 +425,17 @@ class ResumeService {
   private generateSummary(
     score: number,
     skillsAnalysis: { matchingSkills: string[]; missingSkills: string[] },
-    experienceAnalysis: { match: 'under' | 'match' | 'over' }
+    experienceAnalysis: { match: 'under' | 'match' | 'over' },
   ): string {
     const skillsMatch = skillsAnalysis.matchingSkills.length;
     const totalSkills = skillsAnalysis.matchingSkills.length + skillsAnalysis.missingSkills.length;
-    
-    return `Resume evaluation complete. Overall match: ${score}/100. ` +
-           `Skills: ${skillsMatch}/${totalSkills} required skills found. ` +
-           `Experience level: ${experienceAnalysis.match}. ` +
-           `${score >= this.MINIMUM_SCORE_THRESHOLD ? 'Candidate qualifies for interview.' : 'Candidate does not meet minimum requirements.'}`;
+
+    return (
+      `Resume evaluation complete. Overall match: ${score}/100. ` +
+      `Skills: ${skillsMatch}/${totalSkills} required skills found. ` +
+      `Experience level: ${experienceAnalysis.match}. ` +
+      `${score >= this.MINIMUM_SCORE_THRESHOLD ? 'Candidate qualifies for interview.' : 'Candidate does not meet minimum requirements.'}`
+    );
   }
 
   private generateFeedback(analysisData: {
@@ -390,10 +445,11 @@ class ResumeService {
     traitsAnalysis: { score: number; foundTraits: string[] };
     jobDescriptionMatch: { score: number; relevantKeywords: string[] };
   }): string {
-    const { score, skillsAnalysis, experienceAnalysis, traitsAnalysis, jobDescriptionMatch } = analysisData;
-    
+    const { score, skillsAnalysis, experienceAnalysis, traitsAnalysis, jobDescriptionMatch } =
+      analysisData;
+
     let feedback = `Overall Score: ${score}/100\n\n`;
-    
+
     // Skills feedback
     feedback += `Skills Assessment (${skillsAnalysis.score}/100):\n`;
     if (skillsAnalysis.matchingSkills.length > 0) {
@@ -403,28 +459,30 @@ class ResumeService {
       feedback += `✗ Missing: ${skillsAnalysis.missingSkills.join(', ')}\n`;
     }
     feedback += '\n';
-    
+
     // Experience feedback
     feedback += `Experience Assessment (${experienceAnalysis.score}/100):\n`;
     feedback += `Experience level appears to be ${experienceAnalysis.match} the requirements.\n\n`;
-    
+
     // Traits feedback
     if (traitsAnalysis.foundTraits.length > 0) {
       feedback += `Demonstrated Qualities:\n`;
       feedback += `✓ ${traitsAnalysis.foundTraits.join(', ')}\n\n`;
     }
-    
+
     // Job description match feedback
     if (jobDescriptionMatch?.relevantKeywords?.length > 0) {
       feedback += `Relevant Experience:\n`;
       feedback += `✓ Found keywords: ${jobDescriptionMatch.relevantKeywords.slice(0, 5).join(', ')}\n\n`;
     }
-    
+
     // Overall recommendation
-    feedback += `Recommendation: ${score >= this.MINIMUM_SCORE_THRESHOLD ? 
-      'Proceed to interview - candidate meets basic requirements.' :
-      'Does not meet minimum threshold for interview.'}`;
-    
+    feedback += `Recommendation: ${
+      score >= this.MINIMUM_SCORE_THRESHOLD
+        ? 'Proceed to interview - candidate meets basic requirements.'
+        : 'Does not meet minimum threshold for interview.'
+    }`;
+
     return feedback;
   }
 
@@ -434,11 +492,11 @@ class ResumeService {
     jobId: string,
     resumeContent: string,
     resumeFilename: string,
-    evaluation: ResumeEvaluation
+    evaluation: ResumeEvaluation,
   ): Promise<InterviewEvaluation> {
     try {
       const supabase = await createClient();
-      
+
       const evaluationData = {
         profile_id: profileId, // Will be null for anonymous candidates
         job_id: jobId,
@@ -453,7 +511,7 @@ class ResumeService {
         skills_assessment: {},
         traits_assessment: {},
         recommendation: this.mapRecommendation(evaluation.recommendation),
-        feedback: evaluation.feedback
+        feedback: evaluation.feedback,
       };
 
       const { data: savedEvaluation, error } = await supabase
@@ -484,13 +542,16 @@ class ResumeService {
         recommendation: savedEvaluation.recommendation,
         feedback: savedEvaluation.feedback,
         createdAt: savedEvaluation.created_at,
-        updatedAt: savedEvaluation.updated_at
+        updatedAt: savedEvaluation.updated_at,
       };
     } catch (error) {
       console.error('Error saving resume evaluation:', error);
       // Distinguish between different error types
       if (error instanceof Error) {
-        if (error.message.includes('foreign key constraint') || error.message.includes('violates row-level security')) {
+        if (
+          error.message.includes('foreign key constraint') ||
+          error.message.includes('violates row-level security')
+        ) {
           throw new Error('Database configuration error - unable to save evaluation');
         }
         throw error;
@@ -499,7 +560,9 @@ class ResumeService {
     }
   }
 
-  private mapRecommendation(recommendation: 'proceed' | 'reject'): 'strong_yes' | 'yes' | 'maybe' | 'no' | 'strong_no' {
+  private mapRecommendation(
+    recommendation: 'proceed' | 'reject',
+  ): 'strong_yes' | 'yes' | 'maybe' | 'no' | 'strong_no' {
     return recommendation === 'proceed' ? 'yes' : 'no';
   }
 
@@ -507,7 +570,7 @@ class ResumeService {
   async getResumeEvaluation(profileId: string, jobId: string): Promise<InterviewEvaluation | null> {
     try {
       const supabase = await createClient();
-      
+
       const { data: evaluation, error } = await supabase
         .from('evaluations')
         .select('*')
@@ -540,7 +603,7 @@ class ResumeService {
         recommendation: evaluation.recommendation,
         feedback: evaluation.feedback,
         createdAt: evaluation.created_at,
-        updatedAt: evaluation.updated_at
+        updatedAt: evaluation.updated_at,
       };
     } catch (error) {
       console.error('Error fetching resume evaluation:', error);
@@ -550,13 +613,13 @@ class ResumeService {
 
   // Upload resume to Supabase storage
   async uploadResumeToStorage(
-    file: File, 
-    candidateId: string, 
-    jobId: string
+    file: File,
+    candidateId: string,
+    jobId: string,
   ): Promise<{ path: string; publicUrl: string }> {
     try {
       const supabase = await createClient();
-      
+
       // Generate unique file path
       const fileExt = file.name.split('.').pop()?.toLowerCase() || 'pdf';
       const fileName = `${candidateId}_${jobId}_${Date.now()}.${fileExt}`;
@@ -567,7 +630,7 @@ class ResumeService {
         .from('candidate-files')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
         });
 
       if (error) {
@@ -575,13 +638,13 @@ class ResumeService {
       }
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('candidate-files')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('candidate-files').getPublicUrl(filePath);
 
       return {
         path: data.path,
-        publicUrl
+        publicUrl,
       };
     } catch (error) {
       console.error('Error uploading resume to storage:', error);
@@ -595,11 +658,11 @@ class ResumeService {
     file: File,
     storageInfo: { path: string; publicUrl: string },
     parsedDoc?: { wordCount: number; fileType: string },
-    candidateId?: string
+    candidateId?: string,
   ): Promise<string> {
     try {
       const supabase = await createClient();
-      
+
       const resumeData = {
         job_id: jobId,
         candidate_id: candidateId,
@@ -609,7 +672,7 @@ class ResumeService {
         file_size: file.size,
         file_type: parsedDoc?.fileType || file.type,
         word_count: parsedDoc?.wordCount || null,
-        parsing_status: 'success'
+        parsing_status: 'success',
       };
 
       const { data: savedResume, error } = await supabase
@@ -633,14 +696,14 @@ class ResumeService {
   async updateResumeParsingStatus(
     resumeId: string,
     status: 'pending' | 'success' | 'failed',
-    error?: string
+    error?: string,
   ): Promise<void> {
     try {
       const supabase = await createClient();
-      
+
       const updateData: any = {
         parsing_status: status,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       if (error) {
@@ -666,7 +729,7 @@ class ResumeService {
     resumeContent: string,
     jobDescription: string,
     skills: string[],
-    experienceLevel?: string
+    experienceLevel?: string,
   ): Promise<{
     score: number;
     analysis: string;
@@ -702,7 +765,7 @@ Please provide your evaluation as a JSON object with the following structure (no
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${ai.openaiApiKey}`,
+          Authorization: `Bearer ${ai.openaiApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -710,15 +773,16 @@ Please provide your evaluation as a JSON object with the following structure (no
           messages: [
             {
               role: 'system',
-              content: 'You are an expert HR professional who evaluates candidate resumes objectively and thoroughly. Always respond with valid JSON only, no markdown formatting.'
+              content:
+                'You are an expert HR professional who evaluates candidate resumes objectively and thoroughly. Always respond with valid JSON only, no markdown formatting.',
             },
             {
               role: 'user',
-              content: prompt
-            }
+              content: prompt,
+            },
           ],
           temperature: ai.temperature,
-          max_tokens: ai.maxTokens
+          max_tokens: ai.maxTokens,
         }),
       });
 
@@ -729,13 +793,13 @@ Please provide your evaluation as a JSON object with the following structure (no
       }
 
       const data = await response.json();
-      
+
       if (!data.choices || !data.choices[0] || !data.choices[0].message) {
         throw new Error('Invalid response format from OpenAI API');
       }
 
       let responseContent = data.choices[0].message.content.trim();
-      
+
       // Remove markdown code block formatting if present
       if (responseContent.startsWith('```json')) {
         responseContent = responseContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
@@ -746,13 +810,18 @@ Please provide your evaluation as a JSON object with the following structure (no
       let evaluation;
       try {
         evaluation = JSON.parse(responseContent);
-      } catch (parseError) {
+      } catch {
         console.error('Failed to parse OpenAI response as JSON:', responseContent);
         throw new Error('Invalid JSON response from OpenAI');
       }
 
       // Validate the response structure
-      if (typeof evaluation.score !== 'number' || !evaluation.analysis || !Array.isArray(evaluation.strengths) || !Array.isArray(evaluation.weaknesses)) {
+      if (
+        typeof evaluation.score !== 'number' ||
+        !evaluation.analysis ||
+        !Array.isArray(evaluation.strengths) ||
+        !Array.isArray(evaluation.weaknesses)
+      ) {
         throw new Error('Invalid evaluation structure from OpenAI');
       }
 
@@ -760,7 +829,7 @@ Please provide your evaluation as a JSON object with the following structure (no
         score: Math.min(100, Math.max(0, Math.round(evaluation.score))),
         analysis: evaluation.analysis,
         strengths: evaluation.strengths || [],
-        weaknesses: evaluation.weaknesses || []
+        weaknesses: evaluation.weaknesses || [],
       };
     } catch (error) {
       console.error('Error with OpenAI evaluation:', error);
@@ -770,4 +839,4 @@ Please provide your evaluation as a JSON object with the following structure (no
   }
 }
 
-export const resumeService = new ResumeService(); 
+export const resumeService = new ResumeService();
