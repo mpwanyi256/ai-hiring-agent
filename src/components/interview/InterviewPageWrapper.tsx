@@ -8,11 +8,10 @@ import InterviewComplete from '@/components/interview/InterviewComplete';
 import ResumeUpload from '@/components/interview/ResumeUpload';
 import InterviewIntro from '@/components/interview/InterviewIntro';
 import CandidateInfoForm from '@/components/interview/CandidateInfoForm';
-import { ResumeEvaluation } from '@/types/interview';
 
 type pageParams = {
   token: string;
-}
+};
 
 type InterviewStep = 'intro' | 'info' | 'resume' | 'interview' | 'complete';
 
@@ -23,15 +22,6 @@ export default function InterviewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<InterviewStep>('intro');
-  const [candidateInfo, setCandidateInfo] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-  });
-  const [candidateId, setCandidateId] = useState<string | null>(null);
-  const [resumeEvaluation, setResumeEvaluation] = useState<ResumeEvaluation | null>(null);
-  const [resumeContent, setResumeContent] = useState<string>('');
-  const [resolvedParams, setResolvedParams] = useState<{ token: string } | null>(null);
 
   // Fetch job data
   useEffect(() => {
@@ -42,7 +32,7 @@ export default function InterviewPage() {
         setIsLoading(true);
         const response = await fetch(`/api/jobs/interview/${pageParams.token}`);
         const data = await response.json();
-        
+
         if (!data.success) {
           setError(data.error || 'Interview link not found');
           return;
@@ -59,29 +49,6 @@ export default function InterviewPage() {
 
     fetchJob();
   }, [pageParams.token]);
-
-  const handleStartInterview = () => {
-    setCurrentStep('info');
-  };
-
-  const handleCandidateInfoSubmit = (candidateId: string) => {
-    setCandidateId(candidateId);
-    setCurrentStep('resume');
-  };
-
-  const handleResumeEvaluationComplete = (evaluation: ResumeEvaluation, content: string) => {
-    setResumeEvaluation(evaluation);
-    setResumeContent(content);
-    
-    if (evaluation.passesThreshold) {
-      setCurrentStep('interview');
-    }
-    // If evaluation fails, user stays on resume upload step with results
-  };
-
-  const handleInterviewComplete = () => {
-    setCurrentStep('complete');
-  };
 
   // Loading state
   if (isLoading) {
@@ -104,55 +71,31 @@ export default function InterviewPage() {
 
   // Show interview completion
   if (currentStep === 'complete') {
-    return <InterviewComplete job={job} />;
+    return <InterviewComplete />;
   }
 
   // Show actual interview (after resume evaluation passes)
-  if (currentStep === 'interview' && resumeEvaluation?.passesThreshold && candidateId) {
+  if (currentStep === 'interview' && job) {
     return (
-      <InterviewFlow 
+      <InterviewFlow
         jobToken={pageParams.token}
         job={job}
-        candidateId={candidateId}
-        candidateInfo={candidateInfo}
-        resumeEvaluation={resumeEvaluation}
-        resumeContent={resumeContent}
-        onComplete={handleInterviewComplete}
+        resumeContent={''}
+        onComplete={() => setCurrentStep('complete')}
       />
     );
   }
 
   // Show resume upload step
-  if (currentStep === 'resume' && candidateId) {
-    return (
-      <ResumeUpload
-        jobToken={pageParams.token}
-        job={job}
-        candidateId={candidateId}
-        candidateInfo={candidateInfo}
-        onEvaluationComplete={handleResumeEvaluationComplete}
-      />
-    );
+  if (currentStep === 'resume') {
+    return <ResumeUpload jobToken={pageParams.token} />;
   }
 
   // Show candidate info form
   if (currentStep === 'info') {
-    return (
-      <CandidateInfoForm
-        candidateInfo={candidateInfo}
-        setCandidateInfo={setCandidateInfo}
-        jobToken={pageParams.token}
-        onSubmit={handleCandidateInfoSubmit}
-        onBack={() => setCurrentStep('intro')}
-      />
-    );
+    return <CandidateInfoForm jobToken={pageParams.token} />;
   }
 
   // Show interview introduction (default)
-  return (
-    <InterviewIntro 
-      job={job}
-      onStartInterview={handleStartInterview}
-    />
-  );
-} 
+  return <InterviewIntro />;
+}

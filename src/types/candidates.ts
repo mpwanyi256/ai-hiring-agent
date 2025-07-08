@@ -14,18 +14,50 @@ export interface CandidateResume {
   uploadedAt: string;
 }
 
+// AI Evaluation Types
+export interface AIEvaluation {
+  id: string;
+  candidateId: string;
+  summary: string;
+  score: number;
+  strengths: string[];
+  redFlags: string[];
+  skillsAssessment: Record<string, number>;
+  traitsAssessment: Record<string, number>;
+  recommendation: RecommendationType;
+  feedback: string;
+  processingDurationMs: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamAssessment {
+  id: string;
+  candidateId: string;
+  evaluatorId: string;
+  evaluatorName: string;
+  score: number;
+  feedback: string;
+  createdAt: string;
+}
+
+// Enhanced Candidate interface with all properties
 export interface Candidate {
   id: string;
   name?: string;
   email: string;
   progress: number;
-  responses: number;
+  responses: Response[]; // Changed from number to Response[]
   score: number;
   status: 'in_progress' | 'completed' | 'pending';
   createdAt: string;
   profileImage?: string;
   resumeScore: number;
   candidateStatus?: CandidateStatus;
+  // Additional properties that exist in the slice
+  evaluation?: Evaluation;
+  resume?: CandidateResume;
+  submittedAt?: string;
 }
 
 export interface CandidateBasic {
@@ -136,7 +168,7 @@ export type RecommendationType = 'strong_yes' | 'yes' | 'maybe' | 'no' | 'strong
 export type CandidateStatusFilter = 'all' | 'completed' | 'in_progress';
 
 // Database enum values - must match the PostgreSQL enum exactly
-export type CandidateStatus = 
+export type CandidateStatus =
   | 'under_review'
   | 'interview_scheduled'
   | 'shortlisted'
@@ -260,7 +292,7 @@ export interface SupabaseResponse {
   answer: string;
   response_time: number;
   created_at: string;
-} 
+}
 
 export interface getCandidateDetailsPayload {
   jobToken: string;
@@ -273,4 +305,48 @@ export interface CandidateStatusOptions {
   value: CandidateStatus;
   label: string;
   color: string;
+}
+
+// Redux State Types
+export interface CandidatesState {
+  candidates: Candidate[];
+  currentCandidate: Candidate | null;
+  isLoading: boolean;
+  error: string | null;
+  totalCandidates: number;
+  jobCandidatesStats: {
+    total: number;
+    completed: number;
+    inProgress: number;
+    pending: number;
+    averageScore: number;
+  };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+  // AI evaluation state
+  aiEvaluation: {
+    isEvaluating: boolean;
+    evaluatingCandidateId: string | null;
+    lastEvaluationDuration: number | null;
+    isLoadingEvaluation: boolean;
+    currentEvaluation: {
+      candidateId: string | null;
+      aiEvaluation: AIEvaluation | null;
+      teamAssessments: TeamAssessment[];
+      computedValues: Record<string, unknown>;
+    } | null;
+  };
+  // Candidate responses state
+  candidateResponses: {
+    [candidateId: string]: {
+      responses: Response[];
+      isLoading: boolean;
+      error: string | null;
+    };
+  };
 }

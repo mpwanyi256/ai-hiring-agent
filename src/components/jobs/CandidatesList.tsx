@@ -1,18 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
+import {
   MagnifyingGlassIcon,
   FunnelIcon,
   ChartBarIcon,
   ClockIcon,
   CalendarIcon,
-  XMarkIcon
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { CandidateList, CandidateStatus, CandidateStatusOptions } from '@/types/candidates';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface CandidatesListProps {
   candidates: CandidateList[];
@@ -33,7 +38,11 @@ interface CandidatesListProps {
 
 const statusOptions: CandidateStatusOptions[] = [
   { value: 'under_review', label: 'Under Review', color: 'bg-gray-100 text-gray-800' },
-  { value: 'interview_scheduled', label: 'Interview Scheduled', color: 'bg-blue-100 text-blue-800' },
+  {
+    value: 'interview_scheduled',
+    label: 'Interview Scheduled',
+    color: 'bg-blue-100 text-blue-800',
+  },
   { value: 'shortlisted', label: 'Shortlisted', color: 'bg-green-100 text-green-800' },
   { value: 'reference_check', label: 'Reference Check', color: 'bg-purple-100 text-purple-800' },
   { value: 'offer_extended', label: 'Offer Extended', color: 'bg-yellow-100 text-yellow-800' },
@@ -49,10 +58,8 @@ export default function CandidatesList({
   onCandidateSelect,
   searchQuery,
   onSearchChange,
-  onFiltersChange
+  onFiltersChange,
 }: CandidatesListProps) {
-  const [showFilters, setShowFilters] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     minScore: '',
     maxScore: '',
@@ -60,14 +67,14 @@ export default function CandidatesList({
     endDate: '',
     candidateStatus: '' as CandidateStatus | '',
     sortBy: 'created_at',
-    sortOrder: 'desc' as 'asc' | 'desc'
+    sortOrder: 'desc' as 'asc' | 'desc',
   });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -106,7 +113,7 @@ export default function CandidatesList({
   const handleFilterChange = (key: string, value: string | number) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    
+
     if (onFiltersChange) {
       onFiltersChange({
         minScore: newFilters.minScore ? parseInt(newFilters.minScore) : undefined,
@@ -115,7 +122,7 @@ export default function CandidatesList({
         endDate: newFilters.endDate || undefined,
         candidateStatus: newFilters.candidateStatus || undefined,
         sortBy: newFilters.sortBy,
-        sortOrder: newFilters.sortOrder
+        sortOrder: newFilters.sortOrder,
       });
     }
   };
@@ -128,47 +135,48 @@ export default function CandidatesList({
       endDate: '',
       candidateStatus: '' as CandidateStatus | '',
       sortBy: 'created_at',
-      sortOrder: 'desc' as 'asc' | 'desc'
+      sortOrder: 'desc' as 'asc' | 'desc',
     };
     setFilters(clearedFilters);
-    
+
     if (onFiltersChange) {
       onFiltersChange({});
     }
   };
 
-  const hasActiveFilters = filters.minScore || filters.maxScore || filters.startDate || filters.endDate || filters.candidateStatus;
+  const hasActiveFilters =
+    filters.minScore ||
+    filters.maxScore ||
+    filters.startDate ||
+    filters.endDate ||
+    filters.candidateStatus;
 
   return (
     <div className="bg-white rounded-lg border border-gray-100 h-full flex flex-col">
       {/* Header - Fixed */}
       <div className="p-4 border-b border-gray-100 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Candidates ({candidates.length})
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900">Candidates ({candidates.length})</h3>
           <Popover>
             <PopoverTrigger asChild>
               <button
                 className={`flex items-center space-x-1 text-sm transition-colors ${
-                  showFilters || hasActiveFilters 
-                    ? 'text-primary' 
-                    : 'text-gray-500 hover:text-gray-700'
+                  hasActiveFilters ? 'text-primary' : 'text-gray-500 hover:text-gray-700'
                 }`}
                 aria-label="Open filters"
               >
                 <FunnelIcon className="w-4 h-4" />
                 <span>Filters</span>
-                {hasActiveFilters && (
-                  <span className="w-2 h-2 bg-primary rounded-full"></span>
-                )}
+                {hasActiveFilters && <span className="w-2 h-2 bg-primary rounded-full"></span>}
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-96 p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Score Range */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Score Range</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Score Range
+                  </label>
                   <div className="flex space-x-2">
                     <input
                       type="number"
@@ -192,7 +200,9 @@ export default function CandidatesList({
                 </div>
                 {/* Date Range */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Date Applied</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Date Applied
+                  </label>
                   <div className="flex space-x-2">
                     <input
                       type="date"
@@ -248,7 +258,9 @@ export default function CandidatesList({
                     </Select>
                     <Select
                       value={filters.sortOrder}
-                      onValueChange={(value) => handleFilterChange('sortOrder', value as 'asc' | 'desc')}
+                      onValueChange={(value) =>
+                        handleFilterChange('sortOrder', value as 'asc' | 'desc')
+                      }
                     >
                       <SelectTrigger className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary">
                         <SelectValue />
@@ -290,19 +302,15 @@ export default function CandidatesList({
       </div>
       {/* Candidates List - Scrollable */}
       <div className="flex-1 overflow-y-auto">
-        {loading ? (
-          <div className="p-8">
-            <Skeleton className="h-16 w-full mb-2" />
-            <Skeleton className="h-16 w-full mb-2" />
-            <Skeleton className="h-16 w-full mb-2" />
-          </div>
-        ) : candidates.length === 0 ? (
+        {candidates.length === 0 ? (
           <div className="p-8 text-center">
             <div className="text-gray-400 mb-2">
               <ChartBarIcon className="w-12 h-12 mx-auto" />
             </div>
             <h4 className="text-sm font-medium text-gray-900 mb-1">No candidates yet</h4>
-            <p className="text-xs text-gray-500">Candidates will appear here once they complete the interview</p>
+            <p className="text-xs text-gray-500">
+              Candidates will appear here once they complete the interview
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -318,7 +326,9 @@ export default function CandidatesList({
                   {/* Avatar */}
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-white text-sm font-medium">
-                      {candidate.name ? candidate.name.charAt(0).toUpperCase() : candidate.email.charAt(0).toUpperCase()}
+                      {candidate.name
+                        ? candidate.name.charAt(0).toUpperCase()
+                        : candidate.email.charAt(0).toUpperCase()}
                     </span>
                   </div>
 
@@ -328,7 +338,9 @@ export default function CandidatesList({
                       <h4 className="text-sm font-medium text-gray-900 truncate">
                         {candidate.name || 'Anonymous Candidate'}
                       </h4>
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(candidate.score)}`}>
+                      <div
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(candidate.score)}`}
+                      >
                         {candidate.score}/100
                       </div>
                     </div>
@@ -358,7 +370,9 @@ export default function CandidatesList({
                       </span>
                       {candidate.status === 'completed' && (
                         <span className="text-xs text-gray-500">
-                          {candidate.status === 'completed' ? 'Ready for review' : 'Interview in progress'}
+                          {candidate.status === 'completed'
+                            ? 'Ready for review'
+                            : 'Interview in progress'}
                         </span>
                       )}
                     </div>
@@ -371,4 +385,4 @@ export default function CandidatesList({
       </div>
     </div>
   );
-} 
+}

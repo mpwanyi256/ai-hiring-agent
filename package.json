@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next lint --max-warnings=100",
     "db_push": "supabase db push",
     "functions_deploy": "supabase functions deploy ai-candidate-evaluation --use-api",
     "prepare": "husky install"
@@ -79,7 +79,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,md,json}": [
       "prettier --write",
-      "eslint --fix"
+      "eslint --fix --max-warnings=100"
     ]
   }
 }

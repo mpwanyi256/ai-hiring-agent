@@ -1,29 +1,24 @@
 'use client';
 
-import { use, useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "@/store";
-import { fetchInterview } from "@/store/interview/interviewThunks";
-import { selectInterviewStep, selectCandidate, loadedInterview } from "@/store/interview/interviewSelectors";
-import InterviewIntro from "@/components/interview/InterviewIntro";
-import CandidateInfoForm from "@/components/interview/CandidateInfoForm";
-import { InterviewStep } from "@/types/interview";
-import InterviewComplete from "@/components/interview/InterviewComplete";
-import ResumeUpload from "@/components/interview/ResumeUpload";
-import InterviewFlow from "@/components/interview/InterviewFlow";
-import { XCircleIcon } from "@heroicons/react/24/outline";
+import { use, useEffect, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { fetchInterview } from '@/store/interview/interviewThunks';
+import {
+  selectInterviewStep,
+  selectCandidate,
+  loadedInterview,
+} from '@/store/interview/interviewSelectors';
+import InterviewIntro from '@/components/interview/InterviewIntro';
+import CandidateInfoForm from '@/components/interview/CandidateInfoForm';
+import InterviewComplete from '@/components/interview/InterviewComplete';
+import ResumeUpload from '@/components/interview/ResumeUpload';
+import InterviewFlow from '@/components/interview/InterviewFlow';
+import { XCircleIcon } from '@heroicons/react/24/outline';
 
 interface InterviewPageProps {
   params: Promise<{
     token: string;
   }>;
-}
-
-const interviewSteps: Record<number, InterviewStep> = {
-  1: 'intro',
-  2: 'info',
-  3: 'resume',
-  4: 'interview',
-  5: 'complete',
 }
 
 export default function InterviewPage({ params }: InterviewPageProps) {
@@ -35,7 +30,7 @@ export default function InterviewPage({ params }: InterviewPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  console.log('Candidate dat', candidate)
+  console.log('Candidate dat', candidate);
 
   const renderStep = () => {
     switch (interviewStep) {
@@ -67,7 +62,7 @@ export default function InterviewPage({ params }: InterviewPageProps) {
       default:
         return <InterviewIntro />;
     }
-  }
+  };
 
   useEffect(() => {
     const loadInterview = async () => {

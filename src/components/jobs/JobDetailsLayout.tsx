@@ -5,22 +5,19 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { CurrentJob } from '@/types/jobs';
 import { useRouter } from 'next/navigation';
-import { 
+import {
   ArrowLeftIcon,
   PencilIcon,
   ShareIcon,
   EyeIcon,
-  LinkIcon,
   CalendarIcon,
   UserGroupIcon,
   ClockIcon,
   BriefcaseIcon,
   ClipboardDocumentListIcon,
   ChartBarIcon,
-  PlayIcon,
-  PauseIcon,
   ChevronDownIcon,
-  XMarkIcon
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import DashboardLayout from '../layout/DashboardLayout';
 import { useAppDispatch, useAppSelector } from '@/store';
@@ -45,19 +42,18 @@ const tabs = [
   { id: 'overview', label: 'Overview', icon: BriefcaseIcon },
   { id: 'questions', label: 'Questions', icon: ClipboardDocumentListIcon },
   { id: 'candidates', label: 'Candidates', icon: UserGroupIcon },
-  { id: 'shortlisted', label: 'Shortlisted', icon: ChartBarIcon }
+  { id: 'shortlisted', label: 'Shortlisted', icon: ChartBarIcon },
 ];
 
-export default function JobDetailsLayout({ 
-  job, 
-  children, 
-  activeTab, 
+export default function JobDetailsLayout({
+  job,
+  children,
+  activeTab,
   onTabChange,
-  onShareJob 
+  onShareJob,
 }: JobDetailsLayoutProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const [isToggling, setIsToggling] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -70,7 +66,7 @@ export default function JobDetailsLayout({
           value: field.value,
           inputType: field.inputType || 'text',
         }))
-      : []
+      : [],
   );
   const [isSavingCustomFields, setIsSavingCustomFields] = useState(false);
   const [isSavingRequirements, setIsSavingRequirements] = useState(false);
@@ -80,26 +76,30 @@ export default function JobDetailsLayout({
   const traitsLoading = useAppSelector(selectTraitsLoading);
   const [skillsDraft, setSkillsDraft] = useState(job.fields?.skills || []);
   const [traitsDraft, setTraitsDraft] = useState(job.fields?.traits || []);
-  const [experienceLevelDraft, setExperienceLevelDraft] = useState(job.fields?.experienceLevel || '');
+  const [experienceLevelDraft, setExperienceLevelDraft] = useState(
+    job.fields?.experienceLevel || '',
+  );
   const [skillDropdownOpen, setSkillDropdownOpen] = useState(false);
   const [traitDropdownOpen, setTraitDropdownOpen] = useState(false);
   const [skillSearch, setSkillSearch] = useState('');
   const [traitSearch, setTraitSearch] = useState('');
 
-  const availableSkills = allSkills.filter(skill =>
-    !skillsDraft.includes(skill.name) &&
-    skill.name.toLowerCase().includes(skillSearch.toLowerCase())
+  const availableSkills = allSkills.filter(
+    (skill) =>
+      !skillsDraft.includes(skill.name) &&
+      skill.name.toLowerCase().includes(skillSearch.toLowerCase()),
   );
-  const availableTraits = allTraits.filter(trait =>
-    !traitsDraft.includes(trait.name) &&
-    trait.name.toLowerCase().includes(traitSearch.toLowerCase())
+  const availableTraits = allTraits.filter(
+    (trait) =>
+      !traitsDraft.includes(trait.name) &&
+      trait.name.toLowerCase().includes(traitSearch.toLowerCase()),
   );
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -129,12 +129,6 @@ export default function JobDetailsLayout({
     }
   };
 
-  const toggleJobStatus = async () => {
-    setIsToggling(true);
-    // TODO: Implement job status toggle
-    setTimeout(() => setIsToggling(false), 1000);
-  };
-
   const handleStatusUpdate = async (newStatus: 'draft' | 'interviewing' | 'closed') => {
     if (newStatus === job.status) {
       setShowStatusDropdown(false);
@@ -146,8 +140,8 @@ export default function JobDetailsLayout({
       await dispatch(updateJobStatus({ jobId: job.id, status: newStatus })).unwrap();
       apiSuccess(`Job status updated to ${getStatusLabel(newStatus)}`);
       setShowStatusDropdown(false);
-    } catch (error) {
-      apiError(error instanceof Error ? error.message : 'Failed to update job status');
+    } catch {
+      apiError('Failed to update job status');
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -157,12 +151,9 @@ export default function JobDetailsLayout({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await Promise.all([
-          dispatch(fetchSkills()),
-          dispatch(fetchTraits())
-        ]);
-      } catch (err) {
-        console.error('Error fetching skills/traits:', err);
+        await Promise.all([dispatch(fetchSkills()), dispatch(fetchTraits())]);
+      } catch {
+        console.error('Error fetching skills/traits:');
         apiError('Failed to load skills and traits data');
       }
     };
@@ -174,13 +165,13 @@ export default function JobDetailsLayout({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      
+
       // Close skills dropdown if clicking outside
       if (skillDropdownOpen && !target.closest('[data-dropdown="skills"]')) {
         setSkillDropdownOpen(false);
         setSkillSearch('');
       }
-      
+
       // Close traits dropdown if clicking outside
       if (traitDropdownOpen && !target.closest('[data-dropdown="traits"]')) {
         setTraitDropdownOpen(false);
@@ -225,8 +216,10 @@ export default function JobDetailsLayout({
               </div>
 
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl md:text-lg font-bold text-gray-900 mb-2 md:mb-1">{job.title}</h1>
-                
+                <h1 className="text-xl md:text-lg font-bold text-gray-900 mb-2 md:mb-1">
+                  {job.title}
+                </h1>
+
                 <div className="flex flex-wrap items-center gap-4 md:gap-2 text-sm md:text-xs text-gray-500 mb-3 md:mb-2">
                   <div className="flex items-center space-x-1">
                     <CalendarIcon className="w-4 h-4 md:w-3 md:h-3" />
@@ -252,17 +245,21 @@ export default function JobDetailsLayout({
                       {getStatusLabel(job.status)}
                       <ChevronDownIcon className="w-3 h-3 ml-1" />
                     </button>
-                    
+
                     {showStatusDropdown && (
                       <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[120px]">
                         <div className="py-1">
                           {['draft', 'interviewing', 'closed'].map((status) => (
                             <button
                               key={status}
-                              onClick={() => handleStatusUpdate(status as 'draft' | 'interviewing' | 'closed')}
+                              onClick={() =>
+                                handleStatusUpdate(status as 'draft' | 'interviewing' | 'closed')
+                              }
                               disabled={isUpdatingStatus}
                               className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 disabled:opacity-50 ${
-                                status === job.status ? 'bg-primary/10 text-primary font-medium' : 'text-gray-700'
+                                status === job.status
+                                  ? 'bg-primary/10 text-primary font-medium'
+                                  : 'text-gray-700'
                               }`}
                             >
                               {getStatusLabel(status)}
@@ -272,12 +269,12 @@ export default function JobDetailsLayout({
                       </div>
                     )}
                   </div>
-                  
-                  <span className={`inline-flex items-center px-2.5 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${
-                    job.isActive 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-gray-100 text-gray-700'
-                  }`}>
+
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${
+                      job.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
                     {job.isActive ? 'Active' : 'Inactive'}
                   </span>
                   {job.fields?.experienceLevel && (
@@ -292,16 +289,16 @@ export default function JobDetailsLayout({
 
           {/* Actions */}
           <div className="mt-4 lg:mt-0 flex flex-wrap gap-2 md:gap-1">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onShareJob}
               className="flex items-center text-sm md:text-xs"
             >
               <ShareIcon className="w-4 h-4 mr-1" />
               Share
             </Button>
-            
+
             <Link href={job.interviewLink || `/interview/${job.interviewToken}`} target="_blank">
               <Button size="sm" className="flex items-center text-sm">
                 <EyeIcon className="w-4 h-4 mr-1" />
@@ -347,13 +344,13 @@ export default function JobDetailsLayout({
                 <div className="flex items-center justify-between mb-4 md:mb-2">
                   <h2 className="text-lg md:text-base font-semibold text-text">Requirements</h2>
                   {job.status === 'draft' && editingField === null && (
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
+                    <Button
+                      size="sm"
+                      variant="outline"
                       onClick={() => setEditingField('requirements')}
                       disabled={skillsLoading || traitsLoading}
                     >
-                      <PencilIcon className="w-4 h-4 mr-1" /> 
+                      <PencilIcon className="w-4 h-4 mr-1" />
                       {skillsLoading || traitsLoading ? 'Loading...' : 'Edit'}
                     </Button>
                   )}
@@ -368,10 +365,12 @@ export default function JobDetailsLayout({
                     )}
                     {/* Experience Level */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Experience Level</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Experience Level
+                      </label>
                       <select
                         value={experienceLevelDraft}
-                        onChange={e => setExperienceLevelDraft(e.target.value)}
+                        onChange={(e) => setExperienceLevelDraft(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       >
                         <option value="">Select experience level (optional)</option>
@@ -382,7 +381,9 @@ export default function JobDetailsLayout({
                     </div>
                     {/* Skills */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Required Skills</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Required Skills
+                      </label>
                       <div className="relative" data-dropdown="skills">
                         <button
                           type="button"
@@ -396,7 +397,9 @@ export default function JobDetailsLayout({
                           {skillsLoading ? (
                             <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
                           ) : (
-                            <ChevronDownIcon className={`w-5 h-5 text-muted-text transition-transform ${skillDropdownOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDownIcon
+                              className={`w-5 h-5 text-muted-text transition-transform ${skillDropdownOpen ? 'rotate-180' : ''}`}
+                            />
                           )}
                         </button>
                         {skillDropdownOpen && !skillsLoading && (
@@ -405,7 +408,7 @@ export default function JobDetailsLayout({
                               <input
                                 type="text"
                                 value={skillSearch}
-                                onChange={e => setSkillSearch(e.target.value)}
+                                onChange={(e) => setSkillSearch(e.target.value)}
                                 placeholder="Search skills..."
                                 className="w-full px-3 py-2 border border-gray-light rounded text-text placeholder-muted-text focus:outline-none focus:ring-1 focus:ring-primary"
                               />
@@ -426,15 +429,21 @@ export default function JobDetailsLayout({
                                     <div>
                                       <p className="font-medium">{skill.name}</p>
                                       {skill.description && (
-                                        <p className="text-xs text-muted-text truncate mt-1">{skill.description}</p>
+                                        <p className="text-xs text-muted-text truncate mt-1">
+                                          {skill.description}
+                                        </p>
                                       )}
-                                      <p className="text-xs text-primary capitalize mt-1">{skill.category}</p>
+                                      <p className="text-xs text-primary capitalize mt-1">
+                                        {skill.category}
+                                      </p>
                                     </div>
                                   </button>
                                 ))
                               ) : (
                                 <div className="px-4 py-6 text-muted-text text-sm text-center">
-                                  {skillSearch ? 'No skills found matching your search' : 'All skills have been selected'}
+                                  {skillSearch
+                                    ? 'No skills found matching your search'
+                                    : 'All skills have been selected'}
                                 </div>
                               )}
                             </div>
@@ -452,7 +461,9 @@ export default function JobDetailsLayout({
                               {skill}
                               <button
                                 type="button"
-                                onClick={() => setSkillsDraft(skillsDraft.filter(s => s !== skill))}
+                                onClick={() =>
+                                  setSkillsDraft(skillsDraft.filter((s) => s !== skill))
+                                }
                                 className="ml-2 text-primary hover:text-accent-red transition-colors"
                               >
                                 <XMarkIcon className="w-3 h-3" />
@@ -464,7 +475,9 @@ export default function JobDetailsLayout({
                     </div>
                     {/* Traits */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Desired Traits</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Desired Traits
+                      </label>
                       <div className="relative" data-dropdown="traits">
                         <button
                           type="button"
@@ -478,7 +491,9 @@ export default function JobDetailsLayout({
                           {traitsLoading ? (
                             <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
                           ) : (
-                            <ChevronDownIcon className={`w-5 h-5 text-muted-text transition-transform ${traitDropdownOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDownIcon
+                              className={`w-5 h-5 text-muted-text transition-transform ${traitDropdownOpen ? 'rotate-180' : ''}`}
+                            />
                           )}
                         </button>
                         {traitDropdownOpen && !traitsLoading && (
@@ -487,7 +502,7 @@ export default function JobDetailsLayout({
                               <input
                                 type="text"
                                 value={traitSearch}
-                                onChange={e => setTraitSearch(e.target.value)}
+                                onChange={(e) => setTraitSearch(e.target.value)}
                                 placeholder="Search traits..."
                                 className="w-full px-3 py-2 border border-gray-light rounded text-text placeholder-muted-text focus:outline-none focus:ring-1 focus:ring-primary"
                               />
@@ -508,15 +523,21 @@ export default function JobDetailsLayout({
                                     <div>
                                       <p className="font-medium">{trait.name}</p>
                                       {trait.description && (
-                                        <p className="text-xs text-muted-text truncate mt-1">{trait.description}</p>
+                                        <p className="text-xs text-muted-text truncate mt-1">
+                                          {trait.description}
+                                        </p>
                                       )}
-                                      <p className="text-xs text-accent-blue capitalize mt-1">{trait.category}</p>
+                                      <p className="text-xs text-accent-blue capitalize mt-1">
+                                        {trait.category}
+                                      </p>
                                     </div>
                                   </button>
                                 ))
                               ) : (
                                 <div className="px-4 py-6 text-muted-text text-sm text-center">
-                                  {traitSearch ? 'No traits found matching your search' : 'All traits have been selected'}
+                                  {traitSearch
+                                    ? 'No traits found matching your search'
+                                    : 'All traits have been selected'}
                                 </div>
                               )}
                             </div>
@@ -534,7 +555,9 @@ export default function JobDetailsLayout({
                               {trait}
                               <button
                                 type="button"
-                                onClick={() => setTraitsDraft(traitsDraft.filter(t => t !== trait))}
+                                onClick={() =>
+                                  setTraitsDraft(traitsDraft.filter((t) => t !== trait))
+                                }
                                 className="ml-2 text-accent-blue hover:text-accent-red transition-colors"
                               >
                                 <XMarkIcon className="w-3 h-3" />
@@ -551,18 +574,20 @@ export default function JobDetailsLayout({
                         onClick={async () => {
                           setIsSavingRequirements(true);
                           try {
-                            await dispatch(updateJob({
-                              id: job.id,
-                              fields: {
-                                ...job.fields,
-                                experienceLevel: experienceLevelDraft,
-                                skills: skillsDraft,
-                                traits: traitsDraft,
-                              },
-                            })).unwrap();
+                            await dispatch(
+                              updateJob({
+                                id: job.id,
+                                fields: {
+                                  ...job.fields,
+                                  experienceLevel: experienceLevelDraft,
+                                  skills: skillsDraft,
+                                  traits: traitsDraft,
+                                },
+                              }),
+                            ).unwrap();
                             apiSuccess('Requirements updated successfully');
                             setEditingField(null);
-                          } catch (error) {
+                          } catch {
                             apiError('Failed to update requirements');
                           } finally {
                             setIsSavingRequirements(false);
@@ -588,26 +613,38 @@ export default function JobDetailsLayout({
                 ) : (
                   <div className="space-y-2">
                     <div>
-                      <span className="block text-xs font-medium text-muted-text mb-1">Experience Level</span>
+                      <span className="block text-xs font-medium text-muted-text mb-1">
+                        Experience Level
+                      </span>
                       <span className="inline-block px-2 py-1 rounded bg-gray-100 text-xs text-gray-700 capitalize">
                         {job.fields?.experienceLevel || 'Not specified'}
                       </span>
                     </div>
                     <div>
-                      <span className="block text-xs font-medium text-muted-text mb-1">Required Skills</span>
+                      <span className="block text-xs font-medium text-muted-text mb-1">
+                        Required Skills
+                      </span>
                       <div className="flex flex-wrap gap-2">
                         {(job.fields?.skills || []).map((skill: string, idx: number) => (
-                          <span key={idx} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                          <span
+                            key={idx}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                          >
                             {skill}
                           </span>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <span className="block text-xs font-medium text-muted-text mb-1">Desired Traits</span>
+                      <span className="block text-xs font-medium text-muted-text mb-1">
+                        Desired Traits
+                      </span>
                       <div className="flex flex-wrap gap-2">
                         {(job.fields?.traits || []).map((trait: string, idx: number) => (
-                          <span key={idx} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                          <span
+                            key={idx}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+                          >
                             {trait}
                           </span>
                         ))}
@@ -620,20 +657,26 @@ export default function JobDetailsLayout({
               {/* Additional Info Section (Custom Fields) */}
               <div className="bg-white rounded-lg border border-gray-100 p-6 md:p-4">
                 <div className="flex items-center justify-between mb-4 md:mb-2">
-                  <h2 className="text-lg md:text-base font-semibold text-text">Additional Information</h2>
+                  <h2 className="text-lg md:text-base font-semibold text-text">
+                    Additional Information
+                  </h2>
                   {job.status === 'draft' && editingField === null && (
-                    <Button size="sm" variant="outline" onClick={() => {
-                      setCustomFieldsDraft(
-                        job.fields?.customFields
-                          ? Object.entries(job.fields.customFields).map(([key, field]: any) => ({
-                              key,
-                              value: field.value,
-                              inputType: field.inputType || 'text',
-                            }))
-                          : []
-                      );
-                      setEditingField('customFields');
-                    }}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setCustomFieldsDraft(
+                          job.fields?.customFields
+                            ? Object.entries(job.fields.customFields).map(([key, field]: any) => ({
+                                key,
+                                value: field.value,
+                                inputType: field.inputType || 'text',
+                              }))
+                            : [],
+                        );
+                        setEditingField('customFields');
+                      }}
+                    >
                       <PencilIcon className="w-4 h-4 mr-1" /> Edit
                     </Button>
                   )}
@@ -641,17 +684,24 @@ export default function JobDetailsLayout({
                 {editingField === 'customFields' ? (
                   <div>
                     {customFieldsDraft.length === 0 && (
-                      <div className="text-muted-text text-sm mb-4">No additional information. Add a field below.</div>
+                      <div className="text-muted-text text-sm mb-4">
+                        No additional information. Add a field below.
+                      </div>
                     )}
                     <div className="space-y-4">
                       {customFieldsDraft.map((field, idx) => (
-                        <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border border-gray-light rounded-lg">
+                        <div
+                          key={idx}
+                          className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border border-gray-light rounded-lg"
+                        >
                           <div>
-                            <label className="block text-xs font-medium text-muted-text mb-1">Field Name</label>
+                            <label className="block text-xs font-medium text-muted-text mb-1">
+                              Field Name
+                            </label>
                             <input
                               type="text"
                               value={field.key}
-                              onChange={e => {
+                              onChange={(e) => {
                                 const updated = [...customFieldsDraft];
                                 updated[idx].key = e.target.value;
                                 setCustomFieldsDraft(updated);
@@ -661,27 +711,33 @@ export default function JobDetailsLayout({
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-muted-text mb-1">Input Type</label>
+                            <label className="block text-xs font-medium text-muted-text mb-1">
+                              Input Type
+                            </label>
                             <select
                               value={field.inputType}
-                              onChange={e => {
+                              onChange={(e) => {
                                 const updated = [...customFieldsDraft];
                                 updated[idx].inputType = e.target.value;
                                 setCustomFieldsDraft(updated);
                               }}
                               className="w-full px-3 py-2 border border-gray-light rounded text-text focus:outline-none focus:ring-1 focus:ring-primary text-sm"
                             >
-                              {inputTypes.map(type => (
-                                <option key={type.value} value={type.value}>{type.label}</option>
+                              {inputTypes.map((type) => (
+                                <option key={type.value} value={type.value}>
+                                  {type.label}
+                                </option>
                               ))}
                             </select>
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-muted-text mb-1">Description/Placeholder</label>
+                            <label className="block text-xs font-medium text-muted-text mb-1">
+                              Description/Placeholder
+                            </label>
                             <input
                               type="text"
                               value={field.value}
-                              onChange={e => {
+                              onChange={(e) => {
                                 const updated = [...customFieldsDraft];
                                 updated[idx].value = e.target.value;
                                 setCustomFieldsDraft(updated);
@@ -695,7 +751,9 @@ export default function JobDetailsLayout({
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => setCustomFieldsDraft(customFieldsDraft.filter((_, i) => i !== idx))}
+                              onClick={() =>
+                                setCustomFieldsDraft(customFieldsDraft.filter((_, i) => i !== idx))
+                              }
                               className="text-accent-red border-accent-red hover:bg-accent-red hover:text-white w-full"
                             >
                               Remove
@@ -709,7 +767,12 @@ export default function JobDetailsLayout({
                       variant="outline"
                       size="sm"
                       className="mt-4"
-                      onClick={() => setCustomFieldsDraft([...customFieldsDraft, { key: '', value: '', inputType: 'text' }])}
+                      onClick={() =>
+                        setCustomFieldsDraft([
+                          ...customFieldsDraft,
+                          { key: '', value: '', inputType: 'text' },
+                        ])
+                      }
                     >
                       Add Field
                     </Button>
@@ -721,22 +784,30 @@ export default function JobDetailsLayout({
                           setIsSavingCustomFields(true);
                           try {
                             // Convert array to object
-                            const customFieldsObj = customFieldsDraft.reduce((acc, field) => {
-                              if (field.key.trim()) {
-                                acc[field.key] = { value: field.value, inputType: field.inputType };
-                              }
-                              return acc;
-                            }, {} as Record<string, { value: string; inputType: string }>);
-                            await dispatch(updateJob({
-                              id: job.id,
-                              fields: {
-                                ...job.fields,
-                                customFields: customFieldsObj,
+                            const customFieldsObj = customFieldsDraft.reduce(
+                              (acc, field) => {
+                                if (field.key.trim()) {
+                                  acc[field.key] = {
+                                    value: field.value,
+                                    inputType: field.inputType,
+                                  };
+                                }
+                                return acc;
                               },
-                            })).unwrap();
+                              {} as Record<string, { value: string; inputType: string }>,
+                            );
+                            await dispatch(
+                              updateJob({
+                                id: job.id,
+                                fields: {
+                                  ...job.fields,
+                                  customFields: customFieldsObj,
+                                },
+                              }),
+                            ).unwrap();
                             apiSuccess('Additional information updated');
                             setEditingField(null);
-                          } catch (error) {
+                          } catch {
                             apiError('Failed to update additional information');
                           } finally {
                             setIsSavingCustomFields(false);
@@ -745,11 +816,7 @@ export default function JobDetailsLayout({
                       >
                         Save
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditingField(null)}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
                         Cancel
                       </Button>
                     </div>
@@ -764,7 +831,9 @@ export default function JobDetailsLayout({
                         </div>
                       ))
                     ) : (
-                      <span className="text-muted-text text-sm">No additional information provided.</span>
+                      <span className="text-muted-text text-sm">
+                        No additional information provided.
+                      </span>
                     )}
                   </div>
                 )}
@@ -773,9 +842,15 @@ export default function JobDetailsLayout({
               {/* Job Description Section (already inline editable) */}
               <div className="bg-white rounded-lg border border-gray-100 p-6 md:p-4">
                 <div className="flex items-center justify-between mb-3 md:mb-1">
-                  <h3 className="text-lg md:text-base font-semibold text-gray-900">Job Description</h3>
+                  <h3 className="text-lg md:text-base font-semibold text-gray-900">
+                    Job Description
+                  </h3>
                   {job.status === 'draft' && editingField !== 'jobDescription' && (
-                    <Button size="sm" variant="outline" onClick={() => setEditingField('jobDescription')}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingField('jobDescription')}
+                    >
                       <PencilIcon className="w-4 h-4 mr-1" /> Edit
                     </Button>
                   )}
@@ -795,16 +870,18 @@ export default function JobDetailsLayout({
                         onClick={async () => {
                           setIsSavingDescription(true);
                           try {
-                            await dispatch(updateJob({
-                              id: job.id,
-                              fields: {
-                                ...job.fields,
-                                jobDescription: jobDescriptionDraft,
-                              },
-                            })).unwrap();
+                            await dispatch(
+                              updateJob({
+                                id: job.id,
+                                fields: {
+                                  ...job.fields,
+                                  jobDescription: jobDescriptionDraft,
+                                },
+                              }),
+                            ).unwrap();
                             apiSuccess('Job description updated');
                             setEditingField(null);
-                          } catch (error) {
+                          } catch {
                             apiError('Failed to update job description');
                           } finally {
                             setIsSavingDescription(false);
@@ -826,7 +903,14 @@ export default function JobDetailsLayout({
                     </div>
                   </div>
                 ) : (
-                  <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: job.fields?.jobDescription || '<span class=\"text-muted-text\">No description provided.</span>' }} />
+                  <div
+                    className="prose max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        job.fields?.jobDescription ||
+                        '<span class=\"text-muted-text\">No description provided.</span>',
+                    }}
+                  />
                 )}
               </div>
             </>
@@ -839,7 +923,9 @@ export default function JobDetailsLayout({
         <div className="space-y-4 md:space-y-2">
           {/* Job Info (read-only summary) */}
           <div className="bg-white rounded-lg border border-gray-100 p-4 md:p-3">
-            <h3 className="text-sm md:text-xs font-semibold text-gray-900 mb-3 md:mb-2">Job Information</h3>
+            <h3 className="text-sm md:text-xs font-semibold text-gray-900 mb-3 md:mb-2">
+              Job Information
+            </h3>
             <div className="space-y-3">
               <div>
                 <span className="text-xs font-medium text-gray-500">Status</span>
@@ -868,11 +954,13 @@ export default function JobDetailsLayout({
           {/* Skills (read-only summary) */}
           {job.fields?.skills && job.fields.skills.length > 0 && (
             <div className="bg-white rounded-lg border border-gray-100 p-4 md:p-3">
-              <h3 className="text-sm md:text-xs font-semibold text-gray-900 mb-3 md:mb-2">Required Skills</h3>
+              <h3 className="text-sm md:text-xs font-semibold text-gray-900 mb-3 md:mb-2">
+                Required Skills
+              </h3>
               <div className="flex flex-wrap gap-1">
                 {job.fields.skills.map((skill: string, index: number) => (
-                  <span 
-                    key={index} 
+                  <span
+                    key={index}
                     className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
                   >
                     {skill}
@@ -885,4 +973,4 @@ export default function JobDetailsLayout({
       </div>
     </DashboardLayout>
   );
-} 
+}

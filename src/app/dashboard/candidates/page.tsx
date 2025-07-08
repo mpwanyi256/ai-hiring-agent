@@ -22,7 +22,7 @@ import {
   XCircleIcon,
   DocumentIcon,
   CheckCircleIcon,
-  ClockIcon
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 
 interface CandidatesPagination {
@@ -38,7 +38,7 @@ export default function CandidatesPage() {
   const searchParams = useSearchParams();
   const { user } = useAppSelector((state: RootState) => state.auth);
   const { success, error: showError } = useToast();
-  
+
   // State for candidates and pagination
   const [candidates, setCandidates] = useState<CandidateBasic[]>([]);
   const [pagination, setPagination] = useState<CandidatesPagination | null>(null);
@@ -51,11 +51,11 @@ export default function CandidatesPage() {
     inProgress: 0,
     averageScore: 0,
   });
-  
+
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState<CandidateStatusFilter>(
-    (searchParams.get('status') as CandidateStatusFilter) || 'all'
+    (searchParams.get('status') as CandidateStatusFilter) || 'all',
   );
   const [jobFilter, setJobFilter] = useState(searchParams.get('job') || '');
   const [showFilters, setShowFilters] = useState(false);
@@ -70,11 +70,11 @@ export default function CandidatesPage() {
     max: searchParams.get('maxScore') || '',
   });
   const [recommendationFilter, setRecommendationFilter] = useState(
-    searchParams.get('recommendation') || 'all'
+    searchParams.get('recommendation') || 'all',
   );
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
-    (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc'
+    (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
   );
 
   // Bulk operations state
@@ -85,59 +85,73 @@ export default function CandidatesPage() {
 
   // Interview scheduling state
   const [showScheduler, setShowScheduler] = useState(false);
-  const [selectedCandidateForScheduling, setSelectedCandidateForScheduling] = useState<CandidateBasic | null>(null);
+  const [selectedCandidateForScheduling, setSelectedCandidateForScheduling] =
+    useState<CandidateBasic | null>(null);
 
   // Available jobs for filtering
-  const [availableJobs, setAvailableJobs] = useState<Array<{id: string, title: string}>>([]);
+  const [availableJobs, setAvailableJobs] = useState<Array<{ id: string; title: string }>>([]);
 
   // Fetch candidates function
-  const fetchCandidates = useCallback(async (page = 1, reset = false) => {
-    if (!user?.id) return;
+  const fetchCandidates = useCallback(
+    async (page = 1, reset = false) => {
+      if (!user?.id) return;
 
-    const loadState = page === 1 ? setIsLoading : setIsLoadingMore;
-    loadState(true);
-    setError(null);
+      const loadState = page === 1 ? setIsLoading : setIsLoadingMore;
+      loadState(true);
+      setError(null);
 
-    try {
-      const params = new URLSearchParams({
-        profileId: user.id,
-        page: page.toString(),
-        limit: '10',
-        sortBy,
-        sortOrder,
-      });
+      try {
+        const params = new URLSearchParams({
+          profileId: user.id,
+          page: page.toString(),
+          limit: '10',
+          sortBy,
+          sortOrder,
+        });
 
-      if (searchQuery) params.append('search', searchQuery);
-      if (statusFilter !== 'all') params.append('status', statusFilter);
-      if (jobFilter) params.append('jobId', jobFilter);
-      if (dateRange.start) params.append('startDate', dateRange.start);
-      if (dateRange.end) params.append('endDate', dateRange.end);
-      if (scoreRange.min) params.append('minScore', scoreRange.min);
-      if (scoreRange.max) params.append('maxScore', scoreRange.max);
-      if (recommendationFilter !== 'all') params.append('recommendation', recommendationFilter);
+        if (searchQuery) params.append('search', searchQuery);
+        if (statusFilter !== 'all') params.append('status', statusFilter);
+        if (jobFilter) params.append('jobId', jobFilter);
+        if (dateRange.start) params.append('startDate', dateRange.start);
+        if (dateRange.end) params.append('endDate', dateRange.end);
+        if (scoreRange.min) params.append('minScore', scoreRange.min);
+        if (scoreRange.max) params.append('maxScore', scoreRange.max);
+        if (recommendationFilter !== 'all') params.append('recommendation', recommendationFilter);
 
-      const response = await fetch(`/api/candidates?${params}`);
-      const data: CandidatesListResponse = await response.json();
+        const response = await fetch(`/api/candidates?${params}`);
+        const data: CandidatesListResponse = await response.json();
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch candidates');
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to fetch candidates');
+        }
+
+        if (reset || page === 1) {
+          setCandidates(data.candidates);
+        } else {
+          setCandidates((prev) => [...prev, ...data.candidates]);
+        }
+
+        setPagination(data.pagination);
+        setStats(data.stats);
+      } catch (err) {
+        console.error('Error fetching candidates:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch candidates');
+      } finally {
+        loadState(false);
       }
-
-      if (reset || page === 1) {
-        setCandidates(data.candidates);
-      } else {
-        setCandidates(prev => [...prev, ...data.candidates]);
-      }
-      
-      setPagination(data.pagination);
-      setStats(data.stats);
-    } catch (err) {
-      console.error('Error fetching candidates:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch candidates');
-    } finally {
-      loadState(false);
-    }
-  }, [user?.id, searchQuery, statusFilter, jobFilter, dateRange, scoreRange, recommendationFilter, sortBy, sortOrder]);
+    },
+    [
+      user?.id,
+      searchQuery,
+      statusFilter,
+      jobFilter,
+      dateRange,
+      scoreRange,
+      recommendationFilter,
+      sortBy,
+      sortOrder,
+    ],
+  );
 
   // Fetch available jobs for filter
   const fetchJobs = useCallback(async () => {
@@ -148,10 +162,12 @@ export default function CandidatesPage() {
       const data = await response.json();
 
       if (data.success) {
-        setAvailableJobs(data.jobs.map((job: any) => ({
-          id: job.id,
-          title: job.title
-        })));
+        setAvailableJobs(
+          data.jobs.map((job: Record<string, unknown>) => ({
+            id: job.id,
+            title: job.title,
+          })),
+        );
       }
     } catch (error) {
       console.error('Error fetching jobs:', error);
@@ -177,10 +193,20 @@ export default function CandidatesPage() {
     if (recommendationFilter !== 'all') params.set('recommendation', recommendationFilter);
     if (sortBy !== 'created_at') params.set('sortBy', sortBy);
     if (sortOrder !== 'desc') params.set('sortOrder', sortOrder);
-    
+
     const newUrl = `/dashboard/candidates${params.toString() ? '?' + params.toString() : ''}`;
     router.replace(newUrl, { scroll: false });
-  }, [searchQuery, statusFilter, jobFilter, dateRange, scoreRange, recommendationFilter, sortBy, sortOrder, router]);
+  }, [
+    searchQuery,
+    statusFilter,
+    jobFilter,
+    dateRange,
+    scoreRange,
+    recommendationFilter,
+    sortBy,
+    sortOrder,
+    router,
+  ]);
 
   // Search handler
   const handleSearch = useCallback((query: string) => {
@@ -220,7 +246,7 @@ export default function CandidatesPage() {
 
   // Bulk operations functions
   const handleSelectCandidate = useCallback((candidateId: string, checked: boolean) => {
-    setSelectedCandidates(prev => {
+    setSelectedCandidates((prev) => {
       const newSet = new Set(prev);
       if (checked) {
         newSet.add(candidateId);
@@ -231,71 +257,89 @@ export default function CandidatesPage() {
     });
   }, []);
 
-  const handleSelectAll = useCallback((checked: boolean) => {
-    if (checked) {
-      setSelectedCandidates(new Set(candidates.map(c => c.id)));
-      setIsSelectAll(true);
-    } else {
-      setSelectedCandidates(new Set());
-      setIsSelectAll(false);
-    }
-  }, [candidates]);
-
-  const performBulkAction = useCallback(async (action: string) => {
-    if (selectedCandidates.size === 0) return;
-
-    setIsPerformingBulkAction(true);
-    try {
-      const response = await fetch('/api/candidates/bulk-actions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          candidateIds: Array.from(selectedCandidates),
-          action,
-          profileId: user?.id,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to perform bulk action');
+  const handleSelectAll = useCallback(
+    (checked: boolean) => {
+      if (checked) {
+        setSelectedCandidates(new Set(candidates.map((c) => c.id)));
+        setIsSelectAll(true);
+      } else {
+        setSelectedCandidates(new Set());
+        setIsSelectAll(false);
       }
+    },
+    [candidates],
+  );
 
-      success(`Successfully ${action} ${selectedCandidates.size} candidate(s)`);
-      
-      // Clear selection and refresh data
-      setSelectedCandidates(new Set());
-      setIsSelectAll(false);
-      setShowBulkActions(false);
-      fetchCandidates(1, true);
-    } catch (err) {
-      console.error('Error performing bulk action:', err);
-      showError(err instanceof Error ? err.message : 'Failed to perform bulk action');
-    } finally {
-      setIsPerformingBulkAction(false);
-    }
-  }, [selectedCandidates, user?.id, success, showError, fetchCandidates]);
+  const performBulkAction = useCallback(
+    async (action: string) => {
+      if (selectedCandidates.size === 0) return;
+
+      setIsPerformingBulkAction(true);
+      try {
+        const response = await fetch('/api/candidates/bulk-actions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            candidateIds: Array.from(selectedCandidates),
+            action,
+            profileId: user?.id,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to perform bulk action');
+        }
+
+        success(`Successfully ${action} ${selectedCandidates.size} candidate(s)`);
+
+        // Clear selection and refresh data
+        setSelectedCandidates(new Set());
+        setIsSelectAll(false);
+        setShowBulkActions(false);
+        fetchCandidates(1, true);
+      } catch (err) {
+        console.error('Error performing bulk action:', err);
+        showError(err instanceof Error ? err.message : 'Failed to perform bulk action');
+      } finally {
+        setIsPerformingBulkAction(false);
+      }
+    },
+    [selectedCandidates, user?.id, success, showError, fetchCandidates],
+  );
 
   const getRecommendationColor = (recommendation: string) => {
     switch (recommendation) {
-      case 'strong_yes': return 'text-green-700 bg-green-100';
-      case 'yes': return 'text-green-600 bg-green-50';
-      case 'maybe': return 'text-yellow-600 bg-yellow-50';
-      case 'no': return 'text-red-600 bg-red-50';
-      case 'strong_no': return 'text-red-700 bg-red-100';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'strong_yes':
+        return 'text-green-700 bg-green-100';
+      case 'yes':
+        return 'text-green-600 bg-green-50';
+      case 'maybe':
+        return 'text-yellow-600 bg-yellow-50';
+      case 'no':
+        return 'text-red-600 bg-red-50';
+      case 'strong_no':
+        return 'text-red-700 bg-red-100';
+      default:
+        return 'text-gray-600 bg-gray-50';
     }
   };
 
   const getRecommendationLabel = (recommendation: string) => {
     switch (recommendation) {
-      case 'strong_yes': return 'Strong Yes';
-      case 'yes': return 'Yes';
-      case 'maybe': return 'Maybe';
-      case 'no': return 'No';
-      case 'strong_no': return 'Strong No';
-      default: return 'Pending';
+      case 'strong_yes':
+        return 'Strong Yes';
+      case 'yes':
+        return 'Yes';
+      case 'maybe':
+        return 'Maybe';
+      case 'no':
+        return 'No';
+      case 'strong_no':
+        return 'Strong No';
+      default:
+        return 'Pending';
     }
   };
 
@@ -307,39 +351,67 @@ export default function CandidatesPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'under_review': return 'bg-gray-100 text-gray-700';
-      case 'interview_scheduled': return 'bg-blue-100 text-blue-700';
-      case 'shortlisted': return 'bg-yellow-100 text-yellow-700';
-      case 'reference_check': return 'bg-purple-100 text-purple-700';
-      case 'offer_extended': return 'bg-orange-100 text-orange-700';
-      case 'offer_accepted': return 'bg-green-100 text-green-700';
-      case 'hired': return 'bg-green-200 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-700';
-      case 'withdrawn': return 'bg-gray-200 text-gray-800';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'under_review':
+        return 'bg-gray-100 text-gray-700';
+      case 'interview_scheduled':
+        return 'bg-blue-100 text-blue-700';
+      case 'shortlisted':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'reference_check':
+        return 'bg-purple-100 text-purple-700';
+      case 'offer_extended':
+        return 'bg-orange-100 text-orange-700';
+      case 'offer_accepted':
+        return 'bg-green-100 text-green-700';
+      case 'hired':
+        return 'bg-green-200 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-700';
+      case 'withdrawn':
+        return 'bg-gray-200 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-700';
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'under_review': return 'Under Review';
-      case 'interview_scheduled': return 'Interview Scheduled';
-      case 'shortlisted': return 'Shortlisted';
-      case 'reference_check': return 'Reference Check';
-      case 'offer_extended': return 'Offer Extended';
-      case 'offer_accepted': return 'Offer Accepted';
-      case 'hired': return 'Hired';
-      case 'rejected': return 'Rejected';
-      case 'withdrawn': return 'Withdrawn';
-      default: return 'Under Review';
+      case 'under_review':
+        return 'Under Review';
+      case 'interview_scheduled':
+        return 'Interview Scheduled';
+      case 'shortlisted':
+        return 'Shortlisted';
+      case 'reference_check':
+        return 'Reference Check';
+      case 'offer_extended':
+        return 'Offer Extended';
+      case 'offer_accepted':
+        return 'Offer Accepted';
+      case 'hired':
+        return 'Hired';
+      case 'rejected':
+        return 'Rejected';
+      case 'withdrawn':
+        return 'Withdrawn';
+      default:
+        return 'Under Review';
     }
   };
 
   if (!user) return null;
 
-  const hasFilters = searchQuery || statusFilter !== 'all' || jobFilter || 
-    dateRange.start || dateRange.end || scoreRange.min || scoreRange.max || 
-    recommendationFilter !== 'all' || sortBy !== 'created_at' || sortOrder !== 'desc';
+  const hasFilters =
+    searchQuery ||
+    statusFilter !== 'all' ||
+    jobFilter ||
+    dateRange.start ||
+    dateRange.end ||
+    scoreRange.min ||
+    scoreRange.max ||
+    recommendationFilter !== 'all' ||
+    sortBy !== 'created_at' ||
+    sortOrder !== 'desc';
 
   return (
     <DashboardLayout title="Candidates">
@@ -379,7 +451,7 @@ export default function CandidatesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -391,7 +463,7 @@ export default function CandidatesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -403,7 +475,7 @@ export default function CandidatesPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -444,9 +516,7 @@ export default function CandidatesPage() {
             >
               <FunnelIcon className="w-4 h-4 mr-2" />
               Filters
-              {hasFilters && (
-                <span className="ml-2 w-2 h-2 bg-primary rounded-full"></span>
-              )}
+              {hasFilters && <span className="ml-2 w-2 h-2 bg-primary rounded-full"></span>}
             </Button>
           </div>
 
@@ -457,19 +527,25 @@ export default function CandidatesPage() {
               <div>
                 <span className="text-sm font-medium text-muted-text block mb-2">Status:</span>
                 <div className="flex flex-wrap gap-2">
-                  {(['all', 'completed', 'in_progress'] as CandidateStatusFilter[]).map(status => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusFilter(status)}
-                      className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                        statusFilter === status 
-                          ? 'bg-primary text-white border-primary' 
-                          : 'bg-white text-muted-text border-gray-light hover:border-primary'
-                      }`}
-                    >
-                      {status === 'all' ? 'All' : status === 'in_progress' ? 'In Progress' : 'Completed'}
-                    </button>
-                  ))}
+                  {(['all', 'completed', 'in_progress'] as CandidateStatusFilter[]).map(
+                    (status) => (
+                      <button
+                        key={status}
+                        onClick={() => handleStatusFilter(status)}
+                        className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                          statusFilter === status
+                            ? 'bg-primary text-white border-primary'
+                            : 'bg-white text-muted-text border-gray-light hover:border-primary'
+                        }`}
+                      >
+                        {status === 'all'
+                          ? 'All'
+                          : status === 'in_progress'
+                            ? 'In Progress'
+                            : 'Completed'}
+                      </button>
+                    ),
+                  )}
                 </div>
               </div>
 
@@ -480,20 +556,20 @@ export default function CandidatesPage() {
                   <button
                     onClick={() => handleJobFilter('')}
                     className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                      jobFilter === '' 
-                        ? 'bg-primary text-white border-primary' 
+                      jobFilter === ''
+                        ? 'bg-primary text-white border-primary'
                         : 'bg-white text-muted-text border-gray-light hover:border-primary'
                     }`}
                   >
                     All Jobs
                   </button>
-                  {availableJobs.map(job => (
+                  {availableJobs.map((job) => (
                     <button
                       key={job.id}
                       onClick={() => handleJobFilter(job.id)}
                       className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                        jobFilter === job.id 
-                          ? 'bg-primary text-white border-primary' 
+                        jobFilter === job.id
+                          ? 'bg-primary text-white border-primary'
                           : 'bg-white text-muted-text border-gray-light hover:border-primary'
                       }`}
                     >
@@ -505,21 +581,31 @@ export default function CandidatesPage() {
 
               {/* Recommendation Filter */}
               <div>
-                <span className="text-sm font-medium text-muted-text block mb-2">Recommendation:</span>
+                <span className="text-sm font-medium text-muted-text block mb-2">
+                  Recommendation:
+                </span>
                 <div className="flex flex-wrap gap-2">
-                  {(['all', 'strong_yes', 'yes', 'maybe', 'no', 'strong_no']).map(rec => (
+                  {['all', 'strong_yes', 'yes', 'maybe', 'no', 'strong_no'].map((rec) => (
                     <button
                       key={rec}
                       onClick={() => setRecommendationFilter(rec)}
                       className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                        recommendationFilter === rec 
-                          ? 'bg-primary text-white border-primary' 
+                        recommendationFilter === rec
+                          ? 'bg-primary text-white border-primary'
                           : 'bg-white text-muted-text border-gray-light hover:border-primary'
                       }`}
                     >
-                      {rec === 'all' ? 'All' : rec === 'strong_yes' ? 'Strong Yes' : 
-                       rec === 'yes' ? 'Yes' : rec === 'maybe' ? 'Maybe' : 
-                       rec === 'no' ? 'No' : 'Strong No'}
+                      {rec === 'all'
+                        ? 'All'
+                        : rec === 'strong_yes'
+                          ? 'Strong Yes'
+                          : rec === 'yes'
+                            ? 'Yes'
+                            : rec === 'maybe'
+                              ? 'Maybe'
+                              : rec === 'no'
+                                ? 'No'
+                                : 'Strong No'}
                     </button>
                   ))}
                 </div>
@@ -528,11 +614,13 @@ export default function CandidatesPage() {
               {/* Date Range Filter */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <span className="text-sm font-medium text-muted-text block mb-2">Start Date:</span>
+                  <span className="text-sm font-medium text-muted-text block mb-2">
+                    Start Date:
+                  </span>
                   <input
                     type="date"
                     value={dateRange.start}
-                    onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                    onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
@@ -541,7 +629,7 @@ export default function CandidatesPage() {
                   <input
                     type="date"
                     value={dateRange.end}
-                    onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                    onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
@@ -557,7 +645,7 @@ export default function CandidatesPage() {
                     max="100"
                     placeholder="0"
                     value={scoreRange.min}
-                    onChange={(e) => setScoreRange(prev => ({ ...prev, min: e.target.value }))}
+                    onChange={(e) => setScoreRange((prev) => ({ ...prev, min: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
@@ -569,7 +657,7 @@ export default function CandidatesPage() {
                     max="100"
                     placeholder="100"
                     value={scoreRange.max}
-                    onChange={(e) => setScoreRange(prev => ({ ...prev, max: e.target.value }))}
+                    onChange={(e) => setScoreRange((prev) => ({ ...prev, max: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
@@ -602,7 +690,7 @@ export default function CandidatesPage() {
                   </select>
                 </div>
               </div>
-              
+
               {hasFilters && (
                 <button
                   onClick={() => {
@@ -651,10 +739,9 @@ export default function CandidatesPage() {
               {hasFilters ? 'No candidates found' : 'No candidates yet'}
             </h3>
             <p className="text-muted-text mb-6">
-              {hasFilters 
-                ? 'Try adjusting your search criteria or filters' 
-                : 'Create job postings and start interviewing candidates to see them here'
-              }
+              {hasFilters
+                ? 'Try adjusting your search criteria or filters'
+                : 'Create job postings and start interviewing candidates to see them here'}
             </p>
             {!hasFilters && (
               <Link href="/dashboard/jobs/new">
@@ -673,7 +760,7 @@ export default function CandidatesPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <h3 className="font-medium text-text">Candidates ({pagination?.total || 0})</h3>
-                    
+
                     {/* Bulk Selection */}
                     {candidates.length > 0 && (
                       <div className="flex items-center space-x-3">
@@ -686,7 +773,7 @@ export default function CandidatesPage() {
                           />
                           <span className="text-muted-text">Select All</span>
                         </label>
-                        
+
                         {selectedCandidates.size > 0 && (
                           <span className="text-sm text-primary font-medium">
                             {selectedCandidates.size} selected
@@ -695,7 +782,7 @@ export default function CandidatesPage() {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Bulk Actions */}
                   {selectedCandidates.size > 0 && (
                     <div className="flex items-center space-x-2">
@@ -714,7 +801,7 @@ export default function CandidatesPage() {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Bulk Actions Menu */}
                 {showBulkActions && selectedCandidates.size > 0 && (
                   <div className="mt-4 pt-4 border-t border-gray-light">
@@ -728,7 +815,7 @@ export default function CandidatesPage() {
                         <TrophyIcon className="w-4 h-4 mr-2" />
                         Shortlist Selected
                       </Button>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -739,7 +826,7 @@ export default function CandidatesPage() {
                         <XCircleIcon className="w-4 h-4 mr-2" />
                         Reject Selected
                       </Button>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -750,7 +837,7 @@ export default function CandidatesPage() {
                         <DocumentIcon className="w-4 h-4 mr-2" />
                         Archive Selected
                       </Button>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -768,7 +855,7 @@ export default function CandidatesPage() {
                   </div>
                 )}
               </div>
-              
+
               {/* Table */}
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -818,15 +905,17 @@ export default function CandidatesPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{candidate.fullName}</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {candidate.fullName}
+                            </div>
                             {candidate.email && (
                               <div className="text-sm text-gray-500">{candidate.email}</div>
                             )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <Link 
-                            href={`/dashboard/jobs/${candidate.jobId}`} 
+                          <Link
+                            href={`/dashboard/jobs/${candidate.jobId}`}
                             className="text-sm text-primary hover:text-primary/80 flex items-center"
                           >
                             <BriefcaseIcon className="w-3 h-3 mr-1" />
@@ -834,17 +923,23 @@ export default function CandidatesPage() {
                           </Link>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(candidate.status)}`}>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${getStatusColor(candidate.status)}`}
+                          >
                             {getStatusLabel(candidate.status)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {candidate.evaluation ? (
                             <div className="flex items-center space-x-2">
-                              <span className={`text-sm font-bold ${getScoreColor(candidate.evaluation.score)}`}>
+                              <span
+                                className={`text-sm font-bold ${getScoreColor(candidate.evaluation.score)}`}
+                              >
                                 {candidate.evaluation.score}/100
                               </span>
-                              <div className={`px-2 py-1 rounded-full text-xs font-medium ${getRecommendationColor(candidate.evaluation.recommendation)}`}>
+                              <div
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${getRecommendationColor(candidate.evaluation.recommendation)}`}
+                              >
                                 {getRecommendationLabel(candidate.evaluation.recommendation)}
                               </div>
                             </div>
@@ -855,12 +950,14 @@ export default function CandidatesPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center space-x-2">
                             <div className="w-16 bg-gray-200 rounded-full h-2">
-                              <div 
+                              <div
                                 className="bg-primary h-2 rounded-full transition-all duration-300"
                                 style={{ width: `${candidate.completionPercentage}%` }}
                               ></div>
                             </div>
-                            <span className="text-sm text-gray-500">{candidate.completionPercentage}%</span>
+                            <span className="text-sm text-gray-500">
+                              {candidate.completionPercentage}%
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -874,10 +971,10 @@ export default function CandidatesPage() {
                                 View
                               </Button>
                             </Link>
-                            
+
                             {candidate.status === 'under_review' && (
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 className="flex items-center"
                                 onClick={() => {
                                   setSelectedCandidateForScheduling(candidate);
@@ -888,7 +985,7 @@ export default function CandidatesPage() {
                                 Schedule
                               </Button>
                             )}
-                            
+
                             {candidate.evaluation?.recommendation === 'strong_yes' && (
                               <Button size="sm" className="flex items-center">
                                 <TrophyIcon className="w-4 h-4 mr-1" />
@@ -948,4 +1045,4 @@ export default function CandidatesPage() {
       </div>
     </DashboardLayout>
   );
-} 
+}

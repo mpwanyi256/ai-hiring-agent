@@ -15,7 +15,7 @@ export default function RadarChart({ radarMetrics, className = '', size = 'md' }
   const dimensions = {
     sm: { width: 200, height: 200, radius: 70 },
     md: { width: 320, height: 320, radius: 110 },
-    lg: { width: 400, height: 400, radius: 150 }
+    lg: { width: 400, height: 400, radius: 150 },
   };
   const { width, height, radius } = dimensions[size];
 
@@ -24,7 +24,7 @@ export default function RadarChart({ radarMetrics, className = '', size = 'md' }
     { name: 'Growth Mindset', max: 100 },
     { name: 'Team Work', max: 100 },
     { name: 'Culture', max: 100 },
-    { name: 'Communication', max: 100 }
+    { name: 'Communication', max: 100 },
   ];
 
   const data = [
@@ -32,15 +32,15 @@ export default function RadarChart({ radarMetrics, className = '', size = 'md' }
     radarMetrics.growth_mindset,
     radarMetrics.team_work,
     radarMetrics.culture,
-    radarMetrics.communication
+    radarMetrics.communication,
   ];
 
   const option = {
     tooltip: {
       trigger: 'item',
-      formatter: (params: any) => {
+      formatter: (params: { name: string; value: number[] }) => {
         return params.name + ': ' + params.value.join(', ');
-      }
+      },
     },
     radar: {
       indicator,
@@ -53,11 +53,11 @@ export default function RadarChart({ radarMetrics, className = '', size = 'md' }
         fontWeight: 600,
         backgroundColor: 'rgba(255,255,255,0.7)',
         borderRadius: 3,
-        padding: [3, 5]
+        padding: [3, 5],
       },
       axisLine: { lineStyle: { color: '#d1d5db' } },
       splitLine: { lineStyle: { color: '#e5e7eb' } },
-      splitArea: { areaStyle: { color: ['#f7fafc', '#fff'] } }
+      splitArea: { areaStyle: { color: ['#f7fafc', '#fff'] } },
     },
     series: [
       {
@@ -71,11 +71,11 @@ export default function RadarChart({ radarMetrics, className = '', size = 'md' }
             lineStyle: { color: '#44B675', width: 3 },
             symbol: 'circle',
             symbolSize: 8,
-            itemStyle: { color: '#44B675' }
-          }
-        ]
-      }
-    ]
+            itemStyle: { color: '#44B675' },
+          },
+        ],
+      },
+    ],
   };
 
   return (
@@ -91,7 +91,14 @@ export default function RadarChart({ radarMetrics, className = '', size = 'md' }
       <div className="mt-4 grid grid-cols-1 gap-2 text-center max-w-xs">
         {indicator.map((ind, idx) => {
           const value = data[idx];
-          const statusText = value >= 80 ? 'Excellent' : value >= 65 ? 'Good' : value >= 50 ? 'Average' : 'Needs Improvement';
+          const statusText =
+            value >= 80
+              ? 'Excellent'
+              : value >= 65
+                ? 'Good'
+                : value >= 50
+                  ? 'Average'
+                  : 'Needs Improvement';
           return (
             <div key={ind.name} className="flex items-center justify-between text-xs">
               <span className="text-gray-600 font-medium">{ind.name}:</span>
@@ -105,4 +112,4 @@ export default function RadarChart({ radarMetrics, className = '', size = 'md' }
       </div>
     </div>
   );
-} 
+}

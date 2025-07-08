@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Button from '@/components/ui/Button';
-import { useToast } from '@/components/providers/ToastProvider';
 import { RootState, useAppSelector } from '@/store';
-import { CandidateDetailed, CandidateStatusFilter } from '@/types/candidates';
+import { CandidateDetailed } from '@/types/candidates';
 import {
   ArrowLeftIcon,
   EyeIcon,
@@ -18,18 +17,12 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ExclamationTriangleIcon,
   SparklesIcon,
   TrophyIcon,
   BriefcaseIcon,
   EnvelopeIcon,
-  PhoneIcon,
-  MapPinIcon,
   StarIcon,
   FlagIcon,
-  DocumentIcon,
-  PlayIcon,
-  PauseIcon
 } from '@heroicons/react/24/outline';
 
 interface Tab {
@@ -48,22 +41,15 @@ export default function CandidateDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAppSelector((state: RootState) => state.auth);
-  const { success, error: showError } = useToast();
-  
+
   const [candidate, setCandidate] = useState<CandidateDetailed | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const candidateId = params.id as string;
 
-  useEffect(() => {
-    if (!user?.id || !candidateId) return;
-    fetchCandidateDetails();
-  }, [user?.id, candidateId]);
-
-  const fetchCandidateDetails = async () => {
+  const fetchCandidateDetails = useCallback(async () => {
     if (!user?.id) return;
 
     setIsLoading(true);
@@ -84,54 +70,44 @@ export default function CandidateDetailsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, candidateId]);
 
-  const updateCandidateStatus = async (status: string) => {
-    if (!candidate) return;
-
-    setIsUpdatingStatus(true);
-    try {
-      const response = await fetch(`/api/candidates/${candidateId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to update status');
-      }
-
-      setCandidate(prev => prev ? { ...prev, status } : null);
-      success('Candidate status updated successfully');
-    } catch (err) {
-      console.error('Error updating candidate status:', err);
-      showError(err instanceof Error ? err.message : 'Failed to update status');
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  };
+  useEffect(() => {
+    if (!user?.id || !candidateId) return;
+    fetchCandidateDetails();
+  }, [user?.id, candidateId, fetchCandidateDetails]);
 
   const getRecommendationColor = (recommendation: string) => {
     switch (recommendation) {
-      case 'strong_yes': return 'text-green-700 bg-green-100';
-      case 'yes': return 'text-green-600 bg-green-50';
-      case 'maybe': return 'text-yellow-600 bg-yellow-50';
-      case 'no': return 'text-red-600 bg-red-50';
-      case 'strong_no': return 'text-red-700 bg-red-100';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'strong_yes':
+        return 'text-green-700 bg-green-100';
+      case 'yes':
+        return 'text-green-600 bg-green-50';
+      case 'maybe':
+        return 'text-yellow-600 bg-yellow-50';
+      case 'no':
+        return 'text-red-600 bg-red-50';
+      case 'strong_no':
+        return 'text-red-700 bg-red-100';
+      default:
+        return 'text-gray-600 bg-gray-50';
     }
   };
 
   const getRecommendationLabel = (recommendation: string) => {
     switch (recommendation) {
-      case 'strong_yes': return 'Strong Yes';
-      case 'yes': return 'Yes';
-      case 'maybe': return 'Maybe';
-      case 'no': return 'No';
-      case 'strong_no': return 'Strong No';
-      default: return 'Pending';
+      case 'strong_yes':
+        return 'Strong Yes';
+      case 'yes':
+        return 'Yes';
+      case 'maybe':
+        return 'Maybe';
+      case 'no':
+        return 'No';
+      case 'strong_no':
+        return 'Strong No';
+      default:
+        return 'Pending';
     }
   };
 
@@ -192,7 +168,10 @@ export default function CandidateDetailsPage() {
             <div className="text-center">
               <UserIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-text mb-2">Candidate Not Found</h3>
-              <p className="text-muted-text mb-4">The candidate you're looking for doesn't exist or you don't have access to it.</p>
+              <p className="text-muted-text mb-4">
+                The candidate you&apos;re looking for doesn&apos;t exist or you don&apos;t have
+                access to it.
+              </p>
               <Button onClick={() => router.back()}>
                 <ArrowLeftIcon className="w-4 h-4 mr-2" />
                 Go Back
@@ -217,29 +196,33 @@ export default function CandidateDetailsPage() {
               </Button>
               <div>
                 <h1 className="text-2xl font-bold text-text">{candidate.fullName}</h1>
-                <p className="text-muted-text">
-                  Candidate for {candidate.job.title}
-                </p>
+                <p className="text-muted-text">Candidate for {candidate.job.title}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               {candidate.evaluation && (
                 <div className="flex items-center space-x-2">
-                  <span className={`text-xl font-bold ${getScoreColor(candidate.evaluation.score)}`}>
+                  <span
+                    className={`text-xl font-bold ${getScoreColor(candidate.evaluation.score)}`}
+                  >
                     {candidate.evaluation.score}/100
                   </span>
-                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${getRecommendationColor(candidate.evaluation.recommendation)}`}>
+                  <div
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${getRecommendationColor(candidate.evaluation.recommendation)}`}
+                  >
                     {getRecommendationLabel(candidate.evaluation.recommendation)}
                   </div>
                 </div>
               )}
-              
-              <span className={`px-3 py-1 text-sm rounded-full ${
-                candidate.isCompleted 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'bg-blue-100 text-blue-700'
-              }`}>
+
+              <span
+                className={`px-3 py-1 text-sm rounded-full ${
+                  candidate.isCompleted
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-blue-100 text-blue-700'
+                }`}
+              >
                 {candidate.isCompleted ? 'Completed' : 'In Progress'}
               </span>
             </div>
@@ -346,22 +329,26 @@ export default function CandidateDetailsPage() {
                       <SparklesIcon className="w-5 h-5 text-primary" />
                       <h3 className="text-lg font-medium text-text">AI Evaluation Summary</h3>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                       <div className="text-center">
-                        <div className={`text-3xl font-bold mb-2 ${getScoreColor(candidate.evaluation.score)}`}>
+                        <div
+                          className={`text-3xl font-bold mb-2 ${getScoreColor(candidate.evaluation.score)}`}
+                        >
                           {candidate.evaluation.score}/100
                         </div>
                         <div className="text-sm text-muted-text">Overall Score</div>
                       </div>
-                      
+
                       <div className="text-center">
-                        <div className={`px-4 py-2 rounded-full text-sm font-medium inline-block ${getRecommendationColor(candidate.evaluation.recommendation)}`}>
+                        <div
+                          className={`px-4 py-2 rounded-full text-sm font-medium inline-block ${getRecommendationColor(candidate.evaluation.recommendation)}`}
+                        >
                           {getRecommendationLabel(candidate.evaluation.recommendation)}
                         </div>
                         <div className="text-sm text-muted-text mt-2">Recommendation</div>
                       </div>
-                      
+
                       <div className="text-center">
                         <div className="text-3xl font-bold mb-2 text-text">
                           {candidate.evaluation.strengths.length}
@@ -386,7 +373,10 @@ export default function CandidateDetailsPage() {
                           </h4>
                           <div className="flex flex-wrap gap-2">
                             {candidate.evaluation.strengths.map((strength, index) => (
-                              <span key={index} className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
+                              <span
+                                key={index}
+                                className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full"
+                              >
                                 {strength}
                               </span>
                             ))}
@@ -402,7 +392,10 @@ export default function CandidateDetailsPage() {
                           </h4>
                           <div className="flex flex-wrap gap-2">
                             {candidate.evaluation.redFlags.map((flag, index) => (
-                              <span key={index} className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full">
+                              <span
+                                key={index}
+                                className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full"
+                              >
                                 {flag}
                               </span>
                             ))}
@@ -421,19 +414,19 @@ export default function CandidateDetailsPage() {
                       <EyeIcon className="w-4 h-4 mr-2" />
                       View Full Interview
                     </Button>
-                    
+
                     {candidate.evaluation?.recommendation === 'strong_yes' && (
                       <Button className="flex items-center">
                         <TrophyIcon className="w-4 h-4 mr-2" />
                         Shortlist Candidate
                       </Button>
                     )}
-                    
+
                     <Button variant="outline" className="flex items-center">
                       <EnvelopeIcon className="w-4 h-4 mr-2" />
                       Send Message
                     </Button>
-                    
+
                     <Link href={`/dashboard/jobs/${candidate.jobId}`}>
                       <Button variant="outline" className="flex items-center">
                         <BriefcaseIcon className="w-4 h-4 mr-2" />
@@ -470,13 +463,15 @@ export default function CandidateDetailsPage() {
                             {formatDuration(response.responseTime)}
                           </div>
                         </div>
-                        
+
                         <div className="space-y-3">
                           <div>
-                            <div className="text-sm font-medium text-muted-text mb-1">Question:</div>
+                            <div className="text-sm font-medium text-muted-text mb-1">
+                              Question:
+                            </div>
                             <p className="text-text">{response.question}</p>
                           </div>
-                          
+
                           <div>
                             <div className="text-sm font-medium text-muted-text mb-1">Answer:</div>
                             <p className="text-text whitespace-pre-wrap">{response.answer}</p>
@@ -493,7 +488,7 @@ export default function CandidateDetailsPage() {
             {activeTab === 'analytics' && (
               <div className="space-y-6">
                 <h3 className="text-lg font-medium text-text">Interview Analytics</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="text-2xl font-bold text-text mb-1">
@@ -501,21 +496,21 @@ export default function CandidateDetailsPage() {
                     </div>
                     <div className="text-sm text-muted-text">Total Questions</div>
                   </div>
-                  
+
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="text-2xl font-bold text-text mb-1">
                       {candidate.stats.answeredQuestions}
                     </div>
                     <div className="text-sm text-muted-text">Answered</div>
                   </div>
-                  
+
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="text-2xl font-bold text-text mb-1">
                       {formatDuration(candidate.stats.totalInterviewTime)}
                     </div>
                     <div className="text-sm text-muted-text">Total Time</div>
                   </div>
-                  
+
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="text-2xl font-bold text-text mb-1">
                       {formatDuration(candidate.stats.averageResponseTime)}
@@ -527,7 +522,7 @@ export default function CandidateDetailsPage() {
                 {candidate.evaluation && (
                   <div className="bg-white border border-gray-light rounded-lg p-6">
                     <h4 className="font-medium text-text mb-4">Detailed Scoring</h4>
-                    
+
                     <div className="space-y-4">
                       <div>
                         <div className="flex justify-between text-sm mb-1">
@@ -535,7 +530,7 @@ export default function CandidateDetailsPage() {
                           <span className="font-medium">{candidate.evaluation.score}/100</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
+                          <div
                             className={`h-2 rounded-full ${getScoreColor(candidate.evaluation.score).replace('text-', 'bg-')}`}
                             style={{ width: `${candidate.evaluation.score}%` }}
                           ></div>
@@ -546,20 +541,22 @@ export default function CandidateDetailsPage() {
                         <div>
                           <h5 className="font-medium text-text mb-3">Skills Assessment</h5>
                           <div className="space-y-2">
-                            {Object.entries(candidate.evaluation.skillsAssessment).map(([skill, score]) => (
-                              <div key={skill}>
-                                <div className="flex justify-between text-sm mb-1">
-                                  <span className="text-muted-text">{skill}</span>
-                                  <span className="font-medium">{score}/10</span>
+                            {Object.entries(candidate.evaluation.skillsAssessment).map(
+                              ([skill, score]) => (
+                                <div key={skill}>
+                                  <div className="flex justify-between text-sm mb-1">
+                                    <span className="text-muted-text">{skill}</span>
+                                    <span className="font-medium">{score}/10</span>
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div
+                                      className="bg-primary h-1.5 rounded-full"
+                                      style={{ width: `${(score as number) * 10}%` }}
+                                    ></div>
+                                  </div>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                  <div 
-                                    className="bg-primary h-1.5 rounded-full"
-                                    style={{ width: `${(score as number) * 10}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-                            ))}
+                              ),
+                            )}
                           </div>
                         </div>
                       )}
@@ -568,20 +565,22 @@ export default function CandidateDetailsPage() {
                         <div>
                           <h5 className="font-medium text-text mb-3">Traits Assessment</h5>
                           <div className="space-y-2">
-                            {Object.entries(candidate.evaluation.traitsAssessment).map(([trait, score]) => (
-                              <div key={trait}>
-                                <div className="flex justify-between text-sm mb-1">
-                                  <span className="text-muted-text">{trait}</span>
-                                  <span className="font-medium">{score}/10</span>
+                            {Object.entries(candidate.evaluation.traitsAssessment).map(
+                              ([trait, score]) => (
+                                <div key={trait}>
+                                  <div className="flex justify-between text-sm mb-1">
+                                    <span className="text-muted-text">{trait}</span>
+                                    <span className="font-medium">{score}/10</span>
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div
+                                      className="bg-primary h-1.5 rounded-full"
+                                      style={{ width: `${(score as number) * 10}%` }}
+                                    ></div>
+                                  </div>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                  <div 
-                                    className="bg-primary h-1.5 rounded-full"
-                                    style={{ width: `${(score as number) * 10}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-                            ))}
+                              ),
+                            )}
                           </div>
                         </div>
                       )}
@@ -595,4 +594,4 @@ export default function CandidateDetailsPage() {
       </div>
     </DashboardLayout>
   );
-} 
+}

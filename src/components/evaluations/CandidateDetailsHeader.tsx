@@ -1,17 +1,26 @@
 import { useState } from 'react';
-import { apiSuccess, apiError } from "@/lib/notification";
-import { CandidateBasic, CandidateStatus } from "@/types";
-import { ChevronDownIcon } from '@heroicons/react/24/outline';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import { apiSuccess, apiError } from '@/lib/notification';
+import { CandidateBasic, CandidateStatus } from '@/types';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from '@/components/ui/select';
 
 type CandidateDetailsProps = {
   candidate: CandidateBasic;
-}
+};
 
 const statusOptions: { value: CandidateStatus; label: string; color: string }[] = [
   { value: 'under_review', label: 'Under Review', color: 'bg-gray-100 text-gray-800' },
   { value: 'shortlisted', label: 'Shortlist', color: 'bg-green-100 text-green-800' },
-  { value: 'interview_scheduled', label: 'Interview Scheduled', color: 'bg-blue-100 text-blue-800' },
+  {
+    value: 'interview_scheduled',
+    label: 'Interview Scheduled',
+    color: 'bg-blue-100 text-blue-800',
+  },
   { value: 'reference_check', label: 'Reference Check', color: 'bg-purple-100 text-purple-800' },
   { value: 'offer_extended', label: 'Offer Extended', color: 'bg-yellow-100 text-yellow-800' },
   { value: 'offer_accepted', label: 'Offer Accepted', color: 'bg-green-100 text-green-800' },
@@ -23,8 +32,6 @@ const statusOptions: { value: CandidateStatus; label: string; color: string }[] 
 export const CandidateDetailsHeader = ({ candidate }: CandidateDetailsProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<CandidateStatus>(candidate.status);
-
-  const statusOption = statusOptions.find(option => option.value === currentStatus) || statusOptions[0];
 
   const handleStatusUpdate = async (newStatus: CandidateStatus) => {
     if (newStatus === currentStatus) return;
@@ -40,7 +47,9 @@ export const CandidateDetailsHeader = ({ candidate }: CandidateDetailsProps) => 
       const data = await response.json();
       if (data.success) {
         setCurrentStatus(newStatus);
-        apiSuccess(`Candidate status updated to ${statusOptions.find(opt => opt.value === newStatus)?.label}`);
+        apiSuccess(
+          `Candidate status updated to ${statusOptions.find((opt) => opt.value === newStatus)?.label}`,
+        );
       } else {
         apiError(data.error || 'Failed to update candidate status');
       }
@@ -60,8 +69,9 @@ export const CandidateDetailsHeader = ({ candidate }: CandidateDetailsProps) => 
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
               <span className="text-2xl font-bold">
-                {`${candidate.firstName} ${candidate.lastName}`?.charAt(0).toUpperCase() || 
-                  candidate.email?.charAt(0).toUpperCase() || 'A'}
+                {`${candidate.firstName} ${candidate.lastName}`?.charAt(0).toUpperCase() ||
+                  candidate.email?.charAt(0).toUpperCase() ||
+                  'A'}
               </span>
             </div>
             <div>
@@ -84,7 +94,9 @@ export const CandidateDetailsHeader = ({ candidate }: CandidateDetailsProps) => 
               <SelectContent>
                 {statusOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${option.color}`}>
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${option.color}`}
+                    >
                       {option.label}
                     </span>
                   </SelectItem>
@@ -95,5 +107,5 @@ export const CandidateDetailsHeader = ({ candidate }: CandidateDetailsProps) => 
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

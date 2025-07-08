@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import Image from 'next/image';
-import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import { useToast } from '@/components/providers/ToastProvider';
 
@@ -12,14 +11,14 @@ export default function CTASection() {
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     // Here you would typically send to your API
     // For now, just simulate a delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     setEmail('');
     setIsSubmitting(false);
-    
+
     // Show success message
     success('Thanks! We&apos;ll get in touch within 24h.');
   };
@@ -33,11 +32,12 @@ export default function CTASection() {
             <div className="text-white space-y-6 fade-in">
               <div className="space-y-4">
                 <h2 className="text-3xl lg:text-4xl font-bold leading-tight">
-                  Ready to Revolutionize<br />
+                  Ready to Revolutionize
+                  <br />
                   Your Hiring?
                 </h2>
                 <p className="text-lg lg:text-xl text-green-100 leading-relaxed">
-                  Elevate your hiring process with Intervio's AI-powered platform. Join the
+                  Elevate your hiring process with Intervio&apos;s AI-powered platform. Join the
                   future of hiring and unlock a new level of efficiency, fairness, and insights.
                 </p>
               </div>
@@ -61,16 +61,31 @@ export default function CTASection() {
                     className="flex-1 px-5 py-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all hover:bg-white/15"
                     required
                   />
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     disabled={isSubmitting}
                     className="bg-white text-primary hover:bg-gray-100 px-6 py-3 font-semibold rounded-full shadow-lg hover:shadow-xl transition-all hover-lift whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
                         </svg>
                         Joining...
                       </span>
@@ -117,40 +132,70 @@ export default function CTASection() {
                         Approved
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-gray-900">85<span className="text-xs">/100</span></div>
+                    <div className="text-lg font-bold text-gray-900">
+                      85<span className="text-xs">/100</span>
+                    </div>
                   </div>
                 </div>
 
                 <div className="absolute bottom-6 right-3 bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
                   <div className="text-center">
-                    <div className="text-xs font-medium text-gray-600 mb-2">AI Video Score Detail</div>
-                    <div className="text-2xl font-bold text-green-600 mb-2 hover:scale-110 transition-transform duration-300">85%</div>
+                    <div className="text-xs font-medium text-gray-600 mb-2">
+                      AI Video Score Detail
+                    </div>
+                    <div className="text-2xl font-bold text-green-600 mb-2 hover:scale-110 transition-transform duration-300">
+                      85%
+                    </div>
                     <div className="text-xs text-gray-500 mb-2">AI Video Score Summary</div>
-                    
+
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       {[
-                        { percentage: '80%', label: 'Professionalism', color: 'border-green-500 text-green-600' },
-                        { percentage: '90%', label: 'Business Acumen', color: 'border-blue-500 text-blue-600' },
-                        { percentage: '65%', label: 'Opportunistic', color: 'border-orange-500 text-orange-600' },
-                        { percentage: '85%', label: 'Closing Technique', color: 'border-green-500 text-green-600' }
+                        {
+                          percentage: '80%',
+                          label: 'Professionalism',
+                          color: 'border-green-500 text-green-600',
+                        },
+                        {
+                          percentage: '90%',
+                          label: 'Business Acumen',
+                          color: 'border-blue-500 text-blue-600',
+                        },
+                        {
+                          percentage: '65%',
+                          label: 'Opportunistic',
+                          color: 'border-orange-500 text-orange-600',
+                        },
+                        {
+                          percentage: '85%',
+                          label: 'Closing Technique',
+                          color: 'border-green-500 text-green-600',
+                        },
                       ].map((metric, index) => (
                         <div key={index} className="text-center">
-                          <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mb-1 hover:scale-110 transition-transform duration-300 ${metric.color}`}>
-                            <span className={`font-bold text-xs ${metric.color.split(' ')[1]}`}>{metric.percentage}</span>
+                          <div
+                            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mb-1 hover:scale-110 transition-transform duration-300 ${metric.color}`}
+                          >
+                            <span className={`font-bold text-xs ${metric.color.split(' ')[1]}`}>
+                              {metric.percentage}
+                            </span>
                           </div>
                           <div className="text-gray-600 text-xs">{metric.label}</div>
                         </div>
                       ))}
                     </div>
-                    
+
                     <div className="mt-3 pt-2 border-t border-gray-200">
                       <div className="flex items-center justify-between text-xs">
                         <button className="bg-green-500 text-white px-2 py-1 rounded-full font-medium text-xs hover:bg-green-600 transition-colors hover-lift">
                           Hire Talent
                         </button>
                         <div className="flex items-center space-x-1">
-                          <span className="text-green-600 text-xs hover:scale-110 transition-transform duration-300">✓ Shortlist</span>
-                          <span className="text-red-500 text-xs hover:scale-110 transition-transform duration-300">✗ Reject</span>
+                          <span className="text-green-600 text-xs hover:scale-110 transition-transform duration-300">
+                            ✓ Shortlist
+                          </span>
+                          <span className="text-red-500 text-xs hover:scale-110 transition-transform duration-300">
+                            ✗ Reject
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -167,4 +212,4 @@ export default function CTASection() {
       </div>
     </section>
   );
-} 
+}

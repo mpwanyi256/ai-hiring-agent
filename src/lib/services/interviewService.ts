@@ -6,14 +6,14 @@ import {
   CandidateResponse,
   InterviewEvaluation,
   ActiveInterviewSession,
-  InterviewStats
+  InterviewStats,
 } from '@/types/interview';
 
 class InterviewService {
   // Generate interview questions based on job requirements
   async generateQuestions(job: JobData): Promise<InterviewQuestion[]> {
     const questions: Partial<InterviewQuestion>[] = [];
-    
+
     // Base questions for all interviews
     const baseQuestions = [
       {
@@ -25,8 +25,8 @@ class InterviewService {
         orderIndex: 1,
         isRequired: true,
         isAiGenerated: false,
-        metadata: {}
-      }
+        metadata: {},
+      },
     ];
 
     // Experience level specific questions
@@ -49,7 +49,7 @@ class InterviewService {
 
     // Job-specific questions from description
     if (job.fields?.jobDescription) {
-      const jobSpecificQuestions = this.getJobSpecificQuestions(job.fields.jobDescription);
+      const jobSpecificQuestions = this.getJobSpecificQuestions();
       questions.push(...jobSpecificQuestions);
     }
 
@@ -70,18 +70,18 @@ class InterviewService {
         orderIndex: 999,
         isRequired: true,
         isAiGenerated: false,
-        metadata: {}
-      }
+        metadata: {},
+      },
     ];
 
     const allQuestions = [...baseQuestions, ...questions, ...closingQuestions]
       .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
-      .map((q, index) => ({ 
-        ...q, 
+      .map((q, index) => ({
+        ...q,
         jobId: job.id,
         orderIndex: index + 1,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       })) as InterviewQuestion[];
 
     return allQuestions;
@@ -89,17 +89,18 @@ class InterviewService {
 
   private getExperienceQuestions(experienceLevel: string): Partial<InterviewQuestion>[] {
     const questionMap: Record<string, Partial<InterviewQuestion>[]> = {
-      'entry': [
+      entry: [
         {
           id: 'exp-entry-1',
-          questionText: 'What projects or coursework have you worked on that relate to this position?',
+          questionText:
+            'What projects or coursework have you worked on that relate to this position?',
           questionType: 'experience',
           category: 'Experience',
           expectedDuration: 120,
           orderIndex: 10,
           isRequired: true,
           isAiGenerated: false,
-          metadata: {}
+          metadata: {},
         },
         {
           id: 'exp-entry-2',
@@ -110,20 +111,21 @@ class InterviewService {
           orderIndex: 11,
           isRequired: true,
           isAiGenerated: false,
-          metadata: {}
-        }
+          metadata: {},
+        },
       ],
-      'mid': [
+      mid: [
         {
           id: 'exp-mid-1',
-          questionText: 'Describe a challenging project you\'ve worked on and how you overcame the obstacles.',
+          questionText:
+            "Describe a challenging project you've worked on and how you overcame the obstacles.",
           questionType: 'experience',
           category: 'Problem Solving',
           expectedDuration: 150,
           orderIndex: 10,
           isRequired: true,
           isAiGenerated: false,
-          metadata: {}
+          metadata: {},
         },
         {
           id: 'exp-mid-2',
@@ -134,10 +136,10 @@ class InterviewService {
           orderIndex: 11,
           isRequired: true,
           isAiGenerated: false,
-          metadata: {}
-        }
+          metadata: {},
+        },
       ],
-      'senior': [
+      senior: [
         {
           id: 'exp-senior-1',
           questionText: 'Tell me about a time when you led a team or mentored junior colleagues.',
@@ -147,7 +149,7 @@ class InterviewService {
           orderIndex: 10,
           isRequired: true,
           isAiGenerated: false,
-          metadata: {}
+          metadata: {},
         },
         {
           id: 'exp-senior-2',
@@ -158,9 +160,9 @@ class InterviewService {
           orderIndex: 11,
           isRequired: true,
           isAiGenerated: false,
-          metadata: {}
-        }
-      ]
+          metadata: {},
+        },
+      ],
     };
 
     return questionMap[experienceLevel] || questionMap['mid'];
@@ -180,7 +182,7 @@ class InterviewService {
         orderIndex: 20 + index,
         isRequired: true,
         isAiGenerated: false,
-        metadata: { skill }
+        metadata: { skill },
       });
     });
 
@@ -189,23 +191,31 @@ class InterviewService {
 
   private getTraitQuestions(traits: string[]): Partial<InterviewQuestion>[] {
     const traitQuestionMap: Record<string, string> = {
-      'communication': 'Describe a situation where you had to explain a complex concept to someone. How did you ensure they understood?',
-      'teamwork': 'Tell me about a time when you had to work with a difficult team member. How did you handle it?',
-      'leadership': 'Give me an example of when you took initiative to solve a problem or improve a process.',
-      'problem-solving': 'Walk me through your approach to solving a complex problem you encountered recently.',
-      'creativity': 'Tell me about a time when you came up with an innovative solution to a challenge.',
-      'adaptability': 'Describe a situation where you had to quickly adapt to significant changes. How did you manage?',
-      'attention-to-detail': 'Give me an example of when your attention to detail prevented a potential issue.',
-      'time-management': 'How do you prioritize tasks when everything seems urgent?'
+      communication:
+        'Describe a situation where you had to explain a complex concept to someone. How did you ensure they understood?',
+      teamwork:
+        'Tell me about a time when you had to work with a difficult team member. How did you handle it?',
+      leadership:
+        'Give me an example of when you took initiative to solve a problem or improve a process.',
+      'problem-solving':
+        'Walk me through your approach to solving a complex problem you encountered recently.',
+      creativity:
+        'Tell me about a time when you came up with an innovative solution to a challenge.',
+      adaptability:
+        'Describe a situation where you had to quickly adapt to significant changes. How did you manage?',
+      'attention-to-detail':
+        'Give me an example of when your attention to detail prevented a potential issue.',
+      'time-management': 'How do you prioritize tasks when everything seems urgent?',
     };
 
     const questions: Partial<InterviewQuestion>[] = [];
     const selectedTraits = traits.slice(0, 2); // Focus on top 2 traits
 
     selectedTraits.forEach((trait, index) => {
-      const questionText = traitQuestionMap[trait.toLowerCase()] || 
+      const questionText =
+        traitQuestionMap[trait.toLowerCase()] ||
         `Can you give me an example of how you demonstrate ${trait} in your work?`;
-      
+
       questions.push({
         id: `trait-${index + 1}`,
         questionText,
@@ -215,48 +225,53 @@ class InterviewService {
         orderIndex: 30 + index,
         isRequired: true,
         isAiGenerated: false,
-        metadata: { trait }
+        metadata: { trait },
       });
     });
 
     return questions;
   }
 
-  private getJobSpecificQuestions(jobDescription: string): Partial<InterviewQuestion>[] {
+  private getJobSpecificQuestions(): Partial<InterviewQuestion>[] {
     // In a real implementation, this would use AI to analyze the job description
     // For now, we'll return some generic but relevant questions
     return [
       {
         id: 'job-specific-1',
-        questionText: 'Based on the job description, what aspects of this role excite you the most?',
+        questionText:
+          'Based on the job description, what aspects of this role excite you the most?',
         questionType: 'general',
         category: 'Role Interest',
         expectedDuration: 120,
         orderIndex: 40,
         isRequired: true,
         isAiGenerated: false,
-        metadata: {}
+        metadata: {},
       },
       {
         id: 'job-specific-2',
-        questionText: 'What do you think would be the biggest challenges in this position, and how would you approach them?',
+        questionText:
+          'What do you think would be the biggest challenges in this position, and how would you approach them?',
         questionType: 'behavioral',
         category: 'Role Understanding',
         expectedDuration: 150,
         orderIndex: 41,
         isRequired: true,
         isAiGenerated: false,
-        metadata: {}
-      }
+        metadata: {},
+      },
     ];
   }
 
-  private getCustomFieldQuestions(customFields: Record<string, { value: string; inputType: string }>): Partial<InterviewQuestion>[] {
+  private getCustomFieldQuestions(
+    customFields: Record<string, { value: string; inputType: string }>,
+  ): Partial<InterviewQuestion>[] {
     const questions: Partial<InterviewQuestion>[] = [];
     let order = 50;
 
     Object.entries(customFields).forEach(([key, field]) => {
-      if (field.inputType !== 'file') { // Skip file fields
+      if (field.inputType !== 'file') {
+        // Skip file fields
         questions.push({
           id: `custom-${order}`,
           questionText: `Regarding ${key}: ${field.value}`,
@@ -266,7 +281,7 @@ class InterviewService {
           orderIndex: order++,
           isRequired: false,
           isAiGenerated: false,
-          metadata: { customField: key }
+          metadata: { customField: key },
         });
       }
     });
@@ -275,14 +290,18 @@ class InterviewService {
   }
 
   // Create a new candidate session
-  async createCandidate(jobId: string, interviewToken: string, candidateData?: {
-    email?: string;
-    firstName?: string;
-    lastName?: string;
-  }): Promise<Candidate> {
+  async createCandidate(
+    jobId: string,
+    interviewToken: string,
+    candidateData?: {
+      email?: string;
+      firstName?: string;
+      lastName?: string;
+    },
+  ): Promise<Candidate> {
     try {
       const supabase = await createClient();
-      
+
       const candidateInsert = {
         job_id: jobId,
         interview_token: interviewToken,
@@ -311,8 +330,11 @@ class InterviewService {
         email: candidate.email,
         firstName: candidate.first_name,
         lastName: candidate.last_name,
+        companyId: null, // Candidates don't have companyId
+        role: 'candidate' as const,
         submittedAt: candidate.submitted_at,
         createdAt: candidate.created_at,
+        updatedAt: candidate.updated_at || candidate.created_at,
         currentStep: candidate.current_step,
         totalSteps: candidate.total_steps,
         isCompleted: candidate.is_completed,
@@ -327,7 +349,7 @@ class InterviewService {
   async startInterview(candidateId: string, job: JobData): Promise<ActiveInterviewSession> {
     try {
       const supabase = await createClient();
-      
+
       // Get candidate
       const { data: candidateData, error: candidateError } = await supabase
         .from('candidates')
@@ -355,8 +377,11 @@ class InterviewService {
         email: candidateData.email,
         firstName: candidateData.first_name,
         lastName: candidateData.last_name,
+        companyId: null, // Candidates don't have companyId
+        role: 'candidate' as const,
         submittedAt: candidateData.submitted_at,
         createdAt: candidateData.created_at,
+        updatedAt: candidateData.updated_at || candidateData.created_at,
         currentStep: candidateData.current_step,
         totalSteps: questions.length,
         isCompleted: candidateData.is_completed,
@@ -377,10 +402,16 @@ class InterviewService {
   }
 
   // Submit a response
-  async submitResponse(candidateId: string, questionId: string, question: string, answer: string, responseTime: number): Promise<CandidateResponse> {
+  async submitResponse(
+    candidateId: string,
+    questionId: string,
+    question: string,
+    answer: string,
+    responseTime: number,
+  ): Promise<CandidateResponse> {
     try {
       const supabase = await createClient();
-      
+
       const responseInsert = {
         candidate_id: candidateId,
         question_id: questionId,
@@ -415,11 +446,13 @@ class InterviewService {
 
       return {
         id: response.id,
-        candidateId: response.candidate_id,
-        questionId: response.question_id,
+        profileId: response.candidate_id,
+        jobId: response.job_id,
+        jobQuestionId: response.job_question_id,
         question: response.question,
         answer: response.answer,
         responseTime: response.response_time,
+        resumeText: response.resume_text,
         createdAt: response.created_at,
       };
     } catch (error) {
@@ -432,18 +465,18 @@ class InterviewService {
   async completeInterview(candidateId: string): Promise<void> {
     try {
       const supabase = await createClient();
-      
+
       await supabase
         .from('candidates')
-        .update({ 
+        .update({
           is_completed: true,
-          submitted_at: new Date().toISOString()
+          submitted_at: new Date().toISOString(),
         })
         .eq('id', candidateId);
 
       // Trigger AI evaluation (in background)
       // In a real implementation, this would be a background job
-      this.evaluateCandidate(candidateId).catch(error => {
+      this.evaluateCandidate(candidateId).catch((error) => {
         console.error('Error evaluating candidate:', error);
       });
     } catch (error) {
@@ -456,7 +489,7 @@ class InterviewService {
   private async evaluateCandidate(candidateId: string): Promise<InterviewEvaluation> {
     try {
       const supabase = await createClient();
-      
+
       // Get candidate responses
       const { data: responses, error } = await supabase
         .from('responses')
@@ -467,12 +500,21 @@ class InterviewService {
         throw new Error(error.message);
       }
 
+      // Get candidate info for profileId
+      const { data: candidateData } = await supabase
+        .from('candidates')
+        .select('job_id')
+        .eq('id', candidateId)
+        .single();
+
       // Simple scoring algorithm (in real implementation, would use AI)
       const score = this.calculateScore(responses);
       const evaluation = this.generateEvaluation(responses, score);
 
       const evaluationInsert = {
-        candidate_id: candidateId,
+        profile_id: candidateId, // Use candidateId as profileId for candidates
+        job_id: candidateData?.job_id,
+        evaluation_type: 'interview' as const,
         summary: evaluation.summary,
         score: evaluation.score,
         strengths: evaluation.strengths,
@@ -495,7 +537,9 @@ class InterviewService {
 
       return {
         id: evalData.id,
-        candidateId: evalData.candidate_id,
+        profileId: evalData.profile_id,
+        jobId: evalData.job_id,
+        evaluationType: evalData.evaluation_type,
         summary: evalData.summary,
         score: evalData.score,
         strengths: evalData.strengths,
@@ -513,25 +557,38 @@ class InterviewService {
     }
   }
 
-  private calculateScore(responses: any[]): number {
+  private calculateScore(responses: unknown[]): number {
     // Simple scoring based on response length and completeness
     if (responses.length === 0) return 0;
-    
-    const avgResponseLength = responses.reduce((acc, r) => acc + r.answer.length, 0) / responses.length;
-    const completionRate = responses.length / 10; // Assuming 10 questions on average
-    
+
+    const typedResponses = responses as Array<{ answer: { length: number } }>;
+    const avgResponseLength =
+      typedResponses.reduce((acc, r) => acc + r.answer.length, 0) / typedResponses.length;
+    const completionRate = typedResponses.length / 10; // Assuming 10 questions on average
+
     // Basic scoring algorithm
     const score = Math.min(100, (avgResponseLength / 100) * 30 + completionRate * 70);
     return Math.round(score);
   }
 
-  private generateEvaluation(responses: any[], score: number): Omit<InterviewEvaluation, 'id' | 'candidateId' | 'createdAt' | 'updatedAt'> {
+  private generateEvaluation(
+    responses: unknown[],
+    score: number,
+  ): Omit<
+    InterviewEvaluation,
+    'id' | 'profileId' | 'jobId' | 'evaluationType' | 'createdAt' | 'updatedAt'
+  > {
     const strengths = [];
     const redFlags = [];
-    
+
     // Analyze responses (simplified)
-    const avgResponseTime = responses.reduce((acc, r) => acc + r.response_time, 0) / responses.length;
-    
+    const typedResponses = responses as Array<{
+      response_time: number;
+      answer: { length: number };
+    }>;
+    const avgResponseTime =
+      typedResponses.reduce((acc, r) => acc + r.response_time, 0) / typedResponses.length;
+
     if (avgResponseTime < 30) {
       redFlags.push('Very quick responses - may lack depth');
     } else if (avgResponseTime > 300) {
@@ -540,11 +597,11 @@ class InterviewService {
       strengths.push('Thoughtful response timing');
     }
 
-    if (responses.every(r => r.answer.length > 50)) {
+    if (typedResponses.every((r) => r.answer.length > 50)) {
       strengths.push('Detailed and comprehensive responses');
     }
 
-    if (responses.some(r => r.answer.length < 20)) {
+    if (typedResponses.some((r) => r.answer.length < 20)) {
       redFlags.push('Some responses lack detail');
     }
 
@@ -557,7 +614,7 @@ class InterviewService {
     else recommendation = 'strong_no';
 
     return {
-      summary: `Candidate completed interview with ${responses.length} responses. Average response time: ${Math.round(avgResponseTime)}s.`,
+      summary: `Candidate completed interview with ${typedResponses.length} responses. Average response time: ${Math.round(avgResponseTime)}s.`,
       score,
       strengths,
       redFlags,
@@ -573,8 +630,9 @@ class InterviewService {
     const totalQuestions = session.questions.length;
     const answeredQuestions = session.responses.length;
     const timeSpent = session.timeElapsed;
-    
-    const avgTimePerQuestion = session.questions.reduce((acc, q) => acc + q.expectedDuration, 0) / totalQuestions;
+
+    const avgTimePerQuestion =
+      session.questions.reduce((acc, q) => acc + q.expectedDuration, 0) / totalQuestions;
     const estimatedTimeRemaining = (totalQuestions - answeredQuestions) * avgTimePerQuestion;
     const completionPercentage = (answeredQuestions / totalQuestions) * 100;
 
@@ -588,4 +646,4 @@ class InterviewService {
   }
 }
 
-export const interviewService = new InterviewService(); 
+export const interviewService = new InterviewService();

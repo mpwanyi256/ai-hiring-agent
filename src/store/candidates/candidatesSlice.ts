@@ -1,6 +1,12 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Candidate, Response } from '@/types';
-import { AIEvaluation, TeamAssessment } from '@/types/evaluations';
+import {
+  Candidate,
+  Response,
+  AIEvaluation,
+  CandidatesState,
+  Evaluation,
+  CandidateResume,
+} from '@/types/candidates';
 import {
   fetchCandidatesByJob,
   fetchJobCandidates,
@@ -17,50 +23,6 @@ import {
   generateAIEvaluation,
   fetchCandidateResponses,
 } from './candidatesThunks';
-
-// Define the candidates state interface
-interface CandidatesState {
-  candidates: Candidate[];
-  currentCandidate: Candidate | null;
-  isLoading: boolean;
-  error: string | null;
-  totalCandidates: number;
-  jobCandidatesStats: {
-    total: number;
-    completed: number;
-    inProgress: number;
-    pending: number;
-    averageScore: number;
-  };
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasMore: boolean;
-  };
-  // AI evaluation state
-  aiEvaluation: {
-    isEvaluating: boolean;
-    evaluatingCandidateId: string | null;
-    lastEvaluationDuration: number | null;
-    isLoadingEvaluation: boolean;
-    currentEvaluation: {
-      candidateId: string | null;
-      aiEvaluation: AIEvaluation | null;
-      teamAssessments: TeamAssessment[];
-      computedValues: any;
-    } | null;
-  };
-  // Candidate responses state
-  candidateResponses: {
-    [candidateId: string]: {
-      responses: any[];
-      isLoading: boolean;
-      error: string | null;
-    };
-  };
-}
 
 const initialState: CandidatesState = {
   candidates: [],
@@ -143,21 +105,21 @@ const candidatesSlice = createSlice({
         currentEvaluation: null,
       };
     },
-    updateCandidateRealtime(state, action) {
+    updateCandidateRealtime(state, action: PayloadAction<Partial<Candidate>>) {
       // Update or add candidate in state.candidates
-      const idx = state.candidates.findIndex(c => c.id === action.payload.id);
+      const idx = state.candidates.findIndex((c) => c.id === action.payload.id);
       if (idx !== -1) {
         state.candidates[idx] = { ...state.candidates[idx], ...action.payload };
       } else {
-        state.candidates.push(action.payload);
+        state.candidates.push(action.payload as Candidate);
       }
     },
-    updateResponseRealtime(state, action) {
+    updateResponseRealtime(state, action: PayloadAction<Response>) {
       // Find candidate and update responses
-      const candidate = state.candidates.find(c => c.id === action.payload.candidate_id);
+      const candidate = state.candidates.find((c) => c.id === action.payload.candidateId);
       if (candidate) {
         candidate.responses = candidate.responses || [];
-        const idx = candidate.responses.findIndex(r => r.id === action.payload.id);
+        const idx = candidate.responses.findIndex((r) => r.id === action.payload.id);
         if (idx !== -1) {
           candidate.responses[idx] = action.payload;
         } else {
@@ -165,23 +127,23 @@ const candidatesSlice = createSlice({
         }
       }
     },
-    updateEvaluationRealtime(state, action) {
+    updateEvaluationRealtime(state, action: PayloadAction<Evaluation>) {
       // Find candidate and update evaluation
-      const candidate = state.candidates.find(c => c.id === action.payload.candidate_id);
+      const candidate = state.candidates.find((c) => c.id === action.payload.candidateId);
       if (candidate) {
         candidate.evaluation = action.payload;
       }
     },
-    updateAIEvaluationRealtime(state, action) {
+    updateAIEvaluationRealtime(state, action: PayloadAction<AIEvaluation>) {
       // Find candidate and update evaluation (ai_evaluations also update evaluation field)
-      const candidate = state.candidates.find(c => c.id === action.payload.candidate_id);
+      const candidate = state.candidates.find((c) => c.id === action.payload.candidateId);
       if (candidate) {
-        candidate.evaluation = action.payload;
+        candidate.evaluation = action.payload as unknown as Evaluation;
       }
     },
-    updateResumeRealtime(state, action) {
+    updateResumeRealtime(state, action: PayloadAction<CandidateResume>) {
       // Find candidate and update resume
-      const candidate = state.candidates.find(c => c.id === action.payload.candidate_id);
+      const candidate = state.candidates.find((c) => c.id === action.payload.id);
       if (candidate) {
         candidate.resume = action.payload;
       }
@@ -249,10 +211,6 @@ const candidatesSlice = createSlice({
       .addCase(fetchCandidateResume.pending, (state) => {
         state.error = null;
       })
-      .addCase(fetchCandidateResume.fulfilled, (_state, _action) => {
-        // Resume fetching is typically just for download, so we don't need to store it in state
-        // The action payload contains the resume URL which is handled by the component
-      })
       .addCase(fetchCandidateResume.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to fetch candidate resume';
       })
@@ -279,16 +237,16 @@ const candidatesSlice = createSlice({
         state.aiEvaluation.isEvaluating = false;
         state.aiEvaluation.evaluatingCandidateId = null;
         state.aiEvaluation.lastEvaluationDuration = action.payload.processingDurationMs;
-        
+
         // Update candidate in the list with new evaluation
         const candidateIndex = state.candidates.findIndex(
-          (candidate: Candidate) => candidate.id === action.payload.candidateId
+          (candidate: Candidate) => candidate.id === action.payload.candidateId,
         );
         if (candidateIndex !== -1) {
           // The evaluation will be fetched in the next refresh, so we can mark it as updated
           // In a real app, you might want to transform the AI evaluation to the candidate format
         }
-        
+
         if (state.currentCandidate && state.currentCandidate.id === action.payload.candidateId) {
           // Mark that this candidate has been evaluated
         }
@@ -341,7 +299,7 @@ const candidatesSlice = createSlice({
       .addCase(saveEvaluation.fulfilled, (state, action) => {
         state.isLoading = false;
         const candidateIndex = state.candidates.findIndex(
-          (candidate: Candidate) => candidate.id === action.payload.candidateId
+          (candidate: Candidate) => candidate.id === action.payload.candidateId,
         );
         if (candidateIndex !== -1) {
           state.candidates[candidateIndex].evaluation = action.payload;
@@ -357,7 +315,7 @@ const candidatesSlice = createSlice({
       // Update Evaluation
       .addCase(updateEvaluation.fulfilled, (state, action) => {
         const candidateIndex = state.candidates.findIndex(
-          (candidate: Candidate) => candidate.id === action.payload.candidateId
+          (candidate: Candidate) => candidate.id === action.payload.candidateId,
         );
         if (candidateIndex !== -1) {
           state.candidates[candidateIndex].evaluation = action.payload;
@@ -368,7 +326,9 @@ const candidatesSlice = createSlice({
       })
       // Delete Candidate
       .addCase(deleteCandidate.fulfilled, (state, action) => {
-        state.candidates = state.candidates.filter((candidate: Candidate) => candidate.id !== action.payload);
+        state.candidates = state.candidates.filter(
+          (candidate: Candidate) => candidate.id !== action.payload,
+        );
         state.totalCandidates -= 1;
         if (state.currentCandidate && state.currentCandidate.id === action.payload) {
           state.currentCandidate = null;
@@ -382,7 +342,7 @@ const candidatesSlice = createSlice({
       .addCase(generateAIEvaluation.fulfilled, (state, action) => {
         state.isLoading = false;
         const candidateIndex = state.candidates.findIndex(
-          (candidate: Candidate) => candidate.id === action.payload.candidateId
+          (candidate: Candidate) => candidate.id === action.payload.candidateId,
         );
         if (candidateIndex !== -1) {
           state.candidates[candidateIndex].evaluation = action.payload;
@@ -423,17 +383,17 @@ const candidatesSlice = createSlice({
   },
 });
 
-export const { 
-  clearError, 
-  setCurrentCandidate, 
-  clearCurrentCandidate, 
+export const {
+  clearError,
+  setCurrentCandidate,
+  clearCurrentCandidate,
   addResponse,
   clearCandidatesData,
   updateCandidateRealtime,
   updateResponseRealtime,
   updateEvaluationRealtime,
   updateAIEvaluationRealtime,
-  updateResumeRealtime
+  updateResumeRealtime,
 } = candidatesSlice.actions;
 
-export default candidatesSlice.reducer; 
+export default candidatesSlice.reducer;
