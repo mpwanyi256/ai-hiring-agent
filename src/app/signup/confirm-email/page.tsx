@@ -2,21 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDispatch } from 'react-redux';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import TopNavigation from '@/components/navigation/TopNavigation';
 import { checkAuth } from '@/store/auth/authThunks';
-import { AppDispatch } from '@/app/store';
-import { 
-  EnvelopeIcon,
-  CheckCircleIcon
-} from '@heroicons/react/24/outline';
+import { useAppDispatch } from '@/store';
+import { EnvelopeIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 export default function ConfirmEmailPage() {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -50,7 +46,7 @@ export default function ConfirmEmailPage() {
 
   const handleResendEmail = async () => {
     setIsResending(true);
-    
+
     try {
       const response = await fetch('/api/auth/resend-otp', {
         method: 'POST',
@@ -59,7 +55,7 @@ export default function ConfirmEmailPage() {
         },
         body: JSON.stringify({
           email: '', // Server will use current session email if available
-          type: 'signup'
+          type: 'signup',
         }),
       });
 
@@ -109,11 +105,11 @@ export default function ConfirmEmailPage() {
 
               {/* Title */}
               <h1 className="text-2xl font-bold text-text mb-4">Check Your Email</h1>
-              
+
               {/* Description */}
               <p className="text-muted-text mb-6">
-                We&apos;ve sent a confirmation link to your email address. 
-                Click the link to verify your account and start using AI Hiring Agent.
+                We&apos;ve sent a confirmation link to your email address. Click the link to verify
+                your account and start using AI Hiring Agent.
               </p>
 
               {/* Success Message */}
@@ -129,9 +125,7 @@ export default function ConfirmEmailPage() {
               {/* Free Tier Info */}
               <div className="bg-gradient-to-r from-primary/5 to-accent-blue/5 rounded-lg border border-primary/20 p-4 mb-6">
                 <h3 className="font-semibold text-text mb-2">🎉 You&apos;re on the Free Tier</h3>
-                <p className="text-sm text-muted-text mb-2">
-                  Your account includes:
-                </p>
+                <p className="text-sm text-muted-text mb-2">Your account includes:</p>
                 <ul className="text-sm text-muted-text text-left space-y-1">
                   <li>• 1 active job posting</li>
                   <li>• 5 AI interviews per month</li>
@@ -176,19 +170,25 @@ export default function ConfirmEmailPage() {
                     <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
                       1
                     </div>
-                    <p className="text-sm text-muted-text">Click the confirmation link in your email</p>
+                    <p className="text-sm text-muted-text">
+                      Click the confirmation link in your email
+                    </p>
                   </div>
                   <div className="flex items-start space-x-3">
                     <div className="w-6 h-6 bg-gray-light rounded-full flex items-center justify-center text-muted-text text-xs font-bold">
                       2
                     </div>
-                    <p className="text-sm text-muted-text">Access your dashboard and create your first job</p>
+                    <p className="text-sm text-muted-text">
+                      Access your dashboard and create your first job
+                    </p>
                   </div>
                   <div className="flex items-start space-x-3">
                     <div className="w-6 h-6 bg-gray-light rounded-full flex items-center justify-center text-muted-text text-xs font-bold">
                       3
                     </div>
-                    <p className="text-sm text-muted-text">Start interviewing candidates automatically</p>
+                    <p className="text-sm text-muted-text">
+                      Start interviewing candidates automatically
+                    </p>
                   </div>
                 </div>
               </div>
@@ -198,4 +198,4 @@ export default function ConfirmEmailPage() {
       </div>
     </div>
   );
-} 
+}

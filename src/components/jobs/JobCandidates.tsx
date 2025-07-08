@@ -27,7 +27,7 @@ import {
 } from '@/store/candidates/candidatesSlice';
 import { createClient } from '@/lib/supabase/client';
 import { CandidateDetailsHeader } from '../evaluations/CandidateDetailsHeader';
-import { CandidateBasic } from '@/types';
+import { Candidate, CandidateBasic, CandidateList } from '@/types';
 
 interface JobCandidatesProps {
   job: CurrentJob;
@@ -130,32 +130,25 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
   };
 
   // Transform candidates for the list component
-  const transformedCandidates: import('@/types/candidates').CandidateList[] = candidates.map(
-    (candidate) => {
-      const candidateAny = candidate as unknown;
-      return {
-        id: candidate.id,
-        jobId: candidateAny.jobId || job.id,
-        interviewToken: candidateAny.interviewToken || '',
-        email: candidate.email || '',
-        submittedAt: candidateAny.submittedAt,
-        evaluation: candidateAny.evaluation,
-        responses: candidateAny.responses || [],
-        resume: candidateAny.resume,
-        candidateStatus: candidateAny.candidateStatus,
-        name: candidateAny.name || candidateAny.fullName || '',
-        score: (candidateAny as any).score || (candidateAny as any).evaluation?.score || 0,
-        progress: candidateAny.progress || candidateAny.completionPercentage || 0,
-        resumeScore:
-          (candidateAny as any).resumeScore || (candidateAny as any).evaluation?.resumeScore || 0,
-        createdAt: candidateAny.createdAt || new Date().toISOString(),
-        status: (candidateAny.isCompleted ? 'completed' : 'in_progress') as
-          | 'in_progress'
-          | 'completed'
-          | 'pending',
-      };
-    },
-  );
+  const transformedCandidates: CandidateList[] = candidates.map((candidate) => {
+    return {
+      id: candidate.id,
+      jobId: candidate.jobId,
+      interviewToken: candidate.interviewToken,
+      email: candidate.email,
+      submittedAt: candidate.submittedAt,
+      evaluation: candidate.evaluation,
+      responses: candidate.responses,
+      resume: candidate.resume,
+      candidateStatus: candidate.candidateStatus,
+      name: candidate.name,
+      score: candidate.evaluation?.score,
+      progress: candidate.progress,
+      resumeScore: candidate.resumeScore || candidate.evaluation?.resumeScore,
+      createdAt: candidate.createdAt || new Date().toISOString(),
+      status: candidate.status,
+    };
+  });
 
   // Resume download handler
   const handleResumeDownload = async (candidateId: string) => {

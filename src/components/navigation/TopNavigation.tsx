@@ -7,7 +7,7 @@ import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import { signOut } from '@/store/auth/authThunks';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { 
+import {
   SparklesIcon,
   CogIcon,
   UserIcon,
@@ -16,7 +16,7 @@ import {
   Bars3Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  XMarkIcon
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { app } from '@/lib/constants';
@@ -28,11 +28,11 @@ interface TopNavigationProps {
   sidebarCollapsed?: boolean;
 }
 
-export default function TopNavigation({ 
-  showAuthButtons = true, 
+export default function TopNavigation({
+  showAuthButtons = true,
   onMobileMenuClick,
   onToggleSidebar,
-  sidebarCollapsed = false
+  sidebarCollapsed = false,
 }: TopNavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -85,7 +85,9 @@ export default function TopNavigation({
   };
 
   return (
-    <header className={`border-b border-surface bg-white shadow-sm sticky top-0 z-50 ${isDashboardPage ? '' : 'fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100'}`}>
+    <header
+      className={`border-b border-surface bg-white shadow-sm sticky top-0 z-50 ${isDashboardPage ? '' : 'fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100'}`}
+    >
       {isDashboardPage ? (
         // Dashboard layout - more compact with better spacing
         <div className="flex items-center justify-between h-14 px-4 lg:px-6">
@@ -120,7 +122,13 @@ export default function TopNavigation({
             {/* Logo - Compact for dashboard */}
             <Link href="/" className="flex items-center space-x-2 ml-2">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
-                <Image src="/images/logo.png" alt="Intervio Logo" width={40} height={40} objectFit="contain" />
+                <Image
+                  src="/images/logo.png"
+                  alt="Intervio Logo"
+                  width={40}
+                  height={40}
+                  objectFit="contain"
+                />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent text-2xl">
                 {app.name}
@@ -167,7 +175,7 @@ export default function TopNavigation({
                         {user.subscription?.name || 'Free'} Plan
                       </p>
                     </div>
-                    
+
                     <div className="py-2">
                       <Link
                         href="/dashboard"
@@ -177,7 +185,7 @@ export default function TopNavigation({
                         <SparklesIcon className="w-4 h-4 mr-3 text-muted-text" />
                         Dashboard
                       </Link>
-                      
+
                       <Link
                         href="/dashboard/settings"
                         className="flex items-center px-4 py-2 text-sm text-text hover:bg-gray-50"
@@ -186,9 +194,9 @@ export default function TopNavigation({
                         <CogIcon className="w-4 h-4 mr-3 text-muted-text" />
                         Settings
                       </Link>
-                      
+
                       <div className="border-t border-gray-light my-1"></div>
-                      
+
                       <button
                         onClick={handleSignOut}
                         className="flex items-center w-full px-4 py-2 text-sm text-accent-red hover:bg-gray-50"
@@ -208,9 +216,18 @@ export default function TopNavigation({
         <Container>
           <div className="flex items-center justify-between h-18">
             {/* Logo */}
-            <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center space-x-3 hover-lift">
+            <Link
+              href={isAuthenticated ? '/dashboard' : '/'}
+              className="flex items-center space-x-3 hover-lift"
+            >
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
-                <Image src="/images/logo.png" alt="Intervio Logo" width={40} height={40} objectFit="contain" />
+                <Image
+                  src="/images/logo.png"
+                  alt="Intervio Logo"
+                  width={40}
+                  height={40}
+                  objectFit="contain"
+                />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent text-2xl">
                 {app.name}
@@ -221,19 +238,23 @@ export default function TopNavigation({
             <div className="hidden md:flex items-center space-x-1">
               {/* Home Link */}
               {pathname === '/' ? (
-                <button 
+                <button
                   onClick={() => scrollToSection('hero')}
                   className={`px-5 py-2.5 rounded-full font-medium transition-all hover:bg-primary/90 hover:shadow-lg text-sm ${
-                    isActivePage('/') ? 'bg-primary text-white' : 'text-gray-600 hover:text-primary hover:bg-gray-50'
+                    isActivePage('/')
+                      ? 'bg-primary text-white'
+                      : 'text-gray-600 hover:text-primary hover:bg-gray-50'
                   }`}
                 >
                   Home
                 </button>
               ) : (
-                <Link 
+                <Link
                   href="/"
                   className={`px-5 py-2.5 rounded-full font-medium transition-all hover:bg-primary/90 hover:shadow-lg text-sm ${
-                    isActivePage('/') ? 'bg-primary text-white' : 'text-gray-600 hover:text-primary hover:bg-gray-50'
+                    isActivePage('/')
+                      ? 'bg-primary text-white'
+                      : 'text-gray-600 hover:text-primary hover:bg-gray-50'
                   }`}
                 >
                   Home
@@ -242,14 +263,14 @@ export default function TopNavigation({
 
               {/* Features Link */}
               {pathname === '/' ? (
-                <button 
+                <button
                   onClick={() => scrollToSection('features')}
                   className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
                 >
                   Features
                 </button>
               ) : (
-                <Link 
+                <Link
                   href="/#features"
                   className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
                 >
@@ -261,8 +282,18 @@ export default function TopNavigation({
               <div className="relative group">
                 <button className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all flex items-center space-x-1 text-sm">
                   <span>Solutions</span>
-                  <svg className="w-3 h-3 transform group-hover:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className="w-3 h-3 transform group-hover:rotate-180 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </button>
                 {/* Dropdown menu */}
@@ -270,19 +301,19 @@ export default function TopNavigation({
                   <div className="p-2">
                     {pathname === '/' ? (
                       <>
-                        <button 
+                        <button
                           onClick={() => scrollToSection('features')}
                           className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                         >
                           AI Assessments
                         </button>
-                        <button 
+                        <button
                           onClick={() => scrollToSection('why-choose')}
                           className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                         >
                           Behavioral Analysis
                         </button>
-                        <button 
+                        <button
                           onClick={() => scrollToSection('why-choose')}
                           className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                         >
@@ -291,19 +322,19 @@ export default function TopNavigation({
                       </>
                     ) : (
                       <>
-                        <Link 
+                        <Link
                           href="/#features"
                           className="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                         >
                           AI Assessments
                         </Link>
-                        <Link 
+                        <Link
                           href="/#why-choose"
                           className="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                         >
                           Behavioral Analysis
                         </Link>
-                        <Link 
+                        <Link
                           href="/#why-choose"
                           className="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                         >
@@ -316,10 +347,12 @@ export default function TopNavigation({
               </div>
 
               {/* Pricing Link */}
-              <Link 
-                href="/pricing" 
+              <Link
+                href="/pricing"
                 className={`px-5 py-2.5 rounded-full font-medium transition-all text-sm ${
-                  isActivePage('/pricing') ? 'bg-primary text-white' : 'text-gray-600 hover:text-primary hover:bg-gray-50'
+                  isActivePage('/pricing')
+                    ? 'bg-primary text-white'
+                    : 'text-gray-600 hover:text-primary hover:bg-gray-50'
                 }`}
               >
                 Pricing
@@ -327,14 +360,14 @@ export default function TopNavigation({
 
               {/* Testimonials Link */}
               {pathname === '/' ? (
-                <button 
+                <button
                   onClick={() => scrollToSection('testimonials')}
                   className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
                 >
                   Testimonials
                 </button>
               ) : (
-                <Link 
+                <Link
                   href="/#testimonials"
                   className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
                 >
@@ -382,7 +415,7 @@ export default function TopNavigation({
                           {user?.subscription?.name || 'Free'} Plan
                         </p>
                       </div>
-                      
+
                       <div className="py-2">
                         <Link
                           href="/dashboard"
@@ -392,7 +425,7 @@ export default function TopNavigation({
                           <SparklesIcon className="w-4 h-4 mr-3 text-muted-text" />
                           Dashboard
                         </Link>
-                        
+
                         <Link
                           href="/dashboard/settings"
                           className="flex items-center px-4 py-2 text-sm text-text hover:bg-gray-50"
@@ -401,9 +434,9 @@ export default function TopNavigation({
                           <CogIcon className="w-4 h-4 mr-3 text-muted-text" />
                           Settings
                         </Link>
-                        
+
                         <div className="border-t border-gray-light my-1"></div>
-                        
+
                         <button
                           onClick={handleSignOut}
                           className="flex items-center w-full px-4 py-2 text-sm text-accent-red hover:bg-gray-50"
@@ -418,13 +451,17 @@ export default function TopNavigation({
               ) : showAuthButtons ? (
                 <div className="flex items-center space-x-2">
                   <Link href="/signin">
-                    <Button variant="outline" size="sm" className="text-gray-600 border-gray-300 hover:border-primary hover:text-primary">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-gray-600 border-gray-300 hover:border-primary hover:text-primary"
+                    >
                       Sign In
                     </Button>
                   </Link>
                   <Link href="/signup">
                     <Button className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 text-sm">
-                      Start Interview
+                      Create Account
                     </Button>
                   </Link>
                 </div>
@@ -450,19 +487,23 @@ export default function TopNavigation({
               <div className="p-4 space-y-4">
                 {/* Mobile Home Link */}
                 {pathname === '/' ? (
-                  <button 
+                  <button
                     onClick={() => scrollToSection('hero')}
                     className={`block w-full text-left px-4 py-3 rounded-lg font-medium transition-all ${
-                      isActivePage('/') ? 'bg-primary text-white' : 'text-gray-600 hover:text-primary hover:bg-gray-50'
+                      isActivePage('/')
+                        ? 'bg-primary text-white'
+                        : 'text-gray-600 hover:text-primary hover:bg-gray-50'
                     }`}
                   >
                     Home
                   </button>
                 ) : (
-                  <Link 
+                  <Link
                     href="/"
                     className={`block w-full text-left px-4 py-3 rounded-lg font-medium transition-all ${
-                      isActivePage('/') ? 'bg-primary text-white' : 'text-gray-600 hover:text-primary hover:bg-gray-50'
+                      isActivePage('/')
+                        ? 'bg-primary text-white'
+                        : 'text-gray-600 hover:text-primary hover:bg-gray-50'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -472,14 +513,14 @@ export default function TopNavigation({
 
                 {/* Mobile Features Link */}
                 {pathname === '/' ? (
-                  <button 
+                  <button
                     onClick={() => scrollToSection('features')}
                     className="block w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all"
                   >
                     Features
                   </button>
                 ) : (
-                  <Link 
+                  <Link
                     href="/#features"
                     className="block w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all"
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -489,10 +530,12 @@ export default function TopNavigation({
                 )}
 
                 {/* Mobile Pricing Link */}
-                <Link 
-                  href="/pricing" 
+                <Link
+                  href="/pricing"
                   className={`block w-full text-left px-4 py-3 rounded-lg font-medium transition-all ${
-                    isActivePage('/pricing') ? 'bg-primary text-white' : 'text-gray-600 hover:text-primary hover:bg-gray-50'
+                    isActivePage('/pricing')
+                      ? 'bg-primary text-white'
+                      : 'text-gray-600 hover:text-primary hover:bg-gray-50'
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -501,14 +544,14 @@ export default function TopNavigation({
 
                 {/* Mobile Testimonials Link */}
                 {pathname === '/' ? (
-                  <button 
+                  <button
                     onClick={() => scrollToSection('testimonials')}
                     className="block w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all"
                   >
                     Testimonials
                   </button>
                 ) : (
-                  <Link 
+                  <Link
                     href="/#testimonials"
                     className="block w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all"
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -522,19 +565,34 @@ export default function TopNavigation({
                   {isLoading ? (
                     <div className="w-full h-12 bg-gray-200 rounded animate-pulse"></div>
                   ) : isAuthenticated ? (
-                    <Link href="/dashboard" className="block w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Link
+                      href="/dashboard"
+                      className="block w-full"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
                       <Button className="w-full bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all text-sm">
                         Go to Dashboard
                       </Button>
                     </Link>
                   ) : showAuthButtons ? (
                     <div className="space-y-2">
-                      <Link href="/signin" className="block w-full" onClick={() => setIsMobileMenuOpen(false)}>
-                        <Button variant="outline" className="w-full text-gray-600 border-gray-300 hover:border-primary hover:text-primary px-6 py-3 rounded-full">
+                      <Link
+                        href="/signin"
+                        className="block w-full"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Button
+                          variant="outline"
+                          className="w-full text-gray-600 border-gray-300 hover:border-primary hover:text-primary px-6 py-3 rounded-full"
+                        >
                           Sign In
                         </Button>
                       </Link>
-                      <Link href="/signup" className="block w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Link
+                        href="/signup"
+                        className="block w-full"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
                         <Button className="w-full bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all text-sm">
                           Start Interview
                         </Button>
@@ -549,4 +607,4 @@ export default function TopNavigation({
       )}
     </header>
   );
-} 
+}

@@ -219,7 +219,7 @@ export default function Navigation() {
                 </Link>
                 <Link href="/signup">
                   <Button className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 text-sm">
-                    Start Interview
+                    Create Account
                   </Button>
                 </Link>
               </div>
@@ -370,7 +370,7 @@ export default function Navigation() {
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <Button className="w-full bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all text-sm">
-                        Start Interview
+                        Create Account
                       </Button>
                     </Link>
                   </div>

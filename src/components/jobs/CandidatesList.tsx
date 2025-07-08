@@ -293,7 +293,7 @@ export default function CandidatesList({
           <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search candidates..."
+            placeholder="Search candidates"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -339,7 +339,7 @@ export default function CandidatesList({
                         {candidate.name || 'Anonymous Candidate'}
                       </h4>
                       <div
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(candidate.score)}`}
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(candidate?.score || 0)}`}
                       >
                         {candidate.score}/100
                       </div>

@@ -41,54 +41,34 @@ export interface TeamAssessment {
   createdAt: string;
 }
 
+export type CandidateInterviewStatus = 'in_progress' | 'completed' | 'pending';
+
 // Enhanced Candidate interface with all properties
 export interface Candidate {
-  id: string;
-  name?: string;
-  email: string;
-  progress: number;
-  responses: Response[]; // Changed from number to Response[]
-  score: number;
-  status: 'in_progress' | 'completed' | 'pending';
-  createdAt: string;
-  profileImage?: string;
-  resumeScore: number;
-  candidateStatus?: CandidateStatus;
-  // Additional properties that exist in the slice
-  evaluation?: Evaluation;
-  resume?: CandidateResume;
-  submittedAt?: string;
-}
-
-export interface CandidateBasic {
   id: string;
   jobId: string;
   jobTitle: string;
   jobStatus: string;
   interviewToken: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
+  name: string;
   currentStep: number;
   totalSteps: number;
   isCompleted: boolean;
-  completionPercentage: number;
-  responseCount: number;
-  submittedAt?: string;
+  progress: number;
+  responses: number;
+  status: CandidateInterviewStatus;
+  submittedAt: string;
   createdAt: string;
-  status: CandidateStatus;
-  evaluation?: {
-    id: string;
-    score: number;
-    recommendation: string;
-    summary: string;
-    strengths: string[];
-    redFlags: string[];
-    createdAt: string;
-  };
-  resume: CandidateResume | null;
+  resumeScore: number;
+  candidateStatus?: CandidateStatus;
+  evaluation?: Evaluation;
+  resume?: CandidateResume;
 }
+
+export type CandidateBasic = Omit<Candidate, 'evaluation' | 'resume'>;
 
 export interface CandidateEvaluationSummary {
   id: string;
@@ -103,7 +83,7 @@ export interface CandidateEvaluationSummary {
   evaluationType?: 'resume' | 'interview' | 'combined';
 }
 
-export interface CandidateDetailed extends Omit<CandidateBasic, 'evaluation'> {
+export interface CandidateDetailed {
   job: {
     id: string;
     title: string;
@@ -235,15 +215,15 @@ export interface CandidateList {
   email: string;
   submittedAt?: string;
   evaluation?: Evaluation;
-  responses: Response[];
+  responses: number;
   resume?: CandidateResume;
   candidateStatus?: CandidateStatus;
   name: string;
-  score: number;
+  score?: number;
   progress: number;
-  resumeScore: number;
+  resumeScore?: number;
   createdAt: string;
-  status: 'completed' | 'in_progress' | 'pending';
+  status: CandidateInterviewStatus;
 }
 
 export interface Response {
