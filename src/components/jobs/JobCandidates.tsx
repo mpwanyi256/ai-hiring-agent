@@ -34,7 +34,7 @@ const candidateTabs = [
 
 export default function JobCandidates({ job }: JobCandidatesProps) {
   const dispatch = useDispatch<AppDispatch>();
-  const { candidates, jobCandidatesStats, isLoading, error } = useSelector(
+  const { candidates, jobCandidatesStats, error } = useSelector(
     (state: RootState) => state.candidates,
   );
 
@@ -145,28 +145,16 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
   });
 
   // Resume download handler
-  const handleResumeDownload = async (candidateId: string) => {
+  const handleResumeDownload = async () => {
     try {
-      const result = await dispatch(fetchCandidateResume(candidateId));
-      if (result.payload?.publicUrl) {
+      if (selectedCandidate?.resume?.publicUrl) {
         // Open the resume in a new tab
-        window.open(result.payload.publicUrl, '_blank');
+        window.open(selectedCandidate.resume.publicUrl, '_blank');
       }
     } catch (error) {
       console.error('Failed to download resume:', error);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <CandidatesOverview {...overviewData} />
-        <div className="flex items-center justify-center py-12">
-          <div className="text-gray-500">Loading candidates...</div>
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -274,7 +262,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                     </div>
 
                     {/* Resume Section (merged) */}
-                    <div className="border border-gray-200 rounded-lg p-4 mb-6">
+                    <div className="flex flex-col gap-4 border border-gray-200 rounded-lg p-4 mb-6">
                       <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
                         <DocumentTextIcon className="w-4 h-4 mr-2" />
                         Resume
@@ -306,7 +294,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                               </div>
                             </div>
                             <button
-                              onClick={() => handleResumeDownload(selectedCandidate.id)}
+                              onClick={handleResumeDownload}
                               className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors"
                             >
                               <EyeIcon className="w-4 h-4" />
@@ -323,7 +311,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                                 </span>
                               </div>
                               <div className="flex-1">
-                                <span className="block text-xs font-semibold text-primary mb-1">
+                                <span className="block text-md font-semibold text-primary mb-1">
                                   Resume Match Score
                                 </span>
                                 {(selectedCandidate as any).evaluation.resumeSummary && (

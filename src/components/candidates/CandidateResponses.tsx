@@ -192,13 +192,12 @@ export default function CandidateResponses({
           <div className="space-y-6">
             <div className="text-center py-8">
               <ChartBarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Analytics Coming Soon</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Candidate Analytics</h3>
               <p className="text-gray-600">
-                Detailed analytics and insights for this candidate will be available here.
+                A detailed insight into the candidate&apos;s interview responses per question.
               </p>
             </div>
 
-            {/* Placeholder for future analytics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h4 className="font-medium text-blue-900 mb-2">Response Time</h4>
@@ -208,7 +207,7 @@ export default function CandidateResponses({
                         responses.reduce((acc, r) => acc + (r.responseTime || 0), 0) /
                           responses.length,
                       )
-                    : 'N/A'}
+                    : 'No data'}
                 </p>
                 <p className="text-xs text-blue-700 mt-1">Average per question</p>
               </div>
@@ -216,7 +215,7 @@ export default function CandidateResponses({
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h4 className="font-medium text-green-900 mb-2">Completion</h4>
                 <p className="text-2xl font-bold text-green-600">
-                  {responses.length > 0 ? '100%' : '0%'}
+                  {responses.length > 0 ? '100%' : 'No data'}
                 </p>
                 <p className="text-xs text-green-700 mt-1">Questions answered</p>
               </div>
@@ -226,7 +225,7 @@ export default function CandidateResponses({
                 <p className="text-sm font-medium text-purple-600">
                   {responses.length > 0
                     ? formatDate(responses[responses.length - 1].createdAt)
-                    : 'N/A'}
+                    : 'No data'}
                 </p>
                 <p className="text-xs text-purple-700 mt-1">Most recent response</p>
               </div>

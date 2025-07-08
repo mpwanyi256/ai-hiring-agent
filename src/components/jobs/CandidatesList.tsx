@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getCandidateStatusLabelStyle, getScoreColor } from '@/lib/utils';
+import { useAppSelector } from '@/store';
+import { selectCandidatesLoading } from '@/store/candidates/candidatesSelectors';
 
 interface CandidatesListProps {
   candidates: CandidateList[];
@@ -62,6 +64,7 @@ export default function CandidatesList({
   onSearchChange,
   onFiltersChange,
 }: CandidatesListProps) {
+  const isLoading = useAppSelector(selectCandidatesLoading);
   const [filters, setFilters] = useState({
     minScore: '',
     maxScore: '',
@@ -298,15 +301,19 @@ export default function CandidatesList({
       </div>
       {/* Candidates List - Scrollable */}
       <div className="flex-1 overflow-y-auto">
-        {candidates.length === 0 ? (
+        {isLoading || candidates.length === 0 ? (
           <div className="p-8 text-center">
             <div className="text-gray-400 mb-2">
               <ChartBarIcon className="w-12 h-12 mx-auto" />
             </div>
-            <h4 className="text-sm font-medium text-gray-900 mb-1">No candidates yet</h4>
-            <p className="text-xs text-gray-500">
-              Candidates will appear here once they complete the interview
-            </p>
+            <h4 className="text-sm font-medium text-gray-900 mb-1">
+              {isLoading ? 'Loading...' : 'No candidates yet'}
+            </h4>
+            {!isLoading && (
+              <p className="text-xs text-gray-500">
+                Candidates will appear here once they complete the interview
+              </p>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-gray-100">

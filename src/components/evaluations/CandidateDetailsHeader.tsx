@@ -15,7 +15,7 @@ type CandidateDetailsProps = {
 
 const statusOptions: { value: CandidateStatus; label: string; color: string }[] = [
   { value: 'under_review', label: 'Under Review', color: 'bg-gray-100 text-gray-800' },
-  { value: 'shortlisted', label: 'Shortlist', color: 'bg-green-100 text-green-800' },
+  { value: 'shortlisted', label: 'Shortlisted', color: 'bg-green-100 text-green-800' },
   {
     value: 'interview_scheduled',
     label: 'Interview Scheduled',
@@ -31,7 +31,9 @@ const statusOptions: { value: CandidateStatus; label: string; color: string }[] 
 
 export const CandidateDetailsHeader = ({ candidate }: CandidateDetailsProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState<CandidateStatus>(candidate.status);
+  const [currentStatus, setCurrentStatus] = useState<CandidateStatus>(
+    candidate.candidateStatus || 'under_review',
+  );
 
   const handleStatusUpdate = async (newStatus: CandidateStatus) => {
     if (newStatus === currentStatus) return;
