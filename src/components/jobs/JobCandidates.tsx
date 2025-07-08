@@ -8,7 +8,11 @@ import CandidateAnalytics from '@/components/evaluations/CandidateAnalytics';
 import CandidateResponses from '@/components/candidates/CandidateResponses';
 import { CurrentJob } from '@/types/jobs';
 import { AppDispatch, RootState } from '@/store';
-import { fetchJobCandidates, fetchCandidateResume } from '@/store/candidates/candidatesThunks';
+import {
+  fetchJobCandidates,
+  fetchCandidateResume,
+  fetchAIEvaluation,
+} from '@/store/candidates/candidatesThunks';
 import {
   UserCircleIcon,
   DocumentTextIcon,
@@ -21,6 +25,8 @@ import {
 import { CandidateDetailsHeader } from '../evaluations/CandidateDetailsHeader';
 import { CandidateBasic, CandidateList } from '@/types';
 import { formatFileSize } from '@/lib/utils';
+import AIEvaluationCard from '@/components/evaluations/AIEvaluationCard';
+import { Loader2 } from 'lucide-react';
 
 interface JobCandidatesProps {
   job: CurrentJob;
@@ -50,6 +56,9 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     sortBy: 'created_at' as string,
     sortOrder: 'desc' as 'asc' | 'desc',
   });
+  const [aiEvaluation, setAIEvaluation] = useState<any>(null);
+  const [isLoadingAIEval, setIsLoadingAIEval] = useState(false);
+  const [aiEvalError, setAIEvalError] = useState<string | null>(null);
 
   const handleFiltersChange = (newFilters: {
     minScore?: number;
@@ -155,6 +164,26 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
       console.error('Failed to download resume:', error);
     }
   };
+
+  useEffect(() => {
+    const fetchEval = async () => {
+      if (selectedCandidateId) {
+        setIsLoadingAIEval(true);
+        setAIEvalError(null);
+        try {
+          const response = await dispatch(fetchAIEvaluation(selectedCandidateId)).unwrap();
+          setAIEvaluation(response.aiEvaluation);
+        } catch (err: any) {
+          setAIEvalError(err.message || 'Failed to load AI evaluation');
+        } finally {
+          setIsLoadingAIEval(false);
+        }
+      } else {
+        setAIEvaluation(null);
+      }
+    };
+    fetchEval();
+  }, [selectedCandidateId, dispatch]);
 
   if (error) {
     return (
@@ -322,6 +351,17 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                               </div>
                             </div>
                           )}
+                          {/* AI Evaluation Card below resume */}
+                          {isLoadingAIEval ? (
+                            <div className="bg-white border border-gray-200 rounded-lg p-4 h-32 flex items-center justify-center text-gray-500 text-sm mt-4">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Loading AI evaluation...
+                            </div>
+                          ) : aiEvalError ? (
+                            <div className="text-red-500 text-sm mt-4">{aiEvalError}</div>
+                          ) : aiEvaluation ? (
+                            <AIEvaluationCard evaluation={aiEvaluation} />
+                          ) : null}
                         </div>
                       ) : (
                         <div className="text-sm text-gray-500 italic bg-gray-50 border border-gray-200 rounded-lg p-4">
