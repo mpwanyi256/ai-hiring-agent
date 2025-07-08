@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CreateCandidateData, SubmitInterviewData } from '@/types';
 import { apiUtils } from '../api';
+import { RootState } from '../index';
 
 // Async thunks for candidates using API routes
 export const fetchCandidatesByJob = createAsyncThunk(
@@ -12,7 +13,7 @@ export const fetchCandidatesByJob = createAsyncThunk(
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to fetch candidates');
     }
-  }
+  },
 );
 
 // New thunk for fetching job candidates with stats using the dedicated endpoint
@@ -33,11 +34,11 @@ export const fetchJobCandidates = createAsyncThunk(
     sortOrder?: 'asc' | 'desc';
   }) => {
     try {
-      const { 
-        jobId, 
-        search, 
-        status, 
-        page = 1, 
+      const {
+        jobId,
+        search,
+        status,
+        page = 1,
         limit = 50,
         minScore,
         maxScore,
@@ -45,9 +46,9 @@ export const fetchJobCandidates = createAsyncThunk(
         endDate,
         candidateStatus,
         sortBy,
-        sortOrder
+        sortOrder,
       } = params;
-      
+
       const queryParams = new URLSearchParams({
         ...(search && { search }),
         ...(status && { status }),
@@ -61,25 +62,30 @@ export const fetchJobCandidates = createAsyncThunk(
         page: page.toString(),
         limit: limit.toString(),
       });
-      
+
       const response = await apiUtils.get(`/api/jobs/${jobId}/candidates?${queryParams}`);
       return response;
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to fetch job candidates');
     }
-  }
+  },
 );
 
 export const fetchCandidateById = createAsyncThunk(
   'candidates/fetchCandidateById',
-  async (candidateId: string) => {
+  async (candidateId: string, { getState }) => {
     try {
-      const response = await apiUtils.get(`/api/candidates/${candidateId}`);
+      const state = getState() as RootState;
+      const user = state.auth.user;
+      if (!user?.id) {
+        throw new Error('User not found');
+      }
+      const response = await apiUtils.get(`/api/candidates/${candidateId}?profileId=${user.id}`);
       return response.candidate;
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to fetch candidate');
     }
-  }
+  },
 );
 
 export const fetchCandidateByToken = createAsyncThunk(
@@ -91,7 +97,7 @@ export const fetchCandidateByToken = createAsyncThunk(
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to fetch candidate');
     }
-  }
+  },
 );
 
 // New thunk for fetching candidate resume with access control
@@ -104,7 +110,7 @@ export const fetchCandidateResume = createAsyncThunk(
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to fetch candidate resume');
     }
-  }
+  },
 );
 
 // New thunk for fetching AI evaluation with team assessments
@@ -118,12 +124,12 @@ export const fetchAIEvaluation = createAsyncThunk(
         aiEvaluation: response.aiEvaluation,
         teamAssessments: response.teamAssessments,
         computedValues: response.computedValues,
-        candidateInfo: response.candidateInfo
+        candidateInfo: response.candidateInfo,
       };
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to fetch AI evaluation');
     }
-  }
+  },
 );
 
 // New thunk for triggering AI evaluation
@@ -136,12 +142,12 @@ export const triggerAIEvaluation = createAsyncThunk(
       return {
         candidateId,
         evaluation: response.evaluation,
-        processingDurationMs: response.processingDurationMs
+        processingDurationMs: response.processingDurationMs,
       };
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to trigger AI evaluation');
     }
-  }
+  },
 );
 
 export const createCandidate = createAsyncThunk(
@@ -153,7 +159,7 @@ export const createCandidate = createAsyncThunk(
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to create candidate');
     }
-  }
+  },
 );
 
 export const submitInterview = createAsyncThunk(
@@ -167,7 +173,7 @@ export const submitInterview = createAsyncThunk(
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to submit interview');
     }
-  }
+  },
 );
 
 export const saveEvaluation = createAsyncThunk(
@@ -180,12 +186,15 @@ export const saveEvaluation = createAsyncThunk(
     redFlags: string[];
   }) => {
     try {
-      const response = await apiUtils.post(`/api/candidates/${evaluationData.candidateId}/evaluation`, evaluationData);
+      const response = await apiUtils.post(
+        `/api/candidates/${evaluationData.candidateId}/evaluation`,
+        evaluationData,
+      );
       return response.evaluation;
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to save evaluation');
     }
-  }
+  },
 );
 
 export const updateEvaluation = createAsyncThunk(
@@ -199,12 +208,15 @@ export const updateEvaluation = createAsyncThunk(
     redFlags: string[];
   }) => {
     try {
-      const response = await apiUtils.put(`/api/evaluations/${evaluationData.evaluationId}`, evaluationData);
+      const response = await apiUtils.put(
+        `/api/evaluations/${evaluationData.evaluationId}`,
+        evaluationData,
+      );
       return response.evaluation;
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to update evaluation');
     }
-  }
+  },
 );
 
 export const deleteCandidate = createAsyncThunk(
@@ -216,7 +228,7 @@ export const deleteCandidate = createAsyncThunk(
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to delete candidate');
     }
-  }
+  },
 );
 
 // AI Evaluation thunk
@@ -229,7 +241,7 @@ export const generateAIEvaluation = createAsyncThunk(
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to generate AI evaluation');
     }
-  }
+  },
 );
 
 // New thunk for fetching candidate responses
@@ -238,13 +250,15 @@ export const fetchCandidateResponses = createAsyncThunk(
   async (params: { candidateId: string; jobId: string }) => {
     try {
       const { candidateId, jobId } = params;
-      const response = await apiUtils.get(`/api/candidates/${candidateId}/responses?jobId=${jobId}`);
+      const response = await apiUtils.get(
+        `/api/candidates/${candidateId}/responses?jobId=${jobId}`,
+      );
       return {
         candidateId,
-        responses: response.responses || []
+        responses: response.responses || [],
       };
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Failed to fetch candidate responses');
     }
-  }
-); 
+  },
+);

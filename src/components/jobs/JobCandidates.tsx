@@ -18,16 +18,8 @@ import {
   BriefcaseIcon,
   EyeIcon,
 } from '@heroicons/react/24/outline';
-import {
-  updateCandidateRealtime,
-  // updateResponseRealtime,
-  updateEvaluationRealtime,
-  updateAIEvaluationRealtime,
-  updateResumeRealtime,
-} from '@/store/candidates/candidatesSlice';
-import { createClient } from '@/lib/supabase/client';
 import { CandidateDetailsHeader } from '../evaluations/CandidateDetailsHeader';
-import { Candidate, CandidateBasic, CandidateList } from '@/types';
+import { CandidateBasic, CandidateList } from '@/types';
 
 interface JobCandidatesProps {
   job: CurrentJob;

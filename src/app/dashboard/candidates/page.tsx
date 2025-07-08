@@ -11,7 +11,6 @@ import { RootState, useAppDispatch, useAppSelector } from '@/store';
 import { CandidateList, CandidateStatusFilter } from '@/types/candidates';
 import {
   UserGroupIcon,
-  EyeIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
   XMarkIcon,
@@ -43,8 +42,6 @@ export default function CandidatesPage() {
   const isLoading = useAppSelector(selectCandidatesLoading);
   const pagination = useAppSelector(selectCandidatesPagination);
   const stats = useAppSelector(selectCandidateStats);
-
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Search and filter state
@@ -135,6 +132,7 @@ export default function CandidatesPage() {
       recommendationFilter,
       sortBy,
       sortOrder,
+      dispatch,
     ],
   );
 
@@ -948,14 +946,7 @@ export default function CandidatesPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
-                            <Link href={`/dashboard/candidates/${candidate.id}`}>
-                              <Button variant="outline" size="sm" className="flex items-center">
-                                <EyeIcon className="w-4 h-4 mr-1" />
-                                View
-                              </Button>
-                            </Link>
-
-                            {candidate.candidateStatus === 'under_review' && (
+                            {candidate.candidateStatus !== 'under_review' && (
                               <Button
                                 size="sm"
                                 className="flex items-center"
@@ -985,7 +976,7 @@ export default function CandidatesPage() {
             </div>
 
             {/* Loading more indicator */}
-            {isLoadingMore && (
+            {isLoading && (
               <div className="mt-8 flex items-center justify-center">
                 <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
                 <span className="ml-3 text-muted-text">Loading more candidates...</span>
@@ -993,7 +984,7 @@ export default function CandidatesPage() {
             )}
 
             {/* Load more button (backup for infinite scroll) */}
-            {pagination?.hasMore && !isLoadingMore && (
+            {pagination?.hasMore && !isLoading && (
               <div className="mt-8 text-center">
                 <Button variant="outline" onClick={loadMore}>
                   Load More Candidates
