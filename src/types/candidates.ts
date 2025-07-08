@@ -70,6 +70,19 @@ export interface Candidate {
 
 export type CandidateBasic = Omit<Candidate, 'evaluation' | 'resume'>;
 
+// New type for candidates returned by the API that includes evaluation
+export interface CandidateWithEvaluation extends Omit<Candidate, 'evaluation' | 'resume'> {
+  evaluation?: {
+    id: string;
+    score: number;
+    recommendation: RecommendationType;
+    summary: string;
+    strengths: string[];
+    redFlags: string[];
+    createdAt: string;
+  } | null;
+}
+
 export interface CandidateEvaluationSummary {
   id: string;
   score: number;

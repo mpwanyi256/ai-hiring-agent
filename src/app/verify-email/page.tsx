@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useDispatch } from 'react-redux';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';

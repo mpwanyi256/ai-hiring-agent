@@ -1,14 +1,14 @@
-import { createClient as createBrowserClient } from '@supabase/supabase-js'
-import { createClient } from './supabase/client'
+import { createClient as createBrowserClient } from '@supabase/supabase-js';
+import { createClient } from './supabase/client';
 
 // Legacy client for backward compatibility
 export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+);
 
 // New SSR-compatible client (for client components)
-export { createClient }
+export { createClient };
 
 // NOTE: For server components, import directly from './supabase/server'
 // export { createClient as createServerClient } from './supabase/server'
@@ -351,4 +351,3 @@ export type Database = {
 };
 
 // Export types for use throughout the application
-export type { JobStatus }; 

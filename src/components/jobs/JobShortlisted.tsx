@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store';
 import { selectUser } from '@/store/auth/authSelectors';
-import { CandidateBasic } from '@/types/candidates';
+import { CandidateWithEvaluation } from '@/types/candidates';
 import { Loading } from '@/components/ui/Loading';
 import { UserIcon, CalendarIcon, StarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
@@ -13,7 +13,7 @@ interface JobShortlistedProps {
 
 export default function JobShortlisted({ jobId }: JobShortlistedProps) {
   const user = useAppSelector(selectUser);
-  const [candidates, setCandidates] = useState<CandidateBasic[]>([]);
+  const [candidates, setCandidates] = useState<CandidateWithEvaluation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +27,7 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
           profileId: user.id,
           jobId: jobId,
           candidateStatus: 'shortlisted',
-          limit: '50'
+          limit: '50',
         });
 
         const response = await fetch(`/api/candidates?${params}`);
@@ -53,7 +53,7 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -163,7 +163,7 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                       </div>
                       <div className="ml-3">
                         <div className="text-sm font-medium text-gray-900">
-                          {candidate.fullName}
+                          {candidate.firstName} {candidate.lastName}
                         </div>
                         {candidate.email && (
                           <div className="text-sm text-gray-500">{candidate.email}</div>
@@ -179,7 +179,9 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {candidate.evaluation?.score ? (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getScoreColor(candidate.evaluation.score)}`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getScoreColor(candidate.evaluation.score)}`}
+                      >
                         {candidate.evaluation.score}/100
                       </span>
                     ) : (
@@ -188,7 +190,9 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {candidate.evaluation?.recommendation ? (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRecommendationColor(candidate.evaluation.recommendation)}`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRecommendationColor(candidate.evaluation.recommendation)}`}
+                      >
                         {candidate.evaluation.recommendation.replace('_', ' ')}
                       </span>
                     ) : (
@@ -209,4 +213,4 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
       </div>
     </div>
   );
-} 
+}
