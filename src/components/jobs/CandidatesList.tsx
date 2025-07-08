@@ -18,6 +18,7 @@ import {
   SelectItem,
   SelectValue,
 } from '@/components/ui/select';
+import { getCandidateStatusLabelStyle, getScoreColor } from '@/lib/utils';
 
 interface CandidatesListProps {
   candidates: CandidateList[];
@@ -37,6 +38,7 @@ interface CandidatesListProps {
 }
 
 const statusOptions: CandidateStatusOptions[] = [
+  { value: 'all', label: 'All', color: 'bg-gray-100 text-gray-800' },
   { value: 'under_review', label: 'Under Review', color: 'bg-gray-100 text-gray-800' },
   {
     value: 'interview_scheduled',
@@ -104,23 +106,18 @@ export default function CandidatesList({
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-50';
-    if (score >= 60) return 'text-amber-600 bg-amber-50';
-    return 'text-red-600 bg-red-50';
-  };
-
   const handleFilterChange = (key: string, value: string | number) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
 
     if (onFiltersChange) {
+      const status = newFilters.candidateStatus === 'all' ? undefined : newFilters.candidateStatus;
       onFiltersChange({
         minScore: newFilters.minScore ? parseInt(newFilters.minScore) : undefined,
         maxScore: newFilters.maxScore ? parseInt(newFilters.maxScore) : undefined,
         startDate: newFilters.startDate || undefined,
         endDate: newFilters.endDate || undefined,
-        candidateStatus: newFilters.candidateStatus || undefined,
+        candidateStatus: status || undefined,
         sortBy: newFilters.sortBy,
         sortOrder: newFilters.sortOrder,
       });
@@ -170,10 +167,10 @@ export default function CandidatesList({
                 {hasActiveFilters && <span className="w-2 h-2 bg-primary rounded-full"></span>}
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-96 p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <PopoverContent className="w-64 p-4">
+              <div className="flex flex-col gap-4">
                 {/* Score Range */}
-                <div>
+                {/* <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Score Range
                   </label>
@@ -197,9 +194,9 @@ export default function CandidatesList({
                       className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
                     />
                   </div>
-                </div>
+                </div> */}
                 {/* Date Range */}
-                <div>
+                {/* <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Date Applied
                   </label>
@@ -217,7 +214,7 @@ export default function CandidatesList({
                       className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
                     />
                   </div>
-                </div>
+                </div> */}
                 {/* Status Filter (shadcn/ui Select) */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
@@ -229,7 +226,6 @@ export default function CandidatesList({
                       <SelectValue placeholder="All Statuses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="selecc_all">All Statuses</SelectItem>
                       {statusOptions.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
@@ -341,7 +337,7 @@ export default function CandidatesList({
                       <div
                         className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(candidate?.score || 0)}`}
                       >
-                        {candidate.score}/100
+                        {candidate.score || 0}/100
                       </div>
                     </div>
 
@@ -368,11 +364,13 @@ export default function CandidatesList({
                       <span className={`text-xs font-medium ${getStatusColor(candidate.status)}`}>
                         {getStatusLabel(candidate.status)}
                       </span>
-                      {candidate.status === 'completed' && (
-                        <span className="text-xs text-gray-500">
-                          {candidate.status === 'completed'
-                            ? 'Ready for review'
-                            : 'Interview in progress'}
+                      {candidate.candidateStatus && (
+                        <span
+                          className={`text-xs text-gray-500 px-2 py-1 rounded-full ${getCandidateStatusLabelStyle(
+                            candidate.candidateStatus,
+                          )}`}
+                        >
+                          {candidate.candidateStatus}
                         </span>
                       )}
                     </div>

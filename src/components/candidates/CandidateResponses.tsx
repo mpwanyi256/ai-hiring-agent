@@ -153,9 +153,9 @@ export default function CandidateResponses({
                         <span className="bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded">
                           Q{response.orderIndex || index + 1}
                         </span>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {/* <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                           {response.questionType}
-                        </span>
+                        </span> */}
                       </div>
                       <div className="flex items-center space-x-4 text-xs text-gray-500">
                         <div className="flex items-center space-x-1">

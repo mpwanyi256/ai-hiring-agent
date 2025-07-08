@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { JobData } from './services/jobsService';
-import { Job } from '@/types';
+import { CandidateStatus, Job } from '@/types';
 import { JobStatus } from './supabase';
 import { apiError, apiSuccess } from './notification';
 import { twMerge } from 'tailwind-merge';
@@ -148,6 +148,31 @@ export const getJobStatusLabel = (status: JobStatus) => {
   }
 };
 
+export const getCandidateStatusLabelStyle = (status: CandidateStatus) => {
+  switch (status) {
+    case 'under_review':
+      return 'bg-gray-100 text-gray-700';
+    case 'interview_scheduled':
+      return 'bg-blue-100 text-blue-700';
+    case 'shortlisted':
+      return 'bg-green-100 text-green-700';
+    case 'reference_check':
+      return 'bg-yellow-100 text-yellow-700';
+    case 'offer_extended':
+      return 'bg-purple-100 text-purple-700';
+    case 'offer_accepted':
+      return 'bg-green-100 text-green-700';
+    case 'hired':
+      return 'bg-green-100 text-green-700';
+    case 'rejected':
+      return 'bg-red-100 text-red-700';
+    case 'withdrawn':
+      return 'bg-gray-100 text-gray-700';
+    case 'all':
+      return 'bg-gray-100 text-gray-700';
+  }
+};
+
 export const getJobStatusColor = (status: JobStatus) => {
   switch (status) {
     case 'draft':
@@ -234,9 +259,9 @@ export const getFileIcon = (filename: string) => {
 };
 
 export const getScoreColor = (score: number) => {
-  if (score >= 80) return 'text-green-600';
-  if (score >= 60) return 'text-yellow-600';
-  return 'text-red-600';
+  if (score >= 80) return 'text-green-600 bg-green-50';
+  if (score >= 60) return 'text-amber-600 bg-amber-50';
+  return 'text-red-600 bg-red-50';
 };
 
 export const shareJob = async (job: Job) => {
@@ -261,4 +286,12 @@ export const shareJob = async (job: Job) => {
   } catch (error) {
     apiError(error instanceof Error ? error.message : 'Failed to share job');
   }
+};
+
+export const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };

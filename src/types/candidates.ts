@@ -149,6 +149,7 @@ export type CandidateStatusFilter = 'all' | 'completed' | 'in_progress';
 
 // Database enum values - must match the PostgreSQL enum exactly
 export type CandidateStatus =
+  | 'all'
   | 'under_review'
   | 'interview_scheduled'
   | 'shortlisted'
@@ -234,6 +235,10 @@ export interface Response {
   answer: string;
   responseTime: number;
   createdAt: string;
+  orderIndex: number;
+  questionType: string;
+  questionText: string;
+  responseText: string;
 }
 
 export interface Evaluation {

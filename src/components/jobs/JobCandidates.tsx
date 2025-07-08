@@ -20,6 +20,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { CandidateDetailsHeader } from '../evaluations/CandidateDetailsHeader';
 import { CandidateBasic, CandidateList } from '@/types';
+import { formatFileSize } from '@/lib/utils';
 
 interface JobCandidatesProps {
   job: CurrentJob;
@@ -154,15 +155,6 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     } catch (error) {
       console.error('Failed to download resume:', error);
     }
-  };
-
-  // Format file size
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   if (isLoading) {
