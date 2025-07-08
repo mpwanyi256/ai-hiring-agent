@@ -10,7 +10,7 @@ import { useAppSelector, useAppDispatch } from '@/store';
 import { fetchJobById, fetchJobQuestions } from '@/store/jobs/jobsThunks';
 import { resetCurrentJob } from '@/store/jobs/jobsSlice';
 import { selectCurrentJob, selectJobsLoading, selectJobsError } from '@/store/jobs/jobsSelectors';
-import { copyInterviewLink } from '@/lib/utils';
+import { shareJob } from '@/lib/utils';
 import { Loading } from '@/components/ui/Loading';
 import { DashboardError } from '../ui/DashboardError';
 import { useToast } from '../providers/ToastProvider';
@@ -33,43 +33,28 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
 
   // Fetch job details and questions
   useEffect(() => {
-    dispatch(fetchJobById(resolvedParams.id)).unwrap().catch((err) => {
-      showError(err instanceof Error ? err.message : 'Failed to fetch job details');
-    });
+    dispatch(fetchJobById(resolvedParams.id))
+      .unwrap()
+      .catch((err) => {
+        showError(err instanceof Error ? err.message : 'Failed to fetch job details');
+      });
 
-    return () => { // Clean up function to reset the current job when the component unmounts
+    return () => {
+      // Clean up function to reset the current job when the component unmounts
       dispatch(resetCurrentJob());
-    }
+    };
   }, [resolvedParams.id, dispatch, showError]);
 
   // Fetch questions when switching to Questions tab
   useEffect(() => {
     if (activeTab === 'questions' && job?.id) {
-      dispatch(fetchJobQuestions(job.id)).unwrap().catch((err) => {
-        showError(err instanceof Error ? err.message : 'Failed to fetch questions');
-      });
+      dispatch(fetchJobQuestions(job.id))
+        .unwrap()
+        .catch((err) => {
+          showError(err instanceof Error ? err.message : 'Failed to fetch questions');
+        });
     }
   }, [activeTab, job?.id, dispatch, showError]);
-
-  const shareJob = async () => {
-    if (!job) return;
-    const link = job.interviewLink || `${window.location.origin}/interview/${job.interviewToken}`;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `AI Interview: ${job.title}`,
-          text: `Take an AI-powered interview for the ${job.title} position`,
-          url: link,
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-        copyInterviewLink(link);
-      }
-    } else {
-      copyInterviewLink(link);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -81,9 +66,12 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
 
   if (error || !job) {
     return (
-      <DashboardError 
-        title="Job Not Found" 
-        message={error || 'The job you are looking for does not exist or you do not have permission to view it.'} 
+      <DashboardError
+        title="Job Not Found"
+        message={
+          error ||
+          'The job you are looking for does not exist or you do not have permission to view it.'
+        }
       />
     );
   }
@@ -108,7 +96,7 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
       job={job}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      onShareJob={shareJob}
+      onShareJob={() => shareJob(job)}
     >
       {renderTabContent()}
     </JobDetailsLayout>

@@ -1,16 +1,15 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/app/store';
 import { checkAuth } from '@/store/auth/authThunks';
+import { useAppDispatch } from '@/store';
 
 interface AuthProviderProps {
   children: React.ReactNode;
 }
 
 export default function AuthProvider({ children }: AuthProviderProps) {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -27,16 +26,16 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   }, [dispatch]);
 
   // Show loading screen while initializing auth
-//   if (!isInitialized) {
-//     return (
-//       <div className="min-h-screen bg-background flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-//           <p className="text-muted-text">Loading...</p>
-//         </div>
-//       </div>
-//     );
-//   }
+  //   if (!isInitialized) {
+  //     return (
+  //       <div className="min-h-screen bg-background flex items-center justify-center">
+  //         <div className="text-center">
+  //           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+  //           <p className="text-muted-text">Loading...</p>
+  //         </div>
+  //       </div>
+  //     );
+  //   }
 
   return <>{children}</>;
-} 
+}

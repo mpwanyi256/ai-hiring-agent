@@ -2,7 +2,7 @@ import { type ClassValue, clsx } from 'clsx';
 import { JobData } from './services/jobsService';
 import { Job } from '@/types';
 import { JobStatus } from './supabase';
-import { apiSuccess } from './notification';
+import { apiError, apiSuccess } from './notification';
 import { twMerge } from 'tailwind-merge';
 
 // Utility function to merge classes with Tailwind
@@ -237,4 +237,28 @@ export const getScoreColor = (score: number) => {
   if (score >= 80) return 'text-green-600';
   if (score >= 60) return 'text-yellow-600';
   return 'text-red-600';
+};
+
+export const shareJob = async (job: Job) => {
+  try {
+    if (!job) return;
+    const link = job.interviewLink || `${window.location.origin}/interview/${job.interviewToken}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `AI Interview: ${job.title}`,
+          text: `Take an AI-powered interview for the ${job.title} position`,
+          url: link,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        copyInterviewLink(link);
+      }
+    } else {
+      copyInterviewLink(link);
+    }
+  } catch (error) {
+    apiError(error instanceof Error ? error.message : 'Failed to share job');
+  }
 };

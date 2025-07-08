@@ -11,14 +11,10 @@ import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import TopNavigation from '@/components/navigation/TopNavigation';
 import { signUp } from '@/store/auth/authThunks';
-import { RootState, AppDispatch } from '@/app/store';
 import { clearError } from '@/store/auth/authSlice';
-import { 
-  ArrowRightIcon, 
-  ArrowLeftIcon,
-  EyeIcon,
-  EyeSlashIcon
-} from '@heroicons/react/24/outline';
+import { ArrowRightIcon, ArrowLeftIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { RootState } from '@/store';
+import { useAppDispatch } from '@/store';
 
 // Form validation schemas
 const step1Schema = z.object({
@@ -30,14 +26,16 @@ const step2Schema = z.object({
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
 });
 
-const step3Schema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string().min(8, 'Please confirm your password'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don&apos;t match",
-  path: ["confirmPassword"],
-});
+const step3Schema = z
+  .object({
+    email: z.string().email('Please enter a valid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z.string().min(8, 'Please confirm your password'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords don&apos;t match',
+    path: ['confirmPassword'],
+  });
 
 type Step1Data = z.infer<typeof step1Schema>;
 type Step2Data = z.infer<typeof step2Schema>;
@@ -47,12 +45,12 @@ type FormData = Step1Data & Step2Data & Step3Data;
 
 export default function SignupPage() {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const { isLoading, error } = useSelector((state: RootState) => state.auth) as {
     isLoading: boolean;
     error: string | null;
   };
-  
+
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<FormData>>({});
   const [showPassword, setShowPassword] = useState(false);
@@ -86,27 +84,29 @@ export default function SignupPage() {
   });
 
   const handleStep1Submit = (data: Step1Data) => {
-    setFormData(prev => ({ ...prev, ...data }));
+    setFormData((prev) => ({ ...prev, ...data }));
     setCurrentStep(2);
   };
 
   const handleStep2Submit = (data: Step2Data) => {
-    setFormData(prev => ({ ...prev, ...data }));
+    setFormData((prev) => ({ ...prev, ...data }));
     setCurrentStep(3);
   };
 
   const handleStep3Submit = async (data: Step3Data) => {
     const finalData = { ...formData, ...data };
-    
+
     try {
-      await dispatch(signUp({
-        email: finalData.email!,
-        password: finalData.password,
-        firstName: finalData.firstName!,
-        lastName: finalData.lastName!,
-        companyName: finalData.companyName!,
-      })).unwrap();
-      
+      await dispatch(
+        signUp({
+          email: finalData.email!,
+          password: finalData.password,
+          firstName: finalData.firstName!,
+          lastName: finalData.lastName!,
+          companyName: finalData.companyName!,
+        }),
+      ).unwrap();
+
       // Redirect to verification page with email parameter
       router.push(`/verify-email?email=${encodeURIComponent(finalData.email!)}`);
     } catch (error) {
@@ -137,7 +137,9 @@ export default function SignupPage() {
             {/* Progress Bar */}
             <div className="mb-6 sm:mb-8">
               <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <span className="text-xs sm:text-sm font-medium text-text">Step {currentStep} of 3</span>
+                <span className="text-xs sm:text-sm font-medium text-text">
+                  Step {currentStep} of 3
+                </span>
                 <span className="text-xs sm:text-sm text-muted-text">
                   {currentStep === 1 && 'Company Details'}
                   {currentStep === 2 && 'Personal Information'}
@@ -145,7 +147,7 @@ export default function SignupPage() {
                 </span>
               </div>
               <div className="w-full bg-surface rounded-full h-2">
-                <div 
+                <div
                   className="bg-primary h-2 rounded-full transition-all duration-300"
                   style={{ width: `${(currentStep / 3) * 100}%` }}
                 />
@@ -156,10 +158,7 @@ export default function SignupPage() {
             {error && (
               <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-accent-red/10 border border-accent-red/20 rounded-lg">
                 <p className="text-accent-red text-sm">{error}</p>
-                <button
-                  onClick={clearFormError}
-                  className="text-accent-red text-xs underline mt-1"
-                >
+                <button onClick={clearFormError} className="text-accent-red text-xs underline mt-1">
                   Dismiss
                 </button>
               </div>
@@ -168,12 +167,19 @@ export default function SignupPage() {
             {/* Step 1: Company Details */}
             {currentStep === 1 && (
               <div className="bg-white p-4 sm:p-8 rounded-lg shadow-sm border border-gray-light">
-                <h1 className="text-xl sm:text-2xl font-bold text-text mb-2">Create Your Account</h1>
-                <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">Let&apos;s start with your company information</p>
-                
+                <h1 className="text-xl sm:text-2xl font-bold text-text mb-2">
+                  Create Your Account
+                </h1>
+                <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">
+                  Let&apos;s start with your company information
+                </p>
+
                 <form onSubmit={step1Form.handleSubmit(handleStep1Submit)} className="space-y-4">
                   <div>
-                    <label htmlFor="companyName" className="block text-sm font-medium text-text mb-2">
+                    <label
+                      htmlFor="companyName"
+                      className="block text-sm font-medium text-text mb-2"
+                    >
                       Company Name *
                     </label>
                     <input
@@ -201,13 +207,20 @@ export default function SignupPage() {
             {/* Step 2: Personal Information */}
             {currentStep === 2 && (
               <div className="bg-white p-4 sm:p-8 rounded-lg shadow-sm border border-gray-light">
-                <h1 className="text-xl sm:text-2xl font-bold text-text mb-2">Personal Information</h1>
-                <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">Tell us a bit about yourself</p>
-                
+                <h1 className="text-xl sm:text-2xl font-bold text-text mb-2">
+                  Personal Information
+                </h1>
+                <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">
+                  Tell us a bit about yourself
+                </p>
+
                 <form onSubmit={step2Form.handleSubmit(handleStep2Submit)} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="firstName" className="block text-sm font-medium text-text mb-2">
+                      <label
+                        htmlFor="firstName"
+                        className="block text-sm font-medium text-text mb-2"
+                      >
                         First Name *
                       </label>
                       <input
@@ -224,7 +237,10 @@ export default function SignupPage() {
                       )}
                     </div>
                     <div>
-                      <label htmlFor="lastName" className="block text-sm font-medium text-text mb-2">
+                      <label
+                        htmlFor="lastName"
+                        className="block text-sm font-medium text-text mb-2"
+                      >
                         Last Name *
                       </label>
                       <input
@@ -243,9 +259,9 @@ export default function SignupPage() {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={goToPreviousStep}
                       className="flex-1 order-2 sm:order-1"
                     >
@@ -265,8 +281,10 @@ export default function SignupPage() {
             {currentStep === 3 && (
               <div className="bg-white p-4 sm:p-8 rounded-lg shadow-sm border border-gray-light">
                 <h1 className="text-xl sm:text-2xl font-bold text-text mb-2">Account Setup</h1>
-                <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">Create your login credentials</p>
-                
+                <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">
+                  Create your login credentials
+                </p>
+
                 <form onSubmit={step3Form.handleSubmit(handleStep3Submit)} className="space-y-4">
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-text mb-2">
@@ -318,7 +336,10 @@ export default function SignupPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-text mb-2">
+                    <label
+                      htmlFor="confirmPassword"
+                      className="block text-sm font-medium text-text mb-2"
+                    >
                       Confirm Password *
                     </label>
                     <div className="relative">
@@ -349,17 +370,17 @@ export default function SignupPage() {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={goToPreviousStep}
                       className="flex-1 order-2 sm:order-1"
                     >
                       <ArrowLeftIcon className="w-4 h-4 mr-2" />
                       Back
                     </Button>
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="flex-1 order-1 sm:order-2"
                       isLoading={isLoading}
                     >
@@ -387,4 +408,4 @@ export default function SignupPage() {
       </div>
     </div>
   );
-} 
+}

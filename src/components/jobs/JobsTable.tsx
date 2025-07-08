@@ -5,13 +5,12 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { JobData } from '@/lib/services/jobsService';
 import { JobStatus } from '@/lib/supabase';
-import { 
+import {
   EyeIcon,
-  PencilIcon,
   LinkIcon,
   UserGroupIcon,
   CalendarIcon,
-  ClockIcon
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 
 interface JobsTableProps {
@@ -25,7 +24,7 @@ export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProp
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -109,7 +108,7 @@ export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProp
               <tr key={job.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-4">
                   <div className="flex flex-col">
-                    <Link 
+                    <Link
                       href={`/dashboard/jobs/${job.id}`}
                       className="text-sm font-medium text-gray-900 hover:text-primary transition-colors"
                     >
@@ -123,7 +122,10 @@ export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProp
                     {job.fields?.skills && job.fields.skills.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {job.fields.skills.slice(0, 2).map((skill, index) => (
-                          <span key={index} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-primary/10 text-primary">
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-primary/10 text-primary"
+                          >
                             {skill}
                           </span>
                         ))}
@@ -136,20 +138,22 @@ export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProp
                     )}
                   </div>
                 </td>
-                
+
                 <td className="px-4 py-4">
                   <div className="flex flex-col space-y-1">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}>
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}
+                    >
                       {getStatusLabel(job.status)}
                     </span>
-                    <span className={`text-xs ${
-                      job.isActive ? 'text-green-600' : 'text-gray-500'
-                    }`}>
+                    <span
+                      className={`text-xs ${job.isActive ? 'text-green-600' : 'text-gray-500'}`}
+                    >
                       {job.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                 </td>
-                
+
                 <td className="px-4 py-4">
                   <div className="flex items-center space-x-2">
                     <UserGroupIcon className="w-4 h-4 text-gray-400" />
@@ -158,22 +162,20 @@ export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProp
                     </span>
                   </div>
                 </td>
-                
+
                 <td className="px-4 py-4">
                   <div className="flex items-center space-x-2">
                     <ClockIcon className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-500">
-                      {formatDate(job.createdAt)}
-                    </span>
+                    <span className="text-sm text-gray-500">{formatDate(job.createdAt)}</span>
                   </div>
                 </td>
-                
+
                 <td className="px-4 py-4">
                   <span className="text-sm text-gray-500 capitalize">
                     {job.interviewFormat === 'text' ? 'Text' : 'Video'}
                   </span>
                 </td>
-                
+
                 <td className="px-4 py-4 text-right">
                   <div className="flex items-center justify-end space-x-2">
                     <Link href={`/dashboard/jobs/${job.id}`}>
@@ -182,32 +184,25 @@ export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProp
                         View
                       </Button>
                     </Link>
-                    
-                    <Link href={`/dashboard/jobs/${job.id}/edit`}>
-                      <Button variant="ghost" size="sm" className="text-xs">
-                        <PencilIcon className="w-3 h-3 mr-1" />
-                        Edit
-                      </Button>
-                    </Link>
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="text-xs"
                       onClick={() => onCopyLink(job)}
                     >
                       <LinkIcon className="w-3 h-3 mr-1" />
-                      Link
+                      Copy interview link
                     </Button>
-                    
-                    {job.candidateCount && job.candidateCount > 0 && (
+
+                    {/* {job.candidateCount && job.candidateCount > 0 && (
                       <Link href={`/dashboard/candidates?job=${job.id}`}>
                         <Button size="sm" className="text-xs">
                           <UserGroupIcon className="w-3 h-3 mr-1" />
                           Candidates
                         </Button>
                       </Link>
-                    )}
+                    )} */}
                   </div>
                 </td>
               </tr>
@@ -217,4 +212,4 @@ export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProp
       </div>
     </div>
   );
-} 
+}

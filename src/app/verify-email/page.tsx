@@ -8,17 +8,13 @@ import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import TopNavigation from '@/components/navigation/TopNavigation';
 import { checkAuth } from '@/store/auth/authThunks';
-import { AppDispatch } from '@/app/store';
-import { 
-  KeyIcon,
-  CheckCircleIcon,
-  ArrowLeftIcon
-} from '@heroicons/react/24/outline';
+import { KeyIcon, CheckCircleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { useAppDispatch } from '@/store';
 
 function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -27,7 +23,7 @@ function VerifyEmailContent() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [codeExpired, setCodeExpired] = useState(false);
   const [lastCodeSentAt, setLastCodeSentAt] = useState<Date | null>(null);
-  
+
   const email = searchParams.get('email') || '';
 
   useEffect(() => {
@@ -46,7 +42,7 @@ function VerifyEmailContent() {
       const checkExpiry = () => {
         const timeElapsed = Date.now() - lastCodeSentAt.getTime();
         const hasExpired = timeElapsed > 60000; // 60 seconds
-        
+
         if (hasExpired && !codeExpired) {
           setCodeExpired(true);
           setError('Verification code has expired. Please request a new one.');
@@ -67,7 +63,7 @@ function VerifyEmailContent() {
 
   const handleCodeChange = (value: string, index: number) => {
     if (value.length > 1) return; // Only allow single digits
-    
+
     const newCode = [...code];
     newCode[index] = value;
     setCode(newCode);
@@ -100,7 +96,7 @@ function VerifyEmailContent() {
 
   const handleVerifyCode = async () => {
     const verificationCode = code.join('');
-    
+
     if (verificationCode.length !== 6) {
       setError('Please enter all 6 digits');
       return;
@@ -123,7 +119,7 @@ function VerifyEmailContent() {
         body: JSON.stringify({
           email,
           token: verificationCode,
-          type: 'email'
+          type: 'email',
         }),
       });
 
@@ -173,7 +169,7 @@ function VerifyEmailContent() {
         },
         body: JSON.stringify({
           email,
-          type: 'signup'
+          type: 'signup',
         }),
       });
 
@@ -187,7 +183,7 @@ function VerifyEmailContent() {
       setLastCodeSentAt(new Date());
       setCodeExpired(false);
       setCode(['', '', '', '', '', '']);
-      
+
       if (!silent) {
         setShowSuccess(true);
         setResendCooldown(60);
@@ -201,9 +197,11 @@ function VerifyEmailContent() {
     }
   };
 
-  const isCodeComplete = code.every(digit => digit !== '');
+  const isCodeComplete = code.every((digit) => digit !== '');
   const canResend = resendCooldown === 0 && !isResending;
-  const timeRemaining = lastCodeSentAt ? Math.max(0, 60 - Math.floor((Date.now() - lastCodeSentAt.getTime()) / 1000)) : 0;
+  const timeRemaining = lastCodeSentAt
+    ? Math.max(0, 60 - Math.floor((Date.now() - lastCodeSentAt.getTime()) / 1000))
+    : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -221,8 +219,10 @@ function VerifyEmailContent() {
               </div>
 
               {/* Title */}
-              <h1 className="text-xl sm:text-2xl font-bold text-text mb-3 sm:mb-4">Verify Your Email</h1>
-              
+              <h1 className="text-xl sm:text-2xl font-bold text-text mb-3 sm:mb-4">
+                Verify Your Email
+              </h1>
+
               {/* Description */}
               <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">
                 We&apos;ve sent a 6-digit verification code to{' '}
@@ -284,17 +284,15 @@ function VerifyEmailContent() {
                       onKeyDown={(e) => handleKeyDown(e, index)}
                       onPaste={handlePaste}
                       className={`w-10 h-10 sm:w-12 sm:h-12 text-center text-base sm:text-lg font-semibold border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
-                        codeExpired 
-                          ? 'border-accent-red/30 bg-accent-red/5 focus:ring-accent-red/50' 
+                        codeExpired
+                          ? 'border-accent-red/30 bg-accent-red/5 focus:ring-accent-red/50'
                           : 'border-gray-light focus:ring-primary'
                       }`}
                       disabled={codeExpired}
                     />
                   ))}
                 </div>
-                <p className="text-xs text-muted-text">
-                  Enter the 6-digit code from your email
-                </p>
+                <p className="text-xs text-muted-text">Enter the 6-digit code from your email</p>
               </div>
 
               {/* Verify Button */}
@@ -327,7 +325,7 @@ function VerifyEmailContent() {
                     'Resend Code'
                   )}
                 </Button>
-                
+
                 {!codeExpired && timeRemaining > 0 && (
                   <p className="text-xs text-muted-text text-center">
                     You can request a new code in {Math.max(resendCooldown, timeRemaining)} seconds
@@ -337,8 +335,8 @@ function VerifyEmailContent() {
 
               {/* Back to Signup */}
               <div className="pt-4 sm:pt-6 border-t border-gray-light">
-                <Link 
-                  href="/signup" 
+                <Link
+                  href="/signup"
                   className="inline-flex items-center text-sm text-muted-text hover:text-primary"
                 >
                   <ArrowLeftIcon className="w-4 h-4 mr-2" />
@@ -349,9 +347,7 @@ function VerifyEmailContent() {
               {/* Free Tier Info */}
               <div className="mt-4 sm:mt-6 bg-gradient-to-r from-primary/5 to-accent-blue/5 rounded-lg border border-primary/20 p-3 sm:p-4">
                 <h3 className="font-semibold text-text mb-2">🎉 You&apos;re on the Free Tier</h3>
-                <p className="text-sm text-muted-text mb-2">
-                  Your account includes:
-                </p>
+                <p className="text-sm text-muted-text mb-2">Your account includes:</p>
                 <ul className="text-sm text-muted-text text-left space-y-1">
                   <li>• 1 active job posting</li>
                   <li>• 5 AI interviews per month</li>
@@ -369,15 +365,17 @@ function VerifyEmailContent() {
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-muted-text">Loading...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-muted-text">Loading...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <VerifyEmailContent />
     </Suspense>
   );
-} 
+}
