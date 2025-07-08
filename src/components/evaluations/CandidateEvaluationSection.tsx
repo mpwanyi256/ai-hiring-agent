@@ -6,19 +6,42 @@ import { RootState, AppDispatch } from '@/store';
 import { fetchAIEvaluation, triggerAIEvaluation } from '@/store/candidates/candidatesThunks';
 import RadarChart from './RadarChart';
 import Button from '@/components/ui/Button';
-import { evaluationUtils } from '@/lib/utils/evaluationUtils';
-import { TeamAssessment, CategoryScore } from '@/types/evaluations';
 import {
-  StarIcon,
-  UserGroupIcon,
   ClockIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
   ArrowTrendingUpIcon,
+  CheckCircleIcon,
+  UserGroupIcon,
+  StarIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import { NoAIEvaluations } from './NoAIEvaluations';
 import { LoadingAIEvaluations } from './LoadingAIEvaluations';
+import { NoAIEvaluations } from './NoAIEvaluations';
 import { ErrorLoadingAIEvaluations } from './ErrorLoadingAIEvaluations';
+import { RadarMetrics } from '@/types/evaluations';
+
+// Type definition for the actual API response
+interface ActualAIEvaluation {
+  id: string;
+  candidateId: string;
+  jobId: string;
+  profileId: string;
+  overallScore: number;
+  overallStatus: string;
+  recommendation: string;
+  evaluationSummary: string;
+  evaluationExplanation: string;
+  radarMetrics: RadarMetrics;
+  categoryScores: Record<string, any>;
+  keyStrengths: string[];
+  areasForImprovement: string[];
+  redFlags: string[];
+  evaluationSources: any;
+  processingDurationMs: number;
+  aiModelVersion: string;
+  evaluationVersion: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface CandidateEvaluationSectionProps {
   candidateId: string;
@@ -39,7 +62,7 @@ export default function CandidateEvaluationSection({
   } = useSelector((state: RootState) => state.candidates);
 
   const currentEvaluation = aiEvaluationState.currentEvaluation;
-  const aiEvaluation = currentEvaluation?.aiEvaluation;
+  const aiEvaluation = currentEvaluation?.aiEvaluation as ActualAIEvaluation | null;
   const teamAssessments = currentEvaluation?.teamAssessments || [];
   const computedValues = currentEvaluation?.computedValues;
 
@@ -67,9 +90,53 @@ export default function CandidateEvaluationSection({
     return <NoAIEvaluations candidateId={candidateId} />;
   }
 
-  const overallStatusColor = evaluationUtils.getStatusColor(aiEvaluation.overallStatus);
-  const overallStatusText = evaluationUtils.getStatusText(aiEvaluation.overallStatus);
-  const averageTeamRating = computedValues?.averageTeamRating || 0;
+  // Use the actual properties from the API response
+  const overallScore = aiEvaluation.overallScore || 0;
+  const overallStatus = aiEvaluation.overallStatus || 'pending';
+  const recommendation = aiEvaluation.recommendation || 'maybe';
+  const keyStrengths = aiEvaluation.keyStrengths || [];
+  const areasForImprovement = aiEvaluation.areasForImprovement || [];
+  const redFlags = aiEvaluation.redFlags || [];
+  const radarMetrics = aiEvaluation.radarMetrics || {};
+  const categoryScores = aiEvaluation.categoryScores || {};
+  const evaluationSummary = aiEvaluation.evaluationSummary || '';
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'strong_yes':
+      case 'yes':
+        return 'text-green-600 bg-green-100';
+      case 'maybe':
+        return 'text-yellow-600 bg-yellow-100';
+      case 'no':
+      case 'strong_no':
+        return 'text-red-600 bg-red-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'strong_yes':
+        return 'Strong Yes';
+      case 'yes':
+        return 'Yes';
+      case 'maybe':
+        return 'Maybe';
+      case 'no':
+        return 'No';
+      case 'strong_no':
+        return 'Strong No';
+      default:
+        return 'Pending';
+    }
+  };
+
+  const overallStatusColor = getStatusColor(overallStatus);
+  const overallStatusText = getStatusText(overallStatus);
+  const averageTeamRating =
+    typeof computedValues?.averageTeamRating === 'number' ? computedValues.averageTeamRating : 0;
 
   return (
     <div className={`space-y-6 mb-6 ${className}`}>
@@ -112,18 +179,18 @@ export default function CandidateEvaluationSection({
               </div>
 
               <div className="flex items-center space-x-4">
-                <div className="text-4xl font-bold text-gray-900">{aiEvaluation.overallScore}%</div>
+                <div className="text-4xl font-bold text-gray-900">{overallScore}%</div>
                 <div className="flex-1">
                   <div className="w-full bg-gray-200 rounded-full h-3">
                     <div
                       className="bg-primary h-3 rounded-full transition-all"
-                      style={{ width: `${aiEvaluation.overallScore}%` }}
+                      style={{ width: `${overallScore}%` }}
                     />
                   </div>
                   <p className="text-sm text-gray-600 mt-2">
                     AI Recommendation:{' '}
                     <span className="font-medium capitalize">
-                      {aiEvaluation.recommendation.replace('_', ' ')}
+                      {recommendation.replace('_', ' ')}
                     </span>
                   </p>
                 </div>
@@ -150,7 +217,7 @@ export default function CandidateEvaluationSection({
                   </div>
 
                   <div className="space-y-2">
-                    {teamAssessments.slice(0, 3).map((assessment: TeamAssessment) => (
+                    {teamAssessments.slice(0, 3).map((assessment: any) => (
                       <div
                         key={assessment.id}
                         className="flex items-center justify-between text-sm"
@@ -160,7 +227,7 @@ export default function CandidateEvaluationSection({
                             <span className="text-xs font-medium text-primary">
                               {assessment.assessorName
                                 ?.split(' ')
-                                .map((n) => n[0])
+                                .map((n: string) => n[0])
                                 .join('') || 'A'}
                             </span>
                           </div>
@@ -195,7 +262,7 @@ export default function CandidateEvaluationSection({
           {/* Right Column - Radar Chart */}
           <div className="flex flex-col items-center">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Competency Analysis</h3>
-            <RadarChart radarMetrics={aiEvaluation.radarMetrics} size="md" />
+            <RadarChart radarMetrics={radarMetrics} size="md" />
           </div>
         </div>
       </div>
@@ -209,29 +276,26 @@ export default function CandidateEvaluationSection({
           <div>
             <h4 className="text-md font-semibold text-gray-900 mb-4">Category Breakdown</h4>
             <div className="space-y-4">
-              {Object.entries(aiEvaluation.categoryScores || {})
-                .map(([category, data]) => {
-                  if (!data) return null;
-                  const categoryData = data as CategoryScore;
-                  return (
-                    <div key={category} className="border-l-4 border-primary/20 pl-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h5 className="font-medium text-gray-900 capitalize">
-                          {category.replace('_', ' ')}
-                        </h5>
-                        <span className="font-bold text-primary">{categoryData.score}%</span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">{categoryData.explanation}</p>
-                      {categoryData.strengths && categoryData.strengths.length > 0 && (
-                        <div className="text-xs">
-                          <span className="text-green-600 font-medium">Strengths: </span>
-                          <span className="text-gray-600">{categoryData.strengths.join(', ')}</span>
-                        </div>
-                      )}
+              {Object.entries(categoryScores).map(([category, data]: [string, any]) => {
+                if (!data) return null;
+                return (
+                  <div key={category} className="border-l-4 border-primary/20 pl-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="font-medium text-gray-900 capitalize">
+                        {category.replace('_', ' ')}
+                      </h5>
+                      <span className="font-bold text-primary">{data.score}%</span>
                     </div>
-                  );
-                })
-                .filter(Boolean)}
+                    <p className="text-sm text-gray-600 mb-2">{data.explanation}</p>
+                    {data.strengths && data.strengths.length > 0 && (
+                      <div className="text-xs">
+                        <span className="text-green-600 font-medium">Strengths: </span>
+                        <span className="text-gray-600">{data.strengths.join(', ')}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -244,7 +308,7 @@ export default function CandidateEvaluationSection({
                 Key Strengths
               </h4>
               <ul className="space-y-2">
-                {aiEvaluation.keyStrengths.map((strength: string, index: number) => (
+                {keyStrengths.map((strength: string, index: number) => (
                   <li key={index} className="flex items-start space-x-2 text-sm">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0" />
                     <span className="text-gray-700">{strength}</span>
@@ -260,7 +324,7 @@ export default function CandidateEvaluationSection({
                 Areas for Improvement
               </h4>
               <ul className="space-y-2">
-                {aiEvaluation.areasForImprovement.map((area: string, index: number) => (
+                {areasForImprovement.map((area: string, index: number) => (
                   <li key={index} className="flex items-start space-x-2 text-sm">
                     <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
                     <span className="text-gray-700">{area}</span>
@@ -270,14 +334,14 @@ export default function CandidateEvaluationSection({
             </div>
 
             {/* Red Flags */}
-            {aiEvaluation.redFlags && aiEvaluation.redFlags.length > 0 && (
+            {redFlags && redFlags.length > 0 && (
               <div>
                 <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
                   <ExclamationTriangleIcon className="w-5 h-5 text-red-500 mr-2" />
                   Red Flags
                 </h4>
                 <ul className="space-y-2">
-                  {aiEvaluation.redFlags.map((flag: string, index: number) => (
+                  {redFlags.map((flag: string, index: number) => (
                     <li key={index} className="flex items-start space-x-2 text-sm">
                       <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-2 flex-shrink-0" />
                       <span className="text-gray-700">{flag}</span>
@@ -288,23 +352,13 @@ export default function CandidateEvaluationSection({
             )}
           </div>
         </div>
+      </div>
 
-        {/* Summary */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h4 className="text-md font-semibold text-gray-900 mb-2">AI Summary</h4>
-          <p className="text-gray-700 text-sm leading-relaxed">{aiEvaluation.evaluationSummary}</p>
-        </div>
-
-        {/* Processing Info */}
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <div className="flex items-center space-x-4">
-              <span>Processed in {aiEvaluation.processingDurationMs || 0}ms</span>
-              <span>•</span>
-              <span>Model: {aiEvaluation.aiModelVersion || 'gpt-4'}</span>
-            </div>
-            <span>Evaluated on {new Date(aiEvaluation.createdAt).toLocaleDateString()}</span>
-          </div>
+      {/* Evaluation Summary */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Evaluation Summary</h3>
+        <div className="prose prose-sm max-w-none">
+          <p className="text-gray-700 leading-relaxed">{evaluationSummary}</p>
         </div>
       </div>
     </div>
