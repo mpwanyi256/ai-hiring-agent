@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -397,626 +397,640 @@ export default function CandidatesPage() {
     sortOrder !== 'desc';
 
   return (
-    <DashboardLayout title="Candidates">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-text mb-2">All Candidates</h1>
-              <p className="text-muted-text">
-                Manage and review candidates across all your job postings
-              </p>
-            </div>
-            <div className="mt-4 sm:mt-0">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/dashboard/jobs/new">
-                  <Button className="flex items-center">
-                    <BriefcaseIcon className="w-4 h-4 mr-2" />
-                    Create New Job
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <UserGroupIcon className="w-5 h-5 text-gray-600" />
-              </div>
+    <Suspense
+      fallback={<div className="flex items-center justify-center py-12">Loading candidates...</div>}
+    >
+      <DashboardLayout title="Candidates">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-text">Total Candidates</p>
-                <p className="text-xl font-bold text-text">{stats.total}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircleIcon className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-text">Completed</p>
-                <p className="text-xl font-bold text-text">{stats.completed}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <ClockIcon className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-text">In Progress</p>
-                <p className="text-xl font-bold text-text">{stats.pending}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <TrophyIcon className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-text">Avg Score</p>
-                <p className="text-xl font-bold text-text">
-                  {stats.averageScore > 0 ? Math.round(stats.averageScore) : '-'}
+                <h1 className="text-2xl sm:text-3xl font-bold text-text mb-2">All Candidates</h1>
+                <p className="text-muted-text">
+                  Manage and review candidates across all your job postings
                 </p>
               </div>
+              <div className="mt-4 sm:mt-0">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link href="/dashboard/jobs/new">
+                    <Button className="flex items-center">
+                      <BriefcaseIcon className="w-4 h-4 mr-2" />
+                      Create New Job
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Search and Filters */}
-        <div className="bg-white rounded-lg border border-gray-light p-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <MagnifyingGlassIcon className="w-5 h-5 text-muted-text absolute left-3 top-1/2 transform -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Search candidates by name or email..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <UserGroupIcon className="w-5 h-5 text-gray-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-text">Total Candidates</p>
+                  <p className="text-xl font-bold text-text">{stats.total}</p>
+                </div>
               </div>
             </div>
 
-            {/* Filter Toggle */}
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center"
-            >
-              <FunnelIcon className="w-4 h-4 mr-2" />
-              Filters
-              {hasFilters && <span className="ml-2 w-2 h-2 bg-primary rounded-full"></span>}
-            </Button>
+            <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-text">Completed</p>
+                  <p className="text-xl font-bold text-text">{stats.completed}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <ClockIcon className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-text">In Progress</p>
+                  <p className="text-xl font-bold text-text">{stats.pending}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-light p-4 sm:p-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <TrophyIcon className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-text">Avg Score</p>
+                  <p className="text-xl font-bold text-text">
+                    {stats.averageScore > 0 ? Math.round(stats.averageScore) : '-'}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Filter Options */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-light space-y-4">
-              {/* Status Filter */}
-              <div>
-                <span className="text-sm font-medium text-muted-text block mb-2">Status:</span>
-                <div className="flex flex-wrap gap-2">
-                  {(['all', 'completed', 'in_progress'] as CandidateStatusFilter[]).map(
-                    (status) => (
+          {/* Search and Filters */}
+          <div className="bg-white rounded-lg border border-gray-light p-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Search */}
+              <div className="flex-1">
+                <div className="relative">
+                  <MagnifyingGlassIcon className="w-5 h-5 text-muted-text absolute left-3 top-1/2 transform -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search candidates by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Filter Toggle */}
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center"
+              >
+                <FunnelIcon className="w-4 h-4 mr-2" />
+                Filters
+                {hasFilters && <span className="ml-2 w-2 h-2 bg-primary rounded-full"></span>}
+              </Button>
+            </div>
+
+            {/* Filter Options */}
+            {showFilters && (
+              <div className="mt-4 pt-4 border-t border-gray-light space-y-4">
+                {/* Status Filter */}
+                <div>
+                  <span className="text-sm font-medium text-muted-text block mb-2">Status:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {(['all', 'completed', 'in_progress'] as CandidateStatusFilter[]).map(
+                      (status) => (
+                        <button
+                          key={status}
+                          onClick={() => handleStatusFilter(status)}
+                          className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                            statusFilter === status
+                              ? 'bg-primary text-white border-primary'
+                              : 'bg-white text-muted-text border-gray-light hover:border-primary'
+                          }`}
+                        >
+                          {status === 'all'
+                            ? 'All'
+                            : status === 'in_progress'
+                              ? 'In Progress'
+                              : 'Completed'}
+                        </button>
+                      ),
+                    )}
+                  </div>
+                </div>
+
+                {/* Job Filter */}
+                <div>
+                  <span className="text-sm font-medium text-muted-text block mb-2">Job:</span>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleJobFilter('')}
+                      className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                        jobFilter === ''
+                          ? 'bg-primary text-white border-primary'
+                          : 'bg-white text-muted-text border-gray-light hover:border-primary'
+                      }`}
+                    >
+                      All Jobs
+                    </button>
+                    {availableJobs.map((job) => (
                       <button
-                        key={status}
-                        onClick={() => handleStatusFilter(status)}
+                        key={job.id}
+                        onClick={() => handleJobFilter(job.id)}
                         className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                          statusFilter === status
+                          jobFilter === job.id
                             ? 'bg-primary text-white border-primary'
                             : 'bg-white text-muted-text border-gray-light hover:border-primary'
                         }`}
                       >
-                        {status === 'all'
-                          ? 'All'
-                          : status === 'in_progress'
-                            ? 'In Progress'
-                            : 'Completed'}
+                        {job.title}
                       </button>
-                    ),
-                  )}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Job Filter */}
-              <div>
-                <span className="text-sm font-medium text-muted-text block mb-2">Job:</span>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => handleJobFilter('')}
-                    className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                      jobFilter === ''
-                        ? 'bg-primary text-white border-primary'
-                        : 'bg-white text-muted-text border-gray-light hover:border-primary'
-                    }`}
-                  >
-                    All Jobs
-                  </button>
-                  {availableJobs.map((job) => (
-                    <button
-                      key={job.id}
-                      onClick={() => handleJobFilter(job.id)}
-                      className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                        jobFilter === job.id
-                          ? 'bg-primary text-white border-primary'
-                          : 'bg-white text-muted-text border-gray-light hover:border-primary'
-                      }`}
-                    >
-                      {job.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recommendation Filter */}
-              <div>
-                <span className="text-sm font-medium text-muted-text block mb-2">
-                  Recommendation:
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {['all', 'strong_yes', 'yes', 'maybe', 'no', 'strong_no'].map((rec) => (
-                    <button
-                      key={rec}
-                      onClick={() => setRecommendationFilter(rec)}
-                      className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                        recommendationFilter === rec
-                          ? 'bg-primary text-white border-primary'
-                          : 'bg-white text-muted-text border-gray-light hover:border-primary'
-                      }`}
-                    >
-                      {rec === 'all'
-                        ? 'All'
-                        : rec === 'strong_yes'
-                          ? 'Strong Yes'
-                          : rec === 'yes'
-                            ? 'Yes'
-                            : rec === 'maybe'
-                              ? 'Maybe'
-                              : rec === 'no'
-                                ? 'No'
-                                : 'Strong No'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Date Range Filter */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Recommendation Filter */}
                 <div>
                   <span className="text-sm font-medium text-muted-text block mb-2">
-                    Start Date:
+                    Recommendation:
                   </span>
-                  <input
-                    type="date"
-                    value={dateRange.start}
-                    onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
+                  <div className="flex flex-wrap gap-2">
+                    {['all', 'strong_yes', 'yes', 'maybe', 'no', 'strong_no'].map((rec) => (
+                      <button
+                        key={rec}
+                        onClick={() => setRecommendationFilter(rec)}
+                        className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                          recommendationFilter === rec
+                            ? 'bg-primary text-white border-primary'
+                            : 'bg-white text-muted-text border-gray-light hover:border-primary'
+                        }`}
+                      >
+                        {rec === 'all'
+                          ? 'All'
+                          : rec === 'strong_yes'
+                            ? 'Strong Yes'
+                            : rec === 'yes'
+                              ? 'Yes'
+                              : rec === 'maybe'
+                                ? 'Maybe'
+                                : rec === 'no'
+                                  ? 'No'
+                                  : 'Strong No'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <span className="text-sm font-medium text-muted-text block mb-2">End Date:</span>
-                  <input
-                    type="date"
-                    value={dateRange.end}
-                    onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-              </div>
 
-              {/* Score Range Filter */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-sm font-medium text-muted-text block mb-2">Min Score:</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="0"
-                    value={scoreRange.min}
-                    onChange={(e) => setScoreRange((prev) => ({ ...prev, min: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
+                {/* Date Range Filter */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-sm font-medium text-muted-text block mb-2">
+                      Start Date:
+                    </span>
+                    <input
+                      type="date"
+                      value={dateRange.start}
+                      onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-muted-text block mb-2">
+                      End Date:
+                    </span>
+                    <input
+                      type="date"
+                      value={dateRange.end}
+                      onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <span className="text-sm font-medium text-muted-text block mb-2">Max Score:</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="100"
-                    value={scoreRange.max}
-                    onChange={(e) => setScoreRange((prev) => ({ ...prev, max: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-              </div>
 
-              {/* Sorting Options */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-sm font-medium text-muted-text block mb-2">Sort By:</span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                {/* Score Range Filter */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-sm font-medium text-muted-text block mb-2">
+                      Min Score:
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="0"
+                      value={scoreRange.min}
+                      onChange={(e) => setScoreRange((prev) => ({ ...prev, min: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-muted-text block mb-2">
+                      Max Score:
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="100"
+                      value={scoreRange.max}
+                      onChange={(e) => setScoreRange((prev) => ({ ...prev, max: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Sorting Options */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-sm font-medium text-muted-text block mb-2">Sort By:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                      <option value="created_at">Date Applied</option>
+                      <option value="score">Score</option>
+                      <option value="full_name">Name</option>
+                      <option value="completion_percentage">Completion</option>
+                    </select>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-muted-text block mb-2">Order:</span>
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                      className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                      <option value="desc">Newest First</option>
+                      <option value="asc">Oldest First</option>
+                    </select>
+                  </div>
+                </div>
+
+                {hasFilters && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setStatusFilter('all');
+                      setJobFilter('');
+                      setDateRange({ start: '', end: '' });
+                      setScoreRange({ min: '', max: '' });
+                      setRecommendationFilter('all');
+                      setSortBy('created_at');
+                      setSortOrder('desc');
+                      setShowFilters(false);
+                    }}
+                    className="px-3 py-1 text-sm text-accent-red hover:bg-accent-red/10 rounded transition-colors flex items-center"
                   >
-                    <option value="created_at">Date Applied</option>
-                    <option value="score">Score</option>
-                    <option value="full_name">Name</option>
-                    <option value="completion_percentage">Completion</option>
-                  </select>
-                </div>
-                <div>
-                  <span className="text-sm font-medium text-muted-text block mb-2">Order:</span>
-                  <select
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-                    className="w-full px-3 py-2 border border-gray-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  >
-                    <option value="desc">Newest First</option>
-                    <option value="asc">Oldest First</option>
-                  </select>
-                </div>
+                    <XMarkIcon className="w-3 h-3 mr-1" />
+                    Clear All Filters
+                  </button>
+                )}
               </div>
-
-              {hasFilters && (
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setStatusFilter('all');
-                    setJobFilter('');
-                    setDateRange({ start: '', end: '' });
-                    setScoreRange({ min: '', max: '' });
-                    setRecommendationFilter('all');
-                    setSortBy('created_at');
-                    setSortOrder('desc');
-                    setShowFilters(false);
-                  }}
-                  className="px-3 py-1 text-sm text-accent-red hover:bg-accent-red/10 rounded transition-colors flex items-center"
-                >
-                  <XMarkIcon className="w-3 h-3 mr-1" />
-                  Clear All Filters
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-accent-red/10 border border-accent-red/20 rounded-lg">
-            <p className="text-accent-red text-sm">{error}</p>
-          </div>
-        )}
-
-        {/* Candidates List */}
-        {isLoading ? (
-          <div className="bg-white rounded-lg border border-gray-light p-8">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
-              <span className="ml-3 text-muted-text">Loading candidates...</span>
-            </div>
-          </div>
-        ) : candidates.length === 0 ? (
-          // Empty State
-          <div className="bg-white rounded-lg border border-gray-light p-8 text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <UserGroupIcon className="w-8 h-8 text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold text-text mb-2">
-              {hasFilters ? 'No candidates found' : 'No candidates yet'}
-            </h3>
-            <p className="text-muted-text mb-6">
-              {hasFilters
-                ? 'Try adjusting your search criteria or filters'
-                : 'Create job postings and start interviewing candidates to see them here'}
-            </p>
-            {!hasFilters && (
-              <Link href="/dashboard/jobs/new">
-                <Button>
-                  <BriefcaseIcon className="w-4 h-4 mr-2" />
-                  Create Your First Job
-                </Button>
-              </Link>
             )}
           </div>
-        ) : (
-          // Candidates Table
-          <>
-            <div className="bg-white rounded-lg border border-gray-light overflow-hidden">
-              <div className="p-4 border-b border-gray-light">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <h3 className="font-medium text-text">Candidates ({pagination?.total || 0})</h3>
 
-                    {/* Bulk Selection */}
-                    {candidates.length > 0 && (
-                      <div className="flex items-center space-x-3">
-                        <label className="flex items-center space-x-2 text-sm">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-accent-red/10 border border-accent-red/20 rounded-lg">
+              <p className="text-accent-red text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Candidates List */}
+          {isLoading ? (
+            <div className="bg-white rounded-lg border border-gray-light p-8">
+              <div className="flex items-center justify-center">
+                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
+                <span className="ml-3 text-muted-text">Loading candidates...</span>
+              </div>
+            </div>
+          ) : candidates.length === 0 ? (
+            // Empty State
+            <div className="bg-white rounded-lg border border-gray-light p-8 text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <UserGroupIcon className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-text mb-2">
+                {hasFilters ? 'No candidates found' : 'No candidates yet'}
+              </h3>
+              <p className="text-muted-text mb-6">
+                {hasFilters
+                  ? 'Try adjusting your search criteria or filters'
+                  : 'Create job postings and start interviewing candidates to see them here'}
+              </p>
+              {!hasFilters && (
+                <Link href="/dashboard/jobs/new">
+                  <Button>
+                    <BriefcaseIcon className="w-4 h-4 mr-2" />
+                    Create Your First Job
+                  </Button>
+                </Link>
+              )}
+            </div>
+          ) : (
+            // Candidates Table
+            <>
+              <div className="bg-white rounded-lg border border-gray-light overflow-hidden">
+                <div className="p-4 border-b border-gray-light">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <h3 className="font-medium text-text">
+                        Candidates ({pagination?.total || 0})
+                      </h3>
+
+                      {/* Bulk Selection */}
+                      {candidates.length > 0 && (
+                        <div className="flex items-center space-x-3">
+                          <label className="flex items-center space-x-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={isSelectAll}
+                              onChange={(e) => handleSelectAll(e.target.checked)}
+                              className="rounded border-gray-light text-primary focus:ring-primary"
+                            />
+                            <span className="text-muted-text">Select All</span>
+                          </label>
+
+                          {selectedCandidates.size > 0 && (
+                            <span className="text-sm text-primary font-medium">
+                              {selectedCandidates.size} selected
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bulk Actions */}
+                    {selectedCandidates.size > 0 && (
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowBulkActions(!showBulkActions)}
+                          className="flex items-center"
+                        >
+                          <SparklesIcon className="w-4 h-4 mr-2" />
+                          Bulk Actions
+                          <span className="ml-2 px-2 py-0.5 bg-primary text-white text-xs rounded-full">
+                            {selectedCandidates.size}
+                          </span>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bulk Actions Menu */}
+                  {showBulkActions && selectedCandidates.size > 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-light">
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => performBulkAction('shortlist')}
+                          disabled={isPerformingBulkAction}
+                          className="flex items-center"
+                        >
+                          <TrophyIcon className="w-4 h-4 mr-2" />
+                          Shortlist Selected
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => performBulkAction('reject')}
+                          disabled={isPerformingBulkAction}
+                          className="flex items-center"
+                        >
+                          <XCircleIcon className="w-4 h-4 mr-2" />
+                          Reject Selected
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => performBulkAction('archive')}
+                          disabled={isPerformingBulkAction}
+                          className="flex items-center"
+                        >
+                          <DocumentIcon className="w-4 h-4 mr-2" />
+                          Archive Selected
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedCandidates(new Set());
+                            setIsSelectAll(false);
+                            setShowBulkActions(false);
+                          }}
+                          className="flex items-center"
+                        >
+                          <XMarkIcon className="w-4 h-4 mr-2" />
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           <input
                             type="checkbox"
                             checked={isSelectAll}
                             onChange={(e) => handleSelectAll(e.target.checked)}
                             className="rounded border-gray-light text-primary focus:ring-primary"
                           />
-                          <span className="text-muted-text">Select All</span>
-                        </label>
-
-                        {selectedCandidates.size > 0 && (
-                          <span className="text-sm text-primary font-medium">
-                            {selectedCandidates.size} selected
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Bulk Actions */}
-                  {selectedCandidates.size > 0 && (
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowBulkActions(!showBulkActions)}
-                        className="flex items-center"
-                      >
-                        <SparklesIcon className="w-4 h-4 mr-2" />
-                        Bulk Actions
-                        <span className="ml-2 px-2 py-0.5 bg-primary text-white text-xs rounded-full">
-                          {selectedCandidates.size}
-                        </span>
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Bulk Actions Menu */}
-                {showBulkActions && selectedCandidates.size > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-light">
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => performBulkAction('shortlist')}
-                        disabled={isPerformingBulkAction}
-                        className="flex items-center"
-                      >
-                        <TrophyIcon className="w-4 h-4 mr-2" />
-                        Shortlist Selected
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => performBulkAction('reject')}
-                        disabled={isPerformingBulkAction}
-                        className="flex items-center"
-                      >
-                        <XCircleIcon className="w-4 h-4 mr-2" />
-                        Reject Selected
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => performBulkAction('archive')}
-                        disabled={isPerformingBulkAction}
-                        className="flex items-center"
-                      >
-                        <DocumentIcon className="w-4 h-4 mr-2" />
-                        Archive Selected
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedCandidates(new Set());
-                          setIsSelectAll(false);
-                          setShowBulkActions(false);
-                        }}
-                        className="flex items-center"
-                      >
-                        <XMarkIcon className="w-4 h-4 mr-2" />
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <input
-                          type="checkbox"
-                          checked={isSelectAll}
-                          onChange={(e) => handleSelectAll(e.target.checked)}
-                          className="rounded border-gray-light text-primary focus:ring-primary"
-                        />
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Candidate
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Job
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Score
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Progress
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Applied
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-light">
-                    {candidates.map((candidate) => (
-                      <tr key={candidate.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            checked={selectedCandidates.has(candidate.id)}
-                            onChange={(e) => handleSelectCandidate(candidate.id, e.target.checked)}
-                            className="rounded border-gray-light text-primary focus:ring-primary"
-                          />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {candidate.name}
-                            </div>
-                            {candidate.email && (
-                              <div className="text-sm text-gray-500">{candidate.email}</div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Link
-                            href={`/dashboard/jobs/${candidate.jobId}`}
-                            className="text-sm text-primary hover:text-primary/80 flex items-center"
-                          >
-                            <BriefcaseIcon className="w-3 h-3 mr-1" />
-                            {candidate.jobTitle}
-                          </Link>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${getStatusColor(candidate.status)}`}
-                          >
-                            {getStatusLabel(candidate.status)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {candidate.evaluation && candidate.evaluation.score ? (
-                            <div className="flex items-center space-x-2">
-                              <span
-                                className={`text-sm font-bold ${getScoreColor(candidate.evaluation.score)}`}
-                              >
-                                {candidate.evaluation.score}/100
-                              </span>
-                              <div
-                                className={`px-2 py-1 rounded-full text-xs font-medium ${getRecommendationColor(candidate.evaluation.recommendation)}`}
-                              >
-                                {getRecommendationLabel(candidate.evaluation.recommendation)}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-gray-500">Pending</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-16 bg-gray-200 rounded-full h-2">
-                              <div
-                                className="bg-primary h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${candidate.progress}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-sm text-gray-500">{candidate.progress}%</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(candidate.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center space-x-2">
-                            {candidate.candidateStatus !== 'under_review' && (
-                              <Button
-                                size="sm"
-                                className="flex items-center"
-                                onClick={() => {
-                                  setSelectedCandidateForScheduling(candidate);
-                                  setShowScheduler(true);
-                                }}
-                              >
-                                <CalendarIcon className="w-4 h-4 mr-1" />
-                                Schedule
-                              </Button>
-                            )}
-
-                            {candidate.evaluation?.recommendation === 'strong_yes' && (
-                              <Button size="sm" className="flex items-center">
-                                <TrophyIcon className="w-4 h-4 mr-1" />
-                                Shortlist
-                              </Button>
-                            )}
-                          </div>
-                        </td>
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Candidate
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Job
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Score
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Progress
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Applied
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-light">
+                      {candidates.map((candidate) => (
+                        <tr key={candidate.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={selectedCandidates.has(candidate.id)}
+                              onChange={(e) =>
+                                handleSelectCandidate(candidate.id, e.target.checked)
+                              }
+                              className="rounded border-gray-light text-primary focus:ring-primary"
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {candidate.name}
+                              </div>
+                              {candidate.email && (
+                                <div className="text-sm text-gray-500">{candidate.email}</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Link
+                              href={`/dashboard/jobs/${candidate.jobId}`}
+                              className="text-sm text-primary hover:text-primary/80 flex items-center"
+                            >
+                              <BriefcaseIcon className="w-3 h-3 mr-1" />
+                              {candidate.jobTitle}
+                            </Link>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-1 text-xs rounded-full ${getStatusColor(candidate.status)}`}
+                            >
+                              {getStatusLabel(candidate.status)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {candidate.evaluation && candidate.evaluation.score ? (
+                              <div className="flex items-center space-x-2">
+                                <span
+                                  className={`text-sm font-bold ${getScoreColor(candidate.evaluation.score)}`}
+                                >
+                                  {candidate.evaluation.score}/100
+                                </span>
+                                <div
+                                  className={`px-2 py-1 rounded-full text-xs font-medium ${getRecommendationColor(candidate.evaluation.recommendation)}`}
+                                >
+                                  {getRecommendationLabel(candidate.evaluation.recommendation)}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-500">Pending</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-16 bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-primary h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${candidate.progress}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm text-gray-500">{candidate.progress}%</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(candidate.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex items-center space-x-2">
+                              {candidate.candidateStatus !== 'under_review' && (
+                                <Button
+                                  size="sm"
+                                  className="flex items-center"
+                                  onClick={() => {
+                                    setSelectedCandidateForScheduling(candidate);
+                                    setShowScheduler(true);
+                                  }}
+                                >
+                                  <CalendarIcon className="w-4 h-4 mr-1" />
+                                  Schedule
+                                </Button>
+                              )}
+
+                              {candidate.evaluation?.recommendation === 'strong_yes' && (
+                                <Button size="sm" className="flex items-center">
+                                  <TrophyIcon className="w-4 h-4 mr-1" />
+                                  Shortlist
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Loading more indicator */}
+              {isLoading && (
+                <div className="mt-8 flex items-center justify-center">
+                  <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                  <span className="ml-3 text-muted-text">Loading more candidates...</span>
+                </div>
+              )}
+
+              {/* Load more button (backup for infinite scroll) */}
+              {pagination?.hasMore && !isLoading && (
+                <div className="mt-8 text-center">
+                  <Button variant="outline" onClick={loadMore}>
+                    Load More Candidates
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Interview Scheduler Modal */}
+          {showScheduler && selectedCandidateForScheduling && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <InterviewScheduler
+                  candidateId={selectedCandidateForScheduling.id}
+                  candidateName={selectedCandidateForScheduling.name}
+                  jobTitle={selectedCandidateForScheduling.jobTitle}
+                  onScheduled={() => {
+                    setShowScheduler(false);
+                    setSelectedCandidateForScheduling(null);
+                    fetchCandidates(); // Refresh the list
+                    success('Interview scheduled successfully!');
+                  }}
+                  onCancel={() => {
+                    setShowScheduler(false);
+                    setSelectedCandidateForScheduling(null);
+                  }}
+                />
               </div>
             </div>
-
-            {/* Loading more indicator */}
-            {isLoading && (
-              <div className="mt-8 flex items-center justify-center">
-                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
-                <span className="ml-3 text-muted-text">Loading more candidates...</span>
-              </div>
-            )}
-
-            {/* Load more button (backup for infinite scroll) */}
-            {pagination?.hasMore && !isLoading && (
-              <div className="mt-8 text-center">
-                <Button variant="outline" onClick={loadMore}>
-                  Load More Candidates
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Interview Scheduler Modal */}
-        {showScheduler && selectedCandidateForScheduling && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <InterviewScheduler
-                candidateId={selectedCandidateForScheduling.id}
-                candidateName={selectedCandidateForScheduling.name}
-                jobTitle={selectedCandidateForScheduling.jobTitle}
-                onScheduled={() => {
-                  setShowScheduler(false);
-                  setSelectedCandidateForScheduling(null);
-                  fetchCandidates(); // Refresh the list
-                  success('Interview scheduled successfully!');
-                }}
-                onCancel={() => {
-                  setShowScheduler(false);
-                  setSelectedCandidateForScheduling(null);
-                }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    </DashboardLayout>
+          )}
+        </div>
+      </DashboardLayout>
+    </Suspense>
   );
 }

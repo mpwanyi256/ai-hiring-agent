@@ -103,7 +103,6 @@ export default function SignupPage() {
           password: finalData.password,
           firstName: finalData.firstName!,
           lastName: finalData.lastName!,
-          companyName: finalData.companyName!,
         }),
       ).unwrap();
 

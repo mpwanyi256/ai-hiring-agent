@@ -102,3 +102,22 @@ export const selectCandidateScoreDistribution = createSelector(
     return ranges;
   },
 );
+
+// Selector to map aiEvaluation API response to AIEvaluationCard props
+export const selectAIEvaluationCardData = (state: RootState, candidateId: string) => {
+  const aiEvalState = state.candidates.aiEvaluation;
+  const current = aiEvalState.currentEvaluation as any;
+  if (!current || typeof current !== 'object' || !('aiEvaluation' in current)) return null;
+  const aiEvaluation = current.aiEvaluation;
+  if (!aiEvaluation || aiEvaluation.candidateId !== candidateId) return null;
+  return {
+    overallScore: aiEvaluation.overallScore ?? aiEvaluation.score ?? 0,
+    recommendation: aiEvaluation.recommendation ?? '',
+    evaluationSummary: aiEvaluation.evaluationSummary ?? aiEvaluation.summary ?? '',
+    keyStrengths: aiEvaluation.keyStrengths ?? aiEvaluation.strengths ?? [],
+    areasForImprovement:
+      aiEvaluation.areasForImprovement ?? aiEvaluation.areas_for_improvement ?? [],
+    redFlags: aiEvaluation.redFlags ?? [],
+    createdAt: aiEvaluation.createdAt,
+  };
+};

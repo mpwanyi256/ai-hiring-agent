@@ -85,7 +85,10 @@ export const EditQuestion = ({ question, onCancel }: EditQuestionProps) => {
           <select
             value={formData.questionType}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, questionType: e.target.value as any }))
+              setFormData((prev) => ({
+                ...prev,
+                questionType: e.target.value as typeof prev.questionType,
+              }))
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             required

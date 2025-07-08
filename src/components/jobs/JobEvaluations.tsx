@@ -70,16 +70,18 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
       const averageScore =
         totalEvaluated > 0
           ? Math.round(
-              evaluationsList.reduce((sum: number, evaluation: any) => sum + evaluation.score, 0) /
-                totalEvaluated,
+              evaluationsList.reduce(
+                (sum: number, evaluation: Evaluation) => sum + evaluation.score,
+                0,
+              ) / totalEvaluated,
             )
           : 0;
       const recommended = evaluationsList.filter(
-        (evaluation: any) =>
+        (evaluation: Evaluation) =>
           evaluation.recommendation === 'yes' || evaluation.recommendation === 'strong_yes',
       ).length;
       const needReview = evaluationsList.filter(
-        (evaluation: any) => evaluation.recommendation === 'maybe',
+        (evaluation: Evaluation) => evaluation.recommendation === 'maybe',
       ).length;
 
       setStats({

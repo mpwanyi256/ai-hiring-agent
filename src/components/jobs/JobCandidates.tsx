@@ -23,10 +23,11 @@ import {
   EyeIcon,
 } from '@heroicons/react/24/outline';
 import { CandidateDetailsHeader } from '../evaluations/CandidateDetailsHeader';
-import { CandidateBasic, CandidateList } from '@/types';
+import { CandidateBasic, CandidateList, AIEvaluation } from '@/types';
 import { formatFileSize } from '@/lib/utils';
 import AIEvaluationCard from '@/components/evaluations/AIEvaluationCard';
 import { Loader2 } from 'lucide-react';
+import { selectAIEvaluationCardData } from '@/store/candidates/candidatesSelectors';
 
 interface JobCandidatesProps {
   job: CurrentJob;
@@ -56,7 +57,6 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     sortBy: 'created_at' as string,
     sortOrder: 'desc' as 'asc' | 'desc',
   });
-  const [aiEvaluation, setAIEvaluation] = useState<any>(null);
   const [isLoadingAIEval, setIsLoadingAIEval] = useState(false);
   const [aiEvalError, setAIEvalError] = useState<string | null>(null);
 
@@ -87,36 +87,6 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
       );
     }
   }, [dispatch, job.id, searchQuery, filters]);
-
-  // Real-time listeners for candidate data
-  // useEffect(() => {
-  //   if (!job.id) return;
-  //   const supabase = createClient();
-  //   const tables = [
-  //     { table: 'candidates', action: updateCandidateRealtime },
-  //     { table: 'responses', action: updateResponseRealtime },
-  //     { table: 'evaluations', action: updateEvaluationRealtime },
-  //     { table: 'ai_evaluations', action: updateAIEvaluationRealtime },
-  //     { table: 'candidate_resumes', action: updateResumeRealtime },
-  //   ];
-  //   const channels = tables.map(({ table, action }) =>
-  //     supabase
-  //       .channel(`realtime:${table}:${job.id}`)
-  //       .on(
-  //         'postgres_changes',
-  //         { event: '*', schema: 'public', table, filter: `job_id=eq.${job.id}` },
-  //         (payload: any) => {
-  //           if (payload.new) {
-  //             dispatch(action(payload.new));
-  //           }
-  //         },
-  //       )
-  //       .subscribe(),
-  //   );
-  //   return () => {
-  //     channels.forEach((ch) => supabase.removeChannel(ch));
-  //   };
-  // }, [job.id, dispatch]);
 
   // Use candidates directly from state (no frontend filtering)
   const selectedCandidate = selectedCandidateId
@@ -171,19 +141,20 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
         setIsLoadingAIEval(true);
         setAIEvalError(null);
         try {
-          const response = await dispatch(fetchAIEvaluation(selectedCandidateId)).unwrap();
-          setAIEvaluation(response.aiEvaluation);
-        } catch (err: any) {
-          setAIEvalError(err.message || 'Failed to load AI evaluation');
+          await dispatch(fetchAIEvaluation(selectedCandidateId)).unwrap();
+        } catch (err: unknown) {
+          setAIEvalError(err instanceof Error ? err.message : 'Failed to load AI evaluation');
         } finally {
           setIsLoadingAIEval(false);
         }
-      } else {
-        setAIEvaluation(null);
       }
     };
     fetchEval();
   }, [selectedCandidateId, dispatch]);
+
+  const aiEvaluationCardData = useSelector((state: RootState) =>
+    selectedCandidateId ? selectAIEvaluationCardData(state, selectedCandidateId) : null,
+  );
 
   if (error) {
     return (
@@ -267,13 +238,14 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                           </span>
                         </div>
                         <p className="text-sm md:text-xs text-gray-900 font-medium">
-                          {new Date(
-                            (selectedCandidate as any).createdAt || new Date(),
-                          ).toLocaleDateString('en-US', {
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
+                          {new Date(selectedCandidate?.createdAt || new Date()).toLocaleDateString(
+                            'en-US',
+                            {
+                              month: 'long',
+                              day: 'numeric',
+                              year: 'numeric',
+                            },
+                          )}
                         </p>
                       </div>
                       <div className="bg-purple-50 border border-purple-100 rounded-lg p-4 md:p-3">
@@ -296,7 +268,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                         <DocumentTextIcon className="w-4 h-4 mr-2" />
                         Resume
                       </h3>
-                      {(selectedCandidate as any).resume ? (
+                      {selectedCandidate?.resume ? (
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                           <div className="flex items-center justify-between flex-wrap gap-4">
                             <div className="flex items-center space-x-3">
@@ -305,19 +277,22 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                               </div>
                               <div>
                                 <p className="text-sm font-medium text-gray-900">
-                                  {(selectedCandidate as any).resume.filename}
+                                  {selectedCandidate?.resume.filename}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {formatFileSize((selectedCandidate as any).resume.fileSize)} •
-                                  {(selectedCandidate as any).resume.fileType?.toUpperCase()} •
-                                  Uploaded{' '}
-                                  {new Date(
-                                    (selectedCandidate as any).resume.uploadedAt,
-                                  ).toLocaleDateString()}
+                                  {selectedCandidate?.resume
+                                    ? formatFileSize(selectedCandidate.resume.fileSize)
+                                    : ''}{' '}
+                                  •{selectedCandidate?.resume?.fileType?.toUpperCase()} • Uploaded{' '}
+                                  {selectedCandidate?.resume
+                                    ? new Date(
+                                        selectedCandidate.resume.uploadedAt,
+                                      ).toLocaleDateString()
+                                    : ''}
                                 </p>
-                                {(selectedCandidate as any).resume.wordCount && (
+                                {selectedCandidate?.resume?.wordCount && (
                                   <p className="text-xs text-gray-500">
-                                    {(selectedCandidate as any).resume.wordCount} words
+                                    {selectedCandidate.resume.wordCount} words
                                   </p>
                                 )}
                               </div>
@@ -331,11 +306,11 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                             </button>
                           </div>
                           {/* Resume evaluation summary - visually prominent */}
-                          {(selectedCandidate as any).evaluation?.resumeScore && (
+                          {selectedCandidate?.evaluation?.resumeScore && (
                             <div className="mt-6 flex items-center gap-4">
                               <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-4 border-primary">
                                 <span className="text-lg font-bold text-primary">
-                                  {(selectedCandidate as any).evaluation.resumeScore}
+                                  {selectedCandidate?.evaluation?.resumeScore}
                                   <span className="text-base font-semibold">/100</span>
                                 </span>
                               </div>
@@ -343,9 +318,9 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                                 <span className="block text-md font-semibold text-primary mb-1">
                                   Resume Match Score
                                 </span>
-                                {(selectedCandidate as any).evaluation.resumeSummary && (
+                                {selectedCandidate?.evaluation?.resumeSummary && (
                                   <p className="text-xs text-gray-700 mt-1">
-                                    {(selectedCandidate as any).evaluation.resumeSummary}
+                                    {selectedCandidate.evaluation.resumeSummary}
                                   </p>
                                 )}
                               </div>
@@ -359,8 +334,8 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                             </div>
                           ) : aiEvalError ? (
                             <div className="text-red-500 text-sm mt-4">{aiEvalError}</div>
-                          ) : aiEvaluation ? (
-                            <AIEvaluationCard evaluation={aiEvaluation} />
+                          ) : aiEvaluationCardData ? (
+                            <AIEvaluationCard evaluation={aiEvaluationCardData} />
                           ) : null}
                         </div>
                       ) : (
@@ -376,8 +351,8 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                     candidateId={selectedCandidate.id}
                     jobId={job.id}
                     candidateName={
-                      (selectedCandidate as any).name ||
-                      (selectedCandidate as any).fullName ||
+                      selectedCandidate?.name ||
+                      (selectedCandidate as unknown as { fullName?: string }).fullName ||
                       'Anonymous Candidate'
                     }
                   />
@@ -386,8 +361,8 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                   <CandidateAnalytics
                     candidateId={selectedCandidate.id}
                     candidateName={
-                      (selectedCandidate as any).name ||
-                      (selectedCandidate as any).fullName ||
+                      selectedCandidate?.name ||
+                      (selectedCandidate as unknown as { fullName?: string }).fullName ||
                       'Anonymous Candidate'
                     }
                     jobId={job.id}

@@ -3,15 +3,80 @@ import { CreateCandidateData, SubmitInterviewData } from '@/types';
 import { apiUtils } from '../api';
 import { RootState } from '../index';
 
+// Response type interfaces
+interface CandidatesResponse {
+  candidates: unknown[];
+}
+
+interface CandidateResponse {
+  candidate: unknown;
+}
+
+interface CandidateListResponse {
+  candidates: unknown[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+interface AIEvaluationResponse {
+  success: boolean;
+  aiEvaluation: unknown;
+  teamAssessments: unknown[];
+  computedValues: unknown;
+  candidateInfo: unknown;
+}
+
+interface ShortlistResponse {
+  success: boolean;
+  message: string;
+}
+
+interface ResumeResponse {
+  resume: unknown;
+}
+
+interface EvaluationResponse {
+  evaluations: unknown[];
+}
+
+interface CreateCandidateResponse {
+  candidate: unknown;
+}
+
+interface SubmitInterviewResponse {
+  candidate: unknown;
+}
+
+interface SaveEvaluationResponse {
+  evaluation: unknown;
+}
+
+interface UpdateEvaluationResponse {
+  evaluation: unknown;
+}
+
+interface GenerateAIEvaluationResponse {
+  evaluation: unknown;
+}
+
+interface CandidateResponsesResponse {
+  responses: unknown[];
+}
+
+interface TeamAssessmentResponse {
+  assessment: unknown;
+}
+
 // Async thunks for candidates using API routes
 export const fetchCandidatesByJob = createAsyncThunk(
   'candidates/fetchCandidatesByJob',
   async (jobId: string) => {
     try {
-      const response = await apiUtils.get(`/api/candidates?jobId=${jobId}`);
+      const response = await apiUtils.get<CandidatesResponse>(`/api/jobs/${jobId}/candidates`);
       return response.candidates;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch candidates');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to fetch candidates');
     }
   },
 );
@@ -63,10 +128,12 @@ export const fetchJobCandidates = createAsyncThunk(
         limit: limit.toString(),
       });
 
-      const response = await apiUtils.get(`/api/jobs/${jobId}/candidates?${queryParams}`);
+      const response = await apiUtils.get<CandidateListResponse>(
+        `/api/jobs/${jobId}/candidates?${queryParams}`,
+      );
       return response;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch job candidates');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to fetch job candidates');
     }
   },
 );
@@ -80,10 +147,12 @@ export const fetchCandidateById = createAsyncThunk(
       if (!user?.id) {
         throw new Error('User not found');
       }
-      const response = await apiUtils.get(`/api/candidates/${candidateId}?profileId=${user.id}`);
+      const response = await apiUtils.get<CandidateResponse>(
+        `/api/candidates/${candidateId}?profileId=${user.id}`,
+      );
       return response.candidate;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch candidate');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to fetch candidate');
     }
   },
 );
@@ -92,10 +161,10 @@ export const fetchCandidateByToken = createAsyncThunk(
   'candidates/fetchCandidateByToken',
   async (token: string) => {
     try {
-      const response = await apiUtils.get(`/api/candidates/token/${token}`);
+      const response = await apiUtils.get<CandidateResponse>(`/api/candidates/token/${token}`);
       return response.candidate;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch candidate');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to fetch candidate');
     }
   },
 );
@@ -105,10 +174,10 @@ export const fetchCandidateResume = createAsyncThunk(
   'candidates/fetchCandidateResume',
   async (candidateId: string) => {
     try {
-      const response = await apiUtils.get(`/api/candidates/${candidateId}/resume`);
+      const response = await apiUtils.get<ResumeResponse>(`/api/candidates/${candidateId}/resume`);
       return response.resume;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch candidate resume');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to fetch candidate resume');
     }
   },
 );
@@ -118,16 +187,12 @@ export const fetchAIEvaluation = createAsyncThunk(
   'candidates/fetchAIEvaluation',
   async (candidateId: string) => {
     try {
-      const response = await apiUtils.get(`/api/candidates/${candidateId}/ai-evaluation`);
-      return {
-        candidateId,
-        aiEvaluation: response.aiEvaluation,
-        teamAssessments: response.teamAssessments,
-        computedValues: response.computedValues,
-        candidateInfo: response.candidateInfo,
-      };
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch AI evaluation');
+      const response = await apiUtils.get<AIEvaluationResponse>(
+        `/api/candidates/${candidateId}/ai-evaluation`,
+      );
+      return response;
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to fetch AI evaluation');
     }
   },
 );
@@ -138,40 +203,45 @@ export const triggerAIEvaluation = createAsyncThunk(
   async (params: { candidateId: string; force?: boolean }) => {
     try {
       const { candidateId, force = false } = params;
-      const response = await apiUtils.post(`/api/candidates/${candidateId}/evaluate`, { force });
-      return {
-        candidateId,
-        evaluation: response.evaluation,
-        processingDurationMs: response.processingDurationMs,
-      };
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to trigger AI evaluation');
+      const response = await apiUtils.post<AIEvaluationResponse>(
+        `/api/candidates/${candidateId}/ai-evaluation`,
+        { force },
+      );
+      return response;
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to trigger AI evaluation');
     }
   },
 );
 
 export const createCandidate = createAsyncThunk(
   'candidates/createCandidate',
-  async (candidateData: CreateCandidateData) => {
+  async (candidateData: Record<string, unknown>) => {
     try {
-      const response = await apiUtils.post('/api/candidates', candidateData);
+      const response = await apiUtils.post<CreateCandidateResponse>(
+        '/api/candidates',
+        candidateData,
+      );
       return response.candidate;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to create candidate');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to create candidate');
     }
   },
 );
 
 export const submitInterview = createAsyncThunk(
   'candidates/submitInterview',
-  async (submissionData: SubmitInterviewData) => {
+  async (submissionData: Record<string, unknown>) => {
     try {
-      const response = await apiUtils.post(`/api/candidates/${submissionData.candidateId}/submit`, {
-        responses: submissionData.responses,
-      });
+      const response = await apiUtils.post<SubmitInterviewResponse>(
+        `/api/candidates/${submissionData.candidateId}/submit`,
+        {
+          responses: submissionData.responses,
+        },
+      );
       return response.candidate;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to submit interview');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to submit interview');
     }
   },
 );
@@ -186,13 +256,13 @@ export const saveEvaluation = createAsyncThunk(
     redFlags: string[];
   }) => {
     try {
-      const response = await apiUtils.post(
+      const response = await apiUtils.post<SaveEvaluationResponse>(
         `/api/candidates/${evaluationData.candidateId}/evaluation`,
         evaluationData,
       );
       return response.evaluation;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to save evaluation');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to save evaluation');
     }
   },
 );
@@ -208,13 +278,13 @@ export const updateEvaluation = createAsyncThunk(
     redFlags: string[];
   }) => {
     try {
-      const response = await apiUtils.put(
+      const response = await apiUtils.put<UpdateEvaluationResponse>(
         `/api/evaluations/${evaluationData.evaluationId}`,
         evaluationData,
       );
       return response.evaluation;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to update evaluation');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to update evaluation');
     }
   },
 );
@@ -225,8 +295,8 @@ export const deleteCandidate = createAsyncThunk(
     try {
       await apiUtils.delete(`/api/candidates/${candidateId}`);
       return candidateId;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to delete candidate');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to delete candidate');
     }
   },
 );
@@ -234,12 +304,19 @@ export const deleteCandidate = createAsyncThunk(
 // AI Evaluation thunk
 export const generateAIEvaluation = createAsyncThunk(
   'candidates/generateAIEvaluation',
-  async (data: { candidateId: string; jobTitle: string; jobRequirements: any }) => {
+  async (data: {
+    candidateId: string;
+    jobTitle: string;
+    jobRequirements: Record<string, unknown>;
+  }) => {
     try {
-      const response = await apiUtils.post('/api/ai/evaluate-candidate', data);
+      const response = await apiUtils.post<GenerateAIEvaluationResponse>(
+        '/api/ai/evaluate-candidate',
+        data,
+      );
       return response.evaluation;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to generate AI evaluation');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to generate AI evaluation');
     }
   },
 );
@@ -250,15 +327,125 @@ export const fetchCandidateResponses = createAsyncThunk(
   async (params: { candidateId: string; jobId: string }) => {
     try {
       const { candidateId, jobId } = params;
-      const response = await apiUtils.get(
+      const response = await apiUtils.get<CandidateResponsesResponse>(
         `/api/candidates/${candidateId}/responses?jobId=${jobId}`,
       );
       return {
         candidateId,
         responses: response.responses || [],
       };
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch candidate responses');
+    } catch (error: unknown) {
+      throw new Error(
+        error instanceof Error ? error.message : 'Failed to fetch candidate responses',
+      );
+    }
+  },
+);
+
+export const fetchCandidateList = createAsyncThunk(
+  'candidates/fetchCandidateList',
+  async ({
+    jobId,
+    page = 1,
+    limit = 10,
+    status,
+  }: {
+    jobId: string;
+    page?: number;
+    limit?: number;
+    status?: string;
+  }) => {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(status && { status }),
+      });
+      const response = await apiUtils.get<CandidateListResponse>(
+        `/api/jobs/${jobId}/candidates?${params}`,
+      );
+      return response;
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to fetch candidate list');
+    }
+  },
+);
+
+export const updateCandidateStatus = createAsyncThunk(
+  'candidates/updateCandidateStatus',
+  async ({ candidateId, status }: { candidateId: string; status: string }) => {
+    try {
+      const response = await apiUtils.put<CandidateResponse>(
+        `/api/candidates/${candidateId}/status`,
+        { status },
+      );
+      return response.candidate;
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to update candidate status');
+    }
+  },
+);
+
+export const fetchCandidateEvaluations = createAsyncThunk(
+  'candidates/fetchCandidateEvaluations',
+  async (candidateId: string) => {
+    try {
+      const response = await apiUtils.get<EvaluationResponse>(
+        `/api/candidates/${candidateId}/evaluations`,
+      );
+      return response.evaluations;
+    } catch (error: unknown) {
+      throw new Error(
+        error instanceof Error ? error.message : 'Failed to fetch candidate evaluations',
+      );
+    }
+  },
+);
+
+export const addTeamAssessment = createAsyncThunk(
+  'candidates/addTeamAssessment',
+  async ({
+    candidateId,
+    assessmentData,
+  }: {
+    candidateId: string;
+    assessmentData: Record<string, unknown>;
+  }) => {
+    try {
+      const response = await apiUtils.post<TeamAssessmentResponse>(
+        `/api/candidates/${candidateId}/team-assessment`,
+        assessmentData,
+      );
+      return response.assessment;
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to add team assessment');
+    }
+  },
+);
+
+export const shortlistCandidate = createAsyncThunk(
+  'candidates/shortlistCandidate',
+  async ({ candidateId, jobId }: { candidateId: string; jobId: string }) => {
+    try {
+      const response = await apiUtils.post<ShortlistResponse>(
+        `/api/candidates/${candidateId}/shortlist`,
+        { jobId },
+      );
+      return { candidateId, ...response };
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to shortlist candidate');
+    }
+  },
+);
+
+export const removeFromShortlist = createAsyncThunk(
+  'candidates/removeFromShortlist',
+  async ({ candidateId, jobId }: { candidateId: string; jobId: string }) => {
+    try {
+      await apiUtils.delete(`/api/candidates/${candidateId}/shortlist?jobId=${jobId}`);
+      return candidateId;
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to remove from shortlist');
     }
   },
 );

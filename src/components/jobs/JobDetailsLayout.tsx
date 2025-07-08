@@ -61,11 +61,14 @@ export default function JobDetailsLayout({
   const [isSavingDescription, setIsSavingDescription] = useState(false);
   const [customFieldsDraft, setCustomFieldsDraft] = useState(
     job.fields?.customFields
-      ? Object.entries(job.fields.customFields).map(([key, field]: any) => ({
-          key,
-          value: field.value,
-          inputType: field.inputType || 'text',
-        }))
+      ? Object.entries(job.fields.customFields).map(([key, field]: [string, unknown]) => {
+          const safeField = field as { value?: string | number; inputType?: string };
+          return {
+            key,
+            value: safeField.value !== undefined ? String(safeField.value) : '',
+            inputType: safeField.inputType || 'text',
+          };
+        })
       : [],
   );
   const [isSavingCustomFields, setIsSavingCustomFields] = useState(false);
@@ -667,11 +670,20 @@ export default function JobDetailsLayout({
                       onClick={() => {
                         setCustomFieldsDraft(
                           job.fields?.customFields
-                            ? Object.entries(job.fields.customFields).map(([key, field]: any) => ({
-                                key,
-                                value: field.value,
-                                inputType: field.inputType || 'text',
-                              }))
+                            ? Object.entries(job.fields.customFields).map(
+                                ([key, field]: [string, unknown]) => {
+                                  const safeField = field as {
+                                    value?: string | number;
+                                    inputType?: string;
+                                  };
+                                  return {
+                                    key,
+                                    value:
+                                      safeField.value !== undefined ? String(safeField.value) : '',
+                                    inputType: safeField.inputType || 'text',
+                                  };
+                                },
+                              )
                             : [],
                         );
                         setEditingField('customFields');
@@ -824,12 +836,16 @@ export default function JobDetailsLayout({
                 ) : (
                   <div>
                     {job.fields?.customFields && Object.keys(job.fields.customFields).length > 0 ? (
-                      Object.entries(job.fields.customFields).map(([key, field]: any) => (
-                        <div key={key} className="mb-2">
-                          <span className="font-medium text-sm text-gray-700">{key}</span>
-                          <div className="text-xs text-gray-600">{field.value}</div>
-                        </div>
-                      ))
+                      Object.entries(job.fields.customFields).map(
+                        ([key, field]: [string, unknown]) => (
+                          <div key={key} className="mb-2">
+                            <span className="font-medium text-sm text-gray-700">{key}</span>
+                            <div className="text-xs text-gray-600">
+                              {(field as { value?: string | number })?.value || 'No value'}
+                            </div>
+                          </div>
+                        ),
+                      )
                     ) : (
                       <span className="text-muted-text text-sm">
                         No additional information provided.

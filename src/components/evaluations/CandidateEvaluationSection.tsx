@@ -18,29 +18,62 @@ import { LoadingAIEvaluations } from './LoadingAIEvaluations';
 import { NoAIEvaluations } from './NoAIEvaluations';
 import { ErrorLoadingAIEvaluations } from './ErrorLoadingAIEvaluations';
 import { RadarMetrics } from '@/types/evaluations';
+import { TeamAssessment } from '@/types/candidates';
 
 // Type definition for the actual API response
-interface ActualAIEvaluation {
-  id: string;
-  candidateId: string;
-  jobId: string;
-  profileId: string;
-  overallScore: number;
-  overallStatus: string;
-  recommendation: string;
-  evaluationSummary: string;
-  evaluationExplanation: string;
-  radarMetrics: RadarMetrics;
-  categoryScores: Record<string, any>;
-  keyStrengths: string[];
-  areasForImprovement: string[];
-  redFlags: string[];
-  evaluationSources: any;
-  processingDurationMs: number;
-  aiModelVersion: string;
-  evaluationVersion: string;
-  createdAt: string;
-  updatedAt: string;
+interface AIEvaluationResponse {
+  success: boolean;
+  aiEvaluation: {
+    id: string;
+    candidateId: string;
+    jobId: string;
+    overallScore: number;
+    overallStatus: string;
+    recommendation: string;
+    evaluationSummary: string;
+    evaluationExplanation: string;
+    radarMetrics: RadarMetrics;
+    categoryScores: Record<
+      string,
+      {
+        score: number;
+        strengths: string[];
+        explanation: string;
+        areas_for_improvement: string[];
+      }
+    >;
+    keyStrengths: string[];
+    areasForImprovement: string[];
+    redFlags: string[];
+    evaluationSources: {
+      resume: boolean;
+      interview: boolean;
+      previous_evaluations: boolean;
+    };
+    processingDurationMs: number;
+    aiModelVersion: string;
+    evaluationVersion: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  teamAssessments: TeamAssessment[];
+  computedValues: {
+    averageTeamRating: number;
+    totalAssessors: number;
+    consensusLevel: string;
+    finalRecommendation: string;
+  };
+  candidateInfo: {
+    id: string;
+    jobId: string;
+    jobTitle: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    currentStep: number;
+    totalSteps: number;
+    isCompleted: boolean;
+  };
 }
 
 interface CandidateEvaluationSectionProps {
@@ -61,10 +94,11 @@ export default function CandidateEvaluationSection({
     isLoading,
   } = useSelector((state: RootState) => state.candidates);
 
-  const currentEvaluation = aiEvaluationState.currentEvaluation;
-  const aiEvaluation = currentEvaluation?.aiEvaluation as ActualAIEvaluation | null;
-  const teamAssessments = currentEvaluation?.teamAssessments || [];
-  const computedValues = currentEvaluation?.computedValues;
+  // Access the response data directly from the state
+  const response = aiEvaluationState.currentEvaluation as AIEvaluationResponse | null;
+  const aiEvaluation = response?.aiEvaluation;
+  const teamAssessments = response?.teamAssessments || [];
+  const computedValues = response?.computedValues;
 
   useEffect(() => {
     if (candidateId) {
@@ -135,8 +169,7 @@ export default function CandidateEvaluationSection({
 
   const overallStatusColor = getStatusColor(overallStatus);
   const overallStatusText = getStatusText(overallStatus);
-  const averageTeamRating =
-    typeof computedValues?.averageTeamRating === 'number' ? computedValues.averageTeamRating : 0;
+  const averageTeamRating = computedValues?.averageTeamRating || 0;
 
   return (
     <div className={`space-y-6 mb-6 ${className}`}>
@@ -217,35 +250,23 @@ export default function CandidateEvaluationSection({
                   </div>
 
                   <div className="space-y-2">
-                    {teamAssessments.slice(0, 3).map((assessment: any) => (
+                    {teamAssessments.slice(0, 3).map((assessment: TeamAssessment) => (
                       <div
                         key={assessment.id}
-                        className="flex items-center justify-between text-sm"
+                        className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex flex-col gap-1"
                       >
-                        <div className="flex items-center space-x-2">
-                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                            <span className="text-xs font-medium text-primary">
-                              {assessment.assessorName
-                                ?.split(' ')
-                                .map((n: string) => n[0])
-                                .join('') || 'A'}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="font-medium">{assessment.assessorName}</span>
-                            <span className="text-gray-500 ml-1">- {assessment.assessorRole}</span>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900 text-sm">
+                            {assessment.evaluatorName}
+                          </span>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          {[...Array(5)].map((_, i) => (
-                            <StarIcon
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < assessment.overallRating ? 'text-yellow-500' : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-700">Score:</span>
+                          <span className="font-semibold text-primary text-sm">
+                            {assessment.score}/5
+                          </span>
                         </div>
+                        <div className="text-xs text-gray-600 mt-1">{assessment.feedback}</div>
                       </div>
                     ))}
                   </div>
@@ -276,26 +297,47 @@ export default function CandidateEvaluationSection({
           <div>
             <h4 className="text-md font-semibold text-gray-900 mb-4">Category Breakdown</h4>
             <div className="space-y-4">
-              {Object.entries(categoryScores).map(([category, data]: [string, any]) => {
-                if (!data) return null;
-                return (
-                  <div key={category} className="border-l-4 border-primary/20 pl-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h5 className="font-medium text-gray-900 capitalize">
-                        {category.replace('_', ' ')}
-                      </h5>
-                      <span className="font-bold text-primary">{data.score}%</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-2">{data.explanation}</p>
-                    {data.strengths && data.strengths.length > 0 && (
-                      <div className="text-xs">
-                        <span className="text-green-600 font-medium">Strengths: </span>
-                        <span className="text-gray-600">{data.strengths.join(', ')}</span>
-                      </div>
-                    )}
+              {Object.entries(categoryScores).map(([category, data]) => (
+                <div key={category} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-900 text-sm">{category}</span>
+                    <span className="text-xs text-gray-500">Score: {data.score}/100</span>
                   </div>
-                );
-              })}
+                  <p className="text-xs text-gray-600 mb-2">{data.explanation}</p>
+                  {data.strengths.length > 0 && (
+                    <div className="mb-2">
+                      <span className="text-xs font-medium text-green-700">Strengths:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {data.strengths.slice(0, 2).map((strength, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded"
+                          >
+                            {strength}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {data.areas_for_improvement.length > 0 && (
+                    <div>
+                      <span className="text-xs font-medium text-yellow-700">
+                        Areas for Improvement:
+                      </span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {data.areas_for_improvement.slice(0, 2).map((area, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded"
+                          >
+                            {area}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 

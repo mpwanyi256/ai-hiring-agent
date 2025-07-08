@@ -15,18 +15,21 @@ import { fetchTraits } from '@/store/traits/traitsThunks';
 import { fetchJobTemplates } from '@/store/jobTemplates/jobTemplatesThunks';
 import { selectSkillsData, selectSkillsLoading } from '@/store/skills/skillsSelectors';
 import { selectTraitsData, selectTraitsLoading } from '@/store/traits/traitsSelectors';
-import { selectJobTemplatesData, selectJobTemplatesLoading } from '@/store/jobTemplates/jobTemplatesSelectors';
+import {
+  selectJobTemplatesData,
+  selectJobTemplatesLoading,
+} from '@/store/jobTemplates/jobTemplatesSelectors';
 import { RootState, useAppDispatch, useAppSelector } from '@/store';
 import { JobTemplate } from '@/types';
 import { useToast } from '@/components/providers/ToastProvider';
-import { 
+import {
   PlusIcon,
   XMarkIcon,
   ArrowLeftIcon,
   ExclamationTriangleIcon,
   ChevronDownIcon,
   BookmarkIcon,
-  LinkIcon
+  LinkIcon,
 } from '@heroicons/react/24/outline';
 import { experienceLevels, inputTypes } from '@/lib/constants';
 
@@ -39,11 +42,15 @@ const jobSchema = z.object({
   interviewFormat: z.enum(['text', 'video']),
   jobDescription: z.string().min(10, 'Job description must be at least 10 characters'),
   jobDescriptionUrl: z.string().url().optional().or(z.literal('')),
-  customFields: z.array(z.object({
-    key: z.string().min(1, 'Field name is required'),
-    value: z.string().min(1, 'Field value is required'),
-    inputType: z.enum(['text', 'textarea', 'number', 'file', 'url', 'email']),
-  })).optional(),
+  customFields: z
+    .array(
+      z.object({
+        key: z.string().min(1, 'Field name is required'),
+        value: z.string().min(1, 'Field value is required'),
+        inputType: z.enum(['text', 'textarea', 'number', 'file', 'url', 'email']),
+      }),
+    )
+    .optional(),
   saveAsTemplate: z.boolean().optional(),
   templateName: z.string().optional(),
 });
@@ -56,7 +63,7 @@ export default function NewJobPage() {
   const { user } = useAppSelector((state: RootState) => state.auth);
   const { isLoading: jobsLoading, error } = useAppSelector((state) => state.jobs);
   const { success, error: showError, info } = useToast();
-  
+
   // Store selectors
   const allSkills = useAppSelector(selectSkillsData);
   const skillsLoading = useAppSelector(selectSkillsLoading);
@@ -64,7 +71,7 @@ export default function NewJobPage() {
   const traitsLoading = useAppSelector(selectTraitsLoading);
   const jobTemplates = useAppSelector(selectJobTemplatesData);
   const templatesLoading = useAppSelector(selectJobTemplatesLoading);
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOverLimit, setIsOverLimit] = useState(false);
   const [skillDropdownOpen, setSkillDropdownOpen] = useState(false);
@@ -90,7 +97,11 @@ export default function NewJobPage() {
     },
   });
 
-  const { fields: customFields, append: appendCustomField, remove: removeCustomField } = useFieldArray({
+  const {
+    fields: customFields,
+    append: appendCustomField,
+    remove: removeCustomField,
+  } = useFieldArray({
     control: form.control,
     name: 'customFields',
   });
@@ -103,27 +114,29 @@ export default function NewJobPage() {
   const isLoadingData = skillsLoading || traitsLoading || templatesLoading;
 
   // Filter out selected skills and traits
-  const availableSkills = allSkills.filter(skill => 
-    !selectedSkills.includes(skill.name) && 
-    skill.name.toLowerCase().includes(skillSearch.toLowerCase())
+  const availableSkills = allSkills.filter(
+    (skill) =>
+      !selectedSkills.includes(skill.name) &&
+      skill.name.toLowerCase().includes(skillSearch.toLowerCase()),
   );
 
-  const availableTraits = allTraits.filter(trait => 
-    !selectedTraits.includes(trait.name) && 
-    trait.name.toLowerCase().includes(traitSearch.toLowerCase())
+  const availableTraits = allTraits.filter(
+    (trait) =>
+      !selectedTraits.includes(trait.name) &&
+      trait.name.toLowerCase().includes(traitSearch.toLowerCase()),
   );
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      
+
       // Close skills dropdown if clicking outside
       if (skillDropdownOpen && !target.closest('[data-dropdown="skills"]')) {
         setSkillDropdownOpen(false);
         setSkillSearch('');
       }
-      
+
       // Close traits dropdown if clicking outside
       if (traitDropdownOpen && !target.closest('[data-dropdown="traits"]')) {
         setTraitDropdownOpen(false);
@@ -142,7 +155,7 @@ export default function NewJobPage() {
         await Promise.all([
           dispatch(fetchSkills()),
           dispatch(fetchTraits()),
-          dispatch(fetchJobTemplates())
+          dispatch(fetchJobTemplates(user?.id || '')),
         ]);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -151,7 +164,7 @@ export default function NewJobPage() {
     };
 
     fetchData();
-  }, [dispatch, showError]);
+  }, [dispatch, showError, user]);
 
   // Check usage limits
   useEffect(() => {
@@ -171,7 +184,10 @@ export default function NewJobPage() {
   };
 
   const removeSkill = (skillToRemove: string) => {
-    form.setValue('skills', selectedSkills.filter(skill => skill !== skillToRemove));
+    form.setValue(
+      'skills',
+      selectedSkills.filter((skill) => skill !== skillToRemove),
+    );
     info(`Removed skill: ${skillToRemove}`);
   };
 
@@ -186,7 +202,10 @@ export default function NewJobPage() {
   };
 
   const removeTrait = (traitToRemove: string) => {
-    form.setValue('traits', selectedTraits.filter(trait => trait !== traitToRemove));
+    form.setValue(
+      'traits',
+      selectedTraits.filter((trait) => trait !== traitToRemove),
+    );
     info(`Removed trait: ${traitToRemove}`);
   };
 
@@ -198,27 +217,31 @@ export default function NewJobPage() {
     form.setValue('traits', template.fields?.traits || []);
     form.setValue('jobDescription', template.fields?.jobDescription || '');
     form.setValue('interviewFormat', template.interview_format as 'text' | 'video');
-    
+
     // Load custom fields
     if (template.fields?.customFields) {
-      const customFieldsArray = Object.entries(template.fields.customFields).map(([key, fieldData]) => {
-        const inputType = (fieldData as { inputType?: string }).inputType || 'text';
-        const validInputType = ['text', 'textarea', 'number', 'file', 'url', 'email'].includes(inputType) 
-          ? inputType as 'text' | 'textarea' | 'number' | 'file' | 'url' | 'email'
-          : 'text' as const;
-        
-        return {
-          key,
-          value: fieldData.value || (typeof fieldData === 'string' ? fieldData : ''),
-          inputType: validInputType,
-        };
-      });
-      
+      const customFieldsArray = Object.entries(template.fields.customFields).map(
+        ([key, fieldData]) => {
+          const inputType = (fieldData as { inputType?: string }).inputType || 'text';
+          const validInputType = ['text', 'textarea', 'number', 'file', 'url', 'email'].includes(
+            inputType,
+          )
+            ? (inputType as 'text' | 'textarea' | 'number' | 'file' | 'url' | 'email')
+            : ('text' as const);
+
+          return {
+            key,
+            value: fieldData.value || (typeof fieldData === 'string' ? fieldData : ''),
+            inputType: validInputType,
+          };
+        },
+      );
+
       // Clear existing fields and add template fields
       while (customFields.length > 0) {
         removeCustomField(0);
       }
-      customFieldsArray.forEach(field => appendCustomField(field));
+      customFieldsArray.forEach((field) => appendCustomField(field));
     }
 
     success(`Template "${template.name}" loaded successfully!`);
@@ -234,11 +257,11 @@ export default function NewJobPage() {
 
     setIsCrawlingUrl(true);
     info('Importing job description from URL...');
-    
+
     try {
       // Simulate API call - replace with actual crawling service
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       // Mock crawled content
       const mockDescription = `We are seeking a talented ${form.getValues('title') || 'professional'} to join our growing team. 
 
@@ -270,7 +293,10 @@ export default function NewJobPage() {
   };
 
   // Save template function
-  const saveTemplate = async (templateName: string, jobData: { title: string; fields: Record<string, unknown>; interviewFormat: string }) => {
+  const saveTemplate = async (
+    templateName: string,
+    jobData: { title: string; fields: Record<string, unknown>; interviewFormat: string },
+  ) => {
     try {
       const response = await fetch('/api/job-templates', {
         method: 'POST',
@@ -289,7 +315,7 @@ export default function NewJobPage() {
         console.log('Template saved successfully');
         success(`Template "${templateName}" saved successfully!`);
         // Refresh templates list using Redux
-        await dispatch(fetchJobTemplates());
+        await dispatch(fetchJobTemplates(user?.id || ''));
       } else {
         const errorData = await response.json();
         showError(`Failed to save template: ${errorData.error}`);
@@ -303,9 +329,11 @@ export default function NewJobPage() {
   // Handle form submission
   const onSubmit = async (data: JobFormData) => {
     if (!user) return;
-    
+
     if (isOverLimit) {
-      showError('You have reached your job posting limit. Please upgrade your plan to create more jobs.');
+      showError(
+        'You have reached your job posting limit. Please upgrade your plan to create more jobs.',
+      );
       return;
     }
 
@@ -321,15 +349,19 @@ export default function NewJobPage() {
           experienceLevel: data.experienceLevel || undefined,
           traits: data.traits && data.traits.length > 0 ? data.traits : undefined,
           jobDescription: data.jobDescription,
-          customFields: data.customFields && data.customFields.length > 0
-            ? data.customFields.reduce((acc, field) => {
-                acc[field.key] = {
-                  value: field.value,
-                  inputType: field.inputType
-                };
-                return acc;
-              }, {} as Record<string, { value: string; inputType: string }>)
-            : undefined,
+          customFields:
+            data.customFields && data.customFields.length > 0
+              ? data.customFields.reduce(
+                  (acc, field) => {
+                    acc[field.key] = {
+                      value: field.value,
+                      inputType: field.inputType,
+                    };
+                    return acc;
+                  },
+                  {} as Record<string, { value: string; inputType: string }>,
+                )
+              : undefined,
         },
         interviewFormat: data.interviewFormat,
       };
@@ -341,17 +373,16 @@ export default function NewJobPage() {
 
       // Create the job
       await dispatch(createJob(jobData)).unwrap();
-      
+
       // Refresh user data to update usage counts
       await dispatch(refreshUserData()).unwrap();
 
       // Show success message
       success('Job created successfully! Redirecting...');
-      
+
       setTimeout(() => {
         router.push('/dashboard/jobs');
       }, 2000);
-
     } catch (error) {
       console.error('Failed to create job:', error);
       showError('Failed to create job. Please try again.');
@@ -427,8 +458,9 @@ export default function NewJobPage() {
               <div>
                 <h3 className="font-semibold text-accent-red">Job Limit Reached</h3>
                 <p className="text-sm text-accent-red mt-1">
-                  You have reached your limit of {user.subscription?.maxJobs} active job{user.subscription?.maxJobs !== 1 ? 's' : ''}.
-                  Please upgrade your plan to create more jobs.
+                  You have reached your limit of {user.subscription?.maxJobs} active job
+                  {user.subscription?.maxJobs !== 1 ? 's' : ''}. Please upgrade your plan to create
+                  more jobs.
                 </p>
                 <Button
                   variant="outline"
@@ -455,7 +487,7 @@ export default function NewJobPage() {
           {/* Basic Information */}
           <div className="bg-white rounded-lg border border-gray-light p-6">
             <h2 className="text-lg font-semibold text-text mb-6">Basic Information</h2>
-            
+
             <div className="space-y-6">
               {/* Job Title */}
               <div>
@@ -478,7 +510,10 @@ export default function NewJobPage() {
 
               {/* Experience Level */}
               <div>
-                <label htmlFor="experienceLevel" className="block text-sm font-medium text-text mb-2">
+                <label
+                  htmlFor="experienceLevel"
+                  className="block text-sm font-medium text-text mb-2"
+                >
                   Experience Level
                 </label>
                 <select
@@ -497,9 +532,7 @@ export default function NewJobPage() {
 
               {/* Interview Format */}
               <div>
-                <label className="block text-sm font-medium text-text mb-2">
-                  Interview Format
-                </label>
+                <label className="block text-sm font-medium text-text mb-2">Interview Format</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <label className="flex items-center space-x-3 p-4 border border-gray-light rounded-lg cursor-pointer hover:border-primary transition-colors">
                     <input
@@ -533,11 +566,14 @@ export default function NewJobPage() {
           {/* Job Description */}
           <div className="bg-white rounded-lg border border-gray-light p-6">
             <h2 className="text-lg font-semibold text-text mb-6">Job Description</h2>
-            
+
             <div className="space-y-4">
               {/* URL Input for Crawling */}
               <div>
-                <label htmlFor="jobDescriptionUrl" className="block text-sm font-medium text-text mb-2">
+                <label
+                  htmlFor="jobDescriptionUrl"
+                  className="block text-sm font-medium text-text mb-2"
+                >
                   Import from Job URL (Optional)
                 </label>
                 <div className="flex space-x-2">
@@ -569,7 +605,10 @@ export default function NewJobPage() {
 
               {/* Job Description Text Area */}
               <div>
-                <label htmlFor="jobDescription" className="block text-sm font-medium text-text mb-2">
+                <label
+                  htmlFor="jobDescription"
+                  className="block text-sm font-medium text-text mb-2"
+                >
                   Job Description *
                 </label>
                 <RichTextEditor
@@ -590,25 +629,23 @@ export default function NewJobPage() {
           {/* Skills Section */}
           <div className="bg-white rounded-lg border border-gray-light p-6">
             <h2 className="text-lg font-semibold text-text mb-6">Required Skills</h2>
-            
+
             <div className="space-y-4">
               {/* Skills Dropdown */}
               <div className="relative" data-dropdown="skills">
-                <label className="block text-sm font-medium text-text mb-2">
-                  Add Skills
-                </label>
+                <label className="block text-sm font-medium text-text mb-2">Add Skills</label>
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setSkillDropdownOpen(!skillDropdownOpen)}
                     className="w-full px-4 py-3 border border-gray-light rounded-lg text-left text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent flex items-center justify-between"
                   >
-                    <span className="text-muted-text">
-                      Search and select skills...
-                    </span>
-                    <ChevronDownIcon className={`w-5 h-5 text-muted-text transition-transform ${skillDropdownOpen ? 'rotate-180' : ''}`} />
+                    <span className="text-muted-text">Search and select skills...</span>
+                    <ChevronDownIcon
+                      className={`w-5 h-5 text-muted-text transition-transform ${skillDropdownOpen ? 'rotate-180' : ''}`}
+                    />
                   </button>
-                  
+
                   {skillDropdownOpen && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-64 overflow-hidden">
                       <div className="p-3 border-b border-gray-light bg-gray-50">
@@ -632,15 +669,21 @@ export default function NewJobPage() {
                               <div>
                                 <p className="font-medium">{skill.name}</p>
                                 {skill.description && (
-                                  <p className="text-xs text-muted-text truncate mt-1">{skill.description}</p>
+                                  <p className="text-xs text-muted-text truncate mt-1">
+                                    {skill.description}
+                                  </p>
                                 )}
-                                <p className="text-xs text-primary capitalize mt-1">{skill.category}</p>
+                                <p className="text-xs text-primary capitalize mt-1">
+                                  {skill.category}
+                                </p>
                               </div>
                             </button>
                           ))
                         ) : (
                           <div className="px-4 py-6 text-muted-text text-sm text-center">
-                            {skillSearch ? 'No skills found matching your search' : 'All skills have been selected'}
+                            {skillSearch
+                              ? 'No skills found matching your search'
+                              : 'All skills have been selected'}
                           </div>
                         )}
                       </div>
@@ -652,7 +695,9 @@ export default function NewJobPage() {
               {/* Selected Skills */}
               {selectedSkills.length > 0 && (
                 <div>
-                  <p className="text-sm font-medium text-text mb-3">Selected Skills ({selectedSkills.length}):</p>
+                  <p className="text-sm font-medium text-text mb-3">
+                    Selected Skills ({selectedSkills.length}):
+                  </p>
                   <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-4 bg-gray-50 rounded-lg border border-gray-light">
                     {selectedSkills.map((skill) => (
                       <span
@@ -678,25 +723,23 @@ export default function NewJobPage() {
           {/* Traits Section */}
           <div className="bg-white rounded-lg border border-gray-light p-6">
             <h2 className="text-lg font-semibold text-text mb-6">Desired Traits</h2>
-            
+
             <div className="space-y-4">
               {/* Traits Dropdown */}
               <div className="relative" data-dropdown="traits">
-                <label className="block text-sm font-medium text-text mb-2">
-                  Add Traits
-                </label>
+                <label className="block text-sm font-medium text-text mb-2">Add Traits</label>
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setTraitDropdownOpen(!traitDropdownOpen)}
                     className="w-full px-4 py-3 border border-gray-light rounded-lg text-left text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent flex items-center justify-between"
                   >
-                    <span className="text-muted-text">
-                      Search and select traits...
-                    </span>
-                    <ChevronDownIcon className={`w-5 h-5 text-muted-text transition-transform ${traitDropdownOpen ? 'rotate-180' : ''}`} />
+                    <span className="text-muted-text">Search and select traits...</span>
+                    <ChevronDownIcon
+                      className={`w-5 h-5 text-muted-text transition-transform ${traitDropdownOpen ? 'rotate-180' : ''}`}
+                    />
                   </button>
-                  
+
                   {traitDropdownOpen && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-64 overflow-hidden">
                       <div className="p-3 border-b border-gray-light bg-gray-50">
@@ -720,15 +763,21 @@ export default function NewJobPage() {
                               <div>
                                 <p className="font-medium">{trait.name}</p>
                                 {trait.description && (
-                                  <p className="text-xs text-muted-text truncate mt-1">{trait.description}</p>
+                                  <p className="text-xs text-muted-text truncate mt-1">
+                                    {trait.description}
+                                  </p>
                                 )}
-                                <p className="text-xs text-accent-blue capitalize mt-1">{trait.category}</p>
+                                <p className="text-xs text-accent-blue capitalize mt-1">
+                                  {trait.category}
+                                </p>
                               </div>
                             </button>
                           ))
                         ) : (
                           <div className="px-4 py-6 text-muted-text text-sm text-center">
-                            {traitSearch ? 'No traits found matching your search' : 'All traits have been selected'}
+                            {traitSearch
+                              ? 'No traits found matching your search'
+                              : 'All traits have been selected'}
                           </div>
                         )}
                       </div>
@@ -740,7 +789,9 @@ export default function NewJobPage() {
               {/* Selected Traits */}
               {selectedTraits.length > 0 && (
                 <div>
-                  <p className="text-sm font-medium text-text mb-3">Selected Traits ({selectedTraits.length}):</p>
+                  <p className="text-sm font-medium text-text mb-3">
+                    Selected Traits ({selectedTraits.length}):
+                  </p>
                   <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-4 bg-gray-50 rounded-lg border border-gray-light">
                     {selectedTraits.map((trait) => (
                       <span
@@ -777,17 +828,23 @@ export default function NewJobPage() {
                 Add Field
               </Button>
             </div>
-            
+
             {customFields.length === 0 ? (
               <p className="text-muted-text text-sm">
-                No custom fields added. You can add additional requirements or questions for candidates.
+                No custom fields added. You can add additional requirements or questions for
+                candidates.
               </p>
             ) : (
               <div className="space-y-4">
                 {customFields.map((field, index) => (
-                  <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border border-gray-light rounded-lg">
+                  <div
+                    key={field.id}
+                    className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border border-gray-light rounded-lg"
+                  >
                     <div>
-                      <label className="block text-xs font-medium text-muted-text mb-1">Field Name</label>
+                      <label className="block text-xs font-medium text-muted-text mb-1">
+                        Field Name
+                      </label>
                       <input
                         {...form.register(`customFields.${index}.key`)}
                         placeholder="e.g., 'Expected Salary'"
@@ -799,9 +856,11 @@ export default function NewJobPage() {
                         </p>
                       )}
                     </div>
-                    
+
                     <div>
-                      <label className="block text-xs font-medium text-muted-text mb-1">Input Type</label>
+                      <label className="block text-xs font-medium text-muted-text mb-1">
+                        Input Type
+                      </label>
                       <select
                         {...form.register(`customFields.${index}.inputType`)}
                         className="w-full px-3 py-2 border border-gray-light rounded text-text focus:outline-none focus:ring-1 focus:ring-primary text-sm"
@@ -813,9 +872,11 @@ export default function NewJobPage() {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div>
-                      <label className="block text-xs font-medium text-muted-text mb-1">Description/Placeholder</label>
+                      <label className="block text-xs font-medium text-muted-text mb-1">
+                        Description/Placeholder
+                      </label>
                       <input
                         {...form.register(`customFields.${index}.value`)}
                         placeholder="Describe what you're looking for"
@@ -827,7 +888,7 @@ export default function NewJobPage() {
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="flex items-end">
                       <Button
                         type="button"
@@ -848,7 +909,7 @@ export default function NewJobPage() {
           {/* Template Saving */}
           <div className="bg-white rounded-lg border border-gray-light p-6">
             <h2 className="text-lg font-semibold text-text mb-6">Save as Template</h2>
-            
+
             <div className="space-y-4">
               <label className="flex items-center space-x-3">
                 <input
@@ -856,12 +917,17 @@ export default function NewJobPage() {
                   type="checkbox"
                   className="rounded border-gray-light text-primary focus:ring-primary"
                 />
-                <span className="text-text">Save this job configuration as a template for future use</span>
+                <span className="text-text">
+                  Save this job configuration as a template for future use
+                </span>
               </label>
-              
+
               {saveAsTemplate && (
                 <div>
-                  <label htmlFor="templateName" className="block text-sm font-medium text-text mb-2">
+                  <label
+                    htmlFor="templateName"
+                    className="block text-sm font-medium text-text mb-2"
+                  >
                     Template Name
                   </label>
                   <input
@@ -893,11 +959,15 @@ export default function NewJobPage() {
               disabled={isOverLimit || isLoadingData}
               className="min-w-[140px] sm:w-auto w-full"
             >
-              {isSubmitting ? 'Creating...' : saveAsTemplate ? 'Create & Save Template' : 'Create Job'}
+              {isSubmitting
+                ? 'Creating...'
+                : saveAsTemplate
+                  ? 'Create & Save Template'
+                  : 'Create Job'}
             </Button>
           </div>
         </form>
       </div>
     </DashboardLayout>
   );
-} 
+}
