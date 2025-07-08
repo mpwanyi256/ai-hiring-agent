@@ -133,18 +133,24 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
   };
 
   // Transform candidates for the list component
-  const transformedCandidates = candidates.map(candidate => {
+  const transformedCandidates: import('@/types/candidates').CandidateList[] = candidates.map(candidate => {
     const candidateAny = candidate as any;
     return {
       id: candidate.id,
-      name: candidateAny.name || candidateAny.fullName || undefined,
+      jobId: candidateAny.jobId || job.id,
+      interviewToken: candidateAny.interviewToken || '',
       email: candidate.email || '',
+      submittedAt: candidateAny.submittedAt,
+      evaluation: candidateAny.evaluation,
+      responses: candidateAny.responses || [],
+      resume: candidateAny.resume,
+      candidateStatus: candidateAny.candidateStatus,
+      name: candidateAny.name || candidateAny.fullName || '',
+      score: candidateAny.score || candidateAny.evaluation?.score || 0,
       progress: candidateAny.progress || candidateAny.completionPercentage || 0,
-      responses: candidateAny.responses || candidateAny.responseCount || 0,
-      score: candidate.evaluation?.score || 0,
-      status: (candidateAny.isCompleted ? 'completed' : 'in_progress') as 'in_progress' | 'completed' | 'pending',
+      resumeScore: candidateAny.resumeScore || candidateAny.evaluation?.resumeScore || 0,
       createdAt: candidateAny.createdAt || new Date().toISOString(),
-      resumeScore: candidateAny.evaluation?.resumeScore || 0,
+      status: (candidateAny.isCompleted ? 'completed' : 'in_progress') as 'in_progress' | 'completed' | 'pending',
     };
   });
 
@@ -198,7 +204,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
       <CandidatesOverview {...overviewData} />
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-4">
         {/* Candidates List - Fixed height with internal scroll */}
         <div className="lg:col-span-4 h-full max-h-[800px] overflow-y-auto">
           <CandidatesList
@@ -222,13 +228,13 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
               <CandidateDetailsHeader candidate={selectedCandidate as unknown as CandidateBasic} />
 
               {/* Tabs */}
-              <div className="border-b border-gray-200 px-6 pt-4">
-                <nav className="flex space-x-8" aria-label="Tabs">
+              <div className="border-b border-gray-200 px-6 pt-4 md:px-4 md:pt-2">
+                <nav className="flex space-x-8 md:space-x-4" aria-label="Tabs">
                   {candidateTabs.map(tab => (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      className={`flex items-center space-x-2 py-2 md:py-1 px-1 border-b-2 font-medium text-sm md:text-xs transition-colors ${
                         activeTab === tab.id
                           ? 'border-primary text-primary'
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -241,24 +247,24 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
               </div>
 
               {/* Tab Content */}
-              <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex-1 overflow-y-auto p-6 md:p-4">
                 {activeTab === 'overview' && (
-                  <div className="space-y-6">
+                  <div className="space-y-6 md:space-y-4">
                     {/* Candidate Info Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                      <div className="bg-primary/5 border border-primary/10 rounded-lg p-4">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <BriefcaseIcon className="w-5 h-5 text-primary" />
-                          <span className="text-sm font-medium text-gray-700">Position</span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4 mb-6 md:mb-4">
+                      <div className="bg-primary/5 border border-primary/10 rounded-lg p-4 md:p-3">
+                        <div className="flex items-center space-x-2 mb-2 md:mb-1">
+                          <BriefcaseIcon className="w-5 h-5 md:w-4 md:h-4 text-primary" />
+                          <span className="text-sm md:text-xs font-medium text-gray-700">Position</span>
                         </div>
-                        <p className="text-sm text-gray-900 font-medium">{job.title}</p>
+                        <p className="text-sm md:text-xs text-gray-900 font-medium">{job.title}</p>
                       </div>
-                      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <CalendarIcon className="w-5 h-5 text-blue-600" />
-                          <span className="text-sm font-medium text-gray-700">Application Date</span>
+                      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 md:p-3">
+                        <div className="flex items-center space-x-2 mb-2 md:mb-1">
+                          <CalendarIcon className="w-5 h-5 md:w-4 md:h-4 text-blue-600" />
+                          <span className="text-sm md:text-xs font-medium text-gray-700">Application Date</span>
                         </div>
-                        <p className="text-sm text-gray-900 font-medium">
+                        <p className="text-sm md:text-xs text-gray-900 font-medium">
                           {new Date((selectedCandidate as any).createdAt || new Date()).toLocaleDateString('en-US', {
                             month: 'long',
                             day: 'numeric',
@@ -266,12 +272,12 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                           })}
                         </p>
                       </div>
-                      <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <ChartBarIcon className="w-5 h-5 text-purple-600" />
-                          <span className="text-sm font-medium text-gray-700">Experience</span>
+                      <div className="bg-purple-50 border border-purple-100 rounded-lg p-4 md:p-3">
+                        <div className="flex items-center space-x-2 mb-2 md:mb-1">
+                          <ChartBarIcon className="w-5 h-5 md:w-4 md:h-4 text-purple-600" />
+                          <span className="text-sm md:text-xs font-medium text-gray-700">Experience</span>
                         </div>
-                        <p className="text-sm text-gray-900 font-medium">
+                        <p className="text-sm md:text-xs text-gray-900 font-medium">
                           {job.fields?.experienceLevel?.replace(/([A-Z])/g, ' $1').trim() || 'Not specified'}
                         </p>
                       </div>
@@ -315,19 +321,19 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                             </button>
                           </div>
                           {/* Resume evaluation summary - visually prominent */}
-                          {selectedCandidate.evaluation?.resumeScore && (
+                          {(selectedCandidate as any).evaluation?.resumeScore && (
                             <div className="mt-6 flex items-center gap-4">
                               <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-4 border-primary">
                                 <span className="text-lg font-bold text-primary">
-                                  {selectedCandidate.evaluation.resumeScore}
+                                  {(selectedCandidate as any).evaluation.resumeScore}
                                   <span className="text-base font-semibold">/100</span>
                                 </span>
                               </div>
                               <div className="flex-1">
                                 <span className="block text-xs font-semibold text-primary mb-1">Resume Match Score</span>
-                                {selectedCandidate.evaluation.resumeSummary && (
+                                {(selectedCandidate as any).evaluation.resumeSummary && (
                                   <p className="text-xs text-gray-700 mt-1">
-                                    {selectedCandidate.evaluation.resumeSummary}
+                                    {(selectedCandidate as any).evaluation.resumeSummary}
                                   </p>
                                 )}
                               </div>

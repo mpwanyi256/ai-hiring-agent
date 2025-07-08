@@ -34,8 +34,7 @@ export async function POST(request: Request) {
 
     // Save response to the responses table
     const responseData = {
-      // id: uuidv4(),
-      candidate_id: candidateId, // Using candidateId as profile_id for now
+      candidate_id: candidateId,
       job_id: questionData.job_id,
       job_question_id: questionId,
       question: question,

@@ -50,7 +50,10 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
-    let updateData: any = {};
+    type CandidateStatusUpdate = {
+      status: 'shortlisted' | 'rejected' | 'archived' | 'active';
+    };
+    let updateData: CandidateStatusUpdate = { status: 'active' };
     let successMessage = '';
 
     // Define the action and corresponding data update

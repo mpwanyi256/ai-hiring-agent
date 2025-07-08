@@ -23,15 +23,10 @@ export async function POST(request: Request) {
       }, { status: 404 });
     }
 
-    const supabase = await createClient();
-
     // Create a temporary candidate session ID
     const candidateId = uuidv4();
 
-    // For now, we'll track the candidate session in memory/locally
-    // In a full implementation, you might want to create a candidate_sessions table
-    // or use the profiles table with a 'candidate' role
-
+    // Use only fields that exist in the latest DB schema for candidate
     const session = {
       candidate: {
         id: candidateId,

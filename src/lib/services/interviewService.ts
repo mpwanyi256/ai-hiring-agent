@@ -521,7 +521,7 @@ class InterviewService {
     const completionRate = responses.length / 10; // Assuming 10 questions on average
     
     // Basic scoring algorithm
-    let score = Math.min(100, (avgResponseLength / 100) * 30 + completionRate * 70);
+    const score = Math.min(100, (avgResponseLength / 100) * 30 + completionRate * 70);
     return Math.round(score);
   }
 

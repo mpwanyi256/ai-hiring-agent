@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { resumeService } from '@/lib/services/resumeService';
+import { JobData } from '@/lib/services/jobsService';
 
 export async function GET() {
   try {
@@ -48,7 +49,7 @@ EDUCATION:
     const evaluation = await resumeService.evaluateResume(
       mockResumeContent,
       'test-resume.txt',
-      mockJob as any
+      mockJob as JobData
     );
 
     console.log('Resume evaluation test completed successfully');

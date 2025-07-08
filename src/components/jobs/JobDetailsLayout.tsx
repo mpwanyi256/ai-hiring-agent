@@ -215,7 +215,7 @@ export default function JobDetailsLayout({
       </div>
 
       {/* Job Header */}
-      <div className="bg-white rounded-lg border border-gray-100 p-6 mb-6">
+      <div className="bg-white rounded-lg border border-gray-100 p-6 md:p-4 md:mb-4 mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-start space-x-4">
@@ -225,29 +225,29 @@ export default function JobDetailsLayout({
               </div>
 
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold text-gray-900 mb-2">{job.title}</h1>
+                <h1 className="text-xl md:text-lg font-bold text-gray-900 mb-2 md:mb-1">{job.title}</h1>
                 
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-3">
+                <div className="flex flex-wrap items-center gap-4 md:gap-2 text-sm md:text-xs text-gray-500 mb-3 md:mb-2">
                   <div className="flex items-center space-x-1">
-                    <CalendarIcon className="w-4 h-4" />
+                    <CalendarIcon className="w-4 h-4 md:w-3 md:h-3" />
                     <span>Created {formatDate(job.createdAt)}</span>
                   </div>
                   <div className="flex items-center space-x-1">
-                    <UserGroupIcon className="w-4 h-4" />
+                    <UserGroupIcon className="w-4 h-4 md:w-3 md:h-3" />
                     <span>{job.candidateCount || 0} candidates</span>
                   </div>
                   <div className="flex items-center space-x-1">
-                    <ClockIcon className="w-4 h-4" />
+                    <ClockIcon className="w-4 h-4 md:w-3 md:h-3" />
                     <span>{job.interviewFormat === 'text' ? 'Text' : 'Video'} interview</span>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-3 md:space-x-2">
                   <div className="relative">
                     <button
                       onClick={() => setShowStatusDropdown(!showStatusDropdown)}
                       disabled={isUpdatingStatus}
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(job.status)} hover:bg-opacity-80 transition-colors disabled:opacity-50`}
+                      className={`inline-flex items-center px-2.5 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium border ${getStatusColor(job.status)} hover:bg-opacity-80 transition-colors disabled:opacity-50`}
                     >
                       {getStatusLabel(job.status)}
                       <ChevronDownIcon className="w-3 h-3 ml-1" />
@@ -273,7 +273,7 @@ export default function JobDetailsLayout({
                     )}
                   </div>
                   
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                  <span className={`inline-flex items-center px-2.5 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium ${
                     job.isActive 
                       ? 'bg-green-100 text-green-700' 
                       : 'bg-gray-100 text-gray-700'
@@ -281,7 +281,7 @@ export default function JobDetailsLayout({
                     {job.isActive ? 'Active' : 'Inactive'}
                   </span>
                   {job.fields?.experienceLevel && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 capitalize">
+                    <span className="inline-flex items-center px-2.5 py-1 md:px-2 md:py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 capitalize">
                       {job.fields.experienceLevel.replace(/([A-Z])/g, ' $1').trim()} Level
                     </span>
                   )}
@@ -291,12 +291,12 @@ export default function JobDetailsLayout({
           </div>
 
           {/* Actions */}
-          <div className="mt-4 lg:mt-0 flex flex-wrap gap-2">
+          <div className="mt-4 lg:mt-0 flex flex-wrap gap-2 md:gap-1">
             <Button 
               variant="outline" 
               size="sm" 
               onClick={onShareJob}
-              className="flex items-center text-sm"
+              className="flex items-center text-sm md:text-xs"
             >
               <ShareIcon className="w-4 h-4 mr-1" />
               Share
@@ -312,21 +312,17 @@ export default function JobDetailsLayout({
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-t border-gray-100 mt-6 -mb-6">
-          <nav className="flex space-x-8">
+        <div className="border-t border-gray-100 mt-6 md:mt-4 -mb-6 md:-mb-4">
+          <nav className="flex space-x-8 md:space-x-4">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    isActive
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                  className={`flex items-center space-x-2 py-4 md:py-2 px-1 border-b-2 font-medium text-sm md:text-xs transition-colors ${isActive ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                 >
-                  <tab.icon className="w-4 h-4" />
+                  <tab.icon className="w-4 h-4 md:w-3 md:h-3" />
                   <span>{tab.label}</span>
                   {tab.id === 'candidates' && (job.candidateCount || 0) > 0 && (
                     <span className="bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 text-xs font-medium">
@@ -341,15 +337,15 @@ export default function JobDetailsLayout({
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-4">
         {/* Main Content Area */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-3 space-y-6 md:space-y-4">
           {activeTab === 'overview' ? (
             <>
               {/* Requirements Section (Experience Level, Skills, Traits) */}
-              <div className="bg-white rounded-lg border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-text">Requirements</h2>
+              <div className="bg-white rounded-lg border border-gray-100 p-6 md:p-4">
+                <div className="flex items-center justify-between mb-4 md:mb-2">
+                  <h2 className="text-lg md:text-base font-semibold text-text">Requirements</h2>
                   {job.status === 'draft' && editingField === null && (
                     <Button 
                       size="sm" 
@@ -622,9 +618,9 @@ export default function JobDetailsLayout({
               </div>
 
               {/* Additional Info Section (Custom Fields) */}
-              <div className="bg-white rounded-lg border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-text">Additional Information</h2>
+              <div className="bg-white rounded-lg border border-gray-100 p-6 md:p-4">
+                <div className="flex items-center justify-between mb-4 md:mb-2">
+                  <h2 className="text-lg md:text-base font-semibold text-text">Additional Information</h2>
                   {job.status === 'draft' && editingField === null && (
                     <Button size="sm" variant="outline" onClick={() => {
                       setCustomFieldsDraft(
@@ -775,9 +771,9 @@ export default function JobDetailsLayout({
               </div>
 
               {/* Job Description Section (already inline editable) */}
-              <div className="bg-white rounded-lg border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">Job Description</h3>
+              <div className="bg-white rounded-lg border border-gray-100 p-6 md:p-4">
+                <div className="flex items-center justify-between mb-3 md:mb-1">
+                  <h3 className="text-lg md:text-base font-semibold text-gray-900">Job Description</h3>
                   {job.status === 'draft' && editingField !== 'jobDescription' && (
                     <Button size="sm" variant="outline" onClick={() => setEditingField('jobDescription')}>
                       <PencilIcon className="w-4 h-4 mr-1" /> Edit
@@ -840,10 +836,10 @@ export default function JobDetailsLayout({
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-4">
+        <div className="space-y-4 md:space-y-2">
           {/* Job Info (read-only summary) */}
-          <div className="bg-white rounded-lg border border-gray-100 p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Job Information</h3>
+          <div className="bg-white rounded-lg border border-gray-100 p-4 md:p-3">
+            <h3 className="text-sm md:text-xs font-semibold text-gray-900 mb-3 md:mb-2">Job Information</h3>
             <div className="space-y-3">
               <div>
                 <span className="text-xs font-medium text-gray-500">Status</span>
@@ -871,8 +867,8 @@ export default function JobDetailsLayout({
           </div>
           {/* Skills (read-only summary) */}
           {job.fields?.skills && job.fields.skills.length > 0 && (
-            <div className="bg-white rounded-lg border border-gray-100 p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Required Skills</h3>
+            <div className="bg-white rounded-lg border border-gray-100 p-4 md:p-3">
+              <h3 className="text-sm md:text-xs font-semibold text-gray-900 mb-3 md:mb-2">Required Skills</h3>
               <div className="flex flex-wrap gap-1">
                 {job.fields.skills.map((skill: string, index: number) => (
                   <span 
