@@ -84,13 +84,13 @@ export const CandidateDetailsHeader = ({ candidate }: CandidateDetailsProps) => 
             </div>
           </div>
           {/* Status Dropdown (shadcn/ui Select) */}
-          <div className="min-w-[200px]">
+          <div className="bg-primary/20 rounded-lg p-2 min-w-[200px]">
             <Select
               value={currentStatus}
               onValueChange={(value) => handleStatusUpdate(value as CandidateStatus)}
               disabled={isUpdating}
             >
-              <SelectTrigger className="w-full bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary">
+              <SelectTrigger className="w-full bg-white hover:bg-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
