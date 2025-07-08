@@ -211,6 +211,7 @@ export interface CandidateFilters {
 export interface CandidateList {
   id: string;
   jobId: string;
+  jobTitle: string;
   interviewToken: string;
   email: string;
   submittedAt?: string;

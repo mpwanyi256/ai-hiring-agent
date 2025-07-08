@@ -7,8 +7,8 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/components/providers/ToastProvider';
 import InterviewScheduler from '@/components/candidates/InterviewScheduler';
-import { RootState, useAppSelector } from '@/store';
-import { CandidateBasic, CandidatesListResponse, CandidateStatusFilter } from '@/types/candidates';
+import { RootState, useAppDispatch, useAppSelector } from '@/store';
+import { CandidateList, CandidateStatusFilter } from '@/types/candidates';
 import {
   UserGroupIcon,
   EyeIcon,
@@ -24,33 +24,28 @@ import {
   CheckCircleIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
-
-interface CandidatesPagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasMore: boolean;
-}
+import { fetchJobCandidates } from '@/store/candidates/candidatesThunks';
+import {
+  selectCandidatesList,
+  selectCandidatesLoading,
+  selectCandidatesPagination,
+  selectCandidateStats,
+} from '@/store/candidates/candidatesSelectors';
+import { apiError } from '@/lib/notification';
 
 export default function CandidatesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAppSelector((state: RootState) => state.auth);
   const { success, error: showError } = useToast();
+  const dispatch = useAppDispatch();
+  const candidates = useAppSelector(selectCandidatesList);
+  const isLoading = useAppSelector(selectCandidatesLoading);
+  const pagination = useAppSelector(selectCandidatesPagination);
+  const stats = useAppSelector(selectCandidateStats);
 
-  // State for candidates and pagination
-  const [candidates, setCandidates] = useState<CandidateBasic[]>([]);
-  const [pagination, setPagination] = useState<CandidatesPagination | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState({
-    total: 0,
-    completed: 0,
-    inProgress: 0,
-    averageScore: 0,
-  });
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
@@ -86,18 +81,15 @@ export default function CandidatesPage() {
   // Interview scheduling state
   const [showScheduler, setShowScheduler] = useState(false);
   const [selectedCandidateForScheduling, setSelectedCandidateForScheduling] =
-    useState<CandidateBasic | null>(null);
+    useState<CandidateList | null>(null);
 
   // Available jobs for filtering
   const [availableJobs, setAvailableJobs] = useState<Array<{ id: string; title: string }>>([]);
 
   // Fetch candidates function
   const fetchCandidates = useCallback(
-    async (page = 1, reset = false) => {
+    async (page = 1) => {
       if (!user?.id) return;
-
-      const loadState = page === 1 ? setIsLoading : setIsLoadingMore;
-      loadState(true);
       setError(null);
 
       try {
@@ -118,26 +110,19 @@ export default function CandidatesPage() {
         if (scoreRange.max) params.append('maxScore', scoreRange.max);
         if (recommendationFilter !== 'all') params.append('recommendation', recommendationFilter);
 
-        const response = await fetch(`/api/candidates?${params}`);
-        const data: CandidatesListResponse = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch candidates');
-        }
-
-        if (reset || page === 1) {
-          setCandidates(data.candidates);
-        } else {
-          setCandidates((prev) => [...prev, ...data.candidates]);
-        }
-
-        setPagination(data.pagination);
-        setStats(data.stats);
+        dispatch(
+          fetchJobCandidates({
+            jobId: jobFilter,
+            search: searchQuery,
+            status: statusFilter,
+            page,
+            limit: 10,
+          }),
+        );
       } catch (err) {
         console.error('Error fetching candidates:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch candidates');
-      } finally {
-        loadState(false);
+        apiError(err instanceof Error ? err.message : 'Failed to fetch candidates');
       }
     },
     [
@@ -176,7 +161,7 @@ export default function CandidatesPage() {
 
   // Initial load
   useEffect(() => {
-    fetchCandidates(1, true);
+    fetchCandidates(1);
     fetchJobs();
   }, [fetchCandidates, fetchJobs]);
 
@@ -224,10 +209,10 @@ export default function CandidatesPage() {
 
   // Load more for infinite scroll
   const loadMore = useCallback(() => {
-    if (pagination?.hasMore && !isLoadingMore) {
-      fetchCandidates(pagination.page + 1, false);
+    if (pagination?.hasMore && !isLoading) {
+      fetchCandidates(pagination.page + 1);
     }
-  }, [pagination, isLoadingMore, fetchCandidates]);
+  }, [pagination, isLoading, fetchCandidates]);
 
   // Infinite scroll effect
   useEffect(() => {
@@ -298,7 +283,7 @@ export default function CandidatesPage() {
         setSelectedCandidates(new Set());
         setIsSelectAll(false);
         setShowBulkActions(false);
-        fetchCandidates(1, true);
+        fetchCandidates(1);
       } catch (err) {
         console.error('Error performing bulk action:', err);
         showError(err instanceof Error ? err.message : 'Failed to perform bulk action');
@@ -471,7 +456,7 @@ export default function CandidatesPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-text">In Progress</p>
-                <p className="text-xl font-bold text-text">{stats.inProgress}</p>
+                <p className="text-xl font-bold text-text">{stats.pending}</p>
               </div>
             </div>
           </div>
@@ -906,7 +891,7 @@ export default function CandidatesPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {candidate.fullName}
+                              {candidate.name}
                             </div>
                             {candidate.email && (
                               <div className="text-sm text-gray-500">{candidate.email}</div>
@@ -930,7 +915,7 @@ export default function CandidatesPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {candidate.evaluation ? (
+                          {candidate.evaluation && candidate.evaluation.score ? (
                             <div className="flex items-center space-x-2">
                               <span
                                 className={`text-sm font-bold ${getScoreColor(candidate.evaluation.score)}`}
@@ -952,12 +937,10 @@ export default function CandidatesPage() {
                             <div className="w-16 bg-gray-200 rounded-full h-2">
                               <div
                                 className="bg-primary h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${candidate.completionPercentage}%` }}
+                                style={{ width: `${candidate.progress}%` }}
                               ></div>
                             </div>
-                            <span className="text-sm text-gray-500">
-                              {candidate.completionPercentage}%
-                            </span>
+                            <span className="text-sm text-gray-500">{candidate.progress}%</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -972,7 +955,7 @@ export default function CandidatesPage() {
                               </Button>
                             </Link>
 
-                            {candidate.status === 'under_review' && (
+                            {candidate.candidateStatus === 'under_review' && (
                               <Button
                                 size="sm"
                                 className="flex items-center"
@@ -1026,7 +1009,7 @@ export default function CandidatesPage() {
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <InterviewScheduler
                 candidateId={selectedCandidateForScheduling.id}
-                candidateName={selectedCandidateForScheduling.fullName}
+                candidateName={selectedCandidateForScheduling.name}
                 jobTitle={selectedCandidateForScheduling.jobTitle}
                 onScheduled={() => {
                   setShowScheduler(false);

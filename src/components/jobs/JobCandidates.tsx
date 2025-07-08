@@ -20,7 +20,7 @@ import {
 } from '@heroicons/react/24/outline';
 import {
   updateCandidateRealtime,
-  updateResponseRealtime,
+  // updateResponseRealtime,
   updateEvaluationRealtime,
   updateAIEvaluationRealtime,
   updateResumeRealtime,
@@ -87,34 +87,34 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
   }, [dispatch, job.id, searchQuery, filters]);
 
   // Real-time listeners for candidate data
-  useEffect(() => {
-    if (!job.id) return;
-    const supabase = createClient();
-    const tables = [
-      { table: 'candidates', action: updateCandidateRealtime },
-      { table: 'responses', action: updateResponseRealtime },
-      { table: 'evaluations', action: updateEvaluationRealtime },
-      { table: 'ai_evaluations', action: updateAIEvaluationRealtime },
-      { table: 'candidate_resumes', action: updateResumeRealtime },
-    ];
-    const channels = tables.map(({ table, action }) =>
-      supabase
-        .channel(`realtime:${table}:${job.id}`)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table, filter: `job_id=eq.${job.id}` },
-          (payload: any) => {
-            if (payload.new) {
-              dispatch(action(payload.new));
-            }
-          },
-        )
-        .subscribe(),
-    );
-    return () => {
-      channels.forEach((ch) => supabase.removeChannel(ch));
-    };
-  }, [job.id, dispatch]);
+  // useEffect(() => {
+  //   if (!job.id) return;
+  //   const supabase = createClient();
+  //   const tables = [
+  //     { table: 'candidates', action: updateCandidateRealtime },
+  //     { table: 'responses', action: updateResponseRealtime },
+  //     { table: 'evaluations', action: updateEvaluationRealtime },
+  //     { table: 'ai_evaluations', action: updateAIEvaluationRealtime },
+  //     { table: 'candidate_resumes', action: updateResumeRealtime },
+  //   ];
+  //   const channels = tables.map(({ table, action }) =>
+  //     supabase
+  //       .channel(`realtime:${table}:${job.id}`)
+  //       .on(
+  //         'postgres_changes',
+  //         { event: '*', schema: 'public', table, filter: `job_id=eq.${job.id}` },
+  //         (payload: any) => {
+  //           if (payload.new) {
+  //             dispatch(action(payload.new));
+  //           }
+  //         },
+  //       )
+  //       .subscribe(),
+  //   );
+  //   return () => {
+  //     channels.forEach((ch) => supabase.removeChannel(ch));
+  //   };
+  // }, [job.id, dispatch]);
 
   // Use candidates directly from state (no frontend filtering)
   const selectedCandidate = selectedCandidateId
@@ -134,6 +134,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     return {
       id: candidate.id,
       jobId: candidate.jobId,
+      jobTitle: candidate.jobTitle,
       interviewToken: candidate.interviewToken,
       email: candidate.email,
       submittedAt: candidate.submittedAt,

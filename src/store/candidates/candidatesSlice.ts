@@ -70,13 +70,8 @@ const candidatesSlice = createSlice({
     clearCurrentCandidate: (state) => {
       state.currentCandidate = null;
     },
-    addResponse: (state, action: PayloadAction<Response>) => {
-      if (state.currentCandidate) {
-        if (!state.currentCandidate.responses) {
-          state.currentCandidate.responses = [];
-        }
-        state.currentCandidate.responses.push(action.payload);
-      }
+    addResponse: () => {
+      console.log('addResponse');
     },
     clearCandidatesData: (state) => {
       state.candidates = [];
@@ -114,19 +109,21 @@ const candidatesSlice = createSlice({
         state.candidates.push(action.payload as Candidate);
       }
     },
-    updateResponseRealtime(state, action: PayloadAction<Response>) {
-      // Find candidate and update responses
-      const candidate = state.candidates.find((c) => c.id === action.payload.candidateId);
-      if (candidate) {
-        candidate.responses = candidate.responses || [];
-        const idx = candidate.responses.findIndex((r) => r.id === action.payload.id);
-        if (idx !== -1) {
-          candidate.responses[idx] = action.payload;
-        } else {
-          candidate.responses.push(action.payload);
-        }
-      }
-    },
+    // updateResponseRealtime(state, action: PayloadAction<Response>) {
+    //   // Find candidate and update responses
+    //   console.log('updateResponseRealtime', action.payload);
+
+    //   // const candidate = state.candidates.find((c) => c.id === action.payload.candidateId);
+    //   // if (candidate) {
+    //   //   candidate.responses = candidate.responses || [];
+    //   //   const idx = candidate.responses.findIndex((r) => r.id === action.payload.id);
+    //   //   if (idx !== -1) {
+    //   //     candidate.responses[idx] = action.payload;
+    //   //   } else {
+    //   //     candidate.responses.push(action.payload);
+    //   //   }
+    //   // }
+    // },
     updateEvaluationRealtime(state, action: PayloadAction<Evaluation>) {
       // Find candidate and update evaluation
       const candidate = state.candidates.find((c) => c.id === action.payload.candidateId);
@@ -390,7 +387,7 @@ export const {
   addResponse,
   clearCandidatesData,
   updateCandidateRealtime,
-  updateResponseRealtime,
+  // updateResponseRealtime,
   updateEvaluationRealtime,
   updateAIEvaluationRealtime,
   updateResumeRealtime,
