@@ -221,6 +221,8 @@ export async function POST(request: Request) {
         p_candidate_id: candidateResult.candidate_id
       });
 
+    console.log('Candidate details', candidateDetails)
+
     if (detailsError || !candidateDetails.success) {
       console.error('Error getting candidate details:', detailsError);
       return NextResponse.json({ 
@@ -235,18 +237,19 @@ export async function POST(request: Request) {
       success: true,
       data: {
         id: candidate.id,
-        jobId: candidate.jobId,
-        candidateInfoId: candidate.candidateInfoId,
-        interviewToken: candidate.interviewToken,
+        jobId: candidate.job_id,
+        candidateInfoId: candidate.candidate_info_id,
+        interviewToken: candidate.interview_token,
         email: candidate.email,
-        firstName: candidate.firstName,
-        lastName: candidate.lastName,
-        currentStep: candidate.currentStep,
-        totalSteps: candidate.totalSteps,
-        isCompleted: candidate.isCompleted,
-        submittedAt: candidate.submittedAt,
-        createdAt: candidate.createdAt,
-        updatedAt: candidate.updatedAt
+        firstName: candidate.first_name,
+        full_name: candidate.full_name,
+        lastName: candidate.last_name,
+        currentStep: candidate.current_step,
+        totalSteps: candidate.total_steps,
+        isCompleted: candidate.is_completed,
+        submittedAt: candidate.submitted_at,
+        createdAt: candidate.created_at,
+        updatedAt: candidate.updated_at
       }
     });
 

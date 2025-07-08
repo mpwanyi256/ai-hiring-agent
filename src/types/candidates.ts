@@ -14,13 +14,27 @@ export interface CandidateResume {
   uploadedAt: string;
 }
 
+export interface Candidate {
+  id: string;
+  name?: string;
+  email: string;
+  progress: number;
+  responses: number;
+  score: number;
+  status: 'in_progress' | 'completed' | 'pending';
+  createdAt: string;
+  profileImage?: string;
+  resumeScore: number;
+  candidateStatus?: CandidateStatus;
+}
+
 export interface CandidateBasic {
   id: string;
   jobId: string;
   jobTitle: string;
   jobStatus: string;
   interviewToken: string;
-  email?: string;
+  email: string;
   firstName?: string;
   lastName?: string;
   fullName: string;
@@ -182,15 +196,22 @@ export interface CandidateFilters {
 }
 
 // Legacy types for backward compatibility - keeping existing structure
-export interface Candidate {
+export interface CandidateList {
   id: string;
   jobId: string;
   interviewToken: string;
-  email?: string;
+  email: string;
   submittedAt?: string;
   evaluation?: Evaluation;
-  responses?: Response[];
+  responses: Response[];
   resume?: CandidateResume;
+  candidateStatus?: CandidateStatus;
+  name: string;
+  score: number;
+  progress: number;
+  resumeScore: number;
+  createdAt: string;
+  status: 'completed' | 'in_progress' | 'pending';
 }
 
 export interface Response {
@@ -223,7 +244,7 @@ export interface Evaluation {
 export interface CreateCandidateData {
   jobId: string;
   interviewToken: string;
-  email?: string;
+  email: string;
 }
 
 export interface SubmitInterviewData {
@@ -246,4 +267,10 @@ export interface getCandidateDetailsPayload {
   email: string;
   firstName: string;
   lastName: string;
+}
+
+export interface CandidateStatusOptions {
+  value: CandidateStatus;
+  label: string;
+  color: string;
 }

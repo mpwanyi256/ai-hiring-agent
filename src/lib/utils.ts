@@ -4,10 +4,11 @@ import { Job } from '@/types';
 import { JobStatus } from './supabase';
 import { apiSuccess } from './notification';
 import { CheckCircleIcon, ExclamationTriangleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { twMerge } from 'tailwind-merge';
 
 // Utility function to merge classes with Tailwind
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs);
+  return twMerge(clsx(inputs))
 }
 
 // Date formatting utilities

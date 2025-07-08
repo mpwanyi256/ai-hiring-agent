@@ -9,24 +9,13 @@ import {
   CalendarIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { CandidateStatus } from '@/types/candidates';
-
-interface Candidate {
-  id: string;
-  name?: string;
-  email: string;
-  progress: number;
-  responses: number;
-  score: number;
-  status: 'in_progress' | 'completed' | 'pending';
-  createdAt: string;
-  profileImage?: string;
-  resumeScore: number;
-  candidateStatus?: CandidateStatus;
-}
+import { CandidateList, CandidateStatus, CandidateStatusOptions } from '@/types/candidates';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface CandidatesListProps {
-  candidates: Candidate[];
+  candidates: CandidateList[];
   selectedCandidateId?: string;
   onCandidateSelect: (candidateId: string) => void;
   searchQuery: string;
@@ -42,7 +31,7 @@ interface CandidatesListProps {
   }) => void;
 }
 
-const statusOptions: { value: CandidateStatus; label: string; color: string }[] = [
+const statusOptions: CandidateStatusOptions[] = [
   { value: 'under_review', label: 'Under Review', color: 'bg-gray-100 text-gray-800' },
   { value: 'interview_scheduled', label: 'Interview Scheduled', color: 'bg-blue-100 text-blue-800' },
   { value: 'shortlisted', label: 'Shortlisted', color: 'bg-green-100 text-green-800' },
@@ -63,6 +52,7 @@ export default function CandidatesList({
   onFiltersChange
 }: CandidatesListProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     minScore: '',
     maxScore: '',
@@ -157,24 +147,137 @@ export default function CandidatesList({
           <h3 className="text-lg font-semibold text-gray-900">
             Candidates ({candidates.length})
           </h3>
-          <button 
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center space-x-1 text-sm transition-colors ${
-              showFilters || hasActiveFilters 
-                ? 'text-primary' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <FunnelIcon className="w-4 h-4" />
-            <span>Filters</span>
-            {hasActiveFilters && (
-              <span className="w-2 h-2 bg-primary rounded-full"></span>
-            )}
-          </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className={`flex items-center space-x-1 text-sm transition-colors ${
+                  showFilters || hasActiveFilters 
+                    ? 'text-primary' 
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                aria-label="Open filters"
+              >
+                <FunnelIcon className="w-4 h-4" />
+                <span>Filters</span>
+                {hasActiveFilters && (
+                  <span className="w-2 h-2 bg-primary rounded-full"></span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-96 p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Score Range */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Score Range</label>
+                  <div className="flex space-x-2">
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      min="0"
+                      max="100"
+                      value={filters.minScore}
+                      onChange={(e) => handleFilterChange('minScore', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      min="0"
+                      max="100"
+                      value={filters.maxScore}
+                      onChange={(e) => handleFilterChange('maxScore', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                    />
+                  </div>
+                </div>
+                {/* Date Range */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Date Applied</label>
+                  <div className="flex space-x-2">
+                    <input
+                      type="date"
+                      value={filters.startDate}
+                      onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                    />
+                    <input
+                      type="date"
+                      value={filters.endDate}
+                      onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                    />
+                  </div>
+                </div>
+                {/* Status Filter (shadcn/ui Select) */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                  <Select
+                    value={filters.candidateStatus}
+                    onValueChange={(value) => handleFilterChange('candidateStatus', value)}
+                  >
+                    <SelectTrigger className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary">
+                      <SelectValue placeholder="All Statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="selecc_all">All Statuses</SelectItem>
+                      {statusOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Sort Options */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Sort By</label>
+                  <div className="flex space-x-2">
+                    <Select
+                      value={filters.sortBy}
+                      onValueChange={(value) => handleFilterChange('sortBy', value)}
+                    >
+                      <SelectTrigger className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="created_at">Date Applied</SelectItem>
+                        <SelectItem value="score">Score</SelectItem>
+                        <SelectItem value="full_name">Name</SelectItem>
+                        <SelectItem value="candidate_status">Status</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={filters.sortOrder}
+                      onValueChange={(value) => handleFilterChange('sortOrder', value as 'asc' | 'desc')}
+                    >
+                      <SelectTrigger className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="desc">Desc</SelectItem>
+                        <SelectItem value="asc">Asc</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <div className="mt-3 flex justify-end">
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center space-x-1 text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    <XMarkIcon className="w-3 h-3" />
+                    <span>Clear Filters</span>
+                  </button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
         </div>
-
         {/* Search */}
-        <div className="relative">
+        <div className="relative mt-2">
           <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
           <input
             type="text"
@@ -184,117 +287,16 @@ export default function CandidatesList({
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
         </div>
-
-        {/* Filters Panel */}
-        {showFilters && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Score Range */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Score Range</label>
-                <div className="flex space-x-2">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    min="0"
-                    max="100"
-                    value={filters.minScore}
-                    onChange={(e) => handleFilterChange('minScore', e.target.value)}
-                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    min="0"
-                    max="100"
-                    value={filters.maxScore}
-                    onChange={(e) => handleFilterChange('maxScore', e.target.value)}
-                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              {/* Date Range */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Date Applied</label>
-                <div className="flex space-x-2">
-                  <input
-                    type="date"
-                    value={filters.startDate}
-                    onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
-                  />
-                  <input
-                    type="date"
-                    value={filters.endDate}
-                    onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              {/* Status Filter */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={filters.candidateStatus}
-                  onChange={(e) => handleFilterChange('candidateStatus', e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
-                >
-                  <option value="">All Statuses</option>
-                  {statusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Sort Options */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Sort By</label>
-                <div className="flex space-x-2">
-                  <select
-                    value={filters.sortBy}
-                    onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
-                  >
-                    <option value="created_at">Date Applied</option>
-                    <option value="score">Score</option>
-                    <option value="full_name">Name</option>
-                    <option value="candidate_status">Status</option>
-                  </select>
-                  <select
-                    value={filters.sortOrder}
-                    onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
-                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
-                  >
-                    <option value="desc">Desc</option>
-                    <option value="asc">Asc</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Clear Filters */}
-            {hasActiveFilters && (
-              <div className="mt-3 flex justify-end">
-                <button
-                  onClick={clearFilters}
-                  className="flex items-center space-x-1 text-xs text-gray-500 hover:text-gray-700"
-                >
-                  <XMarkIcon className="w-3 h-3" />
-                  <span>Clear Filters</span>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
-
       {/* Candidates List - Scrollable */}
       <div className="flex-1 overflow-y-auto">
-        {candidates.length === 0 ? (
+        {loading ? (
+          <div className="p-8">
+            <Skeleton className="h-16 w-full mb-2" />
+            <Skeleton className="h-16 w-full mb-2" />
+            <Skeleton className="h-16 w-full mb-2" />
+          </div>
+        ) : candidates.length === 0 ? (
           <div className="p-8 text-center">
             <div className="text-gray-400 mb-2">
               <ChartBarIcon className="w-12 h-12 mx-auto" />

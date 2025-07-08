@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAppDispatch } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
 import { setInterviewStep } from '@/store/interview/interviewSlice';
 import { JobData } from '@/lib/services/jobsService';
 import { ResumeEvaluation, JobQuestion } from '@/types/interview';
@@ -14,16 +14,12 @@ import {
   UserIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline';
+import { selectCandidate } from '@/store/interview/interviewSelectors';
+import Image from 'next/image';
 
 interface InterviewFlowProps {
   jobToken: string;
   job: JobData;
-  candidateId: string;
-  candidateInfo: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
   resumeEvaluation?: ResumeEvaluation | null;
   resumeContent: string;
   onComplete: () => void;
@@ -37,9 +33,7 @@ interface Response {
 
 export default function InterviewFlow({ 
   jobToken, 
-  job, 
-  candidateId,
-  candidateInfo, 
+  job,
   resumeEvaluation, 
   resumeContent, 
   onComplete 
@@ -53,6 +47,7 @@ export default function InterviewFlow({
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [questionStartTime, setQuestionStartTime] = useState<Date>(new Date());
   const [error, setError] = useState<string | null>(null);
+  const candidate = useAppSelector(selectCandidate);
 
   const dispatch = useAppDispatch();
 
@@ -91,11 +86,19 @@ export default function InterviewFlow({
     fetchQuestions();
   }, [jobToken]);
 
+  if (!isLoading && !candidate) {
+    return null;
+  }
+
   const currentQuestion = questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
   const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
 
   const handleAnswerSubmit = async () => {
+    if (!candidate) {
+      return;
+    }
+
     if (!currentAnswer.trim()) {
       setError('Please provide an answer before continuing.');
       return;
@@ -115,7 +118,7 @@ export default function InterviewFlow({
 
       // Save response to database
       const responseData = {
-        candidateId,
+        candidateId: candidate.id,
         questionId: currentQuestion.id,
         question: currentQuestion.questionText,
         answer: currentAnswer.trim(),
@@ -174,6 +177,10 @@ export default function InterviewFlow({
 
   const handleInterviewComplete = async () => {
     try {
+      if (!candidate) {
+        return;
+      }
+
       // Complete the interview session
       const completeResponse = await fetch('/api/interview/complete', {
         method: 'POST',
@@ -181,9 +188,13 @@ export default function InterviewFlow({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          candidateId,
+          candidateId: candidate.id,
           jobToken,
-          candidateInfo,
+          candidateInfo: {
+            firstName: candidate.firstName,
+            lastName: candidate.lastName,
+            email: candidate.email,
+          },
           resumeEvaluation: resumeEvaluation || null,
           resumeContent,
           totalTimeSpent: Math.round((new Date().getTime() - (startTime?.getTime() || 0)) / 1000)
@@ -243,10 +254,10 @@ export default function InterviewFlow({
       <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
           <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-red-600 text-2xl">⚠️</span>
+            <Image src="/illustrations/file_not_found.svg" alt="Error" width={48} height={48} />
           </div>
-          <h2 className="text-xl font-bold text-text mb-2">Interview Error</h2>
-          <p className="text-red-600 mb-4">{error}</p>
+          <h2 className="text-xl font-bold text-text mb-2">Invalid Interview Link</h2>
+          <p className="text-red-600 mb-4">The interview link is invalid or has expired.</p>
           <Button onClick={() => window.location.reload()} variant="outline">
             Try Again
           </Button>
@@ -278,7 +289,7 @@ export default function InterviewFlow({
               <div>
                 <h1 className="text-lg font-semibold text-text">{job.title} Interview</h1>
                 <p className="text-sm text-muted-text">
-                  Hi {candidateInfo.firstName}, let&apos;s get to know you better
+                  Hi {candidate?.firstName}, let&apos;s get to know you better
                 </p>
               </div>
             </div>

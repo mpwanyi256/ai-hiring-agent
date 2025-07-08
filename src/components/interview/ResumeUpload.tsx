@@ -40,7 +40,12 @@ export default function ResumeUpload({
     canProceed
   } = useResumeEvaluation({
     jobToken,
-    candidateInfo,
+    candidateInfo: {
+      id: candidateInfo?.id || '',
+      email: candidateInfo?.email || '',
+      firstName: candidateInfo?.firstName || '',
+      lastName: candidateInfo?.lastName || '',
+    },
     jobId: job?.id || ''
   });
 
@@ -63,6 +68,10 @@ export default function ResumeUpload({
       hasExistingEvaluation,
       canProceed
     });
+
+    if (canProceed) {
+      proceedToInterview();
+    }
   }, [candidateInfo, job, isCheckingExisting, existingEvaluation, evaluation, hasExistingEvaluation, canProceed]);
 
   if (!job) {

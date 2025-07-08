@@ -35,6 +35,8 @@ export default function InterviewPage({ params }: InterviewPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  console.log('Candidate dat', candidate)
+
   const renderStep = () => {
     switch (interviewStep) {
       case 1:
@@ -50,12 +52,6 @@ export default function InterviewPage({ params }: InterviewPageProps) {
             <InterviewFlow
               jobToken={token}
               job={job}
-              candidateId={candidate.id}
-              candidateInfo={{
-                firstName: candidate.firstName,
-                lastName: candidate.lastName,
-                email: candidate.email,
-              }}
               resumeEvaluation={null} // Will be fetched by InterviewFlow
               resumeContent=""
               onComplete={() => {
