@@ -47,4 +47,31 @@ export interface EmailNotConfirmedError {
   type: 'EMAIL_NOT_CONFIRMED';
   email: string;
   message: string;
-} 
+}
+
+export interface AuthResponse {
+  user: User;
+  token?: string;
+}
+
+export interface LoginResponse {
+  user: User;
+  token: string;
+}
+
+export interface ProfileResponse {
+  profile: unknown;
+}
+
+export interface CheckAuthResponse {
+  isAuthenticated: boolean;
+  user: User;
+}
+
+export interface VerifyOtpResponse {
+  user: User;
+}
+
+export interface ResendOtpResponse {
+  message: string;
+}

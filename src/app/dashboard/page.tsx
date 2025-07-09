@@ -11,7 +11,7 @@ import QuickActionCard from '@/components/dashboard/QuickActionCard';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import { RootState } from '@/store';
 import { User } from '@/types';
-import { 
+import {
   PlusIcon,
   BriefcaseIcon,
   UserGroupIcon,
@@ -22,8 +22,9 @@ import {
   DocumentTextIcon,
   ArrowTrendingUpIcon,
   UsersIcon,
-  CalendarDaysIcon
+  CalendarDaysIcon,
 } from '@heroicons/react/24/outline';
+import { app } from '@/lib/constants';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -32,23 +33,25 @@ export default function DashboardPage() {
   if (!user) return null;
 
   const isFreeTier = user.subscription?.name === 'free';
-  const usagePercentage = user.subscription ? 
-    (user.usageCounts.activeJobs / user.subscription.maxJobs) * 100 : 0;
-  const interviewUsagePercentage = user.subscription ? 
-    (user.usageCounts.interviewsThisMonth / user.subscription.maxInterviewsPerMonth) * 100 : 0;
+  const usagePercentage = user.subscription
+    ? (user.usageCounts.activeJobs / user.subscription.maxJobs) * 100
+    : 0;
+  const interviewUsagePercentage = user.subscription
+    ? (user.usageCounts.interviewsThisMonth / user.subscription.maxInterviewsPerMonth) * 100
+    : 0;
 
   // Mock data for enhanced insights
   const candidatesByStatus = [
     { label: 'Shortlisted', value: 8, color: '#10B981' },
     { label: 'In Review', value: 12, color: '#F59E0B' },
     { label: 'Interviewed', value: 24, color: '#3B82F6' },
-    { label: 'Applied', value: 35, color: '#6B7280' }
+    { label: 'Applied', value: 35, color: '#6B7280' },
   ];
 
   const interviewStats = [
     { label: 'This Week', value: 15, color: '#8B5CF6' },
     { label: 'Last Week', value: 12, color: '#EC4899' },
-    { label: 'This Month', value: user.usageCounts.interviewsThisMonth, color: '#14B8A6' }
+    { label: 'This Month', value: user.usageCounts.interviewsThisMonth, color: '#14B8A6' },
   ];
 
   return (
@@ -67,11 +70,13 @@ export default function DashboardPage() {
           <div className="mt-3 sm:mt-0 flex items-center space-x-3">
             <div className="flex items-center space-x-2 text-xs text-gray-500">
               <CalendarDaysIcon className="w-4 h-4" />
-              <span>{new Date().toLocaleDateString('en-US', { 
-                weekday: 'short', 
-                month: 'short', 
-                day: 'numeric' 
-              })}</span>
+              <span>
+                {new Date().toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </span>
             </div>
             <Link href="/dashboard/jobs/new">
               <Button size="sm" className="text-xs">
@@ -88,12 +93,14 @@ export default function DashboardPage() {
         <MetricCard
           title="Active Jobs"
           value={user.usageCounts.activeJobs}
-          subtitle={user.subscription?.maxJobs === -1 ? 'Unlimited' : `of ${user.subscription?.maxJobs}`}
+          subtitle={
+            user.subscription?.maxJobs === -1 ? 'Unlimited' : `of ${user.subscription?.maxJobs}`
+          }
           icon={BriefcaseIcon}
           progress={{
             current: user.usageCounts.activeJobs,
             max: user.subscription?.maxJobs || 1,
-            label: 'Jobs used'
+            label: 'Jobs used',
           }}
           onClick={() => router.push('/dashboard/jobs')}
         />
@@ -108,12 +115,12 @@ export default function DashboardPage() {
           trend={{
             value: 15,
             isPositive: true,
-            label: 'vs last month'
+            label: 'vs last month',
           }}
           progress={{
             current: user.usageCounts.interviewsThisMonth,
             max: user.subscription?.maxInterviewsPerMonth || 1,
-            label: 'Monthly limit'
+            label: 'Monthly limit',
           }}
         />
 
@@ -127,7 +134,7 @@ export default function DashboardPage() {
           trend={{
             value: 8,
             isPositive: true,
-            label: 'this week'
+            label: 'this week',
           }}
           onClick={() => router.push('/dashboard/candidates')}
         />
@@ -142,7 +149,7 @@ export default function DashboardPage() {
           trend={{
             value: 12,
             isPositive: false,
-            label: 'vs last week'
+            label: 'vs last week',
           }}
         />
       </div>
@@ -162,7 +169,7 @@ export default function DashboardPage() {
                 buttonText="Create Job Post"
                 href="/dashboard/jobs/new"
               />
-              
+
               <QuickActionCard
                 title="Review Candidates"
                 description="View pending candidate evaluations and interviews"
@@ -173,7 +180,7 @@ export default function DashboardPage() {
                 buttonVariant="outline"
                 href="/dashboard/candidates"
               />
-              
+
               <QuickActionCard
                 title="Job Performance"
                 description="Analyze your job posting performance and metrics"
@@ -184,7 +191,7 @@ export default function DashboardPage() {
                 buttonVariant="outline"
                 href="/dashboard/reports"
               />
-              
+
               <QuickActionCard
                 title="Share Interview Link"
                 description="Get shareable links for your active job positions"
@@ -208,7 +215,7 @@ export default function DashboardPage() {
               icon={ArrowTrendingUpIcon}
               action={{
                 label: 'View All',
-                onClick: () => router.push('/dashboard/candidates')
+                onClick: () => router.push('/dashboard/candidates'),
               }}
             />
 
@@ -220,7 +227,7 @@ export default function DashboardPage() {
               icon={ChartBarIcon}
               action={{
                 label: 'Detailed Report',
-                onClick: () => router.push('/dashboard/reports')
+                onClick: () => router.push('/dashboard/reports'),
               }}
             />
           </div>
@@ -234,23 +241,30 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    🚀 Welcome to AI Hiring Agent!
+                    🚀 Welcome to {app.name}!
                   </h3>
                   <p className="text-sm text-gray-600 mb-4">
-                    Get started by creating your first job post. Our AI will handle candidate interviews and provide detailed evaluations.
+                    Get started by creating your first job post. Our AI will handle candidate
+                    interviews and provide detailed evaluations.
                   </p>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                     <div className="flex items-center space-x-2">
-                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">1</div>
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        1
+                      </div>
                       <span className="text-xs text-gray-700">Create job post</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">2</div>
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        2
+                      </div>
                       <span className="text-xs text-gray-700">Share interview link</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">3</div>
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        3
+                      </div>
                       <span className="text-xs text-gray-700">Review AI evaluations</span>
                     </div>
                   </div>
@@ -276,7 +290,7 @@ export default function DashboardPage() {
             icon={ClockIcon}
             action={{
               label: 'View All',
-              onClick: () => router.push('/dashboard/history')
+              onClick: () => router.push('/dashboard/history'),
             }}
           >
             <RecentActivity maxItems={4} />
@@ -309,12 +323,13 @@ export default function DashboardPage() {
               <div className="flex justify-between items-center text-xs">
                 <span className="text-gray-600">Jobs</span>
                 <span className="font-medium text-gray-900">
-                  {user.usageCounts.activeJobs}/{user.subscription?.maxJobs === -1 ? '∞' : user.subscription?.maxJobs}
+                  {user.usageCounts.activeJobs}/
+                  {user.subscription?.maxJobs === -1 ? '∞' : user.subscription?.maxJobs}
                 </span>
               </div>
               {user.subscription && user.subscription.maxJobs !== -1 && (
                 <div className="w-full bg-gray-100 rounded-full h-1.5">
-                  <div 
+                  <div
                     className="bg-primary h-1.5 rounded-full transition-all"
                     style={{ width: `${Math.min(usagePercentage, 100)}%` }}
                   />
@@ -324,12 +339,15 @@ export default function DashboardPage() {
               <div className="flex justify-between items-center text-xs">
                 <span className="text-gray-600">Interviews (Monthly)</span>
                 <span className="font-medium text-gray-900">
-                  {user.usageCounts.interviewsThisMonth}/{user.subscription?.maxInterviewsPerMonth === -1 ? '∞' : user.subscription?.maxInterviewsPerMonth}
+                  {user.usageCounts.interviewsThisMonth}/
+                  {user.subscription?.maxInterviewsPerMonth === -1
+                    ? '∞'
+                    : user.subscription?.maxInterviewsPerMonth}
                 </span>
               </div>
               {user.subscription && user.subscription.maxInterviewsPerMonth !== -1 && (
                 <div className="w-full bg-gray-100 rounded-full h-1.5">
-                  <div 
+                  <div
                     className="bg-blue-500 h-1.5 rounded-full transition-all"
                     style={{ width: `${Math.min(interviewUsagePercentage, 100)}%` }}
                   />
@@ -346,7 +364,11 @@ export default function DashboardPage() {
                   <li>• Basic AI evaluations</li>
                 </ul>
                 <Link href="/dashboard/billing" className="block mt-2">
-                  <Button size="sm" variant="outline" className="w-full text-xs border-amber-200 text-amber-700 hover:bg-amber-100">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full text-xs border-amber-200 text-amber-700 hover:bg-amber-100"
+                  >
                     Upgrade for More
                   </Button>
                 </Link>
@@ -357,4 +379,4 @@ export default function DashboardPage() {
       </div>
     </DashboardLayout>
   );
-} 
+}

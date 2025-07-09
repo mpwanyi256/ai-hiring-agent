@@ -1,41 +1,29 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { SignUpData, SignInData, EmailNotConfirmedError } from '@/types';
+import {
+  SignUpData,
+  User,
+  SignInData,
+  AuthResponse,
+  LoginResponse,
+  ProfileResponse,
+  CheckAuthResponse,
+  VerifyOtpResponse,
+  ResendOtpResponse,
+} from '@/types/auth';
 import { apiUtils } from '../api';
 
-// Response type interfaces
-interface AuthResponse {
-  user: unknown;
-  token?: string;
-}
-
-interface LoginResponse {
-  user: unknown;
-  token: string;
-}
-
-interface ProfileResponse {
-  profile: unknown;
-}
-
-interface CheckAuthResponse {
-  isAuthenticated: boolean;
-  user: unknown;
-}
-
-interface VerifyOtpResponse {
-  user: unknown;
-}
-
-interface ResendOtpResponse {
-  message: string;
-}
-
 // Async thunks for authentication using API routes with axios
-export const signUp = createAsyncThunk(
+export const signUp = createAsyncThunk<User, SignUpData>(
   'auth/signUp',
-  async (userData: { email: string; password: string; firstName: string; lastName: string }) => {
+  async ({ email, password, firstName, lastName, companyName }: SignUpData) => {
     try {
-      const response = await apiUtils.post<AuthResponse>('/api/auth/signup', userData);
+      const response = await apiUtils.post<AuthResponse>('/api/auth/signup', {
+        email,
+        password,
+        firstName,
+        lastName,
+        companyName,
+      });
       return response.user;
     } catch (error: unknown) {
       throw new Error(error instanceof Error ? error.message : 'Sign up failed');
@@ -43,12 +31,15 @@ export const signUp = createAsyncThunk(
   },
 );
 
-export const signIn = createAsyncThunk(
+export const signIn = createAsyncThunk<User, SignInData>(
   'auth/signIn',
-  async (credentials: { email: string; password: string }) => {
+  async ({ email, password }: SignInData) => {
     try {
-      const response = await apiUtils.post<LoginResponse>('/api/auth/signin', credentials);
-      return response;
+      const response = await apiUtils.post<LoginResponse>('/api/auth/signin', {
+        email,
+        password,
+      });
+      return response.user;
     } catch (error: unknown) {
       throw new Error(error instanceof Error ? error.message : 'Sign in failed');
     }
