@@ -8,11 +8,7 @@ import CandidateAnalytics from '@/components/evaluations/CandidateAnalytics';
 import CandidateResponses from '@/components/candidates/CandidateResponses';
 import { CurrentJob } from '@/types/jobs';
 import { AppDispatch, RootState } from '@/store';
-import {
-  fetchJobCandidates,
-  fetchCandidateResume,
-  fetchAIEvaluation,
-} from '@/store/candidates/candidatesThunks';
+import { fetchJobCandidates, fetchAIEvaluation } from '@/store/candidates/candidatesThunks';
 import {
   UserCircleIcon,
   DocumentTextIcon,
@@ -23,7 +19,7 @@ import {
   EyeIcon,
 } from '@heroicons/react/24/outline';
 import { CandidateDetailsHeader } from '../evaluations/CandidateDetailsHeader';
-import { CandidateBasic, CandidateList, AIEvaluation } from '@/types';
+import { CandidateBasic, CandidateList, CandidateStatus } from '@/types';
 import { formatFileSize } from '@/lib/utils';
 import AIEvaluationCard from '@/components/evaluations/AIEvaluationCard';
 import { Loader2 } from 'lucide-react';
@@ -65,7 +61,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     maxScore?: number;
     startDate?: string;
     endDate?: string;
-    candidateStatus?: string;
+    candidateStatus?: CandidateStatus;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }) => {
@@ -83,6 +79,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
           jobId: job.id,
           search: searchQuery.trim() || undefined,
           ...filters,
+          candidateStatus: filters.candidateStatus as CandidateStatus | undefined,
         }),
       );
     }
@@ -102,7 +99,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
   };
 
   // Transform candidates for the list component
-  const transformedCandidates: CandidateList[] = candidates.map((candidate) => {
+  const transformedCandidates = candidates.map((candidate) => {
     return {
       id: candidate.id,
       jobId: candidate.jobId,
@@ -117,7 +114,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
       name: candidate.name,
       score: candidate.evaluation?.score,
       progress: candidate.progress,
-      resumeScore: candidate.resumeScore || candidate.evaluation?.resumeScore,
+      resumeScore: candidate.evaluation?.resumeScore,
       createdAt: candidate.createdAt || new Date().toISOString(),
       status: candidate.status,
     };
@@ -177,7 +174,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
         {/* Candidates List - Fixed height with internal scroll */}
         <div className="lg:col-span-4 h-full max-h-[800px] overflow-y-auto">
           <CandidatesList
-            candidates={transformedCandidates}
+            candidates={candidates}
             selectedCandidateId={selectedCandidateId}
             onCandidateSelect={(id) => {
               setSelectedCandidateId(id);

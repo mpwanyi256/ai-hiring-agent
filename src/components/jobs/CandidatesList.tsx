@@ -9,7 +9,7 @@ import {
   CalendarIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { CandidateList, CandidateStatus, CandidateStatusOptions } from '@/types/candidates';
+import { Candidate, CandidateStatus, CandidateStatusOptions } from '@/types/candidates';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import {
   Select,
@@ -23,7 +23,7 @@ import { useAppSelector } from '@/store';
 import { selectCandidatesLoading } from '@/store/candidates/candidatesSelectors';
 
 interface CandidatesListProps {
-  candidates: CandidateList[];
+  candidates: Candidate[];
   selectedCandidateId?: string;
   onCandidateSelect: (candidateId: string) => void;
   searchQuery: string;
@@ -342,9 +342,9 @@ export default function CandidatesList({
                         {candidate.name || 'Anonymous Candidate'}
                       </h4>
                       <div
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(candidate?.score || 0)}`}
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(candidate?.evaluation?.score || 0)}`}
                       >
-                        {candidate.score || 0}/100
+                        {candidate.evaluation?.score || 0}/100
                       </div>
                     </div>
 
@@ -358,7 +358,7 @@ export default function CandidatesList({
                       </div>
                       <div className="flex items-center space-x-1">
                         <ClockIcon className="w-3 h-3" />
-                        <span>{candidate.resumeScore} score</span>
+                        <span>{candidate.evaluation?.resumeScore} score</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <CalendarIcon className="w-3 h-3" />

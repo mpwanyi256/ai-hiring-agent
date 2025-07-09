@@ -1,5 +1,7 @@
 // Candidate Management Types
 
+import { UserRole } from '@/lib/supabase';
+
 // Resume information interface
 export interface CandidateResume {
   id: string;
@@ -43,7 +45,17 @@ export interface TeamAssessment {
 
 export type CandidateInterviewStatus = 'in_progress' | 'completed' | 'pending';
 
-// Enhanced Candidate interface with all properties
+export interface AIAssesment {
+  score: number;
+  strengths: string[];
+  explanation: string;
+  areas_for_improvement: string[];
+}
+
+export interface SkillsAssessment {
+  [key: string]: AIAssesment;
+}
+
 export interface Candidate {
   id: string;
   jobId: string;
@@ -59,13 +71,43 @@ export interface Candidate {
   isCompleted: boolean;
   progress: number;
   responses: number;
-  status: CandidateInterviewStatus;
+  status: string;
   submittedAt: string;
   createdAt: string;
-  resumeScore: number;
-  candidateStatus?: CandidateStatus;
-  evaluation?: Evaluation;
-  resume?: CandidateResume;
+  updatedAt: string;
+  candidateStatus: CandidateStatus;
+  evaluation: {
+    id: string;
+    score: number;
+    recommendation: string;
+    summary: string;
+    strengths: string[];
+    redFlags: string[];
+    skillsAssessment: SkillsAssessment;
+    traitsAssessment: {
+      skills: number;
+      culture: number;
+      team_work: number;
+      communication: number;
+      growth_mindset: number;
+    };
+    createdAt: string;
+    resumeScore: number;
+    resumeSummary: string;
+    evaluationType: string;
+  };
+  resume: {
+    id: string;
+    filename: string;
+    filePath: string;
+    publicUrl: string;
+    fileSize: number;
+    fileType: string;
+    wordCount: number;
+    parsingStatus: string;
+    parsingError: string | null;
+    uploadedAt: string;
+  };
 }
 
 export type CandidateBasic = Omit<Candidate, 'evaluation' | 'resume'>;
@@ -309,7 +351,7 @@ export interface CandidateStatusOptions {
 // Redux State Types
 export interface CandidatesState {
   candidates: Candidate[];
-  currentCandidate: Candidate | null;
+  currentCandidate: InterviewingCandidate | null;
   isLoading: boolean;
   error: string | null;
   totalCandidates: number;
@@ -333,19 +375,176 @@ export interface CandidatesState {
     evaluatingCandidateId: string | null;
     lastEvaluationDuration: number | null;
     isLoadingEvaluation: boolean;
-    currentEvaluation: {
-      candidateId: string | null;
-      aiEvaluation: AIEvaluation | null;
-      teamAssessments: TeamAssessment[];
-      computedValues: Record<string, unknown>;
-    } | null;
+    currentEvaluation: AIEvaluationResponse | null;
   };
   // Candidate responses state
   candidateResponses: {
     [candidateId: string]: {
-      responses: Response[];
+      responses: CandidateResponse[];
       isLoading: boolean;
       error: string | null;
     };
   };
+}
+
+export interface CandidatesResponse {
+  candidates: Candidate[];
+}
+
+export interface CandidateListResponse {
+  candidates: Candidate[];
+  job: { id: string; title: string };
+  pagination: {
+    hasMore: boolean;
+    limit: number;
+    page: number;
+    total: number;
+    totalPages: number;
+  };
+  stats: {
+    averageScore: number;
+    completed: number;
+    inProgress: number;
+    pending: number;
+    total: number;
+  };
+  success: boolean;
+}
+
+export interface TeamAssesment {
+  id: string;
+  candidateId: string;
+  jobId: string;
+  aiEvaluationId: string;
+  assessorProfileId: string;
+  assessorName: string;
+  assessorRole: UserRole;
+  overallRating: number;
+  overallRatingStatus: string;
+  categoryRatings: Record<string, number>;
+  assessmentComments: string;
+  privateNotes: string;
+  assessmentType: string;
+  interviewDurationMinutes: number;
+  createdAt: string;
+  updatedAt: string;
+  assessorProfile: {
+    firstName: string;
+    lastName: string;
+  } | null;
+}
+
+export interface AIEvaluationResponse {
+  success: boolean;
+  aiEvaluation: AIEvaluation | null;
+  teamAssessments: TeamAssesment[];
+  computedValues: {
+    averageTeamRating: number;
+    totalAssessors: number;
+    consensusLevel: 'high' | 'medium' | 'low';
+    finalRecommendation: RecommendationType;
+  };
+  candidateInfo: {
+    id: string;
+    jobId: string;
+    jobTitle: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    currentStep: number;
+    totalSteps: number;
+    isCompleted: boolean;
+  };
+}
+
+export interface ShortlistResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface ResumeResponse {
+  resume: unknown;
+}
+
+export interface EvaluationResponse {
+  evaluations: unknown[];
+}
+
+export interface CreateCandidateResponse {
+  candidate: unknown;
+}
+
+export interface SubmitInterviewResponse {
+  candidate: unknown;
+}
+
+export interface SaveEvaluationResponse {
+  evaluation: unknown;
+}
+
+export interface UpdateEvaluationResponse {
+  evaluation: unknown;
+}
+
+export interface GenerateAIEvaluationResponse {
+  evaluation: unknown;
+}
+
+export interface CandidateResponse {
+  id: string;
+  questionId: string;
+  questionText: string | undefined;
+  questionType: string | undefined;
+  responseText: string;
+  responseTime: number;
+  orderIndex: number | undefined;
+  createdAt: string;
+}
+
+export interface CandidateResponsesResponse {
+  responses: CandidateResponse[];
+}
+
+export interface TeamAssessmentResponse {
+  assessment: unknown;
+}
+
+export interface FetchCandidatesByJobIdPayload {
+  jobId: string;
+  search?: string;
+  minScore?: number;
+  maxScore?: number;
+  status?: CandidateStatus;
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+  candidateStatus?: CandidateStatus;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface InterviewingCandidate {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  candidateInfoId: string;
+  interviewToken: string;
+  email: string;
+  firstName: string;
+  full_name: string;
+  lastName: string;
+  currentStep: number;
+  totalSteps: number;
+  isCompleted: boolean;
+  submittedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCandidatePayload {
+  jobToken: string;
+  email: string;
+  firstName: string;
+  lastName: string;
 }

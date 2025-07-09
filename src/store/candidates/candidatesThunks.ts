@@ -1,72 +1,22 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { CreateCandidateData, SubmitInterviewData } from '@/types';
 import { apiUtils } from '../api';
-import { RootState } from '../index';
-
-// Response type interfaces
-interface CandidatesResponse {
-  candidates: unknown[];
-}
-
-interface CandidateResponse {
-  candidate: unknown;
-}
-
-interface CandidateListResponse {
-  candidates: unknown[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-interface AIEvaluationResponse {
-  success: boolean;
-  aiEvaluation: unknown;
-  teamAssessments: unknown[];
-  computedValues: unknown;
-  candidateInfo: unknown;
-}
-
-interface ShortlistResponse {
-  success: boolean;
-  message: string;
-}
-
-interface ResumeResponse {
-  resume: unknown;
-}
-
-interface EvaluationResponse {
-  evaluations: unknown[];
-}
-
-interface CreateCandidateResponse {
-  candidate: unknown;
-}
-
-interface SubmitInterviewResponse {
-  candidate: unknown;
-}
-
-interface SaveEvaluationResponse {
-  evaluation: unknown;
-}
-
-interface UpdateEvaluationResponse {
-  evaluation: unknown;
-}
-
-interface GenerateAIEvaluationResponse {
-  evaluation: unknown;
-}
-
-interface CandidateResponsesResponse {
-  responses: unknown[];
-}
-
-interface TeamAssessmentResponse {
-  assessment: unknown;
-}
+import {
+  CandidatesResponse,
+  CandidateListResponse,
+  ResumeResponse,
+  AIEvaluationResponse,
+  FetchCandidatesByJobIdPayload,
+  InterviewingCandidate,
+  SaveEvaluationResponse,
+  CreateCandidatePayload,
+  UpdateEvaluationResponse,
+  GenerateAIEvaluationResponse,
+  CandidateResponsesResponse,
+  EvaluationResponse,
+  TeamAssessmentResponse,
+  ShortlistResponse,
+} from '@/types/candidates';
+import { APIResponse } from '@/types';
 
 // Async thunks for candidates using API routes
 export const fetchCandidatesByJob = createAsyncThunk(
@@ -82,92 +32,48 @@ export const fetchCandidatesByJob = createAsyncThunk(
 );
 
 // New thunk for fetching job candidates with stats using the dedicated endpoint
-export const fetchJobCandidates = createAsyncThunk(
-  'candidates/fetchJobCandidates',
-  async (params: {
-    jobId: string;
-    search?: string;
-    status?: string;
-    page?: number;
-    limit?: number;
-    minScore?: number;
-    maxScore?: number;
-    startDate?: string;
-    endDate?: string;
-    candidateStatus?: string;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-  }) => {
-    try {
-      const {
-        jobId,
-        search,
-        status,
-        page = 1,
-        limit = 50,
-        minScore,
-        maxScore,
-        startDate,
-        endDate,
-        candidateStatus,
-        sortBy,
-        sortOrder,
-      } = params;
+export const fetchJobCandidates = createAsyncThunk<
+  CandidateListResponse,
+  FetchCandidatesByJobIdPayload
+>('candidates/fetchJobCandidates', async (params) => {
+  try {
+    const {
+      jobId,
+      search,
+      status,
+      page = 1,
+      limit = 50,
+      minScore,
+      maxScore,
+      startDate,
+      endDate,
+      candidateStatus,
+      sortBy,
+      sortOrder,
+    } = params;
 
-      const queryParams = new URLSearchParams({
-        ...(search && { search }),
-        ...(status && { status }),
-        ...(minScore && { minScore: minScore.toString() }),
-        ...(maxScore && { maxScore: maxScore.toString() }),
-        ...(startDate && { startDate }),
-        ...(endDate && { endDate }),
-        ...(candidateStatus && { candidateStatus }),
-        ...(sortBy && { sortBy }),
-        ...(sortOrder && { sortOrder }),
-        page: page.toString(),
-        limit: limit.toString(),
-      });
+    const queryParams = new URLSearchParams({
+      ...(search && { search }),
+      ...(status && { status }),
+      ...(minScore && { minScore: minScore.toString() }),
+      ...(maxScore && { maxScore: maxScore.toString() }),
+      ...(startDate && { startDate }),
+      ...(endDate && { endDate }),
+      ...(candidateStatus && { candidateStatus }),
+      ...(sortBy && { sortBy }),
+      ...(sortOrder && { sortOrder }),
+      page: page.toString(),
+      limit: limit.toString(),
+    });
 
-      const response = await apiUtils.get<CandidateListResponse>(
-        `/api/jobs/${jobId}/candidates?${queryParams}`,
-      );
-      return response;
-    } catch (error: unknown) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to fetch job candidates');
-    }
-  },
-);
-
-export const fetchCandidateById = createAsyncThunk(
-  'candidates/fetchCandidateById',
-  async (candidateId: string, { getState }) => {
-    try {
-      const state = getState() as RootState;
-      const user = state.auth.user;
-      if (!user?.id) {
-        throw new Error('User not found');
-      }
-      const response = await apiUtils.get<CandidateResponse>(
-        `/api/candidates/${candidateId}?profileId=${user.id}`,
-      );
-      return response.candidate;
-    } catch (error: unknown) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to fetch candidate');
-    }
-  },
-);
-
-export const fetchCandidateByToken = createAsyncThunk(
-  'candidates/fetchCandidateByToken',
-  async (token: string) => {
-    try {
-      const response = await apiUtils.get<CandidateResponse>(`/api/candidates/token/${token}`);
-      return response.candidate;
-    } catch (error: unknown) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to fetch candidate');
-    }
-  },
-);
+    const response = await apiUtils.get<CandidateListResponse>(
+      `/api/jobs/${jobId}/candidates?${queryParams}`,
+    );
+    return response;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to fetch job candidates');
+  }
+});
 
 // New thunk for fetching candidate resume with access control
 export const fetchCandidateResume = createAsyncThunk(
@@ -183,9 +89,9 @@ export const fetchCandidateResume = createAsyncThunk(
 );
 
 // New thunk for fetching AI evaluation with team assessments
-export const fetchAIEvaluation = createAsyncThunk(
+export const fetchAIEvaluation = createAsyncThunk<AIEvaluationResponse, string>(
   'candidates/fetchAIEvaluation',
-  async (candidateId: string) => {
+  async (candidateId) => {
     try {
       const response = await apiUtils.get<AIEvaluationResponse>(
         `/api/candidates/${candidateId}/ai-evaluation`,
@@ -214,34 +120,17 @@ export const triggerAIEvaluation = createAsyncThunk(
   },
 );
 
-export const createCandidate = createAsyncThunk(
+export const createCandidate = createAsyncThunk<InterviewingCandidate, CreateCandidatePayload>(
   'candidates/createCandidate',
-  async (candidateData: Record<string, unknown>) => {
+  async (candidateData) => {
     try {
-      const response = await apiUtils.post<CreateCandidateResponse>(
+      const response = await apiUtils.post<APIResponse<InterviewingCandidate>>(
         '/api/candidates',
         candidateData,
       );
-      return response.candidate;
+      return response.data;
     } catch (error: unknown) {
       throw new Error(error instanceof Error ? error.message : 'Failed to create candidate');
-    }
-  },
-);
-
-export const submitInterview = createAsyncThunk(
-  'candidates/submitInterview',
-  async (submissionData: Record<string, unknown>) => {
-    try {
-      const response = await apiUtils.post<SubmitInterviewResponse>(
-        `/api/candidates/${submissionData.candidateId}/submit`,
-        {
-          responses: submissionData.responses,
-        },
-      );
-      return response.candidate;
-    } catch (error: unknown) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to submit interview');
     }
   },
 );
@@ -367,21 +256,6 @@ export const fetchCandidateList = createAsyncThunk(
       return response;
     } catch (error: unknown) {
       throw new Error(error instanceof Error ? error.message : 'Failed to fetch candidate list');
-    }
-  },
-);
-
-export const updateCandidateStatus = createAsyncThunk(
-  'candidates/updateCandidateStatus',
-  async ({ candidateId, status }: { candidateId: string; status: string }) => {
-    try {
-      const response = await apiUtils.put<CandidateResponse>(
-        `/api/candidates/${candidateId}/status`,
-        { status },
-      );
-      return response.candidate;
-    } catch (error: unknown) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to update candidate status');
     }
   },
 );

@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const searchParams = request.nextUrl.searchParams;
-    
+
     const profileId = searchParams.get('profileId');
     const jobId = searchParams.get('jobId');
     const status = searchParams.get('status'); // 'completed', 'in_progress', 'all'
@@ -27,17 +27,17 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     if (!profileId) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Profile ID is required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Profile ID is required',
+        },
+        { status: 400 },
+      );
     }
 
     // Build the query using candidate_details view
-    let query = supabase
-      .from('candidate_details')
-      .select('*')
-      .eq('profile_id', profileId);
+    let query = supabase.from('candidate_details').select('*').eq('profile_id', profileId);
 
     // Apply filters
     if (jobId) {
@@ -95,47 +95,54 @@ export async function GET(request: NextRequest) {
     }
 
     // Format the response data to match the expected interface
-    const formattedCandidates = candidates?.map(candidate => ({
-      id: candidate.id,
-      jobId: candidate.job_id,
-      jobTitle: candidate.job_title || 'Unknown Job',
-      jobStatus: candidate.job_status || 'unknown',
-      interviewToken: candidate.interview_token,
-      email: candidate.email,
-      firstName: candidate.first_name,
-      lastName: candidate.last_name,
-      fullName: candidate.full_name,
-      currentStep: candidate.current_step,
-      totalSteps: candidate.total_steps,
-      isCompleted: candidate.is_completed,
-      completionPercentage: candidate.progress_percentage || 0,
-      responseCount: candidate.response_count || 0,
-      submittedAt: candidate.submitted_at,
-      createdAt: candidate.created_at,
-      status: candidate.candidate_status || 'under_review',
-      evaluation: candidate.evaluation_id ? {
-        id: candidate.evaluation_id,
-        score: candidate.score,
-        recommendation: candidate.recommendation,
-        summary: candidate.summary,
-        strengths: candidate.strengths || [],
-        redFlags: candidate.red_flags || [],
-        createdAt: candidate.evaluation_created_at,
-      } : null,
-    })) || [];
+    const formattedCandidates =
+      candidates?.map((candidate) => ({
+        id: candidate.id,
+        jobId: candidate.job_id,
+        jobTitle: candidate.job_title || 'Unknown Job',
+        jobStatus: candidate.job_status || 'unknown',
+        interviewToken: candidate.interview_token,
+        email: candidate.email,
+        firstName: candidate.first_name,
+        lastName: candidate.last_name,
+        fullName: candidate.full_name,
+        currentStep: candidate.current_step,
+        totalSteps: candidate.total_steps,
+        isCompleted: candidate.is_completed,
+        completionPercentage: candidate.progress_percentage || 0,
+        responseCount: candidate.response_count || 0,
+        submittedAt: candidate.submitted_at,
+        createdAt: candidate.created_at,
+        status: candidate.candidate_status || 'under_review',
+        evaluation: candidate.evaluation_id
+          ? {
+              id: candidate.evaluation_id,
+              score: candidate.score,
+              recommendation: candidate.recommendation,
+              summary: candidate.summary,
+              strengths: candidate.strengths || [],
+              redFlags: candidate.red_flags || [],
+              createdAt: candidate.evaluation_created_at,
+            }
+          : null,
+      })) || [];
 
     // Apply score and recommendation filters after formatting
     let filteredCandidates = formattedCandidates;
-    
+
     if (minScore || maxScore || recommendation) {
-      filteredCandidates = formattedCandidates.filter(candidate => {
+      filteredCandidates = formattedCandidates.filter((candidate) => {
         if (minScore && candidate.evaluation?.score < parseInt(minScore)) {
           return false;
         }
         if (maxScore && candidate.evaluation?.score > parseInt(maxScore)) {
           return false;
         }
-        if (recommendation && recommendation !== 'all' && candidate.evaluation?.recommendation !== recommendation) {
+        if (
+          recommendation &&
+          recommendation !== 'all' &&
+          candidate.evaluation?.recommendation !== recommendation
+        ) {
           return false;
         }
         return true;
@@ -156,19 +163,23 @@ export async function GET(request: NextRequest) {
       },
       stats: {
         total: count || 0,
-        completed: formattedCandidates.filter(c => c.isCompleted).length,
-        inProgress: formattedCandidates.filter(c => !c.isCompleted).length,
-        averageScore: formattedCandidates
-          .filter(c => c.evaluation?.score)
-          .reduce((sum, c, _, arr) => sum + (c.evaluation?.score || 0) / arr.length, 0) || 0,
+        completed: formattedCandidates.filter((c) => c.isCompleted).length,
+        inProgress: formattedCandidates.filter((c) => !c.isCompleted).length,
+        averageScore:
+          formattedCandidates
+            .filter((c) => c.evaluation?.score)
+            .reduce((sum, c, _, arr) => sum + (c.evaluation?.score || 0) / arr.length, 0) || 0,
       },
     });
   } catch (error) {
     console.error('Error fetching candidates:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to fetch candidates' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch candidates',
+      },
+      { status: 500 },
+    );
   }
 }
 
@@ -177,19 +188,25 @@ export async function POST(request: Request) {
     const { jobToken, email, firstName, lastName } = await request.json();
 
     if (!jobToken || !email || !firstName || !lastName) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Job token, email, first name, and last name are required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Job token, email, first name, and last name are required',
+        },
+        { status: 400 },
+      );
     }
 
     // Get job data
     const job = await jobsService.getJobByInterviewToken(jobToken);
     if (!job) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Invalid interview link' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid interview link',
+        },
+        { status: 404 },
+      );
     }
 
     const supabase = await createClient();
@@ -198,37 +215,47 @@ export async function POST(request: Request) {
     const interviewToken = uuidv4();
 
     // Use the new function to create candidate info and record
-    const { data: candidateResult, error: candidateError } = await supabase
-      .rpc('create_candidate_info_and_record', {
+    const { data: candidateResult, error: candidateError } = await supabase.rpc(
+      'create_candidate_info_and_record',
+      {
         p_first_name: firstName,
-        p_last_name: lastName, 
+        p_last_name: lastName,
         p_email: email,
         p_job_id: job.id,
-        p_interview_token: interviewToken
-      });
+        p_interview_token: interviewToken,
+      },
+    );
 
     if (candidateError) {
       console.error('Error creating candidate:', candidateError);
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Failed to create candidate account' 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to create candidate account',
+        },
+        { status: 500 },
+      );
     }
 
     // Get the candidate details with candidate info
-    const { data: candidateDetails, error: detailsError } = await supabase
-      .rpc('get_candidate_with_info', {
-        p_candidate_id: candidateResult.candidate_id
-      });
+    const { data: candidateDetails, error: detailsError } = await supabase.rpc(
+      'get_candidate_with_info',
+      {
+        p_candidate_id: candidateResult.candidate_id,
+      },
+    );
 
-    console.log('Candidate details', candidateDetails)
+    console.log('Candidate details', candidateDetails);
 
     if (detailsError || !candidateDetails.success) {
       console.error('Error getting candidate details:', detailsError);
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Failed to get candidate details' 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to get candidate details',
+        },
+        { status: 500 },
+      );
     }
 
     const candidate = candidateDetails.candidate;
@@ -238,6 +265,7 @@ export async function POST(request: Request) {
       data: {
         id: candidate.id,
         jobId: candidate.job_id,
+        jobTitle: candidate.job_title,
         candidateInfoId: candidate.candidate_info_id,
         interviewToken: candidate.interview_token,
         email: candidate.email,
@@ -249,15 +277,17 @@ export async function POST(request: Request) {
         isCompleted: candidate.is_completed,
         submittedAt: candidate.submitted_at,
         createdAt: candidate.created_at,
-        updatedAt: candidate.updated_at
-      }
+        updatedAt: candidate.updated_at,
+      },
     });
-
   } catch (error) {
     console.error('Error creating candidate:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to create candidate account' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to create candidate account',
+      },
+      { status: 500 },
+    );
   }
-} 
+}

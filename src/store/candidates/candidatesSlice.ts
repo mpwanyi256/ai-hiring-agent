@@ -1,25 +1,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import {
-  Candidate,
-  AIEvaluation,
-  CandidatesState,
-  Evaluation,
-  CandidateResume,
-} from '@/types/candidates';
+import { Candidate, CandidatesState } from '@/types/candidates';
 import {
   fetchCandidatesByJob,
   fetchJobCandidates,
-  fetchCandidateById,
-  fetchCandidateByToken,
   fetchCandidateResume,
   fetchAIEvaluation,
   triggerAIEvaluation,
   createCandidate,
-  submitInterview,
-  saveEvaluation,
-  updateEvaluation,
   deleteCandidate,
-  generateAIEvaluation,
   fetchCandidateResponses,
 } from './candidatesThunks';
 
@@ -63,9 +51,6 @@ const candidatesSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    setCurrentCandidate: (state, action: PayloadAction<Candidate | null>) => {
-      state.currentCandidate = action.payload;
-    },
     clearCurrentCandidate: (state) => {
       state.currentCandidate = null;
     },
@@ -108,42 +93,6 @@ const candidatesSlice = createSlice({
         state.candidates.push(action.payload as Candidate);
       }
     },
-    // updateResponseRealtime(state, action: PayloadAction<Response>) {
-    //   // Find candidate and update responses
-    //   console.log('updateResponseRealtime', action.payload);
-
-    //   // const candidate = state.candidates.find((c) => c.id === action.payload.candidateId);
-    //   // if (candidate) {
-    //   //   candidate.responses = candidate.responses || [];
-    //   //   const idx = candidate.responses.findIndex((r) => r.id === action.payload.id);
-    //   //   if (idx !== -1) {
-    //   //     candidate.responses[idx] = action.payload;
-    //   //   } else {
-    //   //     candidate.responses.push(action.payload);
-    //   //   }
-    //   // }
-    // },
-    updateEvaluationRealtime(state, action: PayloadAction<Evaluation>) {
-      // Find candidate and update evaluation
-      const candidate = state.candidates.find((c) => c.id === action.payload.candidateId);
-      if (candidate) {
-        candidate.evaluation = action.payload;
-      }
-    },
-    updateAIEvaluationRealtime(state, action: PayloadAction<AIEvaluation>) {
-      // Find candidate and update evaluation (ai_evaluations also update evaluation field)
-      const candidate = state.candidates.find((c) => c.id === action.payload.candidateId);
-      if (candidate) {
-        candidate.evaluation = action.payload as unknown as Evaluation;
-      }
-    },
-    updateResumeRealtime(state, action: PayloadAction<CandidateResume>) {
-      // Find candidate and update resume
-      const candidate = state.candidates.find((c) => c.id === action.payload.id);
-      if (candidate) {
-        candidate.resume = action.payload;
-      }
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -177,32 +126,6 @@ const candidatesSlice = createSlice({
         state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch job candidates';
       })
-      // Fetch Candidate by ID
-      .addCase(fetchCandidateById.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchCandidateById.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.currentCandidate = action.payload;
-      })
-      .addCase(fetchCandidateById.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to fetch candidate';
-      })
-      // Fetch Candidate by Token
-      .addCase(fetchCandidateByToken.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchCandidateByToken.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.currentCandidate = action.payload;
-      })
-      .addCase(fetchCandidateByToken.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to fetch candidate';
-      })
       // Fetch Candidate Resume
       .addCase(fetchCandidateResume.pending, (state) => {
         state.error = null;
@@ -229,24 +152,6 @@ const candidatesSlice = createSlice({
         state.aiEvaluation.evaluatingCandidateId = action.meta.arg.candidateId;
         state.error = null;
       })
-      .addCase(triggerAIEvaluation.fulfilled, (state, action) => {
-        state.aiEvaluation.isEvaluating = false;
-        state.aiEvaluation.evaluatingCandidateId = null;
-        state.aiEvaluation.lastEvaluationDuration = action.payload.processingDurationMs;
-
-        // Update candidate in the list with new evaluation
-        const candidateIndex = state.candidates.findIndex(
-          (candidate: Candidate) => candidate.id === action.payload.candidateId,
-        );
-        if (candidateIndex !== -1) {
-          // The evaluation will be fetched in the next refresh, so we can mark it as updated
-          // In a real app, you might want to transform the AI evaluation to the candidate format
-        }
-
-        if (state.currentCandidate && state.currentCandidate.id === action.payload.candidateId) {
-          // Mark that this candidate has been evaluated
-        }
-      })
       .addCase(triggerAIEvaluation.rejected, (state, action) => {
         state.aiEvaluation.isEvaluating = false;
         state.aiEvaluation.evaluatingCandidateId = null;
@@ -260,65 +165,11 @@ const candidatesSlice = createSlice({
       .addCase(createCandidate.fulfilled, (state, action) => {
         state.isLoading = false;
         state.currentCandidate = action.payload;
-        state.candidates.unshift(action.payload);
         state.totalCandidates += 1;
       })
       .addCase(createCandidate.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Failed to create candidate';
-      })
-      // Submit Interview
-      .addCase(submitInterview.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(submitInterview.fulfilled, (state, action) => {
-        state.isLoading = false;
-        if (state.currentCandidate) {
-          state.currentCandidate.submittedAt = action.payload.submittedAt;
-        }
-        // Update candidate in list
-        const index = state.candidates.findIndex((c: Candidate) => c.id === action.payload.id);
-        if (index !== -1) {
-          state.candidates[index] = { ...state.candidates[index], ...action.payload };
-        }
-      })
-      .addCase(submitInterview.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to submit interview';
-      })
-      // Save Evaluation
-      .addCase(saveEvaluation.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(saveEvaluation.fulfilled, (state, action) => {
-        state.isLoading = false;
-        const candidateIndex = state.candidates.findIndex(
-          (candidate: Candidate) => candidate.id === action.payload.candidateId,
-        );
-        if (candidateIndex !== -1) {
-          state.candidates[candidateIndex].evaluation = action.payload;
-        }
-        if (state.currentCandidate && state.currentCandidate.id === action.payload.candidateId) {
-          state.currentCandidate.evaluation = action.payload;
-        }
-      })
-      .addCase(saveEvaluation.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to save evaluation';
-      })
-      // Update Evaluation
-      .addCase(updateEvaluation.fulfilled, (state, action) => {
-        const candidateIndex = state.candidates.findIndex(
-          (candidate: Candidate) => candidate.id === action.payload.candidateId,
-        );
-        if (candidateIndex !== -1) {
-          state.candidates[candidateIndex].evaluation = action.payload;
-        }
-        if (state.currentCandidate && state.currentCandidate.id === action.payload.candidateId) {
-          state.currentCandidate.evaluation = action.payload;
-        }
       })
       // Delete Candidate
       .addCase(deleteCandidate.fulfilled, (state, action) => {
@@ -329,27 +180,6 @@ const candidatesSlice = createSlice({
         if (state.currentCandidate && state.currentCandidate.id === action.payload) {
           state.currentCandidate = null;
         }
-      })
-      // Generate AI Evaluation
-      .addCase(generateAIEvaluation.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(generateAIEvaluation.fulfilled, (state, action) => {
-        state.isLoading = false;
-        const candidateIndex = state.candidates.findIndex(
-          (candidate: Candidate) => candidate.id === action.payload.candidateId,
-        );
-        if (candidateIndex !== -1) {
-          state.candidates[candidateIndex].evaluation = action.payload;
-        }
-        if (state.currentCandidate && state.currentCandidate.id === action.payload.candidateId) {
-          state.currentCandidate.evaluation = action.payload;
-        }
-      })
-      .addCase(generateAIEvaluation.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to generate AI evaluation';
       })
       // Fetch Candidate Responses
       .addCase(fetchCandidateResponses.pending, (state, action) => {
@@ -381,15 +211,10 @@ const candidatesSlice = createSlice({
 
 export const {
   clearError,
-  setCurrentCandidate,
   clearCurrentCandidate,
   addResponse,
   clearCandidatesData,
   updateCandidateRealtime,
-  // updateResponseRealtime,
-  updateEvaluationRealtime,
-  updateAIEvaluationRealtime,
-  updateResumeRealtime,
 } = candidatesSlice.actions;
 
 export default candidatesSlice.reducer;
