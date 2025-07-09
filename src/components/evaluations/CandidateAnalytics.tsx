@@ -15,53 +15,40 @@ import {
   TagIcon,
 } from '@heroicons/react/24/outline';
 import { Loading } from '../ui/Loading';
-import { AnalyticsData } from '@/types/analytics';
-import { useAppSelector } from '@/store';
-import { selectSelectedCandidateEvaluation } from '@/store/selectedCandidate/selectedCandidateSelectors';
+import {
+  selectSelectedCandidate,
+  selectSelectedCandidateAnalytics,
+  selectSelectedCandidateEvaluation,
+} from '@/store/selectedCandidate/selectedCandidateSelectors';
 import { getInterviewScoreColor, getResumeScoreColor } from '@/lib/utils';
+import { fetchSelectedCandidateAnalytics } from '@/store/selectedCandidate/selectedCandidateThunks';
+import { useAppDispatch, useAppSelector } from '@/store';
 
 interface CandidateAnalyticsProps {
-  candidateId: string;
-  candidateName?: string;
-  jobId: string;
   className?: string;
 }
 
-export default function CandidateAnalytics({
-  candidateId,
-  candidateName = 'Candidate',
-  jobId,
-  className = '',
-}: CandidateAnalyticsProps) {
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+export default function CandidateAnalytics({ className = '' }: CandidateAnalyticsProps) {
   const [isLoading, setIsLoading] = useState(true);
   const candidateEvaluation = useAppSelector(selectSelectedCandidateEvaluation);
+  const analyticsData = useAppSelector(selectSelectedCandidateAnalytics);
+  const candidate = useAppSelector(selectSelectedCandidate);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     const loadAnalytics = async () => {
       try {
         setIsLoading(true);
-
-        // Call the analytics API
-        const response = await fetch(`/api/candidates/${candidateId}/analytics?jobId=${jobId}`);
-        if (!response.ok) {
-          throw new Error('Failed to load analytics');
-        }
-
-        const data = await response.json();
-        setAnalyticsData(data);
+        await dispatch(fetchSelectedCandidateAnalytics());
       } catch (err) {
-        console.error('Error loading analytics:', err);
-        apiError('Failed to load candidate analytics');
+        apiError(err instanceof Error ? err.message : 'Failed to load candidate analytics');
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (candidateId && jobId) {
-      loadAnalytics();
-    }
-  }, [candidateId, jobId]);
+    loadAnalytics();
+  }, [dispatch]);
 
   if (isLoading) {
     return <Loading message="Loading analytics..." />;
@@ -129,7 +116,7 @@ export default function CandidateAnalytics({
           </div>
         </div>
         <p className="text-xs md:text-sm text-gray-600">
-          Comprehensive analysis of {candidateName}&apos;s performance and engagement metrics
+          Comprehensive analysis of {candidate?.firstName}&apos;s performance and engagement metrics
         </p>
       </div>
 

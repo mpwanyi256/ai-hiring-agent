@@ -7,3 +7,6 @@ export const selectSelectedCandidateResumeStats = (state: RootState) =>
   state.selectedCandidate.candidate?.resume;
 export const selectSelectedCandidateEvaluation = (state: RootState) =>
   state.selectedCandidate.candidate?.evaluation;
+
+export const selectSelectedCandidateAnalytics = (state: RootState) =>
+  state.selectedCandidate.candidateAnalytics;

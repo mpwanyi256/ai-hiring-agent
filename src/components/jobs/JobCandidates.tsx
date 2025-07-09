@@ -327,17 +327,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                     }
                   />
                 )}
-                {activeTab === 'analytics' && (
-                  <CandidateAnalytics
-                    candidateId={selectedCandidate.id}
-                    candidateName={
-                      selectedCandidate?.name ||
-                      (selectedCandidate as unknown as { fullName?: string }).fullName ||
-                      'Anonymous Candidate'
-                    }
-                    jobId={job.id}
-                  />
-                )}
+                {activeTab === 'analytics' && <CandidateAnalytics />}
               </div>
             </div>
           ) : (
