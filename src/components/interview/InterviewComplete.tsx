@@ -7,15 +7,20 @@ import { useAppSelector } from '@/store';
 import { loadedInterview, selectCandidate } from '@/store/interview/interviewSelectors';
 import Image from 'next/image';
 import { domainEmails } from '@/lib/constants';
-import { selectCurrentInterviewEvaluation } from '@/store/evaluation/evaluationSelectors';
+import {
+  selectCurrentInterviewEvaluation,
+  selectCurrentResumeEvaluation,
+} from '@/store/evaluation/evaluationSelectors';
 import { EvaluationFailure } from './EvaluationFailure';
 
 export default function InterviewComplete() {
   const job = useAppSelector(loadedInterview);
   const candidate = useAppSelector(selectCandidate);
-  const evaluation = useAppSelector(selectCurrentInterviewEvaluation);
+  const interviewEvaluation = useAppSelector(selectCurrentInterviewEvaluation);
+  const resumeEvaluation = useAppSelector(selectCurrentResumeEvaluation);
 
-  console.log('Evaluation resumeScore', evaluation?.resumeScore);
+  console.log('Interview Evaluation resumeScore', interviewEvaluation?.resumeScore);
+  console.log('Resume Evaluation score', resumeEvaluation?.score);
 
   // Update candidate progress to completed
   useEffect(() => {
@@ -58,8 +63,10 @@ export default function InterviewComplete() {
     );
   }
 
-  if (evaluation?.resumeScore && evaluation?.resumeScore < 50) {
-    return <EvaluationFailure />;
+  // Check for resume evaluation failure - check both resume evaluation and interview evaluation resumeScore
+  const resumeScore = resumeEvaluation?.score ?? interviewEvaluation?.resumeScore;
+  if (resumeScore !== undefined && resumeScore < 50) {
+    return <EvaluationFailure evaluation={resumeEvaluation || interviewEvaluation} />;
   }
 
   return (

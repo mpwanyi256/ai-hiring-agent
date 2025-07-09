@@ -742,25 +742,55 @@ class ResumeService {
         throw new Error('OpenAI API key not configured');
       }
 
-      const prompt = `
-You are an expert HR professional evaluating a candidate's resume. Please analyze the following resume against the job requirements and provide a detailed assessment.
+      //       const prompt = `
+      // You are an expert HR professional evaluating a candidate's resume. Please analyze the following resume against the job requirements and provide a detailed assessment.
 
-JOB REQUIREMENTS:
-- Position: ${jobDescription}
-- Required Skills: ${skills.join(', ')}
-- Experience Level: ${experienceLevel || 'Not specified'}
+      // JOB REQUIREMENTS:
+      // - Position: ${jobDescription}
+      // - Required Skills: ${skills.join(', ')}
+      // - Experience Level: ${experienceLevel || 'Not specified'}
+
+      // RESUME CONTENT:
+      // ${resumeContent}
+
+      // Please provide your evaluation as a JSON object with the following structure (no markdown formatting):
+      // {
+      //   "score": [0-100 integer],
+      //   "analysis": "[detailed analysis of fit]",
+      //   "strengths": ["strength1", "strength2", "strength3"],
+      //   "weaknesses": ["weakness1", "weakness2", "weakness3"]
+      // }
+      // `;
+
+      const prompt = `
+You are an expert HR professional and resume evaluator. Your task is to determine if the content provided is a valid resume, and if so, evaluate how well the candidate’s experience and skills align with the specific job requirements.
+
+Step 1: Resume Validation  
+- Confirm that the document is a resume. If it lacks sections like Work Experience, Skills, Education, or Projects, score it as 0 and explain why.
+
+Step 2: Resume Evaluation (if valid)  
+- Evaluate the candidate **strictly in relation to the job role and requirements provided below**.
+- Score based on how well the resume demonstrates:
+  - Relevant technologies or skills listed
+  - Job-aligned experience and responsibilities
+  - Evidence of scope, complexity, and impact aligned with the role
+
+Avoid commenting on formatting, resume aesthetics, or generic writing quality. Focus solely on job fit.
+
+JOB DESCRIPTION:
+${jobDescription}
 
 RESUME CONTENT:
 ${resumeContent}
 
-Please provide your evaluation as a JSON object with the following structure (no markdown formatting):
+Respond in the following JSON format (no markdown):
+
 {
-  "score": [0-100 integer],
-  "analysis": "[detailed analysis of fit]",
-  "strengths": ["strength1", "strength2", "strength3"],
-  "weaknesses": ["weakness1", "weakness2", "weakness3"]
-}
-`;
+  "score": [0-100],
+  "analysis": "[Explain how well the candidate fits the job based on their experience, skills, and accomplishments]",
+  "strengths": ["Strengths specifically related to the job post"],
+  "weaknesses": ["Job-specific gaps or areas where the candidate falls short"]
+}`;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
