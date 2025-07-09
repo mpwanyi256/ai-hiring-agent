@@ -7,10 +7,15 @@ import { useAppSelector } from '@/store';
 import { loadedInterview, selectCandidate } from '@/store/interview/interviewSelectors';
 import Image from 'next/image';
 import { domainEmails } from '@/lib/constants';
+import { selectCurrentInterviewEvaluation } from '@/store/evaluation/evaluationSelectors';
+import { EvaluationFailure } from './EvaluationFailure';
 
 export default function InterviewComplete() {
   const job = useAppSelector(loadedInterview);
   const candidate = useAppSelector(selectCandidate);
+  const evaluation = useAppSelector(selectCurrentInterviewEvaluation);
+
+  console.log('Evaluation resumeScore', evaluation?.resumeScore);
 
   // Update candidate progress to completed
   useEffect(() => {
@@ -51,6 +56,10 @@ export default function InterviewComplete() {
         </div>
       </div>
     );
+  }
+
+  if (evaluation?.resumeScore && evaluation?.resumeScore < 50) {
+    return <EvaluationFailure />;
   }
 
   return (

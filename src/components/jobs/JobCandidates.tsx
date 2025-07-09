@@ -37,6 +37,20 @@ const candidateTabs = [
   { id: 'analytics', label: 'Analytics' },
 ];
 
+const getResumeScoreStyle = (score: number) => {
+  if (score >= 80) return 'bg-green-50 border-green-600';
+  if (score >= 65) return 'bg-yellow-50 border-yellow-600';
+  if (score >= 50) return 'bg-orange-50 border-orange-600';
+  return 'bg-red-50 border-red-600';
+};
+
+const getResumeScoreTextColor = (score: number) => {
+  if (score >= 80) return 'text-green-600';
+  if (score >= 65) return 'text-yellow-600';
+  if (score >= 50) return 'text-orange-600';
+  return 'text-red-600';
+};
+
 export default function JobCandidates({ job }: JobCandidatesProps) {
   const dispatch = useDispatch<AppDispatch>();
   const { candidates, jobCandidatesStats, error } = useSelector(
@@ -258,10 +272,14 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                             </button>
                           </div>
                           {/* Resume evaluation summary - visually prominent */}
-                          {selectedCandidate?.evaluation?.resumeScore && (
+                          {selectedCandidate?.evaluation && (
                             <div className="mt-6 flex items-center gap-4">
-                              <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-4 border-primary">
-                                <span className="text-lg font-bold text-primary">
+                              <div
+                                className={`flex items-center justify-center w-20 h-20 rounded-full ${getResumeScoreStyle(selectedCandidate?.evaluation?.resumeScore)}`}
+                              >
+                                <span
+                                  className={`text-lg font-bold ${getResumeScoreTextColor(selectedCandidate?.evaluation?.resumeScore)}`}
+                                >
                                   {selectedCandidate?.evaluation?.resumeScore}
                                   <span className="text-base font-semibold">/100</span>
                                 </span>

@@ -17,9 +17,7 @@ interface CandidateInfoFormProps {
   jobToken: string;
 }
 
-export default function CandidateInfoForm({
-  jobToken
-}: CandidateInfoFormProps) {
+export default function CandidateInfoForm({ jobToken }: CandidateInfoFormProps) {
   const dispatch = useAppDispatch();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,11 +29,15 @@ export default function CandidateInfoForm({
 
   const handleBack = () => {
     dispatch(setInterviewStep(1));
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!candidateInfo.firstName.trim() || !candidateInfo.lastName.trim() || !candidateInfo.email.trim()) {
+    if (
+      !candidateInfo.firstName.trim() ||
+      !candidateInfo.lastName.trim() ||
+      !candidateInfo.email.trim()
+    ) {
       setError('Please enter your first name, last name, and email');
       return;
     }
@@ -44,15 +46,17 @@ export default function CandidateInfoForm({
     setIsLoading(true);
 
     try {
-      await dispatch(getCandidateDetails({
-        jobToken,
-        email: candidateInfo.email,
-        firstName: candidateInfo.firstName,
-        lastName: candidateInfo.lastName,
-      })).unwrap();
+      await dispatch(
+        getCandidateDetails({
+          jobToken,
+          email: candidateInfo.email,
+          firstName: candidateInfo.firstName,
+          lastName: candidateInfo.lastName,
+        }),
+      ).unwrap();
 
       // Automatically progress to step 3 (resume upload)
-      dispatch(setInterviewStep(3));
+      // dispatch(setInterviewStep(3));
     } catch (err) {
       console.error('Error saving candidate info:', err);
       setError('Something went wrong. Please try again.');
@@ -75,9 +79,7 @@ export default function CandidateInfoForm({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text mb-1">
-              First Name *
-            </label>
+            <label className="block text-sm font-medium text-text mb-1">First Name *</label>
             <input
               type="text"
               value={candidateInfo.firstName}
@@ -89,9 +91,7 @@ export default function CandidateInfoForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text mb-1">
-              Last Name
-            </label>
+            <label className="block text-sm font-medium text-text mb-1">Last Name</label>
             <input
               type="text"
               value={candidateInfo.lastName}
@@ -102,9 +102,7 @@ export default function CandidateInfoForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text mb-1">
-              Email Address
-            </label>
+            <label className="block text-sm font-medium text-text mb-1">Email Address</label>
             <input
               type="email"
               value={candidateInfo.email}
@@ -149,4 +147,4 @@ export default function CandidateInfoForm({
       </div>
     </div>
   );
-} 
+}

@@ -1,19 +1,23 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { ResumeEvaluation, InterviewEvaluation } from '@/types/interview';
+import { setInterviewStep } from '../interview/interviewSlice';
 
 // Resume evaluation thunks
 export const evaluateResume = createAsyncThunk(
   'evaluation/evaluateResume',
-  async (data: {
-    resumeFile: File;
-    jobToken: string;
-    candidateInfo: {
-      id: string;
-      email: string;
-      firstName: string;
-      lastName: string;
-    };
-  }, { rejectWithValue }) => {
+  async (
+    data: {
+      resumeFile: File;
+      jobToken: string;
+      candidateInfo: {
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+      };
+    },
+    { rejectWithValue },
+  ) => {
     const formData = new FormData();
     formData.append('resume', data.resumeFile);
     formData.append('jobToken', data.jobToken);
@@ -36,20 +40,20 @@ export const evaluateResume = createAsyncThunk(
           error: result.error,
           errorType: result.errorType,
           evaluation: result.evaluation,
-          hasEvaluation: true
+          hasEvaluation: true,
         });
       }
-      
+
       // Normal error case
       return rejectWithValue({
         error: result.error || 'Failed to evaluate resume',
         errorType: 'general_error',
-        hasEvaluation: false
+        hasEvaluation: false,
       });
     }
 
     return result.evaluation as ResumeEvaluation;
-  }
+  },
 );
 
 export const saveResumeEvaluation = createAsyncThunk(
@@ -76,13 +80,15 @@ export const saveResumeEvaluation = createAsyncThunk(
 
     const result = await response.json();
     return result.evaluation as InterviewEvaluation;
-  }
+  },
 );
 
 export const getResumeEvaluation = createAsyncThunk(
   'evaluation/getResumeEvaluation',
-  async (data: { candidateId: string; jobId: string }) => {
-    const response = await fetch(`/api/evaluation/resume?candidateId=${data.candidateId}&jobId=${data.jobId}`);
+  async (data: { candidateId: string; jobId: string }, { dispatch }) => {
+    const response = await fetch(
+      `/api/evaluation/resume?candidateId=${data.candidateId}&jobId=${data.jobId}`,
+    );
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -93,8 +99,15 @@ export const getResumeEvaluation = createAsyncThunk(
     }
 
     const result = await response.json();
+
+    if (result.evaluation.resumeScore && result.evaluation.resumeScore < 50) {
+      dispatch(setInterviewStep(5));
+    } else {
+      dispatch(setInterviewStep(3));
+    }
+
     return result.evaluation as InterviewEvaluation | null;
-  }
+  },
 );
 
 // Interview evaluation thunks
@@ -125,7 +138,7 @@ export const evaluateInterview = createAsyncThunk(
 
     const result = await response.json();
     return result.evaluation as InterviewEvaluation;
-  }
+  },
 );
 
 export const saveInterviewEvaluation = createAsyncThunk(
@@ -149,7 +162,7 @@ export const saveInterviewEvaluation = createAsyncThunk(
 
     const result = await response.json();
     return result.evaluation as InterviewEvaluation;
-  }
+  },
 );
 
 export const getInterviewEvaluation = createAsyncThunk(
@@ -167,16 +180,16 @@ export const getInterviewEvaluation = createAsyncThunk(
 
     const result = await response.json();
     return result.evaluation as InterviewEvaluation | null;
-  }
+  },
 );
 
 // Evaluation history and management
 export const getEvaluationHistory = createAsyncThunk(
   'evaluation/getEvaluationHistory',
-  async (data: { 
-    jobId?: string; 
-    candidateId?: string; 
-    limit?: number; 
+  async (data: {
+    jobId?: string;
+    candidateId?: string;
+    limit?: number;
     offset?: number;
     evaluationType?: 'resume' | 'interview' | 'combined';
   }) => {
@@ -196,7 +209,7 @@ export const getEvaluationHistory = createAsyncThunk(
 
     const result = await response.json();
     return result.evaluations as InterviewEvaluation[];
-  }
+  },
 );
 
 export const deleteEvaluation = createAsyncThunk(
@@ -212,17 +225,13 @@ export const deleteEvaluation = createAsyncThunk(
     }
 
     return evaluationId;
-  }
+  },
 );
 
 // Advanced evaluation analytics
 export const getEvaluationAnalytics = createAsyncThunk(
   'evaluation/getEvaluationAnalytics',
-  async (data: { 
-    jobId?: string; 
-    dateFrom?: string; 
-    dateTo?: string;
-  }) => {
+  async (data: { jobId?: string; dateFrom?: string; dateTo?: string }) => {
     const params = new URLSearchParams();
     if (data.jobId) params.append('jobId', data.jobId);
     if (data.dateFrom) params.append('dateFrom', data.dateFrom);
@@ -237,7 +246,7 @@ export const getEvaluationAnalytics = createAsyncThunk(
 
     const result = await response.json();
     return result.analytics;
-  }
+  },
 );
 
 // Bulk evaluation operations
@@ -253,7 +262,7 @@ export const bulkEvaluateResumes = createAsyncThunk(
     }>;
   }) => {
     const evaluations: ResumeEvaluation[] = [];
-    
+
     // Process resumes one by one to avoid overwhelming the API
     for (let i = 0; i < data.resumeFiles.length; i++) {
       const formData = new FormData();
@@ -277,5 +286,5 @@ export const bulkEvaluateResumes = createAsyncThunk(
     }
 
     return evaluations;
-  }
-); 
+  },
+);

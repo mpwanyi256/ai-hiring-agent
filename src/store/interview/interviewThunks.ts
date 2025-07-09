@@ -1,8 +1,9 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk } from '@reduxjs/toolkit';
 import { apiUtils } from '../api';
-import { JobData } from "@/lib/services/jobsService";
-import { APIResponse, CandidateBasic } from "@/types";
-import { createCandidateAccountPayload } from "@/types/interview";
+import { JobData } from '@/lib/services/jobsService';
+import { APIResponse, CandidateBasic } from '@/types';
+import { createCandidateAccountPayload } from '@/types/interview';
+import { getResumeEvaluation } from '../evaluation/evaluationThunks';
 
 export const fetchInterview = createAsyncThunk(
   'interview/fetchInterview',
@@ -10,23 +11,21 @@ export const fetchInterview = createAsyncThunk(
     const response = await fetch(`/api/jobs/interview/${token}`);
 
     if (!response.ok) {
-      throw new Error('Failed to fetch interview')
+      throw new Error('Failed to fetch interview');
     }
 
-    const data = await response.json() as APIResponse<JobData>
+    const data = (await response.json()) as APIResponse<JobData>;
 
     return data.data;
-  }
-)
+  },
+);
 
 export const getCandidateDetails = createAsyncThunk(
   'interview/getCandidateDetails',
-  async ({
-    jobToken,
-    email,
-    firstName,
-    lastName
-  }: createCandidateAccountPayload): Promise<CandidateBasic> => {
+  async (
+    { jobToken, email, firstName, lastName }: createCandidateAccountPayload,
+    { dispatch },
+  ): Promise<CandidateBasic> => {
     const { data, success } = await apiUtils.post<APIResponse<CandidateBasic>>(`/api/candidates`, {
       jobToken,
       email,
@@ -37,9 +36,17 @@ export const getCandidateDetails = createAsyncThunk(
     console.log('Candidate data returned', data);
 
     if (!success) {
-      throw new Error('Failed to create candidate account')
+      throw new Error('Failed to create candidate account');
     }
 
-    return data
-  }
-)
+    // get candidate evaluation
+    await dispatch(
+      getResumeEvaluation({
+        candidateId: data.id,
+        jobId: data.jobId,
+      }),
+    );
+
+    return data;
+  },
+);
