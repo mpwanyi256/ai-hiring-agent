@@ -19,7 +19,7 @@ import {
   EyeIcon,
 } from '@heroicons/react/24/outline';
 import { CandidateDetailsHeader } from '../evaluations/CandidateDetailsHeader';
-import { CandidateBasic, CandidateList, CandidateStatus } from '@/types';
+import { CandidateBasic, CandidateStatus } from '@/types';
 import { formatFileSize } from '@/lib/utils';
 import AIEvaluationCard from '@/components/evaluations/AIEvaluationCard';
 import { Loader2 } from 'lucide-react';

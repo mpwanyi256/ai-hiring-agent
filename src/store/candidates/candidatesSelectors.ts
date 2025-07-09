@@ -67,15 +67,6 @@ export const selectCandidateStats = createSelector([selectCandidatesList], (cand
   };
 });
 
-export const selectCandidateResponses = createSelector([selectCurrentCandidate], (candidate) => {
-  if (!candidate || !candidate.responses) return [];
-  return candidate.responses;
-});
-
-export const selectCandidateEvaluation = createSelector([selectCurrentCandidate], (candidate) => {
-  return candidate?.evaluation || null;
-});
-
 export const selectCandidatesForJob = createSelector(
   [selectCandidatesList, (state: RootState, jobId: string) => jobId],
   (candidates, jobId) => candidates.filter((candidate) => candidate.jobId === jobId),
