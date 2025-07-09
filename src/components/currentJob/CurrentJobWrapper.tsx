@@ -14,6 +14,7 @@ import { shareJob } from '@/lib/utils';
 import { Loading } from '@/components/ui/Loading';
 import { DashboardError } from '../ui/DashboardError';
 import { useToast } from '../providers/ToastProvider';
+import { setSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSlice';
 
 interface CurrentJobWrapperPageProps {
   params: Promise<{
@@ -42,6 +43,7 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
     return () => {
       // Clean up function to reset the current job when the component unmounts
       dispatch(resetCurrentJob());
+      dispatch(setSelectedCandidate(null));
     };
   }, [resolvedParams.id, dispatch, showError]);
 
