@@ -24,6 +24,7 @@ import { formatFileSize } from '@/lib/utils';
 import AIEvaluationCard from '@/components/evaluations/AIEvaluationCard';
 import { Loader2 } from 'lucide-react';
 import { selectAIEvaluationCardData } from '@/store/candidates/candidatesSelectors';
+import { selectSelectedCandidateId } from '@/store/selectedCandidate/selectedCandidateSelectors';
 
 interface JobCandidatesProps {
   job: CurrentJob;
@@ -41,7 +42,9 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     (state: RootState) => state.candidates,
   );
 
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string>();
+  const selectedCandidateId = useSelector(selectSelectedCandidateId);
+
+  // const [selectedCandidateId, setSelectedCandidateId] = useState<string>();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const [filters, setFilters] = useState({
@@ -97,28 +100,6 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     completed: jobCandidatesStats.completed,
     averageScore: jobCandidatesStats.averageScore,
   };
-
-  // Transform candidates for the list component
-  const transformedCandidates = candidates.map((candidate) => {
-    return {
-      id: candidate.id,
-      jobId: candidate.jobId,
-      jobTitle: candidate.jobTitle,
-      interviewToken: candidate.interviewToken,
-      email: candidate.email,
-      submittedAt: candidate.submittedAt,
-      evaluation: candidate.evaluation,
-      responses: candidate.responses,
-      resume: candidate.resume,
-      candidateStatus: candidate.candidateStatus,
-      name: candidate.name,
-      score: candidate.evaluation?.score,
-      progress: candidate.progress,
-      resumeScore: candidate.evaluation?.resumeScore,
-      createdAt: candidate.createdAt || new Date().toISOString(),
-      status: candidate.status,
-    };
-  });
 
   // Resume download handler
   const handleResumeDownload = async () => {
@@ -176,8 +157,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
           <CandidatesList
             candidates={candidates}
             selectedCandidateId={selectedCandidateId}
-            onCandidateSelect={(id) => {
-              setSelectedCandidateId(id);
+            onCandidateSelect={() => {
               setActiveTab('overview');
             }}
             searchQuery={searchQuery}

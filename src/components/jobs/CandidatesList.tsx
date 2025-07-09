@@ -19,13 +19,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getCandidateStatusLabelStyle, getScoreColor } from '@/lib/utils';
-import { useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
 import { selectCandidatesLoading } from '@/store/candidates/candidatesSelectors';
+import { setSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSlice';
 
 interface CandidatesListProps {
   candidates: Candidate[];
   selectedCandidateId?: string;
-  onCandidateSelect: (candidateId: string) => void;
+  onCandidateSelect: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onFiltersChange?: (filters: {
@@ -59,11 +60,11 @@ const statusOptions: CandidateStatusOptions[] = [
 export default function CandidatesList({
   candidates,
   selectedCandidateId,
-  onCandidateSelect,
   searchQuery,
   onSearchChange,
   onFiltersChange,
 }: CandidatesListProps) {
+  const dispatch = useAppDispatch();
   const isLoading = useAppSelector(selectCandidatesLoading);
   const [filters, setFilters] = useState({
     minScore: '',
@@ -142,6 +143,10 @@ export default function CandidatesList({
     if (onFiltersChange) {
       onFiltersChange({});
     }
+  };
+
+  const handleCandidateSelect = (candidate: Candidate) => {
+    dispatch(setSelectedCandidate(candidate));
   };
 
   const hasActiveFilters =
@@ -320,7 +325,7 @@ export default function CandidatesList({
             {candidates.map((candidate) => (
               <div
                 key={candidate.id}
-                onClick={() => onCandidateSelect(candidate.id)}
+                onClick={() => handleCandidateSelect(candidate)}
                 className={`p-4 cursor-pointer transition-colors hover:bg-gray-50 ${
                   selectedCandidateId === candidate.id ? 'bg-blue-50 border-r-2 border-primary' : ''
                 }`}

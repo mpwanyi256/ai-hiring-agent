@@ -14,6 +14,7 @@ import { shareJob } from '@/lib/utils';
 import { Loading } from '@/components/ui/Loading';
 import { DashboardError } from '../ui/DashboardError';
 import { useToast } from '../providers/ToastProvider';
+import { apiError } from '@/lib/notification';
 
 interface CurrentJobWrapperPageProps {
   params: Promise<{
@@ -48,11 +49,12 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
   // Fetch questions when switching to Questions tab
   useEffect(() => {
     if (activeTab === 'questions' && job?.id) {
-      dispatch(fetchJobQuestions(job.id))
-        .unwrap()
-        .catch((err) => {
-          showError(err instanceof Error ? err.message : 'Failed to fetch questions');
-        });
+      try {
+        dispatch(fetchJobQuestions(job.id));
+      } catch (err) {
+        showError(err instanceof Error ? err.message : 'Failed to fetch questions');
+        apiError('Failed to fetch questions');
+      }
     }
   }, [activeTab, job?.id, dispatch, showError]);
 

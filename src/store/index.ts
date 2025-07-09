@@ -8,6 +8,7 @@ import skillsSlice from './skills/skillsSlice';
 import traitsSlice from './traits/traitsSlice';
 import jobTemplatesSlice from './jobTemplates/jobTemplatesSlice';
 import interviewSlice from './interview/interviewSlice';
+import selectedCandidateSlice from './selectedCandidate/selectedCandidateSlice';
 
 export const store = configureStore({
   reducer: {
@@ -19,6 +20,7 @@ export const store = configureStore({
     traits: traitsSlice,
     jobTemplates: jobTemplatesSlice,
     interview: interviewSlice,
+    selectedCandidate: selectedCandidateSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
