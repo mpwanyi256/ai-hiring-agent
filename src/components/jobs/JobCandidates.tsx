@@ -19,7 +19,7 @@ import {
   EyeIcon,
 } from '@heroicons/react/24/outline';
 import { CandidateDetailsHeader } from '../evaluations/CandidateDetailsHeader';
-import { CandidateBasic, CandidateStatus } from '@/types';
+import { CandidateStatus } from '@/types';
 import { formatFileSize } from '@/lib/utils';
 import AIEvaluationCard from '@/components/evaluations/AIEvaluationCard';
 import { Loader2 } from 'lucide-react';
@@ -55,7 +55,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     maxScore: undefined as number | undefined,
     startDate: undefined as string | undefined,
     endDate: undefined as string | undefined,
-    candidateStatus: 'under_review',
+    candidateStatus: undefined as CandidateStatus | undefined,
     sortBy: 'created_at' as string,
     sortOrder: 'desc' as 'asc' | 'desc',
   });
@@ -169,7 +169,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
           {selectedCandidate ? (
             <div className="bg-white rounded-lg border border-gray-100 h-full flex flex-col">
               {/* Header */}
-              <CandidateDetailsHeader candidate={selectedCandidate as unknown as CandidateBasic} />
+              <CandidateDetailsHeader />
 
               {/* Tabs */}
               <div className="border-b border-gray-200 px-6 pt-4 md:px-4 md:pt-2">

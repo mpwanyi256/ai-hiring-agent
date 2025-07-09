@@ -1,5 +1,5 @@
 import { type ClassValue, clsx } from 'clsx';
-import { CandidateStatus, CurrentJob, Job } from '@/types';
+import { CandidateStatus, CandidateStatusOptions, CurrentJob, Job } from '@/types';
 import { JobStatus } from './supabase';
 import { apiError, apiSuccess } from './notification';
 import { twMerge } from 'tailwind-merge';
@@ -309,4 +309,29 @@ export const getResumeScoreColor = (score: number) => {
   if (score >= 40) return 'text-orange-500';
   if (score >= 20) return 'text-red-500';
   return 'text-red-500';
+};
+
+export const getCandidateStatusOptions = (): CandidateStatusOptions[] => {
+  return [
+    { value: 'all', label: 'All', color: 'bg-gray-100 text-gray-800' },
+    { value: 'under_review', label: 'Under Review', color: 'bg-gray-100 text-gray-800' },
+    { value: 'shortlisted', label: 'Shortlisted', color: 'bg-green-100 text-green-800' },
+    { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-800' },
+  ];
+};
+
+export const getAllCandidateStatusOptions = (): CandidateStatusOptions[] => {
+  return [
+    { value: 'all', label: 'All', color: 'bg-gray-100 text-gray-800' },
+    {
+      value: 'interview_scheduled',
+      label: 'Interview Scheduled',
+      color: 'bg-blue-100 text-blue-800',
+    },
+    { value: 'reference_check', label: 'Reference Check', color: 'bg-purple-100 text-purple-800' },
+    { value: 'offer_extended', label: 'Offer Extended', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'offer_accepted', label: 'Offer Accepted', color: 'bg-green-100 text-green-800' },
+    { value: 'hired', label: 'Hired', color: 'bg-green-100 text-green-800' },
+    { value: 'withdrawn', label: 'Withdrawn', color: 'bg-gray-100 text-gray-800' },
+  ];
 };

@@ -8,35 +8,34 @@ import {
   SelectItem,
   SelectValue,
 } from '@/components/ui/select';
-
-type CandidateDetailsProps = {
-  candidate: CandidateBasic;
-};
+import { useAppSelector } from '@/store';
+import { selectSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSelectors';
 
 const statusOptions: { value: CandidateStatus; label: string; color: string }[] = [
   { value: 'under_review', label: 'Under Review', color: 'bg-gray-100 text-gray-800' },
-  { value: 'shortlisted', label: 'Shortlisted', color: 'bg-green-100 text-green-800' },
-  {
-    value: 'interview_scheduled',
-    label: 'Interview Scheduled',
-    color: 'bg-blue-100 text-blue-800',
-  },
-  { value: 'reference_check', label: 'Reference Check', color: 'bg-purple-100 text-purple-800' },
-  { value: 'offer_extended', label: 'Offer Extended', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'offer_accepted', label: 'Offer Accepted', color: 'bg-green-100 text-green-800' },
-  { value: 'hired', label: 'Hired', color: 'bg-green-100 text-green-800' },
+  { value: 'shortlisted', label: 'Shortlist Candidate', color: 'bg-green-100 text-green-800' },
+  // {
+  //   value: 'interview_scheduled',
+  //   label: 'Interview Scheduled',
+  //   color: 'bg-blue-100 text-blue-800',
+  // },
+  // { value: 'reference_check', label: 'Reference Check', color: 'bg-purple-100 text-purple-800' },
+  // { value: 'offer_extended', label: 'Offer Extended', color: 'bg-yellow-100 text-yellow-800' },
+  // { value: 'offer_accepted', label: 'Offer Accepted', color: 'bg-green-100 text-green-800' },
+  // { value: 'hired', label: 'Hired', color: 'bg-green-100 text-green-800' },
   { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-800' },
-  { value: 'withdrawn', label: 'Withdrawn', color: 'bg-gray-100 text-gray-800' },
+  // { value: 'withdrawn', label: 'Withdrawn', color: 'bg-gray-100 text-gray-800' },
 ];
 
-export const CandidateDetailsHeader = ({ candidate }: CandidateDetailsProps) => {
+export const CandidateDetailsHeader = () => {
+  const candidate = useAppSelector(selectSelectedCandidate);
   const [isUpdating, setIsUpdating] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<CandidateStatus>(
-    candidate.candidateStatus || 'under_review',
+    candidate?.candidateStatus || 'under_review',
   );
 
   const handleStatusUpdate = async (newStatus: CandidateStatus) => {
-    if (newStatus === currentStatus) return;
+    if (newStatus === currentStatus || !candidate) return;
     setIsUpdating(true);
     try {
       const response = await fetch(`/api/candidates/${candidate.id}`, {
@@ -62,6 +61,10 @@ export const CandidateDetailsHeader = ({ candidate }: CandidateDetailsProps) => 
       setIsUpdating(false);
     }
   };
+
+  if (!candidate) {
+    return null;
+  }
 
   return (
     <div className="bg-gradient-to-r from-primary via-green-600 to-primary rounded-t-lg p-6 text-white relative overflow-hidden flex-shrink-0">

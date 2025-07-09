@@ -9,7 +9,7 @@ import {
   CalendarIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { Candidate, CandidateStatus, CandidateStatusOptions } from '@/types/candidates';
+import { Candidate, CandidateStatus } from '@/types/candidates';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import {
   Select,
@@ -18,7 +18,11 @@ import {
   SelectItem,
   SelectValue,
 } from '@/components/ui/select';
-import { getCandidateStatusLabelStyle, getScoreColor } from '@/lib/utils';
+import {
+  getCandidateStatusLabelStyle,
+  getCandidateStatusOptions,
+  getScoreColor,
+} from '@/lib/utils';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { selectCandidatesLoading } from '@/store/candidates/candidatesSelectors';
 import { setSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSlice';
@@ -40,22 +44,7 @@ interface CandidatesListProps {
   }) => void;
 }
 
-const statusOptions: CandidateStatusOptions[] = [
-  { value: 'all', label: 'All', color: 'bg-gray-100 text-gray-800' },
-  { value: 'under_review', label: 'Under Review', color: 'bg-gray-100 text-gray-800' },
-  {
-    value: 'interview_scheduled',
-    label: 'Interview Scheduled',
-    color: 'bg-blue-100 text-blue-800',
-  },
-  { value: 'shortlisted', label: 'Shortlisted', color: 'bg-green-100 text-green-800' },
-  { value: 'reference_check', label: 'Reference Check', color: 'bg-purple-100 text-purple-800' },
-  { value: 'offer_extended', label: 'Offer Extended', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'offer_accepted', label: 'Offer Accepted', color: 'bg-green-100 text-green-800' },
-  { value: 'hired', label: 'Hired', color: 'bg-green-100 text-green-800' },
-  { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-800' },
-  { value: 'withdrawn', label: 'Withdrawn', color: 'bg-gray-100 text-gray-800' },
-];
+const statusOptions = getCandidateStatusOptions();
 
 export default function CandidatesList({
   candidates,
@@ -115,13 +104,12 @@ export default function CandidatesList({
     setFilters(newFilters);
 
     if (onFiltersChange) {
-      const status = newFilters.candidateStatus === 'all' ? undefined : newFilters.candidateStatus;
       onFiltersChange({
         minScore: newFilters.minScore ? parseInt(newFilters.minScore) : undefined,
         maxScore: newFilters.maxScore ? parseInt(newFilters.maxScore) : undefined,
         startDate: newFilters.startDate || undefined,
         endDate: newFilters.endDate || undefined,
-        candidateStatus: status || undefined,
+        candidateStatus: newFilters.candidateStatus as CandidateStatus | undefined,
         sortBy: newFilters.sortBy,
         sortOrder: newFilters.sortOrder,
       });
@@ -177,52 +165,6 @@ export default function CandidatesList({
             </PopoverTrigger>
             <PopoverContent className="w-64 p-4">
               <div className="flex flex-col gap-4">
-                {/* Score Range */}
-                {/* <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Score Range
-                  </label>
-                  <div className="flex space-x-2">
-                    <input
-                      type="number"
-                      placeholder="Min"
-                      min="0"
-                      max="100"
-                      value={filters.minScore}
-                      onChange={(e) => handleFilterChange('minScore', e.target.value)}
-                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Max"
-                      min="0"
-                      max="100"
-                      value={filters.maxScore}
-                      onChange={(e) => handleFilterChange('maxScore', e.target.value)}
-                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
-                    />
-                  </div>
-                </div> */}
-                {/* Date Range */}
-                {/* <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Date Applied
-                  </label>
-                  <div className="flex space-x-2">
-                    <input
-                      type="date"
-                      value={filters.startDate}
-                      onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
-                    />
-                    <input
-                      type="date"
-                      value={filters.endDate}
-                      onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
-                    />
-                  </div>
-                </div> */}
                 {/* Status Filter (shadcn/ui Select) */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
@@ -245,7 +187,7 @@ export default function CandidatesList({
                 {/* Sort Options */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Sort By</label>
-                  <div className="flex space-x-2">
+                  <div className="flex gap-2">
                     <Select
                       value={filters.sortBy}
                       onValueChange={(value) => handleFilterChange('sortBy', value)}
