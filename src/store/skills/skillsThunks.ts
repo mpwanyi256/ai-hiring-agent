@@ -4,7 +4,7 @@ import { Skill } from '@/types/jobs';
 
 // Response type interface
 interface SkillsResponse {
-  skills: unknown[];
+  skills: Skill[];
 }
 
 // Fetch all skills

@@ -4,7 +4,7 @@ import { Trait } from '@/types/jobs';
 
 // Response type interface
 interface TraitsResponse {
-  traits: unknown[];
+  traits: Trait[];
 }
 
 // Fetch all traits

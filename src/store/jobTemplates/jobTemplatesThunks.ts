@@ -2,29 +2,20 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { apiUtils } from '../api';
 import { JobTemplate } from '@/types/jobs';
 
-// Response type interfaces
-interface JobTemplatesResponse {
-  templates: unknown[];
-}
-
-interface JobTemplateResponse {
-  template: unknown;
-}
-
 interface CreateTemplateResponse {
-  template: unknown;
+  template: JobTemplate;
 }
 
 interface UpdateTemplateResponse {
-  template: unknown;
+  template: JobTemplate;
 }
 
 // Fetch all job templates
-export const fetchJobTemplates = createAsyncThunk(
+export const fetchJobTemplates = createAsyncThunk<JobTemplate[], string>(
   'jobTemplates/fetchJobTemplates',
-  async (profileId: string) => {
+  async (profileId) => {
     try {
-      const response = await apiUtils.get<JobTemplatesResponse>(
+      const response = await apiUtils.get<{ templates: JobTemplate[] }>(
         `/api/job-templates?profileId=${profileId}`,
       );
       return response.templates;

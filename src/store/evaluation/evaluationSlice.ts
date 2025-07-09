@@ -8,8 +8,9 @@ import {
   saveInterviewEvaluation,
   getInterviewEvaluation,
   getEvaluationHistory,
-  deleteEvaluation
+  deleteEvaluation,
 } from '@/store/evaluation/evaluationThunks';
+import { apiError } from '@/lib/notification';
 
 export interface EvaluationState {
   // Resume evaluation
@@ -17,17 +18,17 @@ export interface EvaluationState {
   resumeEvaluationLoading: boolean;
   resumeEvaluationError: string | null;
   resumeEvaluationErrorType?: string;
-  
+
   // Interview evaluation
   currentInterviewEvaluation: InterviewEvaluation | null;
   interviewEvaluationLoading: boolean;
   interviewEvaluationError: string | null;
-  
+
   // Evaluation history
   evaluationHistory: InterviewEvaluation[];
   historyLoading: boolean;
   historyError: string | null;
-  
+
   // UI state
   isUploading: boolean;
   uploadProgress: number;
@@ -38,15 +39,15 @@ const initialState: EvaluationState = {
   resumeEvaluationLoading: false,
   resumeEvaluationError: null,
   resumeEvaluationErrorType: undefined,
-  
+
   currentInterviewEvaluation: null,
   interviewEvaluationLoading: false,
   interviewEvaluationError: null,
-  
+
   evaluationHistory: [],
   historyLoading: false,
   historyError: null,
-  
+
   isUploading: false,
   uploadProgress: 0,
 };
@@ -71,7 +72,7 @@ const evaluationSlice = createSlice({
       state.interviewEvaluationError = null;
       state.historyError = null;
     },
-    
+
     // Set evaluations
     setCurrentResumeEvaluation: (state, action: PayloadAction<ResumeEvaluation | null>) => {
       state.currentResumeEvaluation = action.payload;
@@ -79,7 +80,7 @@ const evaluationSlice = createSlice({
     setCurrentInterviewEvaluation: (state, action: PayloadAction<InterviewEvaluation | null>) => {
       state.currentInterviewEvaluation = action.payload;
     },
-    
+
     // Upload progress
     setUploadProgress: (state, action: PayloadAction<number>) => {
       state.uploadProgress = action.payload;
@@ -87,7 +88,7 @@ const evaluationSlice = createSlice({
     setUploading: (state, action: PayloadAction<boolean>) => {
       state.isUploading = action.payload;
     },
-    
+
     // Clear data
     clearEvaluationData: (state) => {
       state.currentResumeEvaluation = null;
@@ -112,28 +113,13 @@ const evaluationSlice = createSlice({
         state.isUploading = false;
         state.uploadProgress = 100;
       })
-      .addCase(evaluateResume.rejected, (state, action) => {
+      .addCase(evaluateResume.rejected, (state) => {
         state.resumeEvaluationLoading = false;
         state.isUploading = false;
         state.uploadProgress = 0;
-        
-        // Handle rejectWithValue format that includes evaluation and error type
-        if (action.payload && typeof action.payload === 'object') {
-          const payload = action.payload as any;
-          state.resumeEvaluationError = payload.error;
-          state.resumeEvaluationErrorType = payload.errorType;
-          
-          // If there's an evaluation even with an error (e.g., database error), still store it
-          if (payload.hasEvaluation && payload.evaluation) {
-            state.currentResumeEvaluation = payload.evaluation;
-          }
-        } else {
-          // Fallback for normal error format
-          state.resumeEvaluationError = action.error.message || 'Failed to evaluate resume';
-          state.resumeEvaluationErrorType = 'general_error';
-        }
+        apiError('Resume evaluation failed. Please try again.');
       })
-      
+
       // Save Resume Evaluation
       .addCase(saveResumeEvaluation.pending, (state) => {
         state.resumeEvaluationLoading = true;
@@ -147,7 +133,7 @@ const evaluationSlice = createSlice({
         state.resumeEvaluationLoading = false;
         state.resumeEvaluationError = action.error.message || 'Failed to save resume evaluation';
       })
-      
+
       // Get Resume Evaluation
       .addCase(getResumeEvaluation.pending, (state) => {
         state.resumeEvaluationLoading = true;
@@ -161,7 +147,7 @@ const evaluationSlice = createSlice({
         state.resumeEvaluationLoading = false;
         state.resumeEvaluationError = action.error.message || 'Failed to get resume evaluation';
       })
-      
+
       // Evaluate Interview
       .addCase(evaluateInterview.pending, (state) => {
         state.interviewEvaluationLoading = true;
@@ -175,7 +161,7 @@ const evaluationSlice = createSlice({
         state.interviewEvaluationLoading = false;
         state.interviewEvaluationError = action.error.message || 'Failed to evaluate interview';
       })
-      
+
       // Save Interview Evaluation
       .addCase(saveInterviewEvaluation.pending, (state) => {
         state.interviewEvaluationLoading = true;
@@ -187,9 +173,10 @@ const evaluationSlice = createSlice({
       })
       .addCase(saveInterviewEvaluation.rejected, (state, action) => {
         state.interviewEvaluationLoading = false;
-        state.interviewEvaluationError = action.error.message || 'Failed to save interview evaluation';
+        state.interviewEvaluationError =
+          action.error.message || 'Failed to save interview evaluation';
       })
-      
+
       // Get Interview Evaluation
       .addCase(getInterviewEvaluation.pending, (state) => {
         state.interviewEvaluationLoading = true;
@@ -201,9 +188,10 @@ const evaluationSlice = createSlice({
       })
       .addCase(getInterviewEvaluation.rejected, (state, action) => {
         state.interviewEvaluationLoading = false;
-        state.interviewEvaluationError = action.error.message || 'Failed to get interview evaluation';
+        state.interviewEvaluationError =
+          action.error.message || 'Failed to get interview evaluation';
       })
-      
+
       // Get Evaluation History
       .addCase(getEvaluationHistory.pending, (state) => {
         state.historyLoading = true;
@@ -217,14 +205,17 @@ const evaluationSlice = createSlice({
         state.historyLoading = false;
         state.historyError = action.error.message || 'Failed to get evaluation history';
       })
-      
+
       // Delete Evaluation
       .addCase(deleteEvaluation.fulfilled, (state, action) => {
         state.evaluationHistory = state.evaluationHistory.filter(
-          evaluation => evaluation.id !== action.payload
+          (evaluation) => evaluation.id !== action.payload,
         );
         // Clear current evaluation if it was deleted
-        if (state.currentInterviewEvaluation && state.currentInterviewEvaluation.id === action.payload) {
+        if (
+          state.currentInterviewEvaluation &&
+          state.currentInterviewEvaluation.id === action.payload
+        ) {
           state.currentInterviewEvaluation = null;
         }
       });
@@ -243,4 +234,4 @@ export const {
   clearEvaluationData,
 } = evaluationSlice.actions;
 
-export default evaluationSlice.reducer; 
+export default evaluationSlice.reducer;

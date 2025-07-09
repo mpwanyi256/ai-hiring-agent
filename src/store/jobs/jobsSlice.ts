@@ -45,7 +45,7 @@ const jobsSlice = createSlice({
       state.currentJob = null;
     },
     updateJobCandidateCount: (state, action: PayloadAction<{ jobId: string; count: number }>) => {
-      const job = state.jobs.find(j => j.id === action.payload.jobId);
+      const job = state.jobs.find((j) => j.id === action.payload.jobId);
       if (job) {
         job.candidateCount = action.payload.count;
       }
@@ -65,13 +65,6 @@ const jobsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // .addCase(generateJobQuestions.fulfilled, (state, action) => {
-      //   apiSuccess('AI Questions generated successfully');
-      //   if (state.currentJob) {
-      //     state.currentJob.questions = action.payload.questions;
-      //     state.currentJob.questionStats = action.payload.stats;
-      //   }
-      // })
       .addCase(fetchJobQuestions.fulfilled, (state, action) => {
         if (state.currentJob) {
           state.currentJob.questions = action.payload.questions;
@@ -126,7 +119,7 @@ const jobsSlice = createSlice({
       })
       .addCase(updateJob.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.jobs.findIndex(job => job.id === action.payload.id);
+        const index = state.jobs.findIndex((job) => job.id === action.payload.id);
         if (index !== -1) {
           state.jobs[index] = action.payload;
         }
@@ -145,7 +138,7 @@ const jobsSlice = createSlice({
       })
       .addCase(deleteJob.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.jobs = state.jobs.filter(job => job.id !== action.payload);
+        state.jobs = state.jobs.filter((job) => job.id !== action.payload);
         state.totalJobs -= 1;
         if (state.currentJob && state.currentJob.id === action.payload) {
           state.currentJob = null;
@@ -157,7 +150,7 @@ const jobsSlice = createSlice({
       })
       // Toggle Job Status
       .addCase(toggleJobStatus.fulfilled, (state, action) => {
-        const index = state.jobs.findIndex(job => job.id === action.payload.id);
+        const index = state.jobs.findIndex((job) => job.id === action.payload.id);
         if (index !== -1) {
           state.jobs[index] = action.payload;
         }
@@ -172,7 +165,7 @@ const jobsSlice = createSlice({
       })
       .addCase(updateJobStatus.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.jobs.findIndex(job => job.id === action.payload.id);
+        const index = state.jobs.findIndex((job) => job.id === action.payload.id);
         if (index !== -1) {
           state.jobs[index] = action.payload;
         }
@@ -223,18 +216,20 @@ const jobsSlice = createSlice({
       })
       // Delete Job Template
       .addCase(deleteJobTemplate.fulfilled, (state, action) => {
-        state.jobTemplates = state.jobTemplates.filter(template => template.id !== action.payload);
+        state.jobTemplates = state.jobTemplates.filter(
+          (template) => template.id !== action.payload,
+        );
       });
   },
 });
 
-export const { 
-  clearError, 
-  setCurrentJob, 
-  clearCurrentJob, 
+export const {
+  clearError,
+  setCurrentJob,
+  clearCurrentJob,
   updateJobCandidateCount,
   clearJobsData,
   resetCurrentJob,
 } = jobsSlice.actions;
 
-export default jobsSlice.reducer; 
+export default jobsSlice.reducer;

@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from 'clsx';
-import { JobData } from './services/jobsService';
-import { CandidateStatus, Job } from '@/types';
+import { CandidateStatus, CurrentJob, Job } from '@/types';
 import { JobStatus } from './supabase';
 import { apiError, apiSuccess } from './notification';
 import { twMerge } from 'tailwind-merge';
@@ -90,7 +89,7 @@ export function getInitials(firstName: string, lastName?: string): string {
   return firstName.substring(0, 2).toUpperCase();
 }
 
-export const parseJobFields = (jobFields: JobData['fields']): Job['fields'] => {
+export const parseJobFields = (jobFields: Job['fields']): Job['fields'] => {
   return {
     skills: jobFields.skills,
     experienceLevel: jobFields.experienceLevel,
@@ -107,7 +106,7 @@ export const parseJobFields = (jobFields: JobData['fields']): Job['fields'] => {
   };
 };
 
-export const parseJobDetails = (jobData: JobData): Job => {
+export const parseJobDetails = (jobData: Job): CurrentJob => {
   return {
     id: jobData.id,
     profileId: jobData.profileId,

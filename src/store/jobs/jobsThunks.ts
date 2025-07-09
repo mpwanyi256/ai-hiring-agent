@@ -1,35 +1,46 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AIQuestionsGenerationResponse, CreateJobData, UpdateJobData } from '@/types';
+import {
+  AIQuestionsGenerationResponse,
+  CreateJobData,
+  Job,
+  JobTemplate,
+  QuestionStats,
+  Skill,
+  Trait,
+  UpdateJobData,
+} from '@/types';
 import { apiUtils } from '../api';
 import { RootState } from '..';
+import { JobQuestion } from '@/types/interview';
 
 // Response type interfaces
 interface JobsResponse {
-  jobs: unknown[];
+  jobs: Job[];
 }
 
 interface JobResponse {
-  job: unknown;
+  job: Job;
 }
 
 interface SkillsResponse {
-  skills: unknown[];
+  skills: Skill[];
 }
 
 interface TraitsResponse {
-  traits: unknown[];
+  traits: Trait[];
 }
 
 interface JobTemplatesResponse {
-  templates: unknown[];
+  templates: JobTemplate[];
 }
 
 interface JobTemplateResponse {
-  template: unknown;
+  template: JobTemplate;
 }
 
 interface JobQuestionsResponse {
-  questions: unknown[];
+  questions: JobQuestion[];
+  stats: QuestionStats;
 }
 
 // Async thunks for jobs using API routes

@@ -245,10 +245,7 @@ export async function POST(request: Request) {
       },
     );
 
-    console.log('Candidate details', candidateDetails);
-
     if (detailsError || !candidateDetails.success) {
-      console.error('Error getting candidate details:', detailsError);
       return NextResponse.json(
         {
           success: false,
