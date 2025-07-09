@@ -14,11 +14,22 @@ import {
   saveJobTemplate,
   deleteJobTemplate,
   fetchJobQuestions,
+  fetchJobsPaginated,
 } from './jobsThunks';
 import { parseJobDetails } from '@/lib/utils';
 
 const initialState: ExtendedJobsState = {
   jobs: [],
+  companyJobs: {
+    jobs: [],
+    pagination: {
+      page: 1,
+      limit: 10,
+      total: 0,
+      totalPages: 0,
+      hasMore: false,
+    },
+  },
   currentJob: null,
   isLoading: false,
   error: null,
@@ -65,6 +76,21 @@ const jobsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchJobsPaginated.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchJobsPaginated.fulfilled, (state, { payload }) => {
+        const { jobs, pagination } = payload;
+        state.isLoading = false;
+        state.companyJobs.jobs =
+          pagination.page === 1 ? jobs : [...state.companyJobs.jobs, ...jobs];
+        state.companyJobs.pagination = pagination;
+      })
+      .addCase(fetchJobsPaginated.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to fetch jobs';
+      })
       .addCase(fetchJobQuestions.fulfilled, (state, action) => {
         if (state.currentJob) {
           state.currentJob.questions = action.payload.questions;

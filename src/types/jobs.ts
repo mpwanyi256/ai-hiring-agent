@@ -1,3 +1,4 @@
+import { JobStatus, UserRole } from '@/lib/supabase';
 import { JobQuestion } from './interview';
 
 export interface Skill {
@@ -72,6 +73,7 @@ export interface CurrentJob extends Job {
 
 export interface JobsState {
   jobs: Job[];
+  companyJobs: GetCompanyJobsResponse;
   currentJob: CurrentJob | null;
   isLoading: boolean;
   error: string | null;
@@ -124,4 +126,80 @@ export interface AIQuestionsGenerationResponse {
   questions: Omit<JobQuestion, 'jobId' | 'id' | 'createdAt' | 'updatedAt'>[];
   generation: string;
   success: boolean;
+}
+
+export enum CustomFieldInputType {
+  TEXT = 'text',
+  TEXTAREA = 'textarea',
+  NUMBER = 'number',
+  FILE = 'file',
+  URL = 'url',
+  EMAIL = 'email',
+  MULTI_SELECT = 'multi_select',
+}
+
+export enum InterviewFormat {
+  TEXT = 'text',
+  VIDEO = 'video',
+}
+
+export interface JobField {
+  id: string;
+  label: string;
+  required: boolean;
+  type: CustomFieldInputType;
+  value: string;
+}
+
+export interface CompanyJobs {
+  id: string;
+  profile_id: string;
+  title: string;
+  fields: {
+    skills?: JobField[];
+    experienceLevel?: JobField;
+    traits?: JobField[];
+    jobDescription?: JobField;
+    customFields?: Record<string, { value: string; inputType: CustomFieldInputType } | string>;
+  };
+  interview_format: InterviewFormat;
+  interview_token: string;
+  is_active: boolean;
+  status: JobStatus;
+  created_at: string;
+  updated_at: string;
+  creator_details: {
+    id: string;
+    role: UserRole;
+    email: string;
+    first_name: string;
+    last_name: string;
+  };
+  company_id: string;
+  company_name: string;
+  company_slug: string;
+  candidate_count: number;
+  completed_interviews: number;
+  response_count: number;
+  evaluation_count: number;
+  average_score: number;
+}
+
+export interface GetCompanyJobsPayload {
+  company_id: string;
+  page: number;
+  limit: number;
+  search?: string;
+  status?: string;
+}
+
+export interface GetCompanyJobsResponse {
+  jobs: CompanyJobs[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
 }

@@ -8,30 +8,25 @@ import MetricCard from '@/components/dashboard/MetricCard';
 import JobsTable from '@/components/jobs/JobsTable';
 import SearchAndFilters from '@/components/jobs/SearchAndFilters';
 import { useToast } from '@/components/providers/ToastProvider';
-import { RootState, useAppSelector } from '@/store';
-import { JobData } from '@/lib/services/jobsService';
+import { useAppDispatch, useAppSelector } from '@/store';
 import {
   PlusIcon,
   BriefcaseIcon,
   UserGroupIcon,
   CheckBadgeIcon,
 } from '@heroicons/react/24/outline';
-
-interface JobsPagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasMore: boolean;
-}
+import { fetchJobsPaginated } from '@/store/jobs/jobsThunks';
+import { CompanyJobs } from '@/types/jobs';
+import { selectCompanyJobs } from '@/store/jobs/jobsSelectors';
+import { apiError } from '@/lib/notification';
 
 export default function JobsPage() {
-  const { user } = useAppSelector((state: RootState) => state.auth);
+  const { user } = useAppSelector((state) => state.auth);
   const { success, error: showError } = useToast();
+  const dispatch = useAppDispatch();
+  const { pagination, jobs } = useAppSelector(selectCompanyJobs);
 
   // State for jobs and pagination
-  const [jobs, setJobs] = useState<JobData[]>([]);
-  const [pagination, setPagination] = useState<JobsPagination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,37 +46,22 @@ export default function JobsPage() {
       setError(null);
 
       try {
-        const params = new URLSearchParams({
-          profileId: user.id,
-          page: page.toString(),
-          limit: '10',
-        });
-
-        if (search) params.append('search', search);
-        if (status) params.append('status', status);
-
-        const response = await fetch(`/api/jobs?${params}`);
-        const data = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch jobs');
-        }
-
-        if (reset || page === 1) {
-          setJobs(data.jobs);
-        } else {
-          setJobs((prev) => [...prev, ...data.jobs]);
-        }
-
-        setPagination(data.pagination);
+        await dispatch(
+          fetchJobsPaginated({
+            page: reset ? 1 : page,
+            limit: 10,
+            search,
+            status,
+          }),
+        );
       } catch (err) {
-        console.error('Error fetching jobs:', err);
+        apiError('Failed to fetch jobs');
         setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
       } finally {
         loadState(false);
       }
     },
-    [user?.id],
+    [dispatch, user?.id],
   );
 
   // Initial load
@@ -136,8 +116,8 @@ export default function JobsPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMore]);
 
-  const copyInterviewLink = async (job: JobData) => {
-    const link = job.interviewLink || `${window.location.origin}/interview/${job.interviewToken}`;
+  const copyInterviewLink = async (job: CompanyJobs) => {
+    const link = `${window.location.origin}/interview/${job.interview_token}`;
 
     try {
       await navigator.clipboard.writeText(link);
@@ -150,8 +130,8 @@ export default function JobsPage() {
 
   if (!user) return null;
 
-  const hasJobs = jobs.length > 0 || (!isLoading && pagination && pagination.total > 0);
-  const totalCandidates = jobs.reduce((total, job) => total + (job.candidateCount || 0), 0);
+  const hasJobs = pagination.hasMore || (!isLoading && pagination && pagination.total > 0);
+  const totalCandidates = jobs.reduce((total, job) => total + (job.candidate_count || 0), 0);
 
   return (
     <DashboardLayout>
@@ -212,19 +192,17 @@ export default function JobsPage() {
         </div>
 
         {/* Search and Filters - Only show when user has jobs */}
-        {hasJobs && (
-          <div className="mb-6">
-            <SearchAndFilters
-              searchQuery={searchQuery}
-              statusFilter={statusFilter}
-              showFilters={showFilters}
-              onSearchChange={handleSearch}
-              onStatusFilterChange={handleStatusFilter}
-              onToggleFilters={() => setShowFilters(!showFilters)}
-              onClearFilters={handleClearFilters}
-            />
-          </div>
-        )}
+        <div className="mb-6">
+          <SearchAndFilters
+            searchQuery={searchQuery}
+            statusFilter={statusFilter}
+            showFilters={showFilters}
+            onSearchChange={handleSearch}
+            onStatusFilterChange={handleStatusFilter}
+            onToggleFilters={() => setShowFilters(!showFilters)}
+            onClearFilters={handleClearFilters}
+          />
+        </div>
 
         {/* Error Message */}
         {error && (
@@ -259,7 +237,7 @@ export default function JobsPage() {
           </div>
         ) : (
           <>
-            <JobsTable jobs={jobs} onCopyLink={copyInterviewLink} isLoading={isLoading} />
+            <JobsTable onCopyLink={copyInterviewLink} isLoading={isLoading} />
 
             {/* Loading more indicator */}
             {isLoadingMore && (

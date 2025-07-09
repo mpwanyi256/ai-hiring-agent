@@ -1,7 +1,10 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import {
   AIQuestionsGenerationResponse,
+  APIResponse,
   CreateJobData,
+  GetCompanyJobsPayload,
+  GetCompanyJobsResponse,
   Job,
   JobTemplate,
   QuestionStats,
@@ -42,6 +45,27 @@ interface JobQuestionsResponse {
   questions: JobQuestion[];
   stats: QuestionStats;
 }
+
+export const fetchJobsPaginated = createAsyncThunk<
+  GetCompanyJobsResponse,
+  Omit<GetCompanyJobsPayload, 'company_id'>
+>('jobs/fetchJobsPaginated', async (params, { getState }) => {
+  const state = getState() as RootState;
+  const user = state.auth.user;
+
+  if (!user) {
+    throw new Error('You must be authenticated to fetch jobs');
+  }
+
+  const response = await apiUtils.get<APIResponse<GetCompanyJobsResponse>>(`/api/company`, {
+    params: {
+      ...params,
+      company_id: user.companyId,
+    },
+  });
+
+  return response.data;
+});
 
 // Async thunks for jobs using API routes
 export const fetchJobsByProfile = createAsyncThunk(

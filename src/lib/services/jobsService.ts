@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { generateInterviewToken } from '@/lib/utils';
 import { Database, JobFieldsConfig, JobStatus } from '@/lib/supabase';
 import { app } from '@/lib/constants';
+import { GetCompanyJobsPayload, GetCompanyJobsResponse } from '@/types/jobs';
 
 type JobRow = Database['public']['Tables']['jobs']['Row'];
 type JobInsert = Database['public']['Tables']['jobs']['Insert'];
@@ -81,7 +82,7 @@ export interface DetailedJobData extends JobData {
 // Utility functions to transform between simplified and database formats
 function simplifiedToDbFields(simpleFields: JobData['fields']): JobFieldsConfig {
   const dbFields: JobFieldsConfig = {};
-  
+
   // Convert simple fields to structured JobField format
   if (simpleFields.skills) {
     dbFields.skills = {
@@ -92,7 +93,7 @@ function simplifiedToDbFields(simpleFields: JobData['fields']): JobFieldsConfig 
       value: simpleFields.skills,
     };
   }
-  
+
   if (simpleFields.experienceLevel) {
     dbFields.experienceLevel = {
       id: 'experienceLevel',
@@ -102,7 +103,7 @@ function simplifiedToDbFields(simpleFields: JobData['fields']): JobFieldsConfig 
       value: simpleFields.experienceLevel,
     };
   }
-  
+
   if (simpleFields.traits) {
     dbFields.traits = {
       id: 'traits',
@@ -112,7 +113,7 @@ function simplifiedToDbFields(simpleFields: JobData['fields']): JobFieldsConfig 
       value: simpleFields.traits,
     };
   }
-  
+
   if (simpleFields.jobDescription) {
     dbFields.jobDescription = {
       id: 'jobDescription',
@@ -122,7 +123,7 @@ function simplifiedToDbFields(simpleFields: JobData['fields']): JobFieldsConfig 
       value: simpleFields.jobDescription,
     };
   }
-  
+
   // Convert custom fields
   if (simpleFields.customFields) {
     Object.entries(simpleFields.customFields).forEach(([key, fieldData]) => {
@@ -135,33 +136,33 @@ function simplifiedToDbFields(simpleFields: JobData['fields']): JobFieldsConfig 
       };
     });
   }
-  
+
   return dbFields;
 }
 
 function dbToSimplifiedFields(dbFields: JobFieldsConfig): JobData['fields'] {
   const simpleFields: JobData['fields'] = {};
-  
+
   if (dbFields.skills?.value) {
-    simpleFields.skills = Array.isArray(dbFields.skills.value) 
-      ? dbFields.skills.value as string[]
+    simpleFields.skills = Array.isArray(dbFields.skills.value)
+      ? (dbFields.skills.value as string[])
       : [dbFields.skills.value as string];
   }
-  
+
   if (dbFields.experienceLevel?.value) {
     simpleFields.experienceLevel = dbFields.experienceLevel.value as string;
   }
-  
+
   if (dbFields.traits?.value) {
     simpleFields.traits = Array.isArray(dbFields.traits.value)
-      ? dbFields.traits.value as string[]
+      ? (dbFields.traits.value as string[])
       : [dbFields.traits.value as string];
   }
-  
+
   if (dbFields.jobDescription?.value) {
     simpleFields.jobDescription = dbFields.jobDescription.value as string;
   }
-  
+
   // Convert custom fields
   const customFields: Record<string, { value: string; inputType: string }> = {};
   Object.entries(dbFields).forEach(([key, field]) => {
@@ -172,11 +173,11 @@ function dbToSimplifiedFields(dbFields: JobFieldsConfig): JobData['fields'] {
       };
     }
   });
-  
+
   if (Object.keys(customFields).length > 0) {
     simpleFields.customFields = customFields;
   }
-  
+
   return simpleFields;
 }
 
@@ -199,7 +200,7 @@ function transformJobFromDB(dbJob: JobRow): JobData {
 
 function transformJobToDB(jobData: Partial<JobData>): Partial<JobInsert> {
   const dbData: Partial<JobInsert> = {};
-  
+
   if (jobData.profileId) dbData.profile_id = jobData.profileId;
   if (jobData.title) dbData.title = jobData.title;
   if (jobData.fields) dbData.fields = simplifiedToDbFields(jobData.fields);
@@ -207,7 +208,7 @@ function transformJobToDB(jobData: Partial<JobData>): Partial<JobInsert> {
   if (jobData.interviewToken) dbData.interview_token = jobData.interviewToken;
   if (jobData.isActive !== undefined) dbData.is_active = jobData.isActive;
   if (jobData.status) dbData.status = jobData.status;
-  
+
   return dbData;
 }
 
@@ -285,7 +286,7 @@ class JobsService {
         throw new Error(error.message);
       }
 
-      return jobs.map(job => ({
+      return jobs.map((job) => ({
         ...job,
         profileId: job.profile_id,
         interviewFormat: job.interview_format as 'text' | 'video',
@@ -315,7 +316,7 @@ class JobsService {
         throw new Error(error.message);
       }
 
-      const jobsWithLinks = jobs.map(job => {
+      const jobsWithLinks = jobs.map((job) => {
         const transformed = transformJobFromDB(job);
         return this.addInterviewLink(transformed);
       });
@@ -325,7 +326,7 @@ class JobsService {
         jobsWithLinks.map(async (job) => ({
           ...job,
           candidateCount: await this.getCandidateCount(job.id),
-        }))
+        })),
       );
 
       return jobsWithCounts;
@@ -333,6 +334,58 @@ class JobsService {
       console.error('Error fetching all jobs:', error);
       throw error;
     }
+  }
+
+  async getCompanyJobs({
+    company_id,
+    page,
+    limit,
+    search,
+    status,
+  }: GetCompanyJobsPayload): Promise<GetCompanyJobsResponse> {
+    const supabase = await createClient();
+    const offset = (page - 1) * limit;
+
+    let query = supabase
+      .from('jobs_comprehensive')
+      .select('*')
+      .eq('company_id', company_id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (search) {
+      query = query.ilike('title', `%${search}%`);
+    }
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data: jobs, error } = await query;
+
+    if (error) {
+      throw new Error(error?.message || 'Error fetching company jobs');
+    }
+
+    const { count, error: countError } = await supabase
+      .from('jobs_comprehensive')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', company_id);
+
+    if (countError) {
+      throw new Error(countError?.message || 'Error fetching company jobs');
+    }
+
+    return {
+      jobs,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil(count || 0 / limit),
+        hasMore: offset + limit < (count || 0),
+      },
+    };
   }
 
   async getJobsByProfileId(profileId: string): Promise<JobData[]> {
@@ -348,7 +401,7 @@ class JobsService {
         throw new Error(error.message);
       }
 
-      const jobsWithLinks = jobs.map(job => {
+      const jobsWithLinks = jobs.map((job) => {
         const transformed = transformJobFromDB(job);
         return this.addInterviewLink(transformed);
       });
@@ -358,7 +411,7 @@ class JobsService {
         jobsWithLinks.map(async (job) => ({
           ...job,
           candidateCount: await this.getCandidateCount(job.id),
-        }))
+        })),
       );
 
       return jobsWithCounts;
@@ -378,7 +431,7 @@ class JobsService {
   }): Promise<{ jobs: JobData[]; total: number }> {
     try {
       const supabase = await createClient();
-      
+
       // Build the query
       let query = supabase
         .from('jobs')
@@ -396,7 +449,11 @@ class JobsService {
       }
 
       // Add pagination and ordering
-      const { data: jobs, error, count } = await query
+      const {
+        data: jobs,
+        error,
+        count,
+      } = await query
         .order('created_at', { ascending: false })
         .range(params.offset, params.offset + params.limit - 1);
 
@@ -404,7 +461,7 @@ class JobsService {
         throw new Error(error.message);
       }
 
-      const jobsWithLinks = jobs.map(job => {
+      const jobsWithLinks = jobs.map((job) => {
         const transformed = transformJobFromDB(job);
         return this.addInterviewLink(transformed);
       });
@@ -414,7 +471,7 @@ class JobsService {
         jobsWithLinks.map(async (job) => ({
           ...job,
           candidateCount: await this.getCandidateCount(job.id),
-        }))
+        })),
       );
 
       return {
@@ -430,11 +487,7 @@ class JobsService {
   async getJobById(id: string): Promise<JobData | null> {
     try {
       const supabase = await createClient();
-      const { data: job, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data: job, error } = await supabase.from('jobs').select('*').eq('id', id).single();
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -445,7 +498,7 @@ class JobsService {
 
       const transformed = transformJobFromDB(job);
       const jobWithLink = this.addInterviewLink(transformed);
-      
+
       // Add candidate count
       jobWithLink.candidateCount = await this.getCandidateCount(id);
 
@@ -466,7 +519,7 @@ class JobsService {
     try {
       const supabase = await createClient();
       const interviewToken = generateInterviewToken();
-      
+
       const dbJobData: JobInsert = {
         profile_id: jobData.profileId,
         title: jobData.title,
@@ -477,11 +530,7 @@ class JobsService {
         status: jobData.status || 'draft',
       };
 
-      const { data: job, error } = await supabase
-        .from('jobs')
-        .insert(dbJobData)
-        .select()
-        .single();
+      const { data: job, error } = await supabase.from('jobs').insert(dbJobData).select().single();
 
       if (error) {
         throw new Error(error.message);
@@ -501,9 +550,9 @@ class JobsService {
   async updateJob(id: string, updateData: Partial<JobData>): Promise<JobData | null> {
     try {
       const supabase = await createClient();
-      
+
       const dbUpdateData = transformJobToDB(updateData);
-      
+
       const { data: job, error } = await supabase
         .from('jobs')
         .update(dbUpdateData)
@@ -520,7 +569,7 @@ class JobsService {
 
       const transformed = transformJobFromDB(job);
       const jobWithLink = this.addInterviewLink(transformed);
-      
+
       // Add candidate count
       jobWithLink.candidateCount = await this.getCandidateCount(id);
 
@@ -542,11 +591,8 @@ class JobsService {
   async deleteJob(id: string): Promise<boolean> {
     try {
       const supabase = await createClient();
-      
-      const { error } = await supabase
-        .from('jobs')
-        .delete()
-        .eq('id', id);
+
+      const { error } = await supabase.from('jobs').delete().eq('id', id);
 
       if (error) {
         throw new Error(error.message);
@@ -583,7 +629,7 @@ class JobsService {
 
       const transformed = transformJobFromDB(job);
       const jobWithLink = this.addInterviewLink(transformed);
-      
+
       // Add candidate count
       jobWithLink.candidateCount = await this.getCandidateCount(job.id);
 
@@ -606,9 +652,9 @@ class JobsService {
   }> {
     try {
       const supabase = await createClient();
-      
+
       let query = supabase.from('jobs').select('id, is_active, status');
-      
+
       if (profileId) {
         query = query.eq('profile_id', profileId);
       }
@@ -621,22 +667,20 @@ class JobsService {
 
       const stats = {
         total: jobs.length,
-        active: jobs.filter(job => job.is_active).length,
-        inactive: jobs.filter(job => !job.is_active).length,
-        draft: jobs.filter(job => job.status === 'draft').length,
-        interviewing: jobs.filter(job => job.status === 'interviewing').length,
-        closed: jobs.filter(job => job.status === 'closed').length,
+        active: jobs.filter((job) => job.is_active).length,
+        inactive: jobs.filter((job) => !job.is_active).length,
+        draft: jobs.filter((job) => job.status === 'draft').length,
+        interviewing: jobs.filter((job) => job.status === 'interviewing').length,
+        closed: jobs.filter((job) => job.status === 'closed').length,
         totalCandidates: 0,
       };
 
       // Get total candidates count
-      let candidateQuery = supabase
-        .from('candidates')
-        .select('*', { count: 'exact', head: true });
+      let candidateQuery = supabase.from('candidates').select('*', { count: 'exact', head: true });
 
       if (profileId) {
         // We need to join with jobs to filter by profile
-        const jobIds = jobs.map(job => job.id);
+        const jobIds = jobs.map((job) => job.id);
         if (jobIds.length > 0) {
           candidateQuery = candidateQuery.in('job_id', jobIds);
         }
@@ -657,7 +701,7 @@ class JobsService {
   async autoUpdateJobStatus(jobId: string): Promise<void> {
     try {
       const supabase = await createClient();
-      
+
       // Get candidate count for the job
       const { count } = await supabase
         .from('candidates')
@@ -676,7 +720,6 @@ class JobsService {
         .update({ status: newStatus })
         .eq('id', jobId)
         .eq('status', 'draft'); // Only update if currently draft
-
     } catch (error) {
       console.error('Error auto-updating job status:', error);
       // Don't throw error as this is a background operation
@@ -687,7 +730,7 @@ class JobsService {
   async getJobByInterviewToken(interviewToken: string): Promise<JobData | null> {
     try {
       const supabase = await createClient();
-      
+
       const { data: job, error } = await supabase
         .from('jobs')
         .select('*')
@@ -719,4 +762,4 @@ class JobsService {
 }
 
 // Export a singleton instance
-export const jobsService = new JobsService(); 
+export const jobsService = new JobsService();

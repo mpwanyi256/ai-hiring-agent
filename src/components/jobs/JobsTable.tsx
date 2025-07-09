@@ -3,8 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
-import { JobData } from '@/lib/services/jobsService';
-import { JobStatus } from '@/lib/supabase';
 import {
   EyeIcon,
   LinkIcon,
@@ -12,14 +10,19 @@ import {
   CalendarIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
+import { useAppSelector } from '@/store';
+import { selectCompanyJobs } from '@/store/jobs/jobsSelectors';
+import { CompanyJobs, JobField } from '@/types';
+import { getJobStatusColor } from '@/lib/utils';
 
 interface JobsTableProps {
-  jobs: JobData[];
-  onCopyLink: (job: JobData) => void;
+  onCopyLink: (job: CompanyJobs) => void;
   isLoading?: boolean;
 }
 
-export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProps) {
+export default function JobsTable({ onCopyLink, isLoading }: JobsTableProps) {
+  const { jobs } = useAppSelector(selectCompanyJobs);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -28,33 +31,7 @@ export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProp
     });
   };
 
-  const getStatusColor = (status: JobStatus) => {
-    switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-700';
-      case 'interviewing':
-        return 'bg-blue-100 text-blue-700';
-      case 'closed':
-        return 'bg-green-100 text-green-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getStatusLabel = (status: JobStatus) => {
-    switch (status) {
-      case 'draft':
-        return 'Draft';
-      case 'interviewing':
-        return 'Active';
-      case 'closed':
-        return 'Closed';
-      default:
-        return 'Unknown';
-    }
-  };
-
-  if (isLoading) {
+  if (isLoading && jobs.length === 0) {
     return (
       <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
         <div className="p-8 text-center">
@@ -116,17 +93,17 @@ export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProp
                     </Link>
                     {job.fields?.experienceLevel && (
                       <span className="text-xs text-gray-500 mt-0.5 capitalize">
-                        {job.fields.experienceLevel.replace(/([A-Z])/g, ' $1').trim()} Level
+                        {job.fields['experienceLevel']?.value}
                       </span>
                     )}
                     {job.fields?.skills && job.fields.skills.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {job.fields.skills.slice(0, 2).map((skill, index) => (
+                        {job.fields.skills.slice(0, 2).map((skill: JobField, index: number) => (
                           <span
                             key={index}
                             className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-primary/10 text-primary"
                           >
-                            {skill}
+                            {skill.value}
                           </span>
                         ))}
                         {job.fields.skills.length > 2 && (
@@ -142,14 +119,14 @@ export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProp
                 <td className="px-4 py-4">
                   <div className="flex flex-col space-y-1">
                     <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getJobStatusColor(job.status)}`}
                     >
-                      {getStatusLabel(job.status)}
+                      {job.status}
                     </span>
                     <span
-                      className={`text-xs ${job.isActive ? 'text-green-600' : 'text-gray-500'}`}
+                      className={`text-xs ${job.is_active ? 'text-green-600' : 'text-gray-500'}`}
                     >
-                      {job.isActive ? 'Active' : 'Inactive'}
+                      {job.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                 </td>
@@ -158,7 +135,7 @@ export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProp
                   <div className="flex items-center space-x-2">
                     <UserGroupIcon className="w-4 h-4 text-gray-400" />
                     <span className="text-sm font-medium text-gray-900">
-                      {job.candidateCount || 0}
+                      {job.candidate_count || 0}
                     </span>
                   </div>
                 </td>
@@ -166,13 +143,13 @@ export default function JobsTable({ jobs, onCopyLink, isLoading }: JobsTableProp
                 <td className="px-4 py-4">
                   <div className="flex items-center space-x-2">
                     <ClockIcon className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-500">{formatDate(job.createdAt)}</span>
+                    <span className="text-sm text-gray-500">{formatDate(job.created_at)}</span>
                   </div>
                 </td>
 
                 <td className="px-4 py-4">
                   <span className="text-sm text-gray-500 capitalize">
-                    {job.interviewFormat === 'text' ? 'Text' : 'Video'}
+                    {job.interview_format === 'text' ? 'Text' : 'Video'}
                   </span>
                 </td>
 
