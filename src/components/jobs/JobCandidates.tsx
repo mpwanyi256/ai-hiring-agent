@@ -8,7 +8,7 @@ import CandidateAnalytics from '@/components/evaluations/CandidateAnalytics';
 import CandidateResponses from '@/components/candidates/CandidateResponses';
 import { CurrentJob } from '@/types/jobs';
 import { AppDispatch, RootState } from '@/store';
-import { fetchJobCandidates, fetchAIEvaluation } from '@/store/candidates/candidatesThunks';
+import { fetchJobCandidates } from '@/store/candidates/candidatesThunks';
 import {
   UserCircleIcon,
   DocumentTextIcon,
@@ -22,8 +22,6 @@ import { CandidateDetailsHeader } from '../evaluations/CandidateDetailsHeader';
 import { CandidateStatus } from '@/types';
 import { formatFileSize } from '@/lib/utils';
 import AIEvaluationCard from '@/components/evaluations/AIEvaluationCard';
-import { Loader2 } from 'lucide-react';
-import { selectAIEvaluationCardData } from '@/store/candidates/candidatesSelectors';
 import {
   selectSelectedCandidate,
   selectSelectedCandidateId,
@@ -48,6 +46,8 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
   const selectedCandidateId = useSelector(selectSelectedCandidateId);
   const selectedCandidate = useSelector(selectSelectedCandidate);
 
+  console.log('selectedCandidateId', selectedCandidateId);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const [filters, setFilters] = useState({
@@ -59,8 +59,6 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     sortBy: 'created_at' as string,
     sortOrder: 'desc' as 'asc' | 'desc',
   });
-  const [isLoadingAIEval, setIsLoadingAIEval] = useState(false);
-  const [aiEvalError, setAIEvalError] = useState<string | null>(null);
 
   const handleFiltersChange = (newFilters: {
     minScore?: number;
@@ -110,27 +108,6 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
       console.error('Failed to download resume:', error);
     }
   };
-
-  useEffect(() => {
-    const fetchEval = async () => {
-      if (selectedCandidateId) {
-        setIsLoadingAIEval(true);
-        setAIEvalError(null);
-        try {
-          await dispatch(fetchAIEvaluation(selectedCandidateId)).unwrap();
-        } catch (err: unknown) {
-          setAIEvalError(err instanceof Error ? err.message : 'Failed to load AI evaluation');
-        } finally {
-          setIsLoadingAIEval(false);
-        }
-      }
-    };
-    fetchEval();
-  }, [selectedCandidateId, dispatch]);
-
-  const aiEvaluationCardData = useSelector((state: RootState) =>
-    selectedCandidateId ? selectAIEvaluationCardData(state, selectedCandidateId) : null,
-  );
 
   if (error) {
     return (
@@ -297,16 +274,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                             </div>
                           )}
                           {/* AI Evaluation Card below resume */}
-                          {isLoadingAIEval ? (
-                            <div className="bg-white border border-gray-200 rounded-lg p-4 h-32 flex items-center justify-center text-gray-500 text-sm mt-4">
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              Loading AI evaluation...
-                            </div>
-                          ) : aiEvalError ? (
-                            <div className="text-red-500 text-sm mt-4">{aiEvalError}</div>
-                          ) : aiEvaluationCardData ? (
-                            <AIEvaluationCard evaluation={aiEvaluationCardData} />
-                          ) : null}
+                          {selectedCandidate ? <AIEvaluationCard /> : null}
                         </div>
                       ) : (
                         <div className="text-sm text-gray-500 italic bg-gray-50 border border-gray-200 rounded-lg p-4">

@@ -24,7 +24,7 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { updateJobStatus, updateJob } from '@/store/jobs/jobsThunks';
 import { apiError, apiSuccess } from '@/lib/notification';
 import RichTextEditor from '../ui/RichTextEditor';
-import { inputTypes } from '@/lib/constants';
+import { app, inputTypes } from '@/lib/constants';
 import { selectSkillsData, selectSkillsLoading } from '@/store/skills/skillsSelectors';
 import { selectTraitsData, selectTraitsLoading } from '@/store/traits/traitsSelectors';
 import { fetchSkills } from '@/store/skills/skillsThunks';
@@ -124,7 +124,7 @@ export default function JobDetailsLayout({
       case 'draft':
         return 'Draft';
       case 'interviewing':
-        return 'Interviewing';
+        return 'Published';
       case 'closed':
         return 'Closed';
       default:
@@ -302,7 +302,7 @@ export default function JobDetailsLayout({
               Share
             </Button>
 
-            <Link href={job.interviewLink || `/interview/${job.interviewToken}`} target="_blank">
+            <Link href={`${app.baseUrl}/interview/${job.interviewToken}`} target="_blank">
               <Button size="sm" className="flex items-center text-sm">
                 <EyeIcon className="w-4 h-4 mr-1" />
                 Preview

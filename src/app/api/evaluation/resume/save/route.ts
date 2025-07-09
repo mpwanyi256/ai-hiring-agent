@@ -7,10 +7,14 @@ export async function POST(request: Request) {
     const { candidateId, jobId, resumeContent, resumeFilename, evaluation } = body;
 
     if (!candidateId || !jobId || !resumeContent || !resumeFilename || !evaluation) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Missing required fields: candidateId, jobId, resumeContent, resumeFilename, evaluation' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Missing required fields: candidateId, jobId, resumeContent, resumeFilename, evaluation',
+        },
+        { status: 400 },
+      );
     }
 
     const supabase = await createClient();
@@ -22,13 +26,16 @@ export async function POST(request: Request) {
       .eq('candidate_id', candidateId)
       .eq('job_id', jobId)
       .eq('evaluation_type', 'resume')
-      .single();
+      .maybeSingle();
 
     if (existingEvaluation) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Resume evaluation already exists for this candidate and job' 
-      }, { status: 409 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Resume evaluation already exists for this candidate and job',
+        },
+        { status: 409 },
+      );
     }
 
     // Save the evaluation
@@ -46,7 +53,7 @@ export async function POST(request: Request) {
       skills_assessment: {},
       traits_assessment: {},
       recommendation: evaluation.recommendation === 'proceed' ? 'yes' : 'no',
-      feedback: evaluation.feedback
+      feedback: evaluation.feedback,
     };
 
     const { data: savedEvaluation, error } = await supabase
@@ -78,19 +85,21 @@ export async function POST(request: Request) {
       recommendation: savedEvaluation.recommendation,
       feedback: savedEvaluation.feedback,
       createdAt: savedEvaluation.created_at,
-      updatedAt: savedEvaluation.updated_at
+      updatedAt: savedEvaluation.updated_at,
     };
 
     return NextResponse.json({
       success: true,
-      evaluation: transformedEvaluation
+      evaluation: transformedEvaluation,
     });
-
   } catch (error) {
     console.error('Error saving resume evaluation:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to save resume evaluation' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to save resume evaluation',
+      },
+      { status: 500 },
+    );
   }
-} 
+}

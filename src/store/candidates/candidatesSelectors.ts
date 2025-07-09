@@ -42,31 +42,6 @@ export const selectTopCandidates = createSelector([selectCandidatesByScore], (ca
   candidates.slice(0, 5),
 );
 
-export const selectCandidateStats = createSelector([selectCandidatesList], (candidates) => {
-  const submitted = candidates.filter((c) => c.submittedAt);
-  const evaluated = candidates.filter((c) => c.evaluation);
-  const pending = candidates.filter((c) => !c.submittedAt);
-  const completed = candidates.filter((c) => c.status === 'completed');
-
-  const scores = evaluated.map((c) => c.evaluation?.score || 0).filter((s) => s > 0);
-  const averageScore =
-    scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
-  const highScorers = evaluated.filter((c) => (c.evaluation?.score || 0) >= 80).length;
-
-  return {
-    total: candidates.length,
-    submitted: submitted.length,
-    pending: pending.length,
-    evaluated: evaluated.length,
-    unevaluated: submitted.length - evaluated.length,
-    averageScore: Math.round(averageScore * 10) / 10,
-    highScorers,
-    completed: completed.length,
-    conversionRate:
-      candidates.length > 0 ? Math.round((submitted.length / candidates.length) * 100) : 0,
-  };
-});
-
 export const selectCandidatesForJob = createSelector(
   [selectCandidatesList, (state: RootState, jobId: string) => jobId],
   (candidates, jobId) => candidates.filter((candidate) => candidate.jobId === jobId),

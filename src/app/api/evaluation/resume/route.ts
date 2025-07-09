@@ -8,10 +8,13 @@ export async function GET(request: Request) {
     const jobId = searchParams.get('jobId');
 
     if (!candidateId || !jobId) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'candidateId and jobId are required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'candidateId and jobId are required',
+        },
+        { status: 400 },
+      );
     }
 
     const supabase = await createClient();
@@ -23,17 +26,27 @@ export async function GET(request: Request) {
       .eq('candidate_id', candidateId)
       .eq('job_id', jobId)
       .eq('evaluation_type', 'resume')
-      .single();
+      .maybeSingle();
+
+    console.log('Evaluation found:', evaluation);
 
     if (error) {
+      console.log('Error fetching resume evaluation:', error);
       if (error.code === 'PGRST116') {
         // No evaluation found
-        return NextResponse.json({ 
-          success: true, 
-          evaluation: null 
+        return NextResponse.json({
+          success: true,
+          evaluation: null,
         });
       }
       throw error;
+    }
+
+    if (!evaluation) {
+      return NextResponse.json({
+        success: true,
+        evaluation: null,
+      });
     }
 
     // Transform the data to match the expected format
@@ -54,19 +67,21 @@ export async function GET(request: Request) {
       recommendation: evaluation.recommendation,
       feedback: evaluation.feedback,
       createdAt: evaluation.created_at,
-      updatedAt: evaluation.updated_at
+      updatedAt: evaluation.updated_at,
     };
 
     return NextResponse.json({
       success: true,
-      evaluation: transformedEvaluation
+      evaluation: transformedEvaluation,
     });
-
   } catch (error) {
     console.error('Error fetching resume evaluation:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to fetch resume evaluation' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch resume evaluation',
+      },
+      { status: 500 },
+    );
   }
-} 
+}

@@ -3,6 +3,7 @@ import { CandidateStatus, CandidateStatusOptions, CurrentJob, Job } from '@/type
 import { JobStatus } from './supabase';
 import { apiError, apiSuccess } from './notification';
 import { twMerge } from 'tailwind-merge';
+import { app } from './constants';
 
 // Utility function to merge classes with Tailwind
 export function cn(...inputs: ClassValue[]) {
@@ -266,7 +267,7 @@ export const getScoreColor = (score: number) => {
 export const shareJob = async (job: Job) => {
   try {
     if (!job) return;
-    const link = job.interviewLink || `${window.location.origin}/interview/${job.interviewToken}`;
+    const link = job.interviewLink || `${app.baseUrl}/interview/${job.interviewToken}`;
 
     if (navigator.share) {
       try {

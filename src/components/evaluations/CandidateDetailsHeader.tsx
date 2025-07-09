@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { apiSuccess, apiError } from '@/lib/notification';
-import { CandidateBasic, CandidateStatus } from '@/types';
+import { CandidateStatus } from '@/types';
 import {
   Select,
   SelectTrigger,
@@ -14,17 +14,7 @@ import { selectSelectedCandidate } from '@/store/selectedCandidate/selectedCandi
 const statusOptions: { value: CandidateStatus; label: string; color: string }[] = [
   { value: 'under_review', label: 'Under Review', color: 'bg-gray-100 text-gray-800' },
   { value: 'shortlisted', label: 'Shortlist Candidate', color: 'bg-green-100 text-green-800' },
-  // {
-  //   value: 'interview_scheduled',
-  //   label: 'Interview Scheduled',
-  //   color: 'bg-blue-100 text-blue-800',
-  // },
-  // { value: 'reference_check', label: 'Reference Check', color: 'bg-purple-100 text-purple-800' },
-  // { value: 'offer_extended', label: 'Offer Extended', color: 'bg-yellow-100 text-yellow-800' },
-  // { value: 'offer_accepted', label: 'Offer Accepted', color: 'bg-green-100 text-green-800' },
-  // { value: 'hired', label: 'Hired', color: 'bg-green-100 text-green-800' },
   { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-800' },
-  // { value: 'withdrawn', label: 'Withdrawn', color: 'bg-gray-100 text-gray-800' },
 ];
 
 export const CandidateDetailsHeader = () => {
@@ -89,7 +79,7 @@ export const CandidateDetailsHeader = () => {
           {/* Status Dropdown (shadcn/ui Select) */}
           <div className="bg-primary/20 rounded-lg p-2 min-w-[200px]">
             <Select
-              value={currentStatus}
+              value={candidate?.candidateStatus}
               onValueChange={(value) => handleStatusUpdate(value as CandidateStatus)}
               disabled={isUpdating}
             >
@@ -102,7 +92,7 @@ export const CandidateDetailsHeader = () => {
                     <span
                       className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${option.color}`}
                     >
-                      {option.label}
+                      {option.label}...
                     </span>
                   </SelectItem>
                 ))}
