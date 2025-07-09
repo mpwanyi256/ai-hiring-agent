@@ -2,38 +2,30 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/store';
+import { AppDispatch, RootState, useAppSelector } from '@/store';
 import { fetchCandidateResponses } from '@/store/candidates/candidatesThunks';
 import { ChatBubbleLeftRightIcon, ClockIcon, ChartBarIcon } from '@heroicons/react/24/outline';
-
-interface CandidateResponsesProps {
-  candidateId: string;
-  jobId: string;
-  candidateName: string;
-}
+import { selectSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSelectors';
 
 type TabType = 'responses' | 'analytics';
 
-export default function CandidateResponses({
-  candidateId,
-  jobId,
-  candidateName,
-}: CandidateResponsesProps) {
+export default function CandidateResponses() {
   const dispatch = useDispatch<AppDispatch>();
   const [activeTab, setActiveTab] = useState<TabType>('responses');
 
+  const candidate = useAppSelector(selectSelectedCandidate);
   const { candidateResponses } = useSelector((state: RootState) => state.candidates);
-  const candidateData = candidateResponses[candidateId];
+  const candidateData = candidate && candidateResponses[candidate.id];
 
   const isLoading = candidateData?.isLoading || false;
   const responses = candidateData?.responses || [];
   const error = candidateData?.error;
 
   useEffect(() => {
-    if (candidateId && jobId) {
-      dispatch(fetchCandidateResponses({ candidateId, jobId }));
+    if (candidate) {
+      dispatch(fetchCandidateResponses({ candidateId: candidate.id }));
     }
-  }, [dispatch, candidateId, jobId]);
+  }, [dispatch, candidate]);
 
   const formatResponseTime = (seconds: number) => {
     if (seconds < 60) return `${Math.round(seconds)}s`;
@@ -89,12 +81,16 @@ export default function CandidateResponses({
     );
   }
 
+  if (!candidate) {
+    return <div>Candidate not found</div>;
+  }
+
   return (
     <div className="bg-white rounded-lg border border-gray-200">
       {/* Header */}
       <div className="border-b border-gray-200 px-6 py-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          {candidateName}&apos;s Interview Data
+          {candidate.name}&apos;s Interview Data
         </h3>
         <p className="text-sm text-gray-600 mt-1">
           {responses.length} response{responses.length !== 1 ? 's' : ''} recorded

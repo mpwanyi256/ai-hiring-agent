@@ -17,6 +17,7 @@ import {
   ShortlistResponse,
 } from '@/types/candidates';
 import { APIResponse } from '@/types';
+import { RootState } from '..';
 
 // Async thunks for candidates using API routes
 export const fetchCandidatesByJob = createAsyncThunk(
@@ -213,11 +214,15 @@ export const generateAIEvaluation = createAsyncThunk(
 // New thunk for fetching candidate responses
 export const fetchCandidateResponses = createAsyncThunk(
   'candidates/fetchCandidateResponses',
-  async (params: { candidateId: string; jobId: string }) => {
+  async ({ candidateId }: { candidateId: string }, { getState }) => {
     try {
-      const { candidateId, jobId } = params;
+      const selectedCandidate = (getState() as RootState).selectedCandidate.candidate;
+      if (!selectedCandidate) {
+        throw new Error('No candidate selected');
+      }
+
       const response = await apiUtils.get<CandidateResponsesResponse>(
-        `/api/candidates/${candidateId}/responses?jobId=${jobId}`,
+        `/api/candidates/${candidateId}/responses?jobId=${selectedCandidate.jobId}`,
       );
       return {
         candidateId,
