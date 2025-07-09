@@ -60,9 +60,7 @@ export default function DashboardPage() {
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900 mb-1">
-              Welcome back, {user.firstName}! 👋
-            </h1>
+            <h1 className="text-xl font-bold text-gray-900 mb-1">Hi {user.firstName}</h1>
             <p className="text-sm text-gray-600">
               Here&apos;s what&apos;s happening with your hiring today
             </p>

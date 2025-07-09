@@ -514,7 +514,7 @@ export interface FetchCandidatesByJobIdPayload {
   search?: string;
   minScore?: number;
   maxScore?: number;
-  status?: CandidateStatus;
+  status?: CandidateStatusFilter;
   page?: number;
   limit?: number;
   startDate?: string;

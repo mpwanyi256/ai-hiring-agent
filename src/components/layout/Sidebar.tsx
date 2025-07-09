@@ -19,10 +19,9 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   PlusIcon,
-  EyeIcon,
   DocumentTextIcon,
   UserIcon,
-  BellIcon
+  BellIcon,
 } from '@heroicons/react/24/outline';
 
 interface ChildRoute {
@@ -48,18 +47,21 @@ interface SidebarProps {
   isMobile?: boolean;
 }
 
-export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile = false }: SidebarProps) {
+export default function Sidebar({
+  collapsed,
+  onToggleCollapse,
+  onClose,
+  isMobile = false,
+}: SidebarProps) {
   const pathname = usePathname();
   const { user } = useSelector((state: RootState) => state.auth);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (itemName: string) => {
     if (collapsed && !isMobile) return; // Don't expand in collapsed desktop mode
-    
-    setExpandedItems(prev => 
-      prev.includes(itemName) 
-        ? prev.filter(name => name !== itemName)
-        : [...prev, itemName]
+
+    setExpandedItems((prev) =>
+      prev.includes(itemName) ? prev.filter((name) => name !== itemName) : [...prev, itemName],
     );
   };
 
@@ -79,22 +81,25 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
       description: 'Manage job postings',
       badge: user?.usageCounts?.activeJobs || 0,
       children: [
-        { name: 'All Jobs', href: '/dashboard/jobs', icon: BriefcaseIcon, description: 'View all job postings' },
-        { name: 'Create Job', href: '/dashboard/jobs/new', icon: PlusIcon, description: 'Post a new job' },
-        { name: 'Templates', href: '/dashboard/jobs/templates', icon: DocumentTextIcon, description: 'Job templates' },
-      ]
-    },
-    {
-      name: 'Candidates',
-      href: '/dashboard/candidates',
-      icon: UserGroupIcon,
-      description: 'Review applications',
-      badge: 12, // TODO: Get from actual data
-      children: [
-        { name: 'All Candidates', href: '/dashboard/candidates', icon: UserGroupIcon, description: 'View all candidates' },
-        { name: 'Shortlisted', href: '/dashboard/candidates/shortlisted', icon: UserIcon, description: 'Top candidates' },
-        { name: 'In Review', href: '/dashboard/candidates/review', icon: EyeIcon, description: 'Pending review' },
-      ]
+        {
+          name: 'All Jobs',
+          href: '/dashboard/jobs',
+          icon: BriefcaseIcon,
+          description: 'View all job postings',
+        },
+        {
+          name: 'Create Job',
+          href: '/dashboard/jobs/new',
+          icon: PlusIcon,
+          description: 'Post a new job',
+        },
+        {
+          name: 'Templates',
+          href: '/dashboard/jobs/templates',
+          icon: DocumentTextIcon,
+          description: 'Job templates',
+        },
+      ],
     },
     {
       name: 'Reports',
@@ -102,10 +107,25 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
       icon: ChartBarIcon,
       description: 'Analytics and insights',
       children: [
-        { name: 'Performance', href: '/dashboard/reports/performance', icon: ChartBarIcon, description: 'Hiring metrics' },
-        { name: 'Candidate Analytics', href: '/dashboard/reports/candidates', icon: UserGroupIcon, description: 'Application insights' },
-        { name: 'Export Data', href: '/dashboard/reports/export', icon: DocumentTextIcon, description: 'Download reports' },
-      ]
+        {
+          name: 'Performance',
+          href: '/dashboard/reports/performance',
+          icon: ChartBarIcon,
+          description: 'Hiring metrics',
+        },
+        {
+          name: 'Candidate Analytics',
+          href: '/dashboard/reports/candidates',
+          icon: UserGroupIcon,
+          description: 'Application insights',
+        },
+        {
+          name: 'Export Data',
+          href: '/dashboard/reports/export',
+          icon: DocumentTextIcon,
+          description: 'Download reports',
+        },
+      ],
     },
     {
       name: 'History',
@@ -113,9 +133,19 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
       icon: ClockIcon,
       description: 'Interview records',
       children: [
-        { name: 'All Interviews', href: '/dashboard/history', icon: ClockIcon, description: 'Complete history' },
-        { name: 'Recent', href: '/dashboard/history/recent', icon: ClockIcon, description: 'Last 30 days' },
-      ]
+        {
+          name: 'All Interviews',
+          href: '/dashboard/history',
+          icon: ClockIcon,
+          description: 'Complete history',
+        },
+        {
+          name: 'Recent',
+          href: '/dashboard/history/recent',
+          icon: ClockIcon,
+          description: 'Last 30 days',
+        },
+      ],
     },
     {
       name: 'Billing',
@@ -123,11 +153,31 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
       icon: CreditCardIcon,
       description: 'Subscription and usage',
       children: [
-        { name: 'Current Plan', href: '/dashboard/billing', icon: CreditCardIcon, description: 'Plan details' },
-        { name: 'Usage', href: '/dashboard/billing/usage', icon: ChartBarIcon, description: 'Usage statistics' },
-        { name: 'Invoices', href: '/dashboard/billing/invoices', icon: DocumentTextIcon, description: 'Billing history' },
-        { name: 'Upgrade', href: '/dashboard/billing/upgrade', icon: SparklesIcon, description: 'Upgrade plan' },
-      ]
+        {
+          name: 'Current Plan',
+          href: '/dashboard/billing',
+          icon: CreditCardIcon,
+          description: 'Plan details',
+        },
+        {
+          name: 'Usage',
+          href: '/dashboard/billing/usage',
+          icon: ChartBarIcon,
+          description: 'Usage statistics',
+        },
+        {
+          name: 'Invoices',
+          href: '/dashboard/billing/invoices',
+          icon: DocumentTextIcon,
+          description: 'Billing history',
+        },
+        {
+          name: 'Upgrade',
+          href: '/dashboard/billing/upgrade',
+          icon: SparklesIcon,
+          description: 'Upgrade plan',
+        },
+      ],
     },
     {
       name: 'Settings',
@@ -135,11 +185,31 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
       icon: CogIcon,
       description: 'Account preferences',
       children: [
-        { name: 'Profile', href: '/dashboard/settings/profile', icon: UserIcon, description: 'Personal information' },
-        { name: 'Company', href: '/dashboard/settings/company', icon: BriefcaseIcon, description: 'Company details' },
-        { name: 'Notifications', href: '/dashboard/settings/notifications', icon: BellIcon, description: 'Email preferences' },
-        { name: 'API Keys', href: '/dashboard/settings/api', icon: CogIcon, description: 'Integration settings' },
-      ]
+        {
+          name: 'Profile',
+          href: '/dashboard/settings/profile',
+          icon: UserIcon,
+          description: 'Personal information',
+        },
+        {
+          name: 'Company',
+          href: '/dashboard/settings/company',
+          icon: BriefcaseIcon,
+          description: 'Company details',
+        },
+        {
+          name: 'Notifications',
+          href: '/dashboard/settings/notifications',
+          icon: BellIcon,
+          description: 'Email preferences',
+        },
+        {
+          name: 'API Keys',
+          href: '/dashboard/settings/api',
+          icon: CogIcon,
+          description: 'Integration settings',
+        },
+      ],
     },
   ];
 
@@ -151,22 +221,24 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
   };
 
   const hasActiveChild = (item: NavigationItem) => {
-    return item.children?.some(child => isActive(child.href)) || false;
+    return item.children?.some((child) => isActive(child.href)) || false;
   };
 
   // Auto-expand items with active children
   React.useEffect(() => {
-    navigation.forEach(item => {
+    navigation.forEach((item) => {
       if (hasActiveChild(item) && !isExpanded(item.name)) {
-        setExpandedItems(prev => [...prev, item.name]);
+        setExpandedItems((prev) => [...prev, item.name]);
       }
     });
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className={`bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-200 shadow-none ${
-      collapsed && !isMobile ? 'w-20' : 'w-64'
-    }`}>
+    <div
+      className={`bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-200 shadow-none ${
+        collapsed && !isMobile ? 'w-20' : 'w-64'
+      }`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
         {(!collapsed || isMobile) && (
@@ -218,18 +290,22 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
                     collapsed && !isMobile ? 'justify-center' : ''
                   }`}
                 >
-                  <item.icon className={`flex-shrink-0 ${
-                    collapsed && !isMobile ? 'w-6 h-6' : 'w-5 h-5'
-                  } ${isItemActive || hasActiveChildren ? 'text-primary' : 'text-gray-400'}`} />
+                  <item.icon
+                    className={`flex-shrink-0 ${
+                      collapsed && !isMobile ? 'w-6 h-6' : 'w-5 h-5'
+                    } ${isItemActive || hasActiveChildren ? 'text-primary' : 'text-gray-400'}`}
+                  />
                   {(!collapsed || isMobile) && (
                     <>
                       <span className="ml-3 font-medium text-sm truncate">{item.name}</span>
                       {item.badge !== undefined && item.badge > 0 && (
-                        <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                          isItemActive || hasActiveChildren
-                            ? 'bg-primary text-white' 
-                            : 'bg-gray-100 text-gray-700'
-                        }`}>
+                        <span
+                          className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            isItemActive || hasActiveChildren
+                              ? 'bg-primary text-white'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}
+                        >
                           {item.badge}
                         </span>
                       )}
@@ -264,7 +340,9 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
                           : 'text-gray-500 hover:text-primary hover:bg-gray-50'
                       }`}
                     >
-                      {child.icon && <child.icon className="w-4 h-4 mr-2 flex-shrink-0 opacity-60" />}
+                      {child.icon && (
+                        <child.icon className="w-4 h-4 mr-2 flex-shrink-0 opacity-60" />
+                      )}
                       <span className="font-medium truncate text-xs">{child.name}</span>
                     </Link>
                   ))}
@@ -283,20 +361,26 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
               <UserIcon className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="font-semibold text-gray-900 text-xs">{user ? `${user.firstName} ${user.lastName}` : 'Admin User'}</div>
+              <div className="font-semibold text-gray-900 text-xs">
+                {user ? `${user.firstName} ${user.lastName}` : 'Admin User'}
+              </div>
               <div className="text-xs text-gray-400">{user?.subscription?.name || 'Free'} Plan</div>
             </div>
           </div>
           <div className="flex justify-between text-xs text-gray-600">
             <span>Active Jobs</span>
             <span className="font-medium text-gray-900">
-              {user.usageCounts.activeJobs}/{user.subscription.maxJobs === -1 ? '∞' : user.subscription.maxJobs}
+              {user.usageCounts.activeJobs}/
+              {user.subscription.maxJobs === -1 ? '∞' : user.subscription.maxJobs}
             </span>
           </div>
           <div className="flex justify-between text-xs text-gray-600 mt-1">
             <span>Interviews</span>
             <span className="font-medium text-gray-900">
-              {user.usageCounts.interviewsThisMonth}/{user.subscription.maxInterviewsPerMonth === -1 ? '∞' : user.subscription.maxInterviewsPerMonth}
+              {user.usageCounts.interviewsThisMonth}/
+              {user.subscription.maxInterviewsPerMonth === -1
+                ? '∞'
+                : user.subscription.maxInterviewsPerMonth}
             </span>
           </div>
         </div>
@@ -316,4 +400,4 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
       )}
     </div>
   );
-} 
+}
