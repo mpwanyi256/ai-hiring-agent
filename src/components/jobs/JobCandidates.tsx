@@ -55,7 +55,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     maxScore: undefined as number | undefined,
     startDate: undefined as string | undefined,
     endDate: undefined as string | undefined,
-    candidateStatus: undefined as string | undefined,
+    candidateStatus: 'under_review',
     sortBy: 'created_at' as string,
     sortOrder: 'desc' as 'asc' | 'desc',
   });

@@ -7,14 +7,13 @@ import QuestionManager from '@/components/questions/QuestionManager';
 import JobCandidates from '@/components/jobs/JobCandidates';
 import JobShortlisted from '@/components/jobs/JobShortlisted';
 import { useAppSelector, useAppDispatch } from '@/store';
-import { fetchJobById, fetchJobQuestions } from '@/store/jobs/jobsThunks';
+import { fetchJobById } from '@/store/jobs/jobsThunks';
 import { resetCurrentJob } from '@/store/jobs/jobsSlice';
 import { selectCurrentJob, selectJobsLoading, selectJobsError } from '@/store/jobs/jobsSelectors';
 import { shareJob } from '@/lib/utils';
 import { Loading } from '@/components/ui/Loading';
 import { DashboardError } from '../ui/DashboardError';
 import { useToast } from '../providers/ToastProvider';
-import { apiError } from '@/lib/notification';
 
 interface CurrentJobWrapperPageProps {
   params: Promise<{
@@ -45,18 +44,6 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
       dispatch(resetCurrentJob());
     };
   }, [resolvedParams.id, dispatch, showError]);
-
-  // Fetch questions when switching to Questions tab
-  useEffect(() => {
-    if (activeTab === 'questions' && job?.id) {
-      try {
-        dispatch(fetchJobQuestions(job.id));
-      } catch (err) {
-        showError(err instanceof Error ? err.message : 'Failed to fetch questions');
-        apiError('Failed to fetch questions');
-      }
-    }
-  }, [activeTab, job?.id, dispatch, showError]);
 
   if (isLoading) {
     return (
