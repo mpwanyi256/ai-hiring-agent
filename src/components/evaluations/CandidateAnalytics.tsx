@@ -15,46 +15,16 @@ import {
   TagIcon,
 } from '@heroicons/react/24/outline';
 import { Loading } from '../ui/Loading';
+import { AnalyticsData } from '@/types/analytics';
+import { useAppSelector } from '@/store';
+import { selectSelectedCandidateEvaluation } from '@/store/selectedCandidate/selectedCandidateSelectors';
+import { getInterviewScoreColor, getResumeScoreColor } from '@/lib/utils';
 
 interface CandidateAnalyticsProps {
   candidateId: string;
   candidateName?: string;
   jobId: string;
   className?: string;
-}
-
-interface AnalyticsData {
-  analytics: {
-    total_responses: number;
-    average_response_time_seconds: number;
-    completion_percentage: number;
-    overall_score: number;
-    resume_score: number;
-    interview_score: number;
-    ai_score: number;
-    time_spent_minutes: number;
-    engagement_level: string;
-    rank_in_job: number;
-    total_candidates_in_job: number;
-    percentile_rank: number;
-    total_questions: number;
-  };
-  response_analytics: Array<{
-    response_id: string;
-    response_length_words: number;
-    response_time_seconds: number;
-    response_quality_score: number;
-    sentiment_score?: number;
-    ai_score?: number;
-  }>;
-  comparative_data: {
-    total_candidates: number;
-    average_score: number;
-    top_percentile: number;
-    median_score: number;
-    completion_rate: number;
-    average_time_spent: number;
-  };
 }
 
 export default function CandidateAnalytics({
@@ -65,6 +35,7 @@ export default function CandidateAnalytics({
 }: CandidateAnalyticsProps) {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const candidateEvaluation = useAppSelector(selectSelectedCandidateEvaluation);
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -255,17 +226,17 @@ export default function CandidateAnalytics({
           {/* Resume Score */}
           <div className="text-center">
             <div className="flex items-center justify-center mb-2">
-              <DocumentTextIcon className="w-4 md:w-5 h-4 md:h-5 text-blue-500 mr-2" />
-              <span className="text-xs md:text-sm font-medium text-gray-700">Resume Match</span>
+              <CpuChipIcon className="w-4 md:w-5 h-4 md:h-5 text-blue-500 mr-2" />
+              <span className="text-xs md:text-sm font-medium text-gray-700">Interview Score</span>
             </div>
             <div
-              className={`text-2xl md:text-3xl font-bold ${getScoreColor(analytics.resume_score)}`}
+              className={`text-2xl md:text-3xl font-bold ${getResumeScoreColor(analytics.resume_score)}`}
             >
               {analytics.resume_score}%
             </div>
             <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2 mt-2">
               <div
-                className="bg-green-500 h-1.5 md:h-2 rounded-full"
+                className={`${getInterviewScoreColor(analytics.resume_score)} h-1.5 md:h-2 rounded-full`}
                 style={{ width: `${analytics.resume_score}%` }}
               />
             </div>
@@ -274,40 +245,23 @@ export default function CandidateAnalytics({
           {/* Interview Score */}
           <div className="text-center">
             <div className="flex items-center justify-center mb-2">
-              <CpuChipIcon className="w-4 md:w-5 h-4 md:h-5 text-green-500 mr-2" />
+              <DocumentTextIcon className="w-4 md:w-5 h-4 md:h-5 text-green-500 mr-2" />
               <span className="text-xs md:text-sm font-medium text-gray-700">
-                Interview Performance
+                Resume Match Score
               </span>
             </div>
             <div
-              className={`text-2xl md:text-3xl font-bold ${getScoreColor(analytics.interview_score)}`}
+              className={`text-2xl md:text-3xl font-bold ${getScoreColor(candidateEvaluation?.resumeScore || 0)}`}
             >
-              {analytics.interview_score}%
+              {candidateEvaluation?.resumeScore || 0}%
             </div>
             <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2 mt-2">
               <div
                 className="bg-green-500 h-1.5 md:h-2 rounded-full"
-                style={{ width: `${analytics.interview_score}%` }}
+                style={{ width: `${candidateEvaluation?.resumeScore || 0}%` }}
               />
             </div>
           </div>
-
-          {/* AI Score */}
-          {/* <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <StarIcon className="w-4 md:w-5 h-4 md:h-5 text-purple-500 mr-2" />
-              <span className="text-xs md:text-sm font-medium text-gray-700">AI Assessment</span>
-            </div>
-            <div className={`text-2xl md:text-3xl font-bold ${getScoreColor(analytics.ai_score)}`}>
-              {analytics.ai_score}%
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2 mt-2">
-              <div 
-                className="bg-purple-500 h-1.5 md:h-2 rounded-full"
-                style={{ width: `${analytics.ai_score}%` }}
-              />
-            </div>
-          </div> */}
         </div>
       </div>
 

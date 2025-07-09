@@ -24,7 +24,10 @@ import { formatFileSize } from '@/lib/utils';
 import AIEvaluationCard from '@/components/evaluations/AIEvaluationCard';
 import { Loader2 } from 'lucide-react';
 import { selectAIEvaluationCardData } from '@/store/candidates/candidatesSelectors';
-import { selectSelectedCandidateId } from '@/store/selectedCandidate/selectedCandidateSelectors';
+import {
+  selectSelectedCandidate,
+  selectSelectedCandidateId,
+} from '@/store/selectedCandidate/selectedCandidateSelectors';
 
 interface JobCandidatesProps {
   job: CurrentJob;
@@ -43,8 +46,8 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
   );
 
   const selectedCandidateId = useSelector(selectSelectedCandidateId);
+  const selectedCandidate = useSelector(selectSelectedCandidate);
 
-  // const [selectedCandidateId, setSelectedCandidateId] = useState<string>();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const [filters, setFilters] = useState({
@@ -87,11 +90,6 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
       );
     }
   }, [dispatch, job.id, searchQuery, filters]);
-
-  // Use candidates directly from state (no frontend filtering)
-  const selectedCandidate = selectedCandidateId
-    ? candidates.find((c) => c.id === selectedCandidateId)
-    : null;
 
   // Transform data for components
   const overviewData = {
@@ -295,11 +293,6 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                                 <span className="block text-md font-semibold text-primary mb-1">
                                   Resume Match Score
                                 </span>
-                                {selectedCandidate?.evaluation?.resumeSummary && (
-                                  <p className="text-xs text-gray-700 mt-1">
-                                    {selectedCandidate.evaluation.resumeSummary}
-                                  </p>
-                                )}
                               </div>
                             </div>
                           )}
