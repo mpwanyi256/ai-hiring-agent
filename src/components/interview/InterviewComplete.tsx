@@ -19,9 +19,6 @@ export default function InterviewComplete() {
   const interviewEvaluation = useAppSelector(selectCurrentInterviewEvaluation);
   const resumeEvaluation = useAppSelector(selectCurrentResumeEvaluation);
 
-  console.log('Interview Evaluation resumeScore', interviewEvaluation?.resumeScore);
-  console.log('Resume Evaluation score', resumeEvaluation?.score);
-
   // Update candidate progress to completed
   useEffect(() => {
     if (candidate?.id) {
@@ -39,7 +36,7 @@ export default function InterviewComplete() {
             }),
           });
         } catch (error) {
-          console.error('Error updating candidate progress:', error);
+          // Error updating candidate progress
         }
       };
 

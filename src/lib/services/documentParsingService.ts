@@ -18,10 +18,9 @@ class DocumentParsingService {
   // Main parsing method using LangChain document loaders
   async parseDocument(file: File): Promise<ParsedDocument> {
     const fileType = this.getFileType(file);
-    
-    try {
-      console.log(`Parsing ${fileType.toUpperCase()} file: ${file.name} (${file.size} bytes)`);
 
+    try {
+      // Parsing file
       let documents: Document[];
       let pages: number | undefined;
 
@@ -49,8 +48,8 @@ class DocumentParsingService {
       }
 
       // Combine all document text
-      const text = documents.map(doc => doc.pageContent).join('\n\n');
-      
+      const text = documents.map((doc) => doc.pageContent).join('\n\n');
+
       // Clean and validate the extracted text
       const cleanedText = this.cleanText(text);
       const wordCount = this.countWords(cleanedText);
@@ -58,12 +57,6 @@ class DocumentParsingService {
       if (!cleanedText || cleanedText.length < 10) {
         throw new Error(`Failed to extract meaningful text from ${fileType.toUpperCase()} file`);
       }
-
-      console.log(`Successfully parsed ${fileType.toUpperCase()} file:`, {
-        pages: pages || documents.length,
-        wordCount,
-        textLength: cleanedText.length
-      });
 
       return {
         text: cleanedText,
@@ -73,11 +66,38 @@ class DocumentParsingService {
           fileType: fileType.toUpperCase(),
           fileName: file.name,
           fileSize: file.size,
-        }
+        },
       };
-    } catch (error) {
-      console.error(`Error parsing ${fileType} file:`, error);
-      throw new Error(`Failed to parse ${fileType} file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } catch {
+      // LangChain PDF parsing error
+      // Fallback to basic extraction
+      try {
+        // Attempting fallback PDF text extraction...
+        const buffer = await file.arrayBuffer();
+        const decoder = new TextDecoder('utf-8');
+        const text = decoder.decode(buffer);
+        const extractedText = this.extractTextFromPDFString(text);
+        if (extractedText && extractedText.length > 10) {
+          return {
+            text: extractedText,
+            metadata: {
+              pages: 1,
+              wordCount: this.countWords(extractedText),
+              fileType: 'PDF',
+              fileName: file.name,
+              fileSize: file.size,
+            },
+          };
+        }
+      } catch {
+        // Fallback PDF extraction failed
+        throw new Error(
+          'Failed to parse PDF file. The file may be corrupted, password-protected, or in an unsupported format.',
+        );
+      }
+      throw new Error(
+        'Failed to parse PDF file. The file may be corrupted, password-protected, or in an unsupported format.',
+      );
     }
   }
 
@@ -85,62 +105,64 @@ class DocumentParsingService {
     try {
       // Convert File to Blob for LangChain PDFLoader
       const blob = new Blob([await file.arrayBuffer()], { type: 'application/pdf' });
-      
+
       // Use LangChain PDFLoader with blob
       const loader = new PDFLoader(blob, {
         splitPages: true, // Split into separate pages for better parsing
       });
-      
+
       const documents = await loader.load();
-      
+
       if (!documents || documents.length === 0) {
         throw new Error('No content extracted from PDF');
       }
-      
+
       return documents;
-    } catch (error) {
-      console.error('LangChain PDF parsing error:', error);
-      
+    } catch {
+      // LangChain PDF parsing error
       // Fallback to basic extraction
       try {
-        console.log('Attempting fallback PDF text extraction...');
+        // Attempting fallback PDF text extraction...
         const buffer = await file.arrayBuffer();
         const decoder = new TextDecoder('utf-8');
         const text = decoder.decode(buffer);
         const extractedText = this.extractTextFromPDFString(text);
-        
+
         if (extractedText && extractedText.length > 10) {
-          console.log('Fallback PDF extraction succeeded');
-          return [new Document({ 
-            pageContent: extractedText,
-            metadata: { source: file.name }
-          })];
+          return [
+            new Document({
+              pageContent: extractedText,
+              metadata: { source: file.name },
+            }),
+          ];
         }
-      } catch (fallbackError) {
-        console.error('Fallback PDF extraction failed:', fallbackError);
+      } catch {
+        // Fallback PDF extraction failed
       }
-      
-      throw new Error('Failed to parse PDF file. The file may be corrupted, password-protected, or in an unsupported format.');
+
+      throw new Error(
+        'Failed to parse PDF file. The file may be corrupted, password-protected, or in an unsupported format.',
+      );
     }
   }
 
   private async parseDocxWithLangChain(file: File): Promise<Document[]> {
     try {
       // Convert File to Blob for LangChain DocxLoader
-      const blob = new Blob([await file.arrayBuffer()], { 
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+      const blob = new Blob([await file.arrayBuffer()], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       });
-      
+
       const loader = new DocxLoader(blob);
       const documents = await loader.load();
-      
+
       if (!documents || documents.length === 0) {
         throw new Error('No content extracted from DOCX');
       }
-      
+
       return documents;
-    } catch (error) {
-      console.error('LangChain DOCX parsing error:', error);
+    } catch {
+      // LangChain DOCX parsing error
       throw new Error('Failed to parse DOCX file. The file may be corrupted.');
     }
   }
@@ -151,28 +173,30 @@ class DocumentParsingService {
       return await this.parseDocxWithLangChain(file);
     } catch {
       // Fallback to basic text extraction for older .doc files
-      console.log('DOCX parsing failed, attempting basic text extraction for .doc file');
-      
       try {
         const buffer = await file.arrayBuffer();
         const decoder = new TextDecoder('utf-8');
         let text = decoder.decode(buffer);
-        
+
         // Basic cleanup for .doc files
         text = text.replace(/[^\x20-\x7E\n\r\t]/g, ' ');
         text = this.cleanText(text);
-        
+
         if (text.length < 10) {
           throw new Error('Insufficient text content extracted');
         }
-        
-        return [new Document({ 
-          pageContent: text,
-          metadata: { source: file.name }
-        })];
-      } catch (fallbackError) {
-        console.error('Fallback .doc parsing failed:', fallbackError);
-        throw new Error('Failed to parse DOC file. Please convert to DOCX format for better compatibility.');
+
+        return [
+          new Document({
+            pageContent: text,
+            metadata: { source: file.name },
+          }),
+        ];
+      } catch {
+        // Fallback .doc parsing failed
+        throw new Error(
+          'Failed to parse DOC file. Please convert to DOCX format for better compatibility.',
+        );
       }
     }
   }
@@ -181,30 +205,32 @@ class DocumentParsingService {
     try {
       // Convert File to Blob for LangChain TextLoader
       const blob = new Blob([await file.arrayBuffer()], { type: 'text/plain' });
-      
+
       const loader = new TextLoader(blob);
       const documents = await loader.load();
-      
+
       if (!documents || documents.length === 0) {
         throw new Error('No content extracted from text file');
       }
-      
+
       return documents;
-    } catch (error) {
-      console.error('LangChain text parsing error:', error);
-      
+    } catch {
+      // LangChain text parsing error
+
       // Fallback to direct text decoding
       try {
         const buffer = await file.arrayBuffer();
         const decoder = new TextDecoder('utf-8');
         const text = decoder.decode(buffer);
-        
-        return [new Document({ 
-          pageContent: text,
-          metadata: { source: file.name }
-        })];
-      } catch (fallbackError) {
-        console.error('Fallback text parsing failed:', fallbackError);
+
+        return [
+          new Document({
+            pageContent: text,
+            metadata: { source: file.name },
+          }),
+        ];
+      } catch {
+        // Fallback text parsing failed
         throw new Error('Failed to parse text file. The file encoding may not be supported.');
       }
     }
@@ -216,13 +242,13 @@ class DocumentParsingService {
     const textMatches = pdfString.match(/\((.*?)\)/g);
     if (textMatches) {
       return textMatches
-        .map(match => match.slice(1, -1))
+        .map((match) => match.slice(1, -1))
         .join(' ')
         .replace(/\\[a-z]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
     }
-    
+
     // If no text matches found, try to extract readable characters
     return pdfString
       .replace(/[^\x20-\x7E]/g, ' ')
@@ -235,27 +261,26 @@ class DocumentParsingService {
       return '';
     }
 
-    return text
-      // Remove extra whitespace and normalize line breaks
-      .replace(/\r\n/g, '\n')
-      .replace(/\r/g, '\n')
-      .replace(/\t/g, ' ')
-      .replace(/\s+/g, ' ')
-      // Remove special characters that might interfere with processing
-      .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
-      // Trim and ensure we have actual content
-      .trim();
+    return (
+      text
+        // Remove extra whitespace and normalize line breaks
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/\t/g, ' ')
+        .replace(/\s+/g, ' ')
+        // Remove special characters that might interfere with processing
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
+        // Trim and ensure we have actual content
+        .trim()
+    );
   }
 
   private countWords(text: string): number {
     if (!text || typeof text !== 'string') {
       return 0;
     }
-    
-    return text
-      .split(/\s+/)
-      .filter(word => word.length > 0)
-      .length;
+
+    return text.split(/\s+/).filter((word) => word.length > 0).length;
   }
 
   private getFileType(file: File): string {
@@ -296,23 +321,23 @@ class DocumentParsingService {
       'application/pdf',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/msword',
-      'text/plain'
+      'text/plain',
     ];
-    
+
     const allowedExtensions = ['pdf', 'docx', 'doc', 'txt'];
     const extension = file.name.split('.').pop()?.toLowerCase();
 
     if (file.size > maxSize) {
       return {
         isValid: false,
-        error: 'File size exceeds 10MB limit'
+        error: 'File size exceeds 10MB limit',
       };
     }
 
     if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension || '')) {
       return {
         isValid: false,
-        error: 'Unsupported file type. Please upload PDF, DOC, DOCX, or TXT files.'
+        error: 'Unsupported file type. Please upload PDF, DOC, DOCX, or TXT files.',
       };
     }
 
@@ -326,27 +351,23 @@ class DocumentParsingService {
       throw new Error(validation.error);
     }
 
-    console.log(`Starting resume parsing for: ${file.name}`);
     const parsedDoc = await this.parseDocument(file);
-    
+
     // Ensure we have meaningful content
     if (!parsedDoc.text || parsedDoc.text.length < 50) {
-      throw new Error('The uploaded file appears to be empty or contains insufficient text content.');
+      throw new Error(
+        'The uploaded file appears to be empty or contains insufficient text content.',
+      );
     }
 
     if (parsedDoc.metadata.wordCount < 10) {
-      throw new Error('The resume appears to have very little content. Please ensure the file is readable.');
+      throw new Error(
+        'The resume appears to have very little content. Please ensure the file is readable.',
+      );
     }
-
-    console.log(`Successfully parsed ${parsedDoc.metadata.fileType} resume:`, {
-      fileName: parsedDoc.metadata.fileName,
-      wordCount: parsedDoc.metadata.wordCount,
-      pages: parsedDoc.metadata.pages,
-      textLength: parsedDoc.text.length
-    });
 
     return parsedDoc.text;
   }
 }
 
-export const documentParsingService = new DocumentParsingService(); 
+export const documentParsingService = new DocumentParsingService();

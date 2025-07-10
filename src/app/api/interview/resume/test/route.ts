@@ -4,8 +4,6 @@ import { JobData } from '@/lib/services/jobsService';
 
 export async function GET() {
   try {
-    console.log('Testing resume evaluation system...');
-
     // Mock job data for testing
     const mockJob = {
       id: 'test-job-id',
@@ -14,8 +12,9 @@ export async function GET() {
         skills: ['React', 'TypeScript', 'JavaScript', 'CSS'],
         experienceLevel: 'mid',
         traits: ['teamwork', 'problem-solving'],
-        jobDescription: 'We are looking for a skilled Frontend Developer with experience in React and TypeScript to join our team.'
-      }
+        jobDescription:
+          'We are looking for a skilled Frontend Developer with experience in React and TypeScript to join our team.',
+      },
     };
 
     // Mock resume content for testing
@@ -49,10 +48,8 @@ EDUCATION:
     const evaluation = await resumeService.evaluateResume(
       mockResumeContent,
       'test-resume.txt',
-      mockJob as JobData
+      mockJob as JobData,
     );
-
-    console.log('Resume evaluation test completed successfully');
 
     return NextResponse.json({
       success: true,
@@ -62,17 +59,16 @@ EDUCATION:
         mockJob: {
           title: mockJob.title,
           skills: mockJob.fields.skills,
-          experienceLevel: mockJob.fields.experienceLevel
+          experienceLevel: mockJob.fields.experienceLevel,
         },
-        resumeLength: mockResumeContent.length
-      }
+        resumeLength: mockResumeContent.length,
+      },
     });
   } catch (error) {
-    console.error('Resume evaluation test failed:', error);
     return NextResponse.json({
       success: false,
-      error: 'Resume evaluation test failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+      message: 'Resume evaluation failed. Please try again.',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
-} 
+}

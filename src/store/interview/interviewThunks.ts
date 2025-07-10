@@ -26,18 +26,12 @@ export const getCandidateDetails = createAsyncThunk(
     { jobToken, email, firstName, lastName }: createCandidateAccountPayload,
     { dispatch },
   ): Promise<CandidateBasic> => {
-    const { data, success } = await apiUtils.post<APIResponse<CandidateBasic>>(`/api/candidates`, {
+    const { data } = await apiUtils.post<APIResponse<CandidateBasic>>(`/api/candidates`, {
       jobToken,
       email,
       firstName,
       lastName,
     });
-
-    console.log('Candidate data returned', data);
-
-    if (!success) {
-      throw new Error('Failed to create candidate account');
-    }
 
     // get candidate evaluation
     await dispatch(

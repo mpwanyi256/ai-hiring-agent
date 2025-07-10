@@ -55,7 +55,7 @@ const candidatesSlice = createSlice({
       state.currentCandidate = null;
     },
     addResponse: () => {
-      console.log('addResponse');
+      // addResponse reducer
     },
     clearCandidatesData: (state) => {
       state.candidates = [];

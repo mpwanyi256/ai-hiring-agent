@@ -30,8 +30,6 @@ export default function InterviewPage({ params }: InterviewPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  console.log('Candidate dat', candidate);
-
   const renderStep = () => {
     switch (interviewStep) {
       case 1:

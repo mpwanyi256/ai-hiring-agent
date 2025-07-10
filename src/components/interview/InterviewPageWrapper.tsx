@@ -17,7 +17,6 @@ type InterviewStep = 'intro' | 'info' | 'resume' | 'interview' | 'complete';
 
 export default function InterviewPage() {
   const pageParams = useParams<pageParams>();
-  console.log(pageParams);
   const [job, setJob] = useState<JobData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +39,6 @@ export default function InterviewPage() {
 
         setJob(data.job);
       } catch (err) {
-        console.error('Error fetching job:', err);
         setError('Failed to load interview');
       } finally {
         setIsLoading(false);

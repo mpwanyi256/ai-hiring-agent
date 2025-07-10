@@ -13,6 +13,7 @@ import {
   selectUploadProgress,
 } from '@/store/evaluation/evaluationSelectors';
 import { AppDispatch } from '@/store';
+import { apiError } from '@/lib/notification';
 
 interface UseResumeEvaluationProps {
   jobToken: string;
@@ -55,10 +56,8 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
         if (result) {
           setExistingEvaluation(result);
         } else {
-          setExistingEvaluation(undefined);
+          setExistingEvaluation(null);
         }
-      } catch (err) {
-        // Don't show error to user for this check
       } finally {
         setIsCheckingExisting(false);
       }
@@ -88,7 +87,7 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
     }
 
     try {
-      const result = await dispatch(
+      dispatch(
         evaluateResume({
           resumeFile: selectedFile,
           jobToken,
@@ -99,9 +98,9 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
             lastName: candidateInfo.lastName,
           },
         }),
-      ).unwrap();
+      );
     } catch (err) {
-      // Error handled elsewhere
+      apiError(err as string);
     }
   };
 

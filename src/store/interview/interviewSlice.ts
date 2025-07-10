@@ -32,11 +32,9 @@ const interviewSlice = createSlice({
         state.isLoading = false;
 
         if (state.interviewStep < 5 && payload.currentStep !== state.interviewStep) {
-          console.log('Interview step updated here...');
           // state.interviewStep = payload.currentStep;
         } else if (payload.isCompleted && state.interviewStep < 5) {
           state.interviewStep = 5;
-          console.log('Interview step updated to 5 here...');
         }
       })
       .addCase(getCandidateDetails.rejected, (state, action) => {

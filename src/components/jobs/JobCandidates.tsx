@@ -60,8 +60,6 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
   const selectedCandidateId = useSelector(selectSelectedCandidateId);
   const selectedCandidate = useSelector(selectSelectedCandidate);
 
-  console.log('selectedCandidateId', selectedCandidateId);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const [filters, setFilters] = useState({

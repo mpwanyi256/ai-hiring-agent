@@ -12,7 +12,7 @@ import {
   CheckCircleIcon,
   ClockIcon,
   UserIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 import { selectCandidate } from '@/store/interview/interviewSelectors';
 import Image from 'next/image';
@@ -31,12 +31,12 @@ interface Response {
   timeSpent: number; // in seconds
 }
 
-export default function InterviewFlow({ 
-  jobToken, 
+export default function InterviewFlow({
+  jobToken,
   job,
-  resumeEvaluation, 
-  resumeContent, 
-  onComplete 
+  resumeEvaluation,
+  resumeContent,
+  onComplete,
 }: InterviewFlowProps) {
   const [questions, setQuestions] = useState<JobQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -73,10 +73,7 @@ export default function InterviewFlow({
         setQuestions(data.questions);
         setStartTime(new Date());
         setQuestionStartTime(new Date());
-
-        console.log(`Loaded ${data.questions.length} questions for interview`);
       } catch (err) {
-        console.error('Error fetching questions:', err);
         setError(err instanceof Error ? err.message : 'Failed to load interview questions');
       } finally {
         setIsLoading(false);
@@ -122,7 +119,7 @@ export default function InterviewFlow({
         questionId: currentQuestion.id,
         question: currentQuestion.questionText,
         answer: currentAnswer.trim(),
-        responseTime: timeSpent
+        responseTime: timeSpent,
       };
 
       const saveResponse = await fetch('/api/interview/response', {
@@ -143,16 +140,16 @@ export default function InterviewFlow({
       const response: Response = {
         questionId: currentQuestion.id,
         answer: currentAnswer.trim(),
-        timeSpent
+        timeSpent,
       };
 
-      setResponses(prev => [...prev, response]);
+      setResponses((prev) => [...prev, response]);
 
       if (isLastQuestion) {
         await handleInterviewComplete();
       } else {
         // Move to next question
-        setCurrentQuestionIndex(prev => prev + 1);
+        setCurrentQuestionIndex((prev) => prev + 1);
         setCurrentAnswer('');
         setQuestionStartTime(new Date());
       }
@@ -166,10 +163,12 @@ export default function InterviewFlow({
 
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
-      
+      setCurrentQuestionIndex((prev) => prev - 1);
+
       // Load previous answer
-      const previousResponse = responses.find(r => r.questionId === questions[currentQuestionIndex - 1].id);
+      const previousResponse = responses.find(
+        (r) => r.questionId === questions[currentQuestionIndex - 1].id,
+      );
       setCurrentAnswer(previousResponse?.answer || '');
       setQuestionStartTime(new Date());
     }
@@ -197,7 +196,7 @@ export default function InterviewFlow({
           },
           resumeEvaluation: resumeEvaluation || null,
           resumeContent,
-          totalTimeSpent: Math.round((new Date().getTime() - (startTime?.getTime() || 0)) / 1000)
+          totalTimeSpent: Math.round((new Date().getTime() - (startTime?.getTime() || 0)) / 1000),
         }),
       });
 
@@ -226,12 +225,18 @@ export default function InterviewFlow({
   // Get category color
   const getCategoryColor = (type: string): string => {
     switch (type) {
-      case 'general': return 'bg-blue-100 text-blue-800';
-      case 'technical': return 'bg-green-100 text-green-800';
-      case 'behavioral': return 'bg-purple-100 text-purple-800';
-      case 'experience': return 'bg-orange-100 text-orange-800';
-      case 'custom': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'general':
+        return 'bg-blue-100 text-blue-800';
+      case 'technical':
+        return 'bg-green-100 text-green-800';
+      case 'behavioral':
+        return 'bg-purple-100 text-purple-800';
+      case 'experience':
+        return 'bg-orange-100 text-orange-800';
+      case 'custom':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -241,9 +246,7 @@ export default function InterviewFlow({
         <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
           <h2 className="text-xl font-bold text-text mb-2">Loading Interview Questions</h2>
-          <p className="text-muted-text">
-            Fetching your personalized interview questions...
-          </p>
+          <p className="text-muted-text">Fetching your personalized interview questions...</p>
         </div>
       </div>
     );
@@ -300,11 +303,13 @@ export default function InterviewFlow({
               </div>
               <div className="flex items-center">
                 <DocumentTextIcon className="w-4 h-4 mr-1" />
-                <span>{currentQuestionIndex + 1}/{questions.length}</span>
+                <span>
+                  {currentQuestionIndex + 1}/{questions.length}
+                </span>
               </div>
             </div>
           </div>
-          
+
           {/* Progress Bar */}
           <div className="mt-4">
             <div className="flex justify-between text-xs text-muted-text mb-1">
@@ -312,7 +317,7 @@ export default function InterviewFlow({
               <span>{Math.round(progress)}% Complete</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
+              <div
                 className="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               ></div>
@@ -328,11 +333,15 @@ export default function InterviewFlow({
           <div className="mb-8">
             <div className="flex items-start space-x-3 mb-4">
               <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                <span className="text-primary font-semibold text-sm">{currentQuestionIndex + 1}</span>
+                <span className="text-primary font-semibold text-sm">
+                  {currentQuestionIndex + 1}
+                </span>
               </div>
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-2">
-                  <span className={`px-3 py-1 rounded-lg text-xs font-medium ${getCategoryColor(currentQuestion.questionType)}`}>
+                  <span
+                    className={`px-3 py-1 rounded-lg text-xs font-medium ${getCategoryColor(currentQuestion.questionType)}`}
+                  >
                     {currentQuestion.category}
                   </span>
                   <span className="text-xs text-muted-text">
@@ -351,9 +360,7 @@ export default function InterviewFlow({
 
           {/* Answer Input */}
           <div className="mb-8">
-            <label className="block text-sm font-medium text-text mb-3">
-              Your Answer
-            </label>
+            <label className="block text-sm font-medium text-text mb-3">Your Answer</label>
             <textarea
               value={currentAnswer}
               onChange={(e) => setCurrentAnswer(e.target.value)}
@@ -365,10 +372,15 @@ export default function InterviewFlow({
               <p className="text-xs text-muted-text">
                 Tip: Be specific and provide examples when possible
               </p>
-              <span className={`text-xs ${
-                currentAnswer.length < 10 ? 'text-red-500' : 
-                currentAnswer.length < 50 ? 'text-yellow-600' : 'text-green-600'
-              }`}>
+              <span
+                className={`text-xs ${
+                  currentAnswer.length < 10
+                    ? 'text-red-500'
+                    : currentAnswer.length < 50
+                      ? 'text-yellow-600'
+                      : 'text-green-600'
+                }`}
+              >
                 {currentAnswer.length} characters
               </span>
             </div>
