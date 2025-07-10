@@ -11,6 +11,9 @@ import {
   Skill,
   Trait,
   UpdateJobData,
+  Department,
+  JobTitle,
+  EmploymentType,
 } from '@/types';
 import { apiUtils } from '../api';
 import { RootState } from '..';
@@ -44,6 +47,18 @@ interface JobTemplateResponse {
 interface JobQuestionsResponse {
   questions: JobQuestion[];
   stats: QuestionStats;
+}
+
+interface DepartmentsResponse {
+  departments: Department[];
+}
+
+interface JobTitlesResponse {
+  jobTitles: JobTitle[];
+}
+
+interface EmploymentTypesResponse {
+  employmentTypes: EmploymentType[];
 }
 
 export const fetchJobsPaginated = createAsyncThunk<
@@ -327,3 +342,30 @@ export const updateJobQuestion = createAsyncThunk(
     }
   },
 );
+
+export const fetchDepartments = createAsyncThunk('jobs/fetchDepartments', async () => {
+  try {
+    const response = await apiUtils.get<DepartmentsResponse>('/api/departments');
+    return response.departments;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to fetch departments');
+  }
+});
+
+export const fetchJobTitles = createAsyncThunk('jobs/fetchJobTitles', async () => {
+  try {
+    const response = await apiUtils.get<JobTitlesResponse>('/api/job-titles');
+    return response.jobTitles;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to fetch job titles');
+  }
+});
+
+export const fetchEmploymentTypes = createAsyncThunk('jobs/fetchEmploymentTypes', async () => {
+  try {
+    const response = await apiUtils.get<EmploymentTypesResponse>('/api/employment-types');
+    return response.employmentTypes;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to fetch employment types');
+  }
+});
