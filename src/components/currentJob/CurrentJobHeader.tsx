@@ -9,7 +9,7 @@ import Link from 'next/link';
 import Button from '../ui/Button';
 import { copyInterviewLink } from '@/lib/utils';
 import { getJobStatusColor, getJobStatusLabel } from '@/lib/utils';
-import { JobStatus } from '@/lib/supabase';
+import { JobStatus } from '@/types/jobs';
 import { updateJobStatus } from '@/store/jobs/jobsThunks';
 import { useState } from 'react';
 import { useToast } from '../providers/ToastProvider';

@@ -108,7 +108,7 @@ const JobCreateStep2: React.FC<JobCreateStep2Props> = ({ form, onPrev, onNext, i
           Back
         </Button>
         <Button type="button" onClick={onNext} className="min-w-[120px]" disabled={isSubmitting}>
-          Next
+          Create job
         </Button>
       </div>
       {/* Write with AI Modal */}
