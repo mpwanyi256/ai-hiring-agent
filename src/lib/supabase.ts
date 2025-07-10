@@ -2008,19 +2008,45 @@ export type Database = {
           completed_interviews: number | null;
           created_at: string | null;
           creator_details: Json | null;
+          department_id: string | null;
+          employment_type_id: string | null;
           evaluation_count: number | null;
           fields: Json | null;
           id: string | null;
           interview_format: string | null;
           interview_token: string | null;
           is_active: boolean | null;
+          job_title_id: string | null;
+          job_type: Database['public']['Enums']['job_type'] | null;
           profile_id: string | null;
           response_count: number | null;
           status: Database['public']['Enums']['job_status'] | null;
           title: string | null;
           updated_at: string | null;
+          workplace_type: Database['public']['Enums']['workplace_type'] | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'jobs_department_id_fkey';
+            columns: ['department_id'];
+            isOneToOne: false;
+            referencedRelation: 'departments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'jobs_employment_type_id_fkey';
+            columns: ['employment_type_id'];
+            isOneToOne: false;
+            referencedRelation: 'employment_types';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'jobs_job_title_id_fkey';
+            columns: ['job_title_id'];
+            isOneToOne: false;
+            referencedRelation: 'job_titles';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'jobs_profile_id_fkey';
             columns: ['profile_id'];

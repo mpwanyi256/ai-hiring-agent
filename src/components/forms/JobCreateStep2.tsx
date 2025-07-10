@@ -103,6 +103,26 @@ const JobCreateStep2: React.FC<JobCreateStep2Props> = ({ form, onPrev, onNext, i
           {form.watch('jobDescription')?.length || 0}/10,000
         </div>
       </div>
+      {/* Save as Template Option */}
+      <div className="mb-4 flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="saveAsTemplate"
+          {...form.register('saveAsTemplate')}
+          className="mr-2"
+        />
+        <label htmlFor="saveAsTemplate" className="text-sm">
+          Save as template
+        </label>
+        {form.watch('saveAsTemplate') && (
+          <input
+            type="text"
+            placeholder="Template name"
+            {...form.register('templateName')}
+            className="ml-2 px-2 py-1 border rounded text-sm"
+          />
+        )}
+      </div>
       <div className="flex justify-between mt-8">
         <Button type="button" onClick={onPrev} className="min-w-[120px]">
           Back

@@ -4,8 +4,8 @@ import { Database } from '@/lib/supabase';
 import { app } from '@/lib/constants';
 import { GetCompanyJobsPayload, GetCompanyJobsResponse, JobStatus } from '@/types/jobs';
 
-type JobRow = Database['public']['Tables']['jobs']['Row'];
 type JobInsert = Database['public']['Tables']['jobs']['Insert'];
+type JobComprehensiveRow = Database['public']['Views']['jobs_comprehensive']['Row'];
 
 export interface JobFieldsConfig {
   [key: string]: any;
@@ -35,6 +35,9 @@ export interface JobData {
   employmentTypeId: string;
   workplaceType: string;
   jobType: string;
+  companyName?: string;
+  companyLogo?: string;
+  companySlug?: string;
 }
 
 // Company stats interface matching the database view
@@ -191,11 +194,11 @@ function dbToSimplifiedFields(dbFields: JobFieldsConfig): JobData['fields'] {
 }
 
 // Utility functions to transform between database and API formats
-function transformJobFromDB(dbJob: JobRow): JobData {
+function transformJobFromDB(dbJob: JobComprehensiveRow): JobData {
   return {
-    id: dbJob.id,
-    profileId: dbJob.profile_id,
-    title: dbJob.title,
+    id: dbJob.id || '',
+    profileId: dbJob.profile_id || '',
+    title: dbJob.title || '',
     fields: dbToSimplifiedFields(dbJob.fields as JobFieldsConfig),
     interviewFormat: dbJob.interview_format as 'text' | 'video',
     interviewToken: dbJob.interview_token || '',
@@ -209,6 +212,9 @@ function transformJobFromDB(dbJob: JobRow): JobData {
     employmentTypeId: dbJob.employment_type_id || '',
     workplaceType: dbJob.workplace_type || '',
     jobType: dbJob.job_type || '',
+    companyName: dbJob.company_name || '',
+    companyLogo: '',
+    companySlug: dbJob.company_slug || '',
   };
 }
 
@@ -662,11 +668,13 @@ class JobsService {
   async getJobByToken(token: string): Promise<JobData | null> {
     try {
       const supabase = await createClient();
-      const { data: job, error } = await supabase
-        .from('jobs')
+
+      const { data: job, error } = (await supabase
+        .from('jobs_comprehensive')
         .select('*')
         .eq('interview_token', token)
-        .single();
+        .eq('status', 'interviewing')
+        .maybeSingle()) as unknown as { data: JobComprehensiveRow | null; error: any | null };
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -675,11 +683,15 @@ class JobsService {
         throw new Error(error.message);
       }
 
-      const transformed = transformJobFromDB(job);
+      if (!job) {
+        return null;
+      }
+
+      const transformed = transformJobFromDB(job as JobComprehensiveRow);
       const jobWithLink = this.addInterviewLink(transformed);
 
       // Add candidate count
-      jobWithLink.candidateCount = await this.getCandidateCount(job.id);
+      jobWithLink.candidateCount = await this.getCandidateCount(job.id || '');
 
       return jobWithLink;
     } catch (error) {

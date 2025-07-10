@@ -3,7 +3,7 @@ import { jobsService } from '@/lib/services/jobsService';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: Promise<{ token: string }> },
 ) {
   try {
     const { token } = await params;
@@ -14,7 +14,7 @@ export async function GET(
           success: false,
           error: 'Interview token is required',
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -27,7 +27,7 @@ export async function GET(
           success: false,
           error: 'Interview not found or expired',
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -36,11 +36,12 @@ export async function GET(
       return NextResponse.json(
         {
           success: false,
-          error: job.status === 'draft' 
-            ? 'This interview is not yet available. Please check back later.'
-            : 'This interview has been closed and is no longer accepting candidates.',
+          error:
+            job.status === 'draft'
+              ? 'This interview is not yet available. Please check back later.'
+              : 'This interview has been closed and is no longer accepting candidates.',
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -51,7 +52,7 @@ export async function GET(
           success: false,
           error: 'This interview is currently inactive',
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -65,8 +66,10 @@ export async function GET(
       isActive: job.isActive,
       status: job.status,
       candidateCount: job.candidateCount,
-      // Remove sensitive information
-      profileId: undefined, // Don't expose profile ID
+      profileId: job.profileId,
+      companyName: job.companyName,
+      companyLogo: job.companyLogo,
+      companySlug: job.companySlug,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
     };
@@ -82,7 +85,7 @@ export async function GET(
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch interview',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}
