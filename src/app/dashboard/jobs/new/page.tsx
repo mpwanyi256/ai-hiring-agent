@@ -29,7 +29,6 @@ import {
   ExclamationTriangleIcon,
   ChevronDownIcon,
   BookmarkIcon,
-  LinkIcon,
 } from '@heroicons/react/24/outline';
 import { experienceLevels, inputTypes } from '@/lib/constants';
 
@@ -78,7 +77,6 @@ export default function NewJobPage() {
   const [traitDropdownOpen, setTraitDropdownOpen] = useState(false);
   const [skillSearch, setSkillSearch] = useState('');
   const [traitSearch, setTraitSearch] = useState('');
-  const [isCrawlingUrl, setIsCrawlingUrl] = useState(false);
 
   // Form setup
   const form = useForm<JobFormData>({
@@ -245,51 +243,6 @@ export default function NewJobPage() {
     }
 
     success(`Template "${template.name}" loaded successfully!`);
-  };
-
-  // Handle URL crawling
-  const crawlJobDescription = async () => {
-    const url = form.getValues('jobDescriptionUrl');
-    if (!url) {
-      showError('Please enter a valid URL');
-      return;
-    }
-
-    setIsCrawlingUrl(true);
-    info('Importing job description from URL...');
-
-    try {
-      // Simulate API call - replace with actual crawling service
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Mock crawled content
-      const mockDescription = `We are seeking a talented ${form.getValues('title') || 'professional'} to join our growing team. 
-
-**Key Responsibilities:**
-• Develop and maintain high-quality software solutions
-• Collaborate with cross-functional teams to deliver exceptional results
-• Participate in code reviews and maintain coding standards
-• Contribute to technical discussions and architectural decisions
-
-**Requirements:**
-• Strong technical skills and problem-solving abilities
-• Excellent communication and collaboration skills
-• Experience with modern development practices
-• Passion for continuous learning and improvement
-
-**What We Offer:**
-• Competitive salary and benefits package
-• Flexible working arrangements
-• Professional development opportunities
-• Collaborative and innovative work environment`;
-
-      form.setValue('jobDescription', mockDescription);
-      success('Job description successfully imported from URL!');
-    } catch {
-      showError('Failed to import job description. Please try again or enter manually.');
-    } finally {
-      setIsCrawlingUrl(false);
-    }
   };
 
   // Save template function
@@ -568,42 +521,6 @@ export default function NewJobPage() {
             <h2 className="text-lg font-semibold text-text mb-6">Job Description</h2>
 
             <div className="space-y-4">
-              {/* URL Input for Crawling */}
-              <div>
-                <label
-                  htmlFor="jobDescriptionUrl"
-                  className="block text-sm font-medium text-text mb-2"
-                >
-                  Import from Job URL (Optional)
-                </label>
-                <div className="flex space-x-2">
-                  <input
-                    {...form.register('jobDescriptionUrl')}
-                    type="url"
-                    id="jobDescriptionUrl"
-                    placeholder="https://company.com/careers/job-posting"
-                    className="flex-1 px-4 py-3 border border-gray-light rounded-lg text-text placeholder-muted-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={crawlJobDescription}
-                    disabled={isCrawlingUrl || !form.watch('jobDescriptionUrl')}
-                    isLoading={isCrawlingUrl}
-                    className="flex items-center px-6"
-                  >
-                    <LinkIcon className="w-4 h-4 mr-2" />
-                    {isCrawlingUrl ? 'Importing...' : 'Import'}
-                  </Button>
-                </div>
-                {form.formState.errors.jobDescriptionUrl && (
-                  <p className="text-accent-red text-sm mt-1">
-                    {form.formState.errors.jobDescriptionUrl.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Job Description Text Area */}
               <div>
                 <label
                   htmlFor="jobDescription"
