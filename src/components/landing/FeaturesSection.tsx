@@ -104,8 +104,6 @@ export default function FeaturesSection() {
             </svg>
           </div>
         </div>
-
-        <div>Don&apos;t see what you&apos;re looking for? Here&apos;s what you can do:</div>
       </Container>
     </section>
   );
