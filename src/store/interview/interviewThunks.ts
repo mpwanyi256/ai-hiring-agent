@@ -24,7 +24,7 @@ export const getCandidateDetails = createAsyncThunk(
   'interview/getCandidateDetails',
   async (
     { jobToken, email, firstName, lastName }: createCandidateAccountPayload,
-    { dispatch },
+    // { dispatch },
   ): Promise<CandidateBasic> => {
     const { data } = await apiUtils.post<APIResponse<CandidateBasic>>(`/api/candidates`, {
       jobToken,
@@ -34,12 +34,12 @@ export const getCandidateDetails = createAsyncThunk(
     });
 
     // get candidate evaluation
-    await dispatch(
-      getResumeEvaluation({
-        candidateId: data.id,
-        jobId: data.jobId,
-      }),
-    );
+    // await dispatch(
+    //   getResumeEvaluation({
+    //     candidateId: data.id,
+    //     jobId: data.jobId,
+    //   }),
+    // );
 
     return data;
   },

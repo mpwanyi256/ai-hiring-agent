@@ -302,7 +302,7 @@ export default function JobDetailsLayout({
               Share
             </Button>
 
-            <Link href={`${app.baseUrl}/interview/${job.interviewToken}`} target="_blank">
+            <Link href={`${app.baseUrl}/job/${job.interviewToken}`} target="_blank">
               <Button size="sm" className="flex items-center text-sm">
                 <EyeIcon className="w-4 h-4 mr-1" />
                 Preview

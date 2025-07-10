@@ -290,7 +290,7 @@ export default function InterviewFlow({
                 <UserIcon className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-text">{job.title} Interview</h1>
+                <h1 className="text-lg font-semibold text-text">{job.title}</h1>
                 <p className="text-sm text-muted-text">
                   Hi {candidate?.firstName}, let&apos;s get to know you better
                 </p>

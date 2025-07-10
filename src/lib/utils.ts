@@ -267,7 +267,7 @@ export const getScoreColor = (score: number) => {
 export const shareJob = async (job: Job) => {
   try {
     if (!job) return;
-    const link = job.interviewLink || `${app.baseUrl}/interview/${job.interviewToken}`;
+    const link = job.interviewLink || `${app.baseUrl}/job/${job.interviewToken}`;
 
     if (navigator.share) {
       try {

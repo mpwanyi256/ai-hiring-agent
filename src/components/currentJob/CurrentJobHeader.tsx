@@ -85,7 +85,7 @@ export const CurrentJobHeader: React.FC<CurrentJobHeaderProps> = ({ onSetActiveT
         <Button
           variant="outline"
           size="sm"
-          onClick={() => copyInterviewLink(`${app.baseUrl}/interview/${job.interviewToken}`)}
+          onClick={() => copyInterviewLink(`${app.baseUrl}/job/${job.interviewToken}`)}
           className="flex items-center"
         >
           <LinkIcon className="w-4 h-4 mr-1" />
@@ -138,7 +138,7 @@ export const CurrentJobHeader: React.FC<CurrentJobHeaderProps> = ({ onSetActiveT
           </Button>
         )}
         {job.status === 'interviewing' && (
-          <Link href={job.interviewLink || `/interview/${job.interviewToken}`} target="_blank">
+          <Link href={job.interviewLink || `/job/${job.interviewToken}`} target="_blank">
             <Button variant="outline" size="sm" className="flex items-center">
               <EyeIcon className="w-4 h-4 mr-1" />
               Test Interview

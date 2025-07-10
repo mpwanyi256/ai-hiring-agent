@@ -263,7 +263,7 @@ class JobsService {
   private addInterviewLink(job: JobData): JobData {
     return {
       ...job,
-      interviewLink: `${app.baseUrl}/interview/${job.interviewToken}`,
+      interviewLink: `${app.baseUrl}/job/${job.interviewToken}`,
     };
   }
 
@@ -342,7 +342,7 @@ class JobsService {
         createdAt: job.created_at,
         updatedAt: job.updated_at,
         fields: dbToSimplifiedFields(job.fields),
-        interviewLink: `${app.baseUrl}/interview/${job.interview_token}`,
+        interviewLink: `${app.baseUrl}/job/${job.interview_token}`,
       }));
     } catch (error) {
       console.error('Error fetching detailed jobs:', error);

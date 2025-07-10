@@ -1,5 +1,9 @@
 import { ChatOpenAI } from '@langchain/openai';
-import { ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate } from '@langchain/core/prompts';
+import {
+  ChatPromptTemplate,
+  SystemMessagePromptTemplate,
+  HumanMessagePromptTemplate,
+} from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { ai } from '@/lib/constants';
 import { JobQuestion } from '@/types/interview';
@@ -29,7 +33,9 @@ class AIQuestionService {
 
   constructor() {
     if (!ai.openaiApiKey) {
-      throw new Error('OpenAI API key is required. Please set OPENAI_API_KEY in your environment variables.');
+      throw new Error(
+        'OpenAI API key is required. Please set OPENAI_API_KEY in your environment variables.',
+      );
     }
 
     this.llm = new ChatOpenAI({
@@ -42,7 +48,9 @@ class AIQuestionService {
     this.outputParser = new StringOutputParser();
   }
 
-  async generateQuestions(params: AIQuestionParams): Promise<Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[]> {
+  async generateQuestions(
+    params: AIQuestionParams,
+  ): Promise<Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[]> {
     try {
       const systemPrompt = this.createSystemPrompt();
       const humanPrompt = this.createHumanPrompt(params);
@@ -53,23 +61,31 @@ class AIQuestionService {
       ]);
 
       const chain = prompt.pipe(this.llm).pipe(this.outputParser);
-      
+
       const response = await chain.invoke({
         jobTitle: params.jobTitle,
         jobDescription: params.jobDescription || 'No specific job description provided.',
-        skills: params.skills?.join(', ') || 'No specific skills listed',
-        experienceLevel: params.experienceLevel || 'Not specified',
-        traits: params.traits?.join(', ') || 'No specific traits listed',
-        customRequirements: this.formatCustomFields(params.customFields),
+        skills:
+          params.skills && Array.isArray(params.skills)
+            ? params.skills.join(', ')
+            : 'No specific skills listed',
+        experienceLevel: params.experienceLevel ? params.experienceLevel : 'Not specified',
+        traits:
+          params.traits && Array.isArray(params.traits)
+            ? params.traits.join(', ')
+            : 'No specific traits listed',
+        customRequirements: params.customFields
+          ? this.formatCustomFields(params.customFields)
+          : 'No custom requirements specified.',
         questionCount: params.questionCount || 8,
-        interviewFormat: params.interviewFormat || 'text'
+        interviewFormat: params.interviewFormat || 'text',
       });
 
       return this.parseAIResponse(response);
     } catch (error) {
       console.error('Error generating AI questions:', error);
       // Fallback to basic questions if AI fails
-      return []; //this.getFallbackQuestions(params);
+      return this.getFallbackQuestions(params);
     }
   }
 
@@ -112,18 +128,32 @@ IMPORTANT:
 - Always include 1 opening question and 1 closing question`;
   }
 
-  private createHumanPrompt({ jobTitle, jobDescription, skills, experienceLevel, traits, customFields, interviewFormat, questionCount }: AIQuestionParams): string {
+  private createHumanPrompt({
+    jobTitle,
+    jobDescription,
+    skills,
+    experienceLevel,
+    traits,
+    customFields,
+    interviewFormat,
+    questionCount,
+  }: AIQuestionParams): string {
+    const formattedSkills =
+      skills && Array.isArray(skills) ? skills.join(', ') : 'No specific skills listed';
+    const formattedTraits =
+      traits && Array.isArray(traits) ? traits.join(', ') : 'No specific traits listed';
+
     return `Generate ${questionCount} interview questions for the following position:
 
     JOB TITLE: ${jobTitle}
 
     JOB DESCRIPTION: ${jobDescription}
 
-    REQUIRED SKILLS: ${skills}
+    REQUIRED SKILLS: ${formattedSkills}
 
     EXPERIENCE LEVEL: ${experienceLevel}
 
-    DESIRED TRAITS: ${traits}
+    DESIRED TRAITS: ${formattedTraits}
 
     CUSTOM REQUIREMENTS: ${this.formatCustomFields(customFields)}
 
@@ -147,15 +177,18 @@ IMPORTANT:
 
     return Object.entries(customFields)
       .map(([key, value]) => {
-        const valueStr = typeof value === 'object' && value !== null 
-          ? (value as Record<string, unknown>).value || JSON.stringify(value)
-          : String(value);
+        const valueStr =
+          typeof value === 'object' && value !== null
+            ? (value as Record<string, unknown>).value || JSON.stringify(value)
+            : String(value);
         return `${key}: ${valueStr}`;
       })
       .join(', ');
   }
 
-  private parseAIResponse(response: string): Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[] {
+  private parseAIResponse(
+    response: string,
+  ): Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[] {
     try {
       // Clean the response to extract JSON
       const jsonMatch = response.match(/\[[\s\S]*\]/);
@@ -164,7 +197,7 @@ IMPORTANT:
       }
 
       const parsedQuestions: AIGeneratedQuestion[] = JSON.parse(jsonMatch[0]);
-      
+
       return parsedQuestions.map((q, index) => ({
         questionText: q.questionText,
         questionType: q.questionType,
@@ -176,8 +209,8 @@ IMPORTANT:
         metadata: {
           reasoning: q.reasoning,
           aiGenerated: true,
-          generatedAt: new Date().toISOString()
-        }
+          generatedAt: new Date().toISOString(),
+        },
       }));
     } catch (error) {
       console.error('Error parsing AI response:', error);
@@ -185,7 +218,9 @@ IMPORTANT:
     }
   }
 
-  private getFallbackQuestions(params: AIQuestionParams): Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[] {
+  private getFallbackQuestions(
+    params: AIQuestionParams,
+  ): Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[] {
     // Fallback questions if AI fails
     const fallbackQuestions: Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[] = [
       {
@@ -196,7 +231,7 @@ IMPORTANT:
         isRequired: true,
         orderIndex: 1,
         isAiGenerated: false,
-        metadata: { fallback: true, reason: 'AI generation failed' } as Record<string, any>
+        metadata: { fallback: true, reason: 'AI generation failed' } as Record<string, any>,
       },
       {
         questionText: 'What motivated you to apply for this role?',
@@ -206,22 +241,22 @@ IMPORTANT:
         isRequired: true,
         orderIndex: 2,
         isAiGenerated: false,
-        metadata: { fallback: true, reason: 'AI generation failed' } as Record<string, any>
+        metadata: { fallback: true, reason: 'AI generation failed' } as Record<string, any>,
       },
       {
-        questionText: 'Describe a challenging project you\'ve worked on and how you handled it.',
+        questionText: "Describe a challenging project you've worked on and how you handled it.",
         questionType: 'behavioral',
         category: 'Problem Solving',
         expectedDuration: 180,
         isRequired: true,
         orderIndex: 3,
         isAiGenerated: false,
-        metadata: { fallback: true, reason: 'AI generation failed' } as Record<string, any>
-      }
+        metadata: { fallback: true, reason: 'AI generation failed' } as Record<string, any>,
+      },
     ];
 
     // Add skill-specific questions if available
-    if (params.skills && params.skills.length > 0) {
+    if (params.skills && Array.isArray(params.skills) && params.skills.length > 0) {
       params.skills.slice(0, 2).forEach((skill) => {
         fallbackQuestions.push({
           questionText: `How would you rate your experience with ${skill}? Can you provide an example?`,
@@ -231,7 +266,10 @@ IMPORTANT:
           isRequired: true,
           orderIndex: fallbackQuestions.length + 1,
           isAiGenerated: false,
-          metadata: { fallback: true, reason: 'AI generation failed', skillFocus: skill } as Record<string, unknown>
+          metadata: { fallback: true, reason: 'AI generation failed', skillFocus: skill } as Record<
+            string,
+            unknown
+          >,
         });
       });
     }
@@ -245,19 +283,21 @@ IMPORTANT:
       isRequired: false,
       orderIndex: fallbackQuestions.length + 1,
       isAiGenerated: false,
-      metadata: { fallback: true, reason: 'AI generation failed' } as Record<string, any>
+      metadata: { fallback: true, reason: 'AI generation failed' } as Record<string, any>,
     });
 
     return fallbackQuestions.slice(0, params.questionCount || 8);
   }
 
   // Enhanced question generation with context awareness
-  async generateContextualQuestions(params: AIQuestionParams & {
-    companyInfo?: string;
-    teamSize?: number;
-    remote?: boolean;
-    industry?: string;
-  }): Promise<Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[]> {
+  async generateContextualQuestions(
+    params: AIQuestionParams & {
+      companyInfo?: string;
+      teamSize?: number;
+      remote?: boolean;
+      industry?: string;
+    },
+  ): Promise<Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[]> {
     const enhancedParams = {
       ...params,
       customFields: {
@@ -265,8 +305,8 @@ IMPORTANT:
         companyContext: params.companyInfo,
         teamSize: params.teamSize,
         workArrangement: params.remote ? 'Remote' : 'On-site',
-        industry: params.industry
-      }
+        industry: params.industry,
+      },
     };
 
     return this.generateQuestions(enhancedParams);
@@ -275,7 +315,9 @@ IMPORTANT:
   // Validate API key and connection
   async validateConnection(): Promise<boolean> {
     try {
-      const testPrompt = ChatPromptTemplate.fromTemplate('Respond with "OK" if you can see this message.');
+      const testPrompt = ChatPromptTemplate.fromTemplate(
+        'Respond with "OK" if you can see this message.',
+      );
       const chain = testPrompt.pipe(this.llm).pipe(this.outputParser);
       const response = await chain.invoke({});
       return response.toLowerCase().includes('ok');
@@ -286,4 +328,4 @@ IMPORTANT:
   }
 }
 
-export const aiQuestionService = new AIQuestionService(); 
+export const aiQuestionService = new AIQuestionService();

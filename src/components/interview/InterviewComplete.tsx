@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import Button from '@/components/ui/Button';
-import { DocumentTextIcon, EnvelopeIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
+import { EnvelopeIcon } from '@heroicons/react/24/outline';
 import { useAppSelector } from '@/store';
 import { loadedInterview, selectCandidate } from '@/store/interview/interviewSelectors';
 import Image from 'next/image';
@@ -35,7 +34,7 @@ export default function InterviewComplete() {
               totalSteps: 5,
             }),
           });
-        } catch (error) {
+        } catch {
           // Error updating candidate progress
         }
       };
@@ -67,8 +66,8 @@ export default function InterviewComplete() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+    <div className="p-4">
+      <div className="max-w-2xl w-full">
         {/* Success Icon */}
         <div className="text-center mb-8">
           <div className="w-[200px] h-[200px] bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -80,15 +79,13 @@ export default function InterviewComplete() {
               objectFit="contain"
             />
           </div>
-          <h1 className="text-3xl font-bold text-text mb-2">Interview Complete!</h1>
           <p className="text-muted-text text-lg">
-            Thank you for taking the time to complete the interview for <strong>{job.title}</strong>
-            .
+            Thank you for taking the time to apply for the <strong>{job.title}</strong> position.
           </p>
         </div>
 
         {/* Interview Details */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+        {/* <div className="grid md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white border border-gray-light rounded-lg p-4">
             <div className="flex items-center mb-2">
               <DocumentTextIcon className="w-5 h-5 text-primary mr-2" />
@@ -106,7 +103,7 @@ export default function InterviewComplete() {
               {job.interviewFormat === 'text' ? 'Text-based' : 'Video'} Interview
             </p>
           </div>
-        </div>
+        </div> */}
 
         {/* Additional Information */}
         <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
@@ -124,14 +121,14 @@ export default function InterviewComplete() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        {/* <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button variant="outline" onClick={() => window.close()} className="sm:w-auto w-full">
             Close Window
           </Button>
           <Button onClick={() => (window.location.href = '/')} className="sm:w-auto w-full">
             Visit Our Website
           </Button>
-        </div>
+        </div> */}
 
         {/* Footer */}
         <div className="text-center mt-8 pt-6 border-t border-gray-light">

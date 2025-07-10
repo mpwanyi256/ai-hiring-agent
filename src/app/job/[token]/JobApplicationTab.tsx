@@ -48,5 +48,5 @@ export default function JobApplicationTab() {
     }
   };
 
-  return <div className="min-h-[600px]">{renderStep()}</div>;
+  return <div className="">{renderStep()}</div>;
 }
