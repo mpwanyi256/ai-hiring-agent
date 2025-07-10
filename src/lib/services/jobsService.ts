@@ -236,6 +236,19 @@ function transformJobToDB(jobData: Partial<JobData>): Partial<JobInsert> {
       | 'internship'
       | 'other';
 
+  // If status is provided
+  if (jobData.status) {
+    dbData.status = jobData.status;
+
+    if (jobData.status === 'interviewing') {
+      dbData.is_active = true;
+    }
+
+    if (jobData.status === 'closed') {
+      dbData.is_active = false;
+    }
+  }
+
   return dbData;
 }
 
@@ -557,12 +570,12 @@ class JobsService {
         fields: simplifiedToDbFields(jobData.fields),
         interview_format: jobData.interviewFormat,
         interview_token: interviewToken,
-        is_active: true,
         department_id: jobData.departmentId,
         job_title_id: jobData.jobTitleId,
         employment_type_id: jobData.employmentTypeId,
         workplace_type: jobData.workplaceType,
         job_type: jobData.jobType,
+        is_active: false,
       };
 
       const { data: job, error } = await supabase.from('jobs').insert(dbJobData).select().single();

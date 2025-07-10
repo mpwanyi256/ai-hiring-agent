@@ -73,7 +73,7 @@ const JobCreateStep2: React.FC<JobCreateStep2Props> = ({ form, onPrev, onNext, i
         <Button
           type="button"
           variant="secondary"
-          className="!py-1 !px-3 !text-xs !font-normal"
+          className="py-1 px-3 text-xs font-normal"
           onClick={() => setAiModalOpen(true)}
         >
           + Write new with AI
