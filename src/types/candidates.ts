@@ -1,6 +1,6 @@
 // Candidate Management Types
 
-import { UserRole } from '@/lib/supabase';
+import { UserRole } from '@/types/jobs';
 
 // Resume information interface
 export interface CandidateResume {
