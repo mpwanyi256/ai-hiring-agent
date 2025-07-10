@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { CandidateStatus, CandidateStatusOptions, CurrentJob, Job } from '@/types';
-import { JobStatus } from './supabase';
+import { JobStatus } from '@/types/jobs';
 import { apiError, apiSuccess } from './notification';
 import { twMerge } from 'tailwind-merge';
 import { app } from './constants';

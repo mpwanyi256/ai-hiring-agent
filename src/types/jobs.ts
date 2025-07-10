@@ -1,6 +1,9 @@
-import { JobStatus, UserRole } from '@/lib/supabase';
+import { Database } from '@/lib/supabase';
 import { JobQuestion } from './interview';
 import z from 'zod';
+
+export type JobStatus = Database['public']['Enums']['job_status'];
+export type UserRole = Database['public']['Enums']['user_role'];
 
 export interface Skill {
   id: string;
@@ -61,6 +64,19 @@ export type JobType =
   | 'volunteer'
   | 'internship'
   | 'other';
+
+export interface CreateJobPayload {
+  title: string;
+  fields: Record<string, unknown>;
+  interviewFormat: 'text' | 'video';
+  departmentId: string;
+  jobTitleId: string;
+  employmentTypeId: string;
+  workplaceType: string;
+  jobType: string;
+  saveAsTemplate: boolean;
+  templateName?: string;
+}
 
 export interface Job {
   id: string;
@@ -218,7 +234,7 @@ export interface CompanyJobs {
   updated_at: string;
   creator_details: {
     id: string;
-    role: UserRole;
+    role: string;
     email: string;
     first_name: string;
     last_name: string;

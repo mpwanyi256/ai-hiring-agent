@@ -10,7 +10,8 @@
     "db_push": "supabase db push",
     "functions_deploy": "supabase functions deploy ai-candidate-evaluation --use-api",
     "prepare": "husky install",
-    "unused": "next-unused"
+    "unused": "next-unused",
+    "db_types": "npx supabase gen types typescript --project-id 'msrspatwjkmyhgqucxuh' --schema public > ./src/lib/supabase.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

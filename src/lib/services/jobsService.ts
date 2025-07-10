@@ -1,11 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { generateInterviewToken } from '@/lib/utils';
-import { Database, JobFieldsConfig, JobStatus } from '@/lib/supabase';
+import { Database } from '@/lib/supabase';
 import { app } from '@/lib/constants';
-import { GetCompanyJobsPayload, GetCompanyJobsResponse } from '@/types/jobs';
+import { GetCompanyJobsPayload, GetCompanyJobsResponse, JobStatus } from '@/types/jobs';
 
 type JobRow = Database['public']['Tables']['jobs']['Row'];
 type JobInsert = Database['public']['Tables']['jobs']['Insert'];
+
+export interface JobFieldsConfig {
+  [key: string]: any;
+}
 
 export interface JobData {
   id: string;
@@ -26,6 +30,11 @@ export interface JobData {
   updatedAt: string;
   candidateCount?: number;
   interviewLink?: string;
+  departmentId: string;
+  jobTitleId: string;
+  employmentTypeId: string;
+  workplaceType: string;
+  jobType: string;
 }
 
 // Company stats interface matching the database view
@@ -187,14 +196,19 @@ function transformJobFromDB(dbJob: JobRow): JobData {
     id: dbJob.id,
     profileId: dbJob.profile_id,
     title: dbJob.title,
-    fields: dbToSimplifiedFields(dbJob.fields),
-    interviewFormat: dbJob.interview_format,
-    interviewToken: dbJob.interview_token,
-    isActive: dbJob.is_active,
+    fields: dbToSimplifiedFields(dbJob.fields as JobFieldsConfig),
+    interviewFormat: dbJob.interview_format as 'text' | 'video',
+    interviewToken: dbJob.interview_token || '',
+    isActive: dbJob.is_active || false,
     status: (dbJob.status || 'draft') as JobStatus,
-    createdAt: dbJob.created_at,
-    updatedAt: dbJob.updated_at,
+    createdAt: dbJob.created_at || '',
+    updatedAt: dbJob.updated_at || '',
     candidateCount: 0, // This would be calculated from candidates table
+    departmentId: dbJob.department_id || '',
+    jobTitleId: dbJob.job_title_id || '',
+    employmentTypeId: dbJob.employment_type_id || '',
+    workplaceType: dbJob.workplace_type || '',
+    jobType: dbJob.job_type || '',
   };
 }
 
@@ -207,7 +221,20 @@ function transformJobToDB(jobData: Partial<JobData>): Partial<JobInsert> {
   if (jobData.interviewFormat) dbData.interview_format = jobData.interviewFormat;
   if (jobData.interviewToken) dbData.interview_token = jobData.interviewToken;
   if (jobData.isActive !== undefined) dbData.is_active = jobData.isActive;
-  if (jobData.status) dbData.status = jobData.status;
+  if (jobData.departmentId) dbData.department_id = jobData.departmentId;
+  if (jobData.jobTitleId) dbData.job_title_id = jobData.jobTitleId;
+  if (jobData.employmentTypeId) dbData.employment_type_id = jobData.employmentTypeId;
+  if (jobData.workplaceType)
+    dbData.workplace_type = jobData.workplaceType as 'on_site' | 'remote' | 'hybrid';
+  if (jobData.jobType)
+    dbData.job_type = jobData.jobType as
+      | 'full_time'
+      | 'part_time'
+      | 'contract'
+      | 'temporary'
+      | 'volunteer'
+      | 'internship'
+      | 'other';
 
   return dbData;
 }
@@ -514,20 +541,28 @@ class JobsService {
     title: string;
     fields: JobData['fields'];
     interviewFormat: 'text' | 'video';
-    status?: JobStatus;
+    departmentId: string;
+    jobTitleId: string;
+    employmentTypeId: string;
+    workplaceType: string;
+    jobType: string;
   }): Promise<JobData> {
     try {
       const supabase = await createClient();
       const interviewToken = generateInterviewToken();
 
-      const dbJobData: JobInsert = {
+      const dbJobData = {
         profile_id: jobData.profileId,
         title: jobData.title,
         fields: simplifiedToDbFields(jobData.fields),
         interview_format: jobData.interviewFormat,
         interview_token: interviewToken,
         is_active: true,
-        status: jobData.status || 'draft',
+        department_id: jobData.departmentId,
+        job_title_id: jobData.jobTitleId,
+        employment_type_id: jobData.employmentTypeId,
+        workplace_type: jobData.workplaceType,
+        job_type: jobData.jobType,
       };
 
       const { data: job, error } = await supabase.from('jobs').insert(dbJobData).select().single();
@@ -747,12 +782,17 @@ class JobsService {
         profileId: job.profile_id,
         title: job.title,
         fields: job.fields,
-        interviewFormat: job.interview_format,
-        interviewToken: job.interview_token,
-        isActive: job.is_active,
-        status: job.status,
-        createdAt: job.created_at,
-        updatedAt: job.updated_at,
+        interviewFormat: job.interview_format as 'text' | 'video',
+        interviewToken: job.interview_token || '',
+        isActive: job.is_active || false,
+        status: job.status as JobStatus,
+        createdAt: job.created_at || '',
+        updatedAt: job.updated_at || '',
+        departmentId: job.department_id || '',
+        jobTitleId: job.job_title_id || '',
+        employmentTypeId: job.employment_type_id || '',
+        workplaceType: job.workplace_type || '',
+        jobType: job.job_type || '',
       };
     } catch (error) {
       console.error('Error getting job by interview token:', error);

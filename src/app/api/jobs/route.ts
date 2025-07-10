@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
           success: false,
           error: 'Profile ID is required',
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch jobs',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -58,16 +58,36 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { profileId, title, fields, interviewFormat } = body;
+    const {
+      profileId,
+      title,
+      fields,
+      interviewFormat,
+      departmentId,
+      jobTitleId,
+      employmentTypeId,
+      workplaceType,
+      jobType,
+    } = body;
 
     // Validate required fields
-    if (!profileId || !title || !interviewFormat) {
+    if (
+      !profileId ||
+      !title ||
+      !interviewFormat ||
+      !departmentId ||
+      !jobTitleId ||
+      !employmentTypeId ||
+      !workplaceType ||
+      !jobType
+    ) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing required fields: profileId, title, and interviewFormat are required',
+          error:
+            'Missing required fields: profileId, title, interviewFormat, departmentId, jobTitleId, employmentTypeId, workplaceType, and jobType are required',
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -78,7 +98,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: 'Invalid interview format. Must be "text" or "video"',
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -88,6 +108,11 @@ export async function POST(request: NextRequest) {
       title,
       fields: fields || {},
       interviewFormat,
+      departmentId,
+      jobTitleId,
+      employmentTypeId,
+      workplaceType,
+      jobType,
     });
 
     console.log('Created new job:', {
@@ -108,7 +133,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to create job',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}
