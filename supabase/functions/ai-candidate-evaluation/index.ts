@@ -1,23 +1,23 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "npm:@supabase/supabase-js@2.39.3"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'npm:@supabase/supabase-js@2.39.3';
 
 // Type declaration for EdgeRuntime (Supabase Edge Functions)
 declare const EdgeRuntime: {
   waitUntil(promise: Promise<any>): void;
-}
+};
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 // Environment variables
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
 
 // Initialize Supabase client
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Evaluation schema interface (simplified without Zod)
 interface EvaluationResult {
@@ -33,12 +33,15 @@ interface EvaluationResult {
     culture: number;
     communication: number;
   };
-  category_scores: Record<string, {
-    score: number;
-    explanation: string;
-    strengths: string[];
-    areas_for_improvement: string[];
-  }>;
+  category_scores: Record<
+    string,
+    {
+      score: number;
+      explanation: string;
+      strengths: string[];
+      areas_for_improvement: string[];
+    }
+  >;
   key_strengths: string[];
   areas_for_improvement: string[];
   red_flags: string[];
@@ -49,7 +52,7 @@ async function callOpenAI(prompt: string): Promise<string> {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
+      Authorization: `Bearer ${openaiApiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -57,16 +60,17 @@ async function callOpenAI(prompt: string): Promise<string> {
       messages: [
         {
           role: 'system',
-          content: 'You are an expert HR professional and hiring manager. You evaluate candidates based on their resume, interview responses, and job requirements to provide comprehensive assessments.'
+          content:
+            'You are an expert HR professional and hiring manager. You evaluate candidates based on their resume, interview responses, and job requirements to provide comprehensive assessments.',
         },
         {
           role: 'user',
-          content: prompt
-        }
+          content: prompt,
+        },
       ],
       temperature: 0.3,
-      max_tokens: 2000
-    })
+      max_tokens: 2000,
+    }),
   });
 
   if (!response.ok) {
@@ -88,7 +92,7 @@ function parseAIResponse(response: string): EvaluationResult {
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    
+
     // Validate and clean the response
     return {
       overall_score: Math.max(0, Math.min(100, parsed.overall_score || 0)),
@@ -105,8 +109,10 @@ function parseAIResponse(response: string): EvaluationResult {
       },
       category_scores: parsed.category_scores || {},
       key_strengths: Array.isArray(parsed.key_strengths) ? parsed.key_strengths : [],
-      areas_for_improvement: Array.isArray(parsed.areas_for_improvement) ? parsed.areas_for_improvement : [],
-      red_flags: Array.isArray(parsed.red_flags) ? parsed.red_flags : []
+      areas_for_improvement: Array.isArray(parsed.areas_for_improvement)
+        ? parsed.areas_for_improvement
+        : [],
+      red_flags: Array.isArray(parsed.red_flags) ? parsed.red_flags : [],
     };
   } catch (error) {
     console.error('Error parsing AI response:', error);
@@ -123,10 +129,13 @@ function createEvaluationPrompt(params: {
   resumeUrl?: string;
   previousEvaluation?: any;
 }): string {
+  const requiredSkills = params.jobFields?.skills
+    ? params.jobFields.skills.value.join(', ')
+    : 'Not specified';
+  const requiredTraits = params.jobFields?.traits
+    ? params.jobFields.traits.value.join(', ')
+    : 'Not specified';
 
-  const requiredSkills = params.jobFields?.skills ? params.jobFields.skills.value.join(', ') : 'Not specified';
-  const requiredTraits = params.jobFields?.traits ? params.jobFields.traits.value.join(', ') : 'Not specified';
-  
   return `
 Evaluate this candidate for the ${params.jobTitle} position and provide a comprehensive assessment.
 
@@ -140,11 +149,15 @@ Evaluate this candidate for the ${params.jobTitle} position and provide a compre
 ${params.resumeUrl ? `Resume URL: ${params.resumeUrl}` : 'No resume available'}
 
 **Previous Evaluation (if any):**
-${params.previousEvaluation ? `
+${
+  params.previousEvaluation
+    ? `
 - Previous Score: ${params.previousEvaluation.score || 'N/A'}
 - Previous Recommendation: ${params.previousEvaluation.recommendation || 'N/A'}
 - Previous Summary: ${params.previousEvaluation.summary || 'N/A'}
-` : 'No previous evaluation'}
+`
+    : 'No previous evaluation'
+}
 
 **Interview Responses:**
 ${params.interviewResponses}
@@ -202,11 +215,11 @@ async function getResumeUrl(candidateId: string, jobId: string): Promise<string 
       .select('public_url')
       .eq('candidate_id', candidateId)
       .eq('job_id', jobId)
-      .single()
+      .single();
 
     return resumeData?.public_url || null;
   } catch (error) {
-    console.error('Error fetching resume URL:', error)
+    console.error('Error fetching resume URL:', error);
     return null;
   }
 }
@@ -229,7 +242,7 @@ async function gatherCandidateData(candidateInfoId: string, jobId: string) {
     const { data: candidateDetails, error: candidateError } = await supabase
       .from('candidate_details')
       .select('*')
-      .eq('id', candidateId)
+      .eq('candidate_info_id', candidateId)
       .eq('job_id', jobId)
       .single();
 
@@ -247,27 +260,29 @@ async function gatherCandidateData(candidateInfoId: string, jobId: string) {
     if (responsesError) throw new Error('Failed to fetch interview responses');
 
     // Get previous evaluation data (if exists)
-    const previousEvaluation = candidateDetails.evaluation_id ? {
-      score: candidateDetails.score,
-      recommendation: candidateDetails.recommendation,
-      summary: candidateDetails.summary,
-      strengths: candidateDetails.strengths,
-      red_flags: candidateDetails.red_flags,
-      skills_assessment: candidateDetails.skills_assessment,
-      traits_assessment: candidateDetails.traits_assessment
-    } : null;
+    const previousEvaluation = candidateDetails.evaluation_id
+      ? {
+          score: candidateDetails.score,
+          recommendation: candidateDetails.recommendation,
+          summary: candidateDetails.summary,
+          strengths: candidateDetails.strengths,
+          red_flags: candidateDetails.red_flags,
+          skills_assessment: candidateDetails.skills_assessment,
+          traits_assessment: candidateDetails.traits_assessment,
+        }
+      : null;
 
     return {
       candidate: candidateDetails,
       job: {
         id: candidateDetails.job_id,
         title: candidateDetails.job_title,
-        fields: candidateDetails.job_fields
+        fields: candidateDetails.job_fields,
       },
       responses: responses || [],
       resumeUrl: candidateDetails.resume_public_url,
       previousEvaluation,
-      candidateId // pass the resolved application id for downstream use
+      candidateId, // pass the resolved application id for downstream use
     };
   } catch (error) {
     console.error('Error gathering candidate data:', error);
@@ -277,18 +292,21 @@ async function gatherCandidateData(candidateInfoId: string, jobId: string) {
 
 // Background task function that performs the actual evaluation
 async function performEvaluationInBackground(candidateId: string, jobId: string) {
-  const startTime = Date.now()
-  
-  try {
-    console.log(`Starting background evaluation for candidate ${candidateId} and job ${jobId}`)
+  const startTime = Date.now();
 
-    const { job, responses, resumeUrl, previousEvaluation } = await gatherCandidateData(candidateId, jobId)
+  try {
+    console.log(`Starting background evaluation for candidate ${candidateId} and job ${jobId}`);
+
+    const { job, responses, resumeUrl, previousEvaluation } = await gatherCandidateData(
+      candidateId,
+      jobId,
+    );
 
     const formattedResponses = responses
       .map((r: any, index: number) => `Q${index + 1}: ${r.question}\nA${index + 1}: ${r.answer}`)
-      .join('\n\n')
+      .join('\n\n');
 
-    const experienceLevel = job.fields?.experienceLevel || 'Not specified'
+    const experienceLevel = job.fields?.experienceLevel || 'Not specified';
 
     const prompt = createEvaluationPrompt({
       jobTitle: job.title,
@@ -296,24 +314,24 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
       experienceLevel,
       interviewResponses: formattedResponses || 'No interview responses available',
       resumeUrl: resumeUrl || undefined,
-      previousEvaluation
-    })
+      previousEvaluation,
+    });
 
-    console.log(`Calling OpenAI API for candidate ${candidateId}`)
-    const aiResponse = await callOpenAI(prompt)
-    const evaluationResult = parseAIResponse(aiResponse)
-    const processingDuration = Date.now() - startTime
+    console.log(`Calling OpenAI API for candidate ${candidateId}`);
+    const aiResponse = await callOpenAI(prompt);
+    const evaluationResult = parseAIResponse(aiResponse);
+    const processingDuration = Date.now() - startTime;
 
     const evaluationSources = {
       resume: !!resumeUrl,
       interview: responses.length > 0,
-      previous_evaluations: !!previousEvaluation
-    }
+      previous_evaluations: !!previousEvaluation,
+    };
 
     const candidateEvaluation = {
       overall_score: evaluationResult.overall_score,
       overall_status: evaluationResult.overall_status,
-      recommendation: evaluationResult.recommendation,  
+      recommendation: evaluationResult.recommendation,
       evaluation_summary: evaluationResult.evaluation_summary,
       evaluation_explanation: evaluationResult.evaluation_explanation,
       radar_metrics: evaluationResult.radar_metrics,
@@ -324,8 +342,8 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
       evaluation_sources: evaluationSources,
       processing_duration_ms: processingDuration,
       ai_model_version: 'gpt-4',
-      evaluation_version: '1.0'
-    }
+      evaluation_version: '1.0',
+    };
 
     // Check if the candidate has already been evaluated for this specific job
     const { data: existingEvaluation } = await supabase
@@ -333,36 +351,34 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
       .select('id')
       .eq('candidate_id', candidateId)
       .eq('job_id', jobId)
-      .maybeSingle()
-      
+      .maybeSingle();
+
     if (existingEvaluation) {
       // Update the existing evaluation
       const { error: updateError } = await supabase
         .from('ai_evaluations')
         .update({
-          ...candidateEvaluation
+          ...candidateEvaluation,
         })
         .eq('id', existingEvaluation.id);
 
-      if (updateError) throw updateError
+      if (updateError) throw updateError;
 
-      console.log(`Updated existing evaluation for candidate ${candidateId}`)
+      console.log(`Updated existing evaluation for candidate ${candidateId}`);
     } else {
       // Create new evaluation
-      const { error: saveError } = await supabase
-        .from('ai_evaluations')
-        .insert({
-          candidate_id: candidateId,
-          job_id: jobId,
-          ...candidateEvaluation
-        })
+      const { error: saveError } = await supabase.from('ai_evaluations').insert({
+        candidate_id: candidateId,
+        job_id: jobId,
+        ...candidateEvaluation,
+      });
 
-      if (saveError) throw saveError
+      if (saveError) throw saveError;
 
-      console.log(`Created new evaluation for candidate ${candidateId}`)
+      console.log(`Created new evaluation for candidate ${candidateId}`);
     }
 
-    console.log('Updating evaluations table for backwards compatibility')
+    console.log('Updating evaluations table for backwards compatibility');
     // Update evaluations table for backwards compatibility
     const { error: updateError } = await supabase
       .from('evaluations')
@@ -376,83 +392,81 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
         skills_assessment: evaluationResult.category_scores,
         traits_assessment: evaluationResult.radar_metrics,
         feedback: evaluationResult.evaluation_explanation,
-        evaluation_type: 'combined'
+        evaluation_type: 'combined',
       })
       .eq('candidate_id', candidateId)
       .eq('job_id', jobId);
 
     if (updateError) {
-      console.error('Error updating evaluations table for backwards compatibility:', updateError)
+      console.error('Error updating evaluations table for backwards compatibility:', updateError);
 
-      await supabase
-        .from('function_logs')
-        .insert({
-          function_name: 'ai_evaluation_background',
-          status: 'failed',
-          message: `Error updating evaluations table for backwards compatibility`,
-          candidate_id: candidateId,
-          job_id: jobId,
-          error_message: updateError.message
-        })
-
-      throw updateError
-    }
-
-    console.log('Updating evaluations table for backwards compatibility')
-
-    // Update function logs to show success
-    await supabase
-      .from('function_logs')
-      .insert({
-        function_name: 'ai_evaluation_background',
-        status: 'success',
-        message: `AI evaluation completed successfully in ${processingDuration}ms`,
-        candidate_id: candidateId,
-        job_id: jobId,
-        payload: { processingDurationMs: processingDuration }
-      })
-
-    console.log(`Background evaluation completed successfully for candidate ${candidateId} in ${processingDuration}ms`)
-
-  } catch (error: any) {
-    console.error(`Error in background evaluation for candidate ${candidateId}:`, error)
-    
-    // Update function logs to show error
-    await supabase
-      .from('function_logs')
-      .insert({
+      await supabase.from('function_logs').insert({
         function_name: 'ai_evaluation_background',
         status: 'failed',
-        message: `AI evaluation failed: ${error?.message || 'Unknown error'}`,
+        message: `Error updating evaluations table for backwards compatibility`,
         candidate_id: candidateId,
         job_id: jobId,
-        error_message: error?.message || 'Unknown error'
-      })
-    
-    throw error
+        error_message: updateError.message,
+      });
+
+      throw updateError;
+    }
+
+    console.log('Updating evaluations table for backwards compatibility');
+
+    // Update function logs to show success
+    await supabase.from('function_logs').insert({
+      function_name: 'ai_evaluation_background',
+      status: 'success',
+      message: `AI evaluation completed successfully in ${processingDuration}ms`,
+      candidate_id: candidateId,
+      job_id: jobId,
+      payload: { processingDurationMs: processingDuration },
+    });
+
+    console.log(
+      `Background evaluation completed successfully for candidate ${candidateId} in ${processingDuration}ms`,
+    );
+  } catch (error: any) {
+    console.error(`Error in background evaluation for candidate ${candidateId}:`, error);
+
+    // Update function logs to show error
+    await supabase.from('function_logs').insert({
+      function_name: 'ai_evaluation_background',
+      status: 'failed',
+      message: `AI evaluation failed: ${error?.message || 'Unknown error'}`,
+      candidate_id: candidateId,
+      job_id: jobId,
+      error_message: error?.message || 'Unknown error',
+    });
+
+    throw error;
   }
 }
 
 // Listen for function shutdown to handle cleanup
 addEventListener('beforeunload', (ev) => {
-  console.log('Function will be shutdown')
+  console.log('Function will be shutdown');
   // Could add cleanup logic here if needed
-})
+});
 
 const validateInput = (candidateId: string, jobId: string): Response | null => {
   if (!candidateId || !jobId) {
-    return new Response(JSON.stringify({ success: false, error: 'Missing required parameter: candidateId or jobId' }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ success: false, error: 'Missing required parameter: candidateId or jobId' }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    );
   }
 
-  return null
-}
+  return null;
+};
 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
@@ -478,58 +492,68 @@ serve(async (req: Request) => {
     }
 
     if (!candidateRow.is_completed) {
-      return new Response(JSON.stringify({ success: false, error: 'Candidate interview not completed yet' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ success: false, error: 'Candidate interview not completed yet' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     if (candidateRow.job_id !== jobId) {
-      return new Response(JSON.stringify({ success: false, error: 'Job ID does not match candidate\'s assigned job' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ success: false, error: "Job ID does not match candidate's assigned job" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     // Log the trigger execution
-    await supabase
-      .from('function_logs')
-      .insert([
-        {
-          function_name: 'ai_evaluation_trigger',
-          status: 'triggered',
-          message: 'AI evaluation request received, starting background processing',
-          candidate_id: candidateInfoId,
-          job_id: jobId
-        },
-        {
-          function_name: 'ai_evaluation_background',
-          status: 'processing',
-          message: 'AI evaluation processing started',
-          candidate_id: candidateInfoId,
-          job_id: jobId
-        }
-      ]);
+    await supabase.from('function_logs').insert([
+      {
+        function_name: 'ai_evaluation_trigger',
+        status: 'triggered',
+        message: 'AI evaluation request received, starting background processing',
+        candidate_id: candidateInfoId,
+        job_id: jobId,
+      },
+      {
+        function_name: 'ai_evaluation_background',
+        status: 'processing',
+        message: 'AI evaluation processing started',
+        candidate_id: candidateInfoId,
+        job_id: jobId,
+      },
+    ]);
 
     // Start the background evaluation task with the resolved application id
     EdgeRuntime.waitUntil(performEvaluationInBackground(candidateInfoId, jobId));
 
     // Immediately return success response
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'AI evaluation started in background',
-      candidateId: candidateInfoId,
-      jobId,
-      status: 'processing'
-    }), {
-      status: 202,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'AI evaluation started in background',
+        candidateId: candidateInfoId,
+        jobId,
+        status: 'processing',
+      }),
+      {
+        status: 202,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    );
   } catch (error: any) {
     console.error('Edge Function error:', error);
-    return new Response(JSON.stringify({ success: false, error: error?.message || 'Internal server error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ success: false, error: error?.message || 'Internal server error' }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    );
   }
 });
