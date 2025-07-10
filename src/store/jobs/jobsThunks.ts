@@ -2,7 +2,6 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import {
   AIQuestionsGenerationResponse,
   APIResponse,
-  CreateJobData,
   GetCompanyJobsPayload,
   GetCompanyJobsResponse,
   Job,
@@ -11,10 +10,15 @@ import {
   Skill,
   Trait,
   UpdateJobData,
+  Department,
+  JobTitle,
+  EmploymentType,
+  CreateJobPayload,
 } from '@/types';
 import { apiUtils } from '../api';
 import { RootState } from '..';
 import { JobQuestion } from '@/types/interview';
+import { refreshUserData } from '../auth/authThunks';
 
 // Response type interfaces
 interface JobsResponse {
@@ -44,6 +48,18 @@ interface JobTemplateResponse {
 interface JobQuestionsResponse {
   questions: JobQuestion[];
   stats: QuestionStats;
+}
+
+interface DepartmentsResponse {
+  departments: Department[];
+}
+
+interface JobTitlesResponse {
+  jobTitles: JobTitle[];
+}
+
+interface EmploymentTypesResponse {
+  employmentTypes: EmploymentType[];
 }
 
 export const fetchJobsPaginated = createAsyncThunk<
@@ -94,14 +110,51 @@ export const fetchJobById = createAsyncThunk(
   },
 );
 
-export const createJob = createAsyncThunk('jobs/createJob', async (jobData: CreateJobData) => {
-  try {
-    const response = await apiUtils.post<JobResponse>('/api/jobs', jobData);
-    return response.job;
-  } catch (error: unknown) {
-    throw new Error(error instanceof Error ? error.message : 'Failed to create job');
-  }
-});
+export const createJob = createAsyncThunk<Job, CreateJobPayload>(
+  'jobs/createJob',
+  async (jobData, { rejectWithValue, getState, dispatch }) => {
+    try {
+      const state = getState() as RootState;
+      const user = state.auth.user;
+      if (!user) {
+        throw new Error('You must be authenticated to create a job');
+      }
+      const response = await apiUtils.post<JobResponse>('/api/jobs', {
+        ...jobData,
+        profileId: user.id,
+      });
+
+      if (jobData.saveAsTemplate) {
+        dispatch(
+          saveJobTemplate({
+            profileId: user.id,
+            name: jobData.templateName || jobData.title,
+            title: jobData.title,
+            fields: jobData.fields,
+            interviewFormat: jobData.interviewFormat,
+          }),
+        );
+      }
+
+      // refresh user data
+      Promise.all([
+        dispatch(refreshUserData()),
+        dispatch(
+          generateJobQuestions({
+            jobId: response.job.id,
+            questionCount: 5,
+            includeCustom: true,
+            replaceExisting: true,
+          }),
+        ),
+      ]);
+
+      return response.job;
+    } catch (error: unknown) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to create job');
+    }
+  },
+);
 
 export const updateJob = createAsyncThunk('jobs/updateJob', async (jobData: UpdateJobData) => {
   try {
@@ -324,6 +377,93 @@ export const updateJobQuestion = createAsyncThunk(
       return response;
     } catch (error: unknown) {
       throw new Error(error instanceof Error ? error.message : 'Failed to update job question');
+    }
+  },
+);
+
+export const fetchDepartments = createAsyncThunk('jobs/fetchDepartments', async () => {
+  try {
+    const response = await apiUtils.get<DepartmentsResponse>('/api/departments');
+    return response.departments;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to fetch departments');
+  }
+});
+
+export const fetchJobTitles = createAsyncThunk('jobs/fetchJobTitles', async () => {
+  try {
+    const response = await apiUtils.get<JobTitlesResponse>('/api/job-titles');
+    return response.jobTitles;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to fetch job titles');
+  }
+});
+
+export const fetchEmploymentTypes = createAsyncThunk('jobs/fetchEmploymentTypes', async () => {
+  try {
+    const response = await apiUtils.get<EmploymentTypesResponse>('/api/employment-types');
+    return response.employmentTypes;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to fetch employment types');
+  }
+});
+
+export const generateJobDescriptionWithAI = createAsyncThunk(
+  'jobs/generateJobDescriptionWithAI',
+  async (
+    jobDetails: {
+      title: string;
+      departmentId: string;
+      employmentTypeId: string;
+      workplaceType: string;
+      jobType: string;
+      experienceLevel?: string;
+      skills?: string[];
+      traits?: string[];
+      // Add department and employment type display names for mapping
+      departmentName?: string;
+      employmentTypeName?: string;
+    },
+    { rejectWithValue, getState },
+  ) => {
+    try {
+      // Get the state to access departments and employment types for mapping
+      const state = getState() as RootState;
+      const departments = state.jobs.departments;
+      const employmentTypes = state.jobs.employmentTypes;
+
+      // Map IDs to display names
+      const department =
+        departments.find((d) => d.id === jobDetails.departmentId)?.name ||
+        jobDetails.departmentName ||
+        'Unknown Department';
+      const employmentType =
+        employmentTypes.find((et) => et.id === jobDetails.employmentTypeId)?.name ||
+        jobDetails.employmentTypeName ||
+        'Unknown Employment Type';
+
+      const res = await fetch('/api/job-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: jobDetails.title,
+          department,
+          employmentType,
+          workplaceType: jobDetails.workplaceType,
+          jobType: jobDetails.jobType,
+          experienceLevel: jobDetails.experienceLevel,
+          skills: jobDetails.skills,
+          traits: jobDetails.traits,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.html) {
+        return data.html as string;
+      } else {
+        return rejectWithValue(data.error || 'Failed to generate job description');
+      }
+    } catch {
+      return rejectWithValue('Failed to generate job description');
     }
   },
 );

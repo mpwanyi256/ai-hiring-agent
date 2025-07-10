@@ -15,6 +15,9 @@ import {
   deleteJobTemplate,
   fetchJobQuestions,
   fetchJobsPaginated,
+  fetchDepartments,
+  fetchJobTitles,
+  fetchEmploymentTypes,
 } from './jobsThunks';
 import { parseJobDetails } from '@/lib/utils';
 
@@ -40,6 +43,15 @@ const initialState: ExtendedJobsState = {
   skillsLoading: false,
   traitsLoading: false,
   templatesLoading: false,
+  departments: [],
+  departmentsLoading: false,
+  departmentsError: null,
+  jobTitles: [],
+  jobTitlesLoading: false,
+  jobTitlesError: null,
+  employmentTypes: [],
+  employmentTypesLoading: false,
+  employmentTypesError: null,
 };
 
 const jobsSlice = createSlice({
@@ -245,6 +257,45 @@ const jobsSlice = createSlice({
         state.jobTemplates = state.jobTemplates.filter(
           (template) => template.id !== action.payload,
         );
+      })
+      // Departments
+      .addCase(fetchDepartments.pending, (state) => {
+        state.departmentsLoading = true;
+        state.departmentsError = null;
+      })
+      .addCase(fetchDepartments.fulfilled, (state, action) => {
+        state.departmentsLoading = false;
+        state.departments = action.payload;
+      })
+      .addCase(fetchDepartments.rejected, (state, action) => {
+        state.departmentsLoading = false;
+        state.departmentsError = action.error.message || 'Failed to fetch departments';
+      })
+      // Job Titles
+      .addCase(fetchJobTitles.pending, (state) => {
+        state.jobTitlesLoading = true;
+        state.jobTitlesError = null;
+      })
+      .addCase(fetchJobTitles.fulfilled, (state, action) => {
+        state.jobTitlesLoading = false;
+        state.jobTitles = action.payload;
+      })
+      .addCase(fetchJobTitles.rejected, (state, action) => {
+        state.jobTitlesLoading = false;
+        state.jobTitlesError = action.error.message || 'Failed to fetch job titles';
+      })
+      // Employment Types
+      .addCase(fetchEmploymentTypes.pending, (state) => {
+        state.employmentTypesLoading = true;
+        state.employmentTypesError = null;
+      })
+      .addCase(fetchEmploymentTypes.fulfilled, (state, action) => {
+        state.employmentTypesLoading = false;
+        state.employmentTypes = action.payload;
+      })
+      .addCase(fetchEmploymentTypes.rejected, (state, action) => {
+        state.employmentTypesLoading = false;
+        state.employmentTypesError = action.error.message || 'Failed to fetch employment types';
       });
   },
 });

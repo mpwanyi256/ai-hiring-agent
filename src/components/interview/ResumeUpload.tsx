@@ -148,7 +148,7 @@ export default function ResumeUpload({ jobToken }: ResumeUploadProps) {
 
   // Main upload interface
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="p-4">
       <div className="max-w-2xl mx-auto px-4 border border-gray-200 rounded-lg p-8 flex flex-col gap-8">
         {/* Header */}
         <div className="text-center">

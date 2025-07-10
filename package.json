@@ -10,7 +10,8 @@
     "db_push": "supabase db push",
     "functions_deploy": "supabase functions deploy ai-candidate-evaluation --use-api",
     "prepare": "husky install",
-    "unused": "next-unused"
+    "unused": "next-unused",
+    "db_types": "npx supabase gen types typescript --project-id 'msrspatwjkmyhgqucxuh' --schema public > ./src/lib/supabase.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -48,6 +49,7 @@
     "langchain": "^0.3.29",
     "lucide-react": "^0.525.0",
     "mammoth": "^1.9.1",
+    "marked": "^16.0.0",
     "next": "15.3.4",
     "openai": "^5.8.2",
     "pdf-parse": "^1.1.1",

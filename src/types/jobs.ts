@@ -1,5 +1,9 @@
-import { JobStatus, UserRole } from '@/lib/supabase';
+import { Database } from '@/lib/supabase';
 import { JobQuestion } from './interview';
+import z from 'zod';
+
+export type JobStatus = Database['public']['Enums']['job_status'];
+export type UserRole = Database['public']['Enums']['user_role'];
 
 export interface Skill {
   id: string;
@@ -36,6 +40,44 @@ export interface JobTemplate {
   updated_at: string;
 }
 
+export interface Department {
+  id: string;
+  name: string;
+}
+
+export interface JobTitle {
+  id: string;
+  name: string;
+}
+
+export interface EmploymentType {
+  id: string;
+  name: string;
+}
+
+export type WorkplaceType = 'on_site' | 'remote' | 'hybrid';
+export type JobType =
+  | 'full_time'
+  | 'part_time'
+  | 'contract'
+  | 'temporary'
+  | 'volunteer'
+  | 'internship'
+  | 'other';
+
+export interface CreateJobPayload {
+  title: string;
+  fields: Record<string, unknown>;
+  interviewFormat: 'text' | 'video';
+  departmentId: string;
+  jobTitleId: string;
+  employmentTypeId: string;
+  workplaceType: string;
+  jobType: string;
+  saveAsTemplate: boolean;
+  templateName?: string;
+}
+
 export interface Job {
   id: string;
   profileId: string;
@@ -55,6 +97,14 @@ export interface Job {
   updatedAt: string;
   interviewLink?: string;
   candidateCount?: number;
+  department?: Department;
+  departmentId?: string;
+  jobTitle?: JobTitle;
+  jobTitleId?: string;
+  employmentType?: EmploymentType;
+  employmentTypeId?: string;
+  workplaceType?: WorkplaceType;
+  jobType?: JobType;
 }
 
 export interface QuestionStats {
@@ -85,6 +135,11 @@ export interface CreateJobData {
   title: string;
   fields: Job['fields'];
   interviewFormat: 'text' | 'video';
+  departmentId?: string;
+  jobTitleId?: string;
+  employmentTypeId?: string;
+  workplaceType?: WorkplaceType;
+  jobType?: JobType;
 }
 
 export interface UpdateJobData {
@@ -120,6 +175,15 @@ export interface ExtendedJobsState extends JobsState {
   skillsLoading: boolean;
   traitsLoading: boolean;
   templatesLoading: boolean;
+  departments: Department[];
+  departmentsLoading: boolean;
+  departmentsError: string | null;
+  jobTitles: JobTitle[];
+  jobTitlesLoading: boolean;
+  jobTitlesError: string | null;
+  employmentTypes: EmploymentType[];
+  employmentTypesLoading: boolean;
+  employmentTypesError: string | null;
 }
 
 export interface AIQuestionsGenerationResponse {
@@ -170,7 +234,7 @@ export interface CompanyJobs {
   updated_at: string;
   creator_details: {
     id: string;
-    role: UserRole;
+    role: string;
     email: string;
     first_name: string;
     last_name: string;
@@ -203,3 +267,31 @@ export interface GetCompanyJobsResponse {
     hasMore: boolean;
   };
 }
+
+export const jobSchema = z.object({
+  title: z.string().min(2, 'Job title must be at least 2 characters'),
+  skills: z.array(z.string().min(1)).optional(),
+  experienceLevel: z.string().optional(),
+  traits: z.array(z.string().min(1)).optional(),
+  interviewFormat: z.enum(['text', 'video']),
+  jobDescription: z.string().min(10, 'Job description must be at least 10 characters'),
+  jobDescriptionUrl: z.string().url().optional().or(z.literal('')),
+  customFields: z
+    .array(
+      z.object({
+        key: z.string().min(1, 'Field name is required'),
+        value: z.string().min(1, 'Field value is required'),
+        inputType: z.enum(['text', 'textarea', 'number', 'file', 'url', 'email']),
+      }),
+    )
+    .optional(),
+  saveAsTemplate: z.boolean().optional(),
+  templateName: z.string().optional(),
+  jobTitleId: z.string().min(1, 'Job title is required'),
+  departmentId: z.string().min(1, 'Department is required'),
+  employmentTypeId: z.string().min(1, 'Employment type is required'),
+  workplaceType: z.string().min(1, 'Workplace type is required'),
+  jobType: z.string().min(1, 'Job type is required'),
+});
+
+export type JobFormData = z.infer<typeof jobSchema>;

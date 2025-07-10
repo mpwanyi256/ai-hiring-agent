@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { CandidateStatus, CandidateStatusOptions, CurrentJob, Job } from '@/types';
-import { JobStatus } from './supabase';
+import { JobStatus } from '@/types/jobs';
 import { apiError, apiSuccess } from './notification';
 import { twMerge } from 'tailwind-merge';
 import { app } from './constants';
@@ -267,7 +267,7 @@ export const getScoreColor = (score: number) => {
 export const shareJob = async (job: Job) => {
   try {
     if (!job) return;
-    const link = job.interviewLink || `${app.baseUrl}/interview/${job.interviewToken}`;
+    const link = job.interviewLink || `${app.baseUrl}/job/${job.interviewToken}`;
 
     if (navigator.share) {
       try {

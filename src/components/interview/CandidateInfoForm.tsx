@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { BriefcaseIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '@/store';
 import { getCandidateDetails } from '@/store/interview/interviewThunks';
 import { setInterviewStep } from '@/store/interview/interviewSlice';
 import { apiError } from '@/lib/notification';
+import { getResumeEvaluation } from '@/store/evaluation/evaluationThunks';
 
 interface CandidateInfo {
   firstName: string;
@@ -26,10 +26,6 @@ export default function CandidateInfoForm({ jobToken }: CandidateInfoFormProps) 
     lastName: '',
     email: '',
   });
-
-  const handleBack = () => {
-    dispatch(setInterviewStep(1));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +55,13 @@ export default function CandidateInfoForm({ jobToken }: CandidateInfoFormProps) 
       if ('isCompleted' in candidate && candidate.isCompleted) {
         dispatch(setInterviewStep(5)); // Step 5: Interview complete/results
         return;
+      } else {
+        dispatch(
+          getResumeEvaluation({
+            candidateId: candidate.id,
+            jobId: candidate.jobId,
+          }),
+        );
       }
 
       // Type guard for evaluation property
@@ -86,14 +89,10 @@ export default function CandidateInfoForm({ jobToken }: CandidateInfoFormProps) 
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-        <div className="text-center mb-6">
-          <BriefcaseIcon className="w-12 h-12 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-text mb-2">Let&apos;s Get Started</h1>
-          <p className="text-muted-text">
-            Please provide your basic information before we begin the interview process.
-          </p>
+    <div className="p-4">
+      <div className="max-w-md w-full">
+        <div className="mb-6">
+          <p className="text-muted-text">Please provide your basic information</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -153,16 +152,6 @@ export default function CandidateInfoForm({ jobToken }: CandidateInfoFormProps) 
             )}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={handleBack}
-            disabled={isLoading}
-            className="text-primary hover:text-primary/80 text-sm disabled:text-primary/50"
-          >
-            ← Back to Job Details
-          </button>
-        </div>
       </div>
     </div>
   );

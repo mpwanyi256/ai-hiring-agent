@@ -1,4 +1,4 @@
-import { UserRole } from '@/lib/supabase';
+import { UserRole } from '@/types/jobs';
 
 export interface User {
   id: string;

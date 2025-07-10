@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jobsService } from '@/lib/services/jobsService';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: jobId } = await params;
 
@@ -14,7 +11,7 @@ export async function GET(
           success: false,
           error: 'Job ID is required',
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -26,7 +23,7 @@ export async function GET(
           success: false,
           error: 'Job not found',
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -41,18 +38,17 @@ export async function GET(
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch job',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: jobId } = await params;
     const body = await request.json();
+
+    console.log('Job update data:', body);
 
     if (!jobId) {
       return NextResponse.json(
@@ -60,7 +56,7 @@ export async function PUT(
           success: false,
           error: 'Job ID is required',
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -71,7 +67,7 @@ export async function PUT(
           success: false,
           error: 'Invalid interview format. Must be "text" or "video"',
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -82,7 +78,7 @@ export async function PUT(
           success: false,
           error: 'Invalid status. Must be "draft", "interviewing", or "closed"',
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -126,7 +122,7 @@ export async function PUT(
           success: false,
           error: 'Job not found',
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -141,14 +137,14 @@ export async function PUT(
         success: false,
         error: error instanceof Error ? error.message : 'Failed to update job',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id: jobId } = await params;
@@ -159,7 +155,7 @@ export async function DELETE(
           success: false,
           error: 'Job ID is required',
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -171,7 +167,7 @@ export async function DELETE(
           success: false,
           error: 'Job not found or could not be deleted',
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -190,7 +186,7 @@ export async function DELETE(
         success: false,
         error: error instanceof Error ? error.message : 'Failed to delete job',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

@@ -208,3 +208,10 @@ export const selectJobsCanBeClosed = createSelector([selectJobsList], (jobs) =>
 export const selectJobsCanBeReopened = createSelector([selectJobsList], (jobs) =>
   jobs.filter((job) => job.status === 'closed' && job.isActive),
 );
+
+export const selectDepartments = (state: RootState) => state.jobs.departments;
+export const selectDepartmentsLoading = (state: RootState) => state.jobs.departmentsLoading;
+export const selectJobTitles = (state: RootState) => state.jobs.jobTitles;
+export const selectJobTitlesLoading = (state: RootState) => state.jobs.jobTitlesLoading;
+export const selectEmploymentTypes = (state: RootState) => state.jobs.employmentTypes;
+export const selectEmploymentTypesLoading = (state: RootState) => state.jobs.employmentTypesLoading;
