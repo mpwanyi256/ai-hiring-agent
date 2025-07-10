@@ -46,7 +46,7 @@ export default function CandidateInfoForm({ jobToken }: CandidateInfoFormProps) 
     setIsLoading(true);
 
     try {
-      await dispatch(
+      const candidate = await dispatch(
         getCandidateDetails({
           jobToken,
           email: candidateInfo.email,
@@ -55,8 +55,27 @@ export default function CandidateInfoForm({ jobToken }: CandidateInfoFormProps) 
         }),
       ).unwrap();
 
-      // Automatically progress to step 3 (resume upload)
-      // dispatch(setInterviewStep(3));
+      // Check for isCompleted and evaluation logic
+      if ('isCompleted' in candidate && candidate.isCompleted) {
+        dispatch(setInterviewStep(5)); // Step 5: Interview complete/results
+        return;
+      }
+
+      // Type guard for evaluation property
+      if ('evaluation' in candidate && candidate.evaluation) {
+        const evaluation = candidate.evaluation as { resumeScore?: number; score?: number };
+        // Prefer resumeScore if available, otherwise use score
+        const score = evaluation?.resumeScore ?? evaluation?.score;
+        if (score !== undefined && score >= 50) {
+          dispatch(setInterviewStep(4)); // Step 4: Interview questions
+        } else {
+          dispatch(setInterviewStep(5)); // Step 5: Results/failure
+        }
+        return;
+      }
+
+      // If no evaluation, go to resume upload
+      dispatch(setInterviewStep(3));
     } catch (err) {
       console.error('Error saving candidate info:', err);
       setError('Something went wrong. Please try again.');

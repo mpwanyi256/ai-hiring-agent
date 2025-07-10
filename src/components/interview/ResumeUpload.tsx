@@ -8,7 +8,8 @@ import ErrorDisplay from './ErrorDisplay';
 import UploadProgress from './UploadProgress';
 import ExistingEvaluationDisplay from './ExistingEvaluationDisplay';
 import { loadedInterview, selectCandidate } from '@/store/interview/interviewSelectors';
-import { useAppSelector } from '@/store';
+import { useAppSelector, useAppDispatch } from '@/store';
+import { setInterviewStep } from '@/store/interview/interviewSlice';
 import { useEffect } from 'react';
 
 interface ResumeUploadProps {
@@ -18,6 +19,7 @@ interface ResumeUploadProps {
 export default function ResumeUpload({ jobToken }: ResumeUploadProps) {
   const job = useAppSelector(loadedInterview);
   const candidateInfo = useAppSelector(selectCandidate);
+  const dispatch = useAppDispatch();
 
   const {
     selectedFile,
@@ -50,26 +52,31 @@ export default function ResumeUpload({ jobToken }: ResumeUploadProps) {
   // Handle evaluation completion
   useEffect(() => {
     if (evaluation) {
-      console.log('New evaluation received:', evaluation);
       handleEvaluationComplete(evaluation);
     }
   }, [evaluation, handleEvaluationComplete]);
 
+  // Handle evaluation result and step transition
+  useEffect(() => {
+    const displayEvaluation = evaluation || (existingEvaluation ? existingEvaluation : undefined);
+    if (displayEvaluation && typeof displayEvaluation === 'object') {
+      const score =
+        typeof displayEvaluation.resumeScore === 'number'
+          ? displayEvaluation.resumeScore
+          : displayEvaluation.score;
+      if (typeof score === 'number') {
+        if (score >= 50) {
+          dispatch(setInterviewStep(4)); // Interview step
+        } else {
+          dispatch(setInterviewStep(5)); // Results/failure step
+        }
+      }
+    }
+  }, [evaluation, existingEvaluation, dispatch]);
+
   // Debug logging
   useEffect(() => {
-    console.log('ResumeUpload state:', {
-      candidateInfo: !!candidateInfo,
-      job: !!job,
-      isCheckingExisting,
-      existingEvaluation: !!existingEvaluation,
-      evaluation: !!evaluation,
-      hasExistingEvaluation,
-      canProceed,
-    });
-
-    if (canProceed) {
-      proceedToInterview();
-    }
+    // The old proceedToInterview/canProceed logic is now handled by the new useEffect
   }, [
     candidateInfo,
     job,
@@ -107,14 +114,16 @@ export default function ResumeUpload({ jobToken }: ResumeUploadProps) {
 
   // Show existing evaluation results if we have any evaluation (new or existing)
   if (evaluation || existingEvaluation) {
-    const displayEvaluation = evaluation || existingEvaluation;
-    return (
-      <ExistingEvaluationDisplay
-        evaluation={displayEvaluation}
-        job={job}
-        onProceedToInterview={proceedToInterview}
-      />
-    );
+    const displayEvaluation = evaluation || (existingEvaluation ? existingEvaluation : undefined);
+    if (displayEvaluation) {
+      return (
+        <ExistingEvaluationDisplay
+          evaluation={displayEvaluation}
+          job={job}
+          onProceedToInterview={proceedToInterview}
+        />
+      );
+    }
   }
 
   // Show message if no candidate info is available
@@ -207,8 +216,6 @@ export default function ResumeUpload({ jobToken }: ResumeUploadProps) {
             </div>
           </div>
         </div>
-
-        <div>Don&apos;t see what you&apos;re looking for? Here&apos;s what you can do:</div>
       </div>
     </div>
   );

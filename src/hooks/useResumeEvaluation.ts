@@ -54,12 +54,10 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
 
         if (result) {
           setExistingEvaluation(result);
-          console.log('Found existing evaluation:', result);
         } else {
-          console.log('No existing evaluation found');
+          setExistingEvaluation(undefined);
         }
       } catch (err) {
-        console.error('Error checking existing evaluation:', err);
         // Don't show error to user for this check
       } finally {
         setIsCheckingExisting(false);
@@ -74,7 +72,6 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
   const handleFileSelect = (file: File) => {
     // Don't allow file selection if there's already an evaluation
     if (existingEvaluation) {
-      console.log('Cannot upload new file - existing evaluation found');
       return;
     }
 
@@ -87,7 +84,6 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
 
     // Don't allow upload if there's already an evaluation
     if (existingEvaluation) {
-      console.log('Cannot upload new resume - existing evaluation found');
       return;
     }
 
@@ -104,10 +100,8 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
           },
         }),
       ).unwrap();
-
-      console.log('Resume evaluation completed:', result);
     } catch (err) {
-      console.error('Error evaluating resume:', err);
+      // Error handled elsewhere
     }
   };
 

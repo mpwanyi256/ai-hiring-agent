@@ -98,7 +98,11 @@ export const getResumeEvaluation = createAsyncThunk(
       throw new Error(errorData.error || 'Failed to get resume evaluation');
     }
 
-    const result = await response.json();
+    const result = (await response.json()) as { evaluation: InterviewEvaluation | null };
+
+    if (!result?.evaluation) {
+      return null;
+    }
 
     if (result.evaluation.resumeScore && result.evaluation.resumeScore < 50) {
       dispatch(setInterviewStep(5));
