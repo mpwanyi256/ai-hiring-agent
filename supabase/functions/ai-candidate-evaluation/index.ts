@@ -236,13 +236,13 @@ async function gatherCandidateData(candidateInfoId: string, jobId: string) {
 
     if (candidateRowError) throw candidateRowError;
     if (!candidateRow) throw new Error('Candidate application not found');
-    const candidateId = candidateInfoId;
+    // const candidateId = candidateInfoId;
 
     // Get candidate details from the view (includes job info and previous evaluation)
     const { data: candidateDetails, error: candidateError } = await supabase
       .from('candidate_details')
       .select('*')
-      .eq('candidate_info_id', candidateId)
+      .eq('candidate_info_id', candidateInfoId)
       .eq('job_id', jobId)
       .single();
 
@@ -253,7 +253,7 @@ async function gatherCandidateData(candidateInfoId: string, jobId: string) {
     const { data: responses, error: responsesError } = await supabase
       .from('responses')
       .select('question, answer')
-      .eq('candidate_id', candidateId)
+      .eq('candidate_id', candidateRow.id) // get responses based on the candidate application id
       .eq('job_id', jobId)
       .order('created_at', { ascending: true });
 
@@ -282,7 +282,8 @@ async function gatherCandidateData(candidateInfoId: string, jobId: string) {
       responses: responses || [],
       resumeUrl: candidateDetails.resume_public_url,
       previousEvaluation,
-      candidateId, // pass the resolved application id for downstream use
+      candidateId: candidateInfoId, // pass the resolved application id for downstream use
+      candidateApplicationId: candidateRow.id, // pass the resolved application id for downstream use
     };
   } catch (error) {
     console.error('Error gathering candidate data:', error);
@@ -297,10 +298,8 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
   try {
     console.log(`Starting background evaluation for candidate ${candidateId} and job ${jobId}`);
 
-    const { job, responses, resumeUrl, previousEvaluation } = await gatherCandidateData(
-      candidateId,
-      jobId,
-    );
+    const { job, responses, resumeUrl, previousEvaluation, candidateApplicationId } =
+      await gatherCandidateData(candidateId, jobId);
 
     const formattedResponses = responses
       .map((r: any, index: number) => `Q${index + 1}: ${r.question}\nA${index + 1}: ${r.answer}`)
@@ -319,6 +318,8 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
 
     console.log(`Calling OpenAI API for candidate ${candidateId}`);
     const aiResponse = await callOpenAI(prompt);
+    console.log(`AI evaluation response: ${aiResponse}`);
+
     const evaluationResult = parseAIResponse(aiResponse);
     const processingDuration = Date.now() - startTime;
 
@@ -383,7 +384,6 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
     const { error: updateError } = await supabase
       .from('evaluations')
       .update({
-        candidate_id: candidateId,
         score: evaluationResult.overall_score,
         recommendation: evaluationResult.recommendation,
         summary: evaluationResult.evaluation_summary,
@@ -394,7 +394,7 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
         feedback: evaluationResult.evaluation_explanation,
         evaluation_type: 'combined',
       })
-      .eq('candidate_id', candidateId)
+      .eq('candidate_id', candidateApplicationId) // TODO: Update table to reference actual candidate id
       .eq('job_id', jobId);
 
     if (updateError) {
