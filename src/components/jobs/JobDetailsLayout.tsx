@@ -29,6 +29,7 @@ import { selectSkillsData, selectSkillsLoading } from '@/store/skills/skillsSele
 import { selectTraitsData, selectTraitsLoading } from '@/store/traits/traitsSelectors';
 import { fetchSkills } from '@/store/skills/skillsThunks';
 import { fetchTraits } from '@/store/traits/traitsThunks';
+import { selectCompanySlug } from '@/store/auth/authSelectors';
 
 interface JobDetailsLayoutProps {
   job: CurrentJob;
@@ -54,6 +55,7 @@ export default function JobDetailsLayout({
 }: JobDetailsLayoutProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const companySlug = useAppSelector(selectCompanySlug);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -302,7 +304,7 @@ export default function JobDetailsLayout({
               Share
             </Button>
 
-            <Link href={`${app.baseUrl}/job/${job.interviewToken}`} target="_blank">
+            <Link href={`${app.baseUrl}/${companySlug}/${job.interviewToken}`} target="_blank">
               <Button size="sm" className="flex items-center text-sm">
                 <EyeIcon className="w-4 h-4 mr-1" />
                 Preview

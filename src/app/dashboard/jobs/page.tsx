@@ -19,9 +19,11 @@ import { fetchJobsPaginated } from '@/store/jobs/jobsThunks';
 import { CompanyJobs } from '@/types/jobs';
 import { selectCompanyJobs } from '@/store/jobs/jobsSelectors';
 import { apiError } from '@/lib/notification';
+import { selectCompanySlug } from '@/store/auth/authSelectors';
 
 export default function JobsPage() {
   const { user } = useAppSelector((state) => state.auth);
+  const companySlug = useAppSelector(selectCompanySlug);
   const { success, error: showError } = useToast();
   const dispatch = useAppDispatch();
   const { pagination, jobs } = useAppSelector(selectCompanyJobs);
@@ -117,7 +119,7 @@ export default function JobsPage() {
   }, [loadMore]);
 
   const copyInterviewLink = async (job: CompanyJobs) => {
-    const link = `${window.location.origin}/job/${job.interview_token}`;
+    const link = `${window.location.origin}/${companySlug}/${job.interview_token}`;
 
     try {
       await navigator.clipboard.writeText(link);

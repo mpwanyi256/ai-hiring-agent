@@ -14,6 +14,7 @@ import { updateJobStatus } from '@/store/jobs/jobsThunks';
 import { useState } from 'react';
 import { useToast } from '../providers/ToastProvider';
 import { app } from '@/lib/constants';
+import { selectCompanySlug } from '@/store/auth/authSelectors';
 
 interface CurrentJobHeaderProps {
   onSetActiveTab: (tab: string) => void;
@@ -23,6 +24,7 @@ export const CurrentJobHeader: React.FC<CurrentJobHeaderProps> = ({ onSetActiveT
   const job = useAppSelector(selectCurrentJob);
   const isLoading = useAppSelector(selectJobsLoading);
   const questionsCount = useAppSelector(selectJobQuestionsCount);
+  const companySlug = useAppSelector(selectCompanySlug);
   const dispatch = useAppDispatch();
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { success, error: showError } = useToast();
@@ -85,7 +87,7 @@ export const CurrentJobHeader: React.FC<CurrentJobHeaderProps> = ({ onSetActiveT
         <Button
           variant="outline"
           size="sm"
-          onClick={() => copyInterviewLink(`${app.baseUrl}/job/${job.interviewToken}`)}
+          onClick={() => copyInterviewLink(`${app.baseUrl}/${companySlug}/${job.interviewToken}`)}
           className="flex items-center"
         >
           <LinkIcon className="w-4 h-4 mr-1" />
@@ -138,7 +140,7 @@ export const CurrentJobHeader: React.FC<CurrentJobHeaderProps> = ({ onSetActiveT
           </Button>
         )}
         {job.status === 'interviewing' && (
-          <Link href={job.interviewLink || `/job/${job.interviewToken}`} target="_blank">
+          <Link href={`${app.baseUrl}/${companySlug}/${job.interviewToken}`} target="_blank">
             <Button variant="outline" size="sm" className="flex items-center">
               <EyeIcon className="w-4 h-4 mr-1" />
               Test Interview
