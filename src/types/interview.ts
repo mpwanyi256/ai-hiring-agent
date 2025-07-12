@@ -1,5 +1,6 @@
-import { JobData } from "@/lib/services/jobsService";
-import { CandidateBasic } from "./candidates";
+import { JobData } from '@/lib/services/jobsService';
+import { CandidateBasic } from './candidates';
+import { ClientCompany } from './company';
 
 export interface JobQuestion {
   id: string;
@@ -148,7 +149,7 @@ export interface QuestionGenerationResponse {
   questions: Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[];
   totalGenerated: number;
   estimatedDuration: number; // total estimated interview duration
-} 
+}
 
 export interface InterviewState {
   interview: JobData | null;
@@ -156,6 +157,7 @@ export interface InterviewState {
   candidate: CandidateBasic | null;
   isLoading: boolean;
   error: string | null;
+  company: Omit<ClientCompany, 'id'> | null;
 }
 
 export interface createCandidateAccountPayload {

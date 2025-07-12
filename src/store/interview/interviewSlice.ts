@@ -2,6 +2,7 @@ import { JobData } from '@/lib/services/jobsService';
 import { InterviewState } from '@/types/interview';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { fetchInterview, getCandidateDetails } from './interviewThunks';
+import { fetchCompanyBySlug } from '../company/companyThunks';
 
 const initialState: InterviewState = {
   interview: null,
@@ -9,6 +10,7 @@ const initialState: InterviewState = {
   isLoading: false,
   error: null,
   candidate: null,
+  company: null,
 };
 
 const interviewSlice = createSlice({
@@ -50,6 +52,13 @@ const interviewSlice = createSlice({
       })
       .addCase(fetchInterview.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to fetch interview';
+        state.isLoading = false;
+      })
+      .addCase(fetchCompanyBySlug.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchCompanyBySlug.fulfilled, (state, action) => {
+        state.company = action.payload;
         state.isLoading = false;
       });
   },

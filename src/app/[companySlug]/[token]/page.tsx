@@ -6,38 +6,43 @@ import TopNavigation from '@/components/navigation/TopNavigation';
 import JobSidebar from './JobSidebar';
 import JobOverviewTab from './JobOverviewTab';
 import JobApplicationTab from './JobApplicationTab';
-import { useAppDispatch } from '@/store';
-import { setInterview } from '@/store/interview/interviewSlice';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { fetchInterview } from '@/store/interview/interviewThunks';
+import { fetchCompanyBySlug } from '@/store/company/companyThunks';
+import {
+  selectIsLoading,
+  loadedInterview,
+  selectInterviewCompany,
+} from '@/store/interview/interviewSelectors';
 
 export default function PublicJobPage() {
-  const { token } = useParams<{ token: string }>();
-  const [loading, setLoading] = useState(true);
+  const { token, companySlug } = useParams<{ token: string; companySlug: string }>();
+  // const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'application'>('overview');
   const dispatch = useAppDispatch();
+  const isLoading = useAppSelector(selectIsLoading);
+  // const company = useAppSelector(selectInterviewCompany);
+  // const interview = useAppSelector(loadedInterview);
+
+  console.log('companySlug', companySlug);
 
   useEffect(() => {
     if (!token) return;
-    setLoading(true);
+    // setLoading(true);
     setError(null);
-    fetch(`/api/jobs/interview/${token}`)
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to fetch job');
-        dispatch(setInterview(data.data));
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [token, dispatch]);
+
+    Promise.all([dispatch(fetchInterview(token)), dispatch(fetchCompanyBySlug(companySlug))]);
+  }, [token, dispatch, companySlug]);
 
   return (
     <div className="min-h-screen w-full bg-[#f7f7f8] flex flex-col">
       {/* Top Navigation at the very top */}
       <TopNavigation showAuthButtons={false} />
       <div className="flex-1 w-full max-w-6xl flex flex-col items-center mx-auto mb-10 mt-8 px-2">
-        {loading && <div className="text-gray-500 text-lg py-20">Loading job details...</div>}
+        {isLoading && <div className="text-gray-500 text-lg py-20">Loading job details...</div>}
         {error && <div className="text-red-600 text-lg py-20">{error}</div>}
-        {!loading && !error && (
+        {!isLoading && !error && (
           <div className="w-full flex flex-col lg:flex-row gap-16 items-start justify-start">
             {/* Left: Job Info Sidebar */}
             <aside className="w-full lg:w-1/3 flex-shrink-0 lg:border-r lg:border-gray-200 lg:pr-10 mb-8 lg:mb-0">

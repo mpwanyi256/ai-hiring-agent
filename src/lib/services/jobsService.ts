@@ -35,6 +35,7 @@ export interface JobData {
   employmentTypeId: string;
   workplaceType: string;
   jobType: string;
+  companyId: string;
   companyName?: string;
   companyLogo?: string;
   companySlug?: string;
@@ -212,6 +213,7 @@ function transformJobFromDB(dbJob: JobComprehensiveRow): JobData {
     employmentTypeId: dbJob.employment_type_id || '',
     workplaceType: dbJob.workplace_type || '',
     jobType: dbJob.job_type || '',
+    companyId: dbJob.company_id || '',
     companyName: dbJob.company_name || '',
     companyLogo: dbJob.company_logo_url || '',
     companySlug: dbJob.company_slug || '',
@@ -792,7 +794,7 @@ class JobsService {
       const supabase = await createClient();
 
       const { data: job, error } = await supabase
-        .from('jobs')
+        .from('jobs_comprehensive')
         .select('*')
         .eq('interview_token', interviewToken)
         .eq('is_active', true)
@@ -818,6 +820,10 @@ class JobsService {
         employmentTypeId: job.employment_type_id || '',
         workplaceType: job.workplace_type || '',
         jobType: job.job_type || '',
+        companyId: job.company_id || '',
+        companyName: job.company_name || '',
+        companyLogo: job.company_logo_url || '',
+        companySlug: job.company_slug || '',
       };
     } catch (error) {
       console.error('Error getting job by interview token:', error);
