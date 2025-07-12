@@ -1,36 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { CandidateStatus } from '@/types/candidates';
+import { AppRequestParams } from '@/types/api';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: AppRequestParams<{ id: string }>) {
   try {
     const supabase = await createClient();
     const searchParams = request.nextUrl.searchParams;
-    
+
     const profileId = searchParams.get('profileId');
     const { id: candidateId } = await params;
 
     if (!profileId) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Profile ID is required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Profile ID is required',
+        },
+        { status: 400 },
+      );
     }
 
     if (!candidateId) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Candidate ID is required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Candidate ID is required',
+        },
+        { status: 400 },
+      );
     }
 
     // Fetch candidate with job and evaluation details
     const { data: candidate, error: candidateError } = await supabase
       .from('candidates')
-      .select(`
+      .select(
+        `
         id,
         job_id,
         interview_token,
@@ -67,17 +72,21 @@ export async function GET(
           created_at,
           updated_at
         )
-      `)
+      `,
+      )
       .eq('id', candidateId)
       .eq('jobs.profile_id', profileId)
       .single();
 
     if (candidateError) {
       if (candidateError.code === 'PGRST116') {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Candidate not found' 
-        }, { status: 404 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Candidate not found',
+          },
+          { status: 404 },
+        );
       }
       throw new Error(candidateError.message);
     }
@@ -85,13 +94,15 @@ export async function GET(
     // Fetch candidate responses
     const { data: responses, error: responsesError } = await supabase
       .from('responses')
-      .select(`
+      .select(
+        `
         id,
         question,
         answer,
         response_time,
         created_at
-      `)
+      `,
+      )
       .eq('candidate_id', candidateId)
       .order('created_at', { ascending: true });
 
@@ -104,10 +115,13 @@ export async function GET(
     const answeredQuestions = responses?.length || 0;
     const totalInterviewTime = responses?.reduce((sum, r) => sum + (r.response_time || 0), 0) || 0;
     const averageResponseTime = answeredQuestions > 0 ? totalInterviewTime / answeredQuestions : 0;
-    const completionPercentage = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
+    const completionPercentage =
+      totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
 
     // Format the response data
-    const candidateInfo = Array.isArray(candidate.candidates_info) ? candidate.candidates_info[0] : candidate.candidates_info;
+    const candidateInfo = Array.isArray(candidate.candidates_info)
+      ? candidate.candidates_info[0]
+      : candidate.candidates_info;
     const job = Array.isArray(candidate.jobs) ? candidate.jobs[0] : candidate.jobs;
     const evaluation = candidate.evaluations?.[0];
 
@@ -118,7 +132,9 @@ export async function GET(
       email: candidateInfo?.email,
       firstName: candidateInfo?.first_name,
       lastName: candidateInfo?.last_name,
-      fullName: `${candidateInfo?.first_name || ''} ${candidateInfo?.last_name || ''}`.trim() || 'Anonymous',
+      fullName:
+        `${candidateInfo?.first_name || ''} ${candidateInfo?.last_name || ''}`.trim() ||
+        'Anonymous',
       currentStep: candidate.current_step,
       totalSteps: candidate.total_steps,
       isCompleted: candidate.is_completed,
@@ -132,27 +148,30 @@ export async function GET(
         fields: job?.fields || {},
         interviewFormat: job?.interview_format || 'text',
       },
-      responses: responses?.map(response => ({
-        id: response.id,
-        questionId: response.id,
-        question: response.question,
-        answer: response.answer,
-        responseTime: response.response_time || 0,
-        createdAt: response.created_at,
-      })) || [],
-      evaluation: evaluation ? {
-        id: evaluation.id,
-        summary: evaluation.summary,
-        score: evaluation.score,
-        strengths: evaluation.strengths || [],
-        redFlags: evaluation.red_flags || [],
-        skillsAssessment: evaluation.skills_assessment || {},
-        traitsAssessment: evaluation.traits_assessment || {},
-        recommendation: evaluation.recommendation,
-        feedback: evaluation.feedback,
-        createdAt: evaluation.created_at,
-        updatedAt: evaluation.updated_at,
-      } : null,
+      responses:
+        responses?.map((response) => ({
+          id: response.id,
+          questionId: response.id,
+          question: response.question,
+          answer: response.answer,
+          responseTime: response.response_time || 0,
+          createdAt: response.created_at,
+        })) || [],
+      evaluation: evaluation
+        ? {
+            id: evaluation.id,
+            summary: evaluation.summary,
+            score: evaluation.score,
+            strengths: evaluation.strengths || [],
+            redFlags: evaluation.red_flags || [],
+            skillsAssessment: evaluation.skills_assessment || {},
+            traitsAssessment: evaluation.traits_assessment || {},
+            recommendation: evaluation.recommendation,
+            feedback: evaluation.feedback,
+            createdAt: evaluation.created_at,
+            updatedAt: evaluation.updated_at,
+          }
+        : null,
       stats: {
         totalQuestions,
         answeredQuestions,
@@ -168,17 +187,17 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error fetching candidate details:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to fetch candidate details' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch candidate details',
+      },
+      { status: 500 },
+    );
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
     const { id } = resolvedParams;
@@ -186,10 +205,13 @@ export async function PATCH(
     const { status } = body;
 
     if (!status) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Status is required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Status is required',
+        },
+        { status: 400 },
+      );
     }
 
     // Validate status
@@ -202,14 +224,17 @@ export async function PATCH(
       'offer_accepted',
       'hired',
       'rejected',
-      'withdrawn'
+      'withdrawn',
     ];
 
     if (!validStatuses.includes(status)) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Invalid status value' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid status value',
+        },
+        { status: 400 },
+      );
     }
 
     const supabase = await createClient();
@@ -224,24 +249,30 @@ export async function PATCH(
 
     if (error) {
       console.error('Error updating candidate status:', error);
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Failed to update candidate status' 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to update candidate status',
+        },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
       success: true,
       candidate: {
         id: data.id,
-        status: data.status
-      }
+        status: data.status,
+      },
     });
   } catch (error) {
     console.error('Error updating candidate status:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Internal server error' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+      },
+      { status: 500 },
+    );
   }
-} 
+}

@@ -15,6 +15,7 @@ import { Loading } from '@/components/ui/Loading';
 import { DashboardError } from '../ui/DashboardError';
 import { useToast } from '../providers/ToastProvider';
 import { setSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSlice';
+import { selectCompany } from '@/store/company/companySelectors';
 
 interface CurrentJobWrapperPageProps {
   params: Promise<{
@@ -31,6 +32,7 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
   const error = useAppSelector(selectJobsError);
   const [activeTab, setActiveTab] = useState('overview');
   const job = useAppSelector(selectCurrentJob);
+  const company = useAppSelector(selectCompany);
 
   // Fetch job details and questions
   useEffect(() => {
@@ -87,7 +89,7 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
       job={job}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      onShareJob={() => shareJob(job)}
+      onShareJob={() => shareJob(job, company?.slug || '')}
     >
       {renderTabContent()}
     </JobDetailsLayout>

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadService } from '@/lib/services/uploadService';
+import { AppRequestParams } from '@/types/api';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: AppRequestParams<{ id: string }>) {
   try {
     const { id } = await params;
-    console.log('uploading logo for company', id);
     const formData = await request.formData();
     const file = formData.get('file');
     if (!file || !(file instanceof File)) {
@@ -13,7 +13,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const ext = file.name.split('.').pop() || 'png';
     const fileName = `logos/${id}_${Date.now()}.${ext}`;
 
-    console.log('file name', fileName);
     const { public_url, path } = await uploadService.uploadFile({
       file,
       bucketName: 'company',

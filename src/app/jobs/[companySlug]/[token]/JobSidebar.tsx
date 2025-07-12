@@ -1,5 +1,6 @@
 import { useAppSelector } from '@/store';
 import { loadedInterview } from '@/store/interview/interviewSelectors';
+import { AppJobsFields } from '@/types';
 
 export default function JobSidebar() {
   const job = useAppSelector(loadedInterview);
@@ -64,7 +65,7 @@ export default function JobSidebar() {
         <div className="mb-6">
           <h3 className="font-semibold text-gray-900 mb-3">Additional Requirements</h3>
           <div className="space-y-2">
-            {Object.entries(job.fields.customFields).map(([key, field]: [string, any]) => (
+            {Object.entries(job.fields.customFields).map(([key, field]: AppJobsFields) => (
               <div key={key} className="text-sm">
                 <span className="font-medium text-gray-900">{key}:</span>{' '}
                 <span className="text-gray-700">{field.value}</span>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { AppRequestParams } from '@/types/api';
 // import { ClientCompany } from '@/types/company';
 // import { SupabaseResponse } from '@/types';
 
@@ -19,7 +20,7 @@ import { createClient } from '@/lib/supabase/server';
 //   }
 // }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: AppRequestParams<{ id: string }>) {
   try {
     const { id } = await params;
     const supabase = await createClient();
