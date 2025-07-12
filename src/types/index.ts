@@ -8,10 +8,19 @@ export * from './jobs';
 export * from './candidates';
 
 // Export all common types
-export * from './common'; 
+export * from './common';
 
 export interface APIResponse<T> {
   success: boolean;
   data: T;
   error?: string;
+}
+
+export interface SupabaseResponse<T> {
+  data: T;
+  error: {
+    code: string;
+    message: string;
+    hint?: string;
+  } | null;
 }
