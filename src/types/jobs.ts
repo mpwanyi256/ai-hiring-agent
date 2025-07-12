@@ -116,15 +116,10 @@ export interface QuestionStats {
   estimatedDuration: number;
 }
 
-export interface CurrentJob extends Job {
-  questions?: JobQuestion[];
-  questionStats?: QuestionStats;
-}
-
 export interface JobsState {
   jobs: Job[];
   companyJobs: GetCompanyJobsResponse;
-  currentJob: CurrentJob | null;
+  currentJob: Job | null;
   isLoading: boolean;
   error: string | null;
   totalJobs: number;
@@ -184,6 +179,8 @@ export interface ExtendedJobsState extends JobsState {
   employmentTypes: EmploymentType[];
   employmentTypesLoading: boolean;
   employmentTypesError: string | null;
+  questions: JobQuestion[];
+  questionStats: QuestionStats;
 }
 
 export interface AIQuestionsGenerationResponse {

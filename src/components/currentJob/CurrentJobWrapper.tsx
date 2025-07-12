@@ -34,6 +34,8 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
   const job = useAppSelector(selectCurrentJob);
   const company = useAppSelector(selectCompany);
 
+  console.log('Loaded Job', job);
+
   // Fetch job details and questions
   useEffect(() => {
     dispatch(fetchJobById(resolvedParams.id))

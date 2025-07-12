@@ -8,11 +8,9 @@ export const selectCurrentJob = (state: RootState) => state.jobs.currentJob;
 export const selectJobsLoading = (state: RootState) => state.jobs.isLoading;
 export const selectJobsError = (state: RootState) => state.jobs.error;
 export const selectTotalJobs = (state: RootState) => state.jobs.totalJobs;
-export const selectJobQuestions = (state: RootState) => state.jobs.currentJob?.questions || [];
-export const selectJobQuestionsCount = (state: RootState) =>
-  state.jobs.currentJob?.questions?.length || 0;
-export const selectJobQuestionStats = (state: RootState) =>
-  state.jobs.currentJob?.questionStats || null;
+export const selectJobQuestions = (state: RootState) => state.jobs.questions || [];
+export const selectJobQuestionsCount = (state: RootState) => state.jobs.questions.length || 0;
+export const selectJobQuestionStats = (state: RootState) => state.jobs.questionStats || null;
 
 export const selectCompanyJobs = (state: RootState) => state.jobs.companyJobs;
 

@@ -52,6 +52,15 @@ const initialState: ExtendedJobsState = {
   employmentTypes: [],
   employmentTypesLoading: false,
   employmentTypesError: null,
+  questions: [],
+  questionStats: {
+    total: 0,
+    required: 0,
+    optional: 0,
+    aiGenerated: 0,
+    custom: 0,
+    estimatedDuration: 0,
+  },
 };
 
 const jobsSlice = createSlice({
@@ -104,10 +113,8 @@ const jobsSlice = createSlice({
         state.error = action.error.message || 'Failed to fetch jobs';
       })
       .addCase(fetchJobQuestions.fulfilled, (state, action) => {
-        if (state.currentJob) {
-          state.currentJob.questions = action.payload.questions;
-          state.currentJob.questionStats = action.payload.stats;
-        }
+        state.questions = action.payload.questions;
+        state.questionStats = action.payload.stats;
       })
       // Fetch Jobs by Profile
       .addCase(fetchJobsByProfile.pending, (state) => {
