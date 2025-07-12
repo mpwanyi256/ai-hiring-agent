@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
-import { CurrentJob } from '@/types/jobs';
+import { Job } from '@/types/jobs';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeftIcon,
@@ -32,7 +32,7 @@ import { fetchTraits } from '@/store/traits/traitsThunks';
 import { selectCompanySlug } from '@/store/auth/authSelectors';
 
 interface JobDetailsLayoutProps {
-  job: CurrentJob;
+  job: Job;
   children: React.ReactNode;
   activeTab: string;
   onTabChange: (tab: string) => void;
@@ -458,7 +458,7 @@ export default function JobDetailsLayout({
                       {/* Selected Skills */}
                       {skillsDraft.length > 0 && (
                         <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 mt-2 bg-gray-50 rounded-lg border border-gray-light">
-                          {skillsDraft.map((skill) => (
+                          {skillsDraft.map((skill: string) => (
                             <span
                               key={skill}
                               className="inline-flex items-center px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
@@ -467,7 +467,7 @@ export default function JobDetailsLayout({
                               <button
                                 type="button"
                                 onClick={() =>
-                                  setSkillsDraft(skillsDraft.filter((s) => s !== skill))
+                                  setSkillsDraft(skillsDraft.filter((s: string) => s !== skill))
                                 }
                                 className="ml-2 text-primary hover:text-accent-red transition-colors"
                               >

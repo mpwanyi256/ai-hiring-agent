@@ -92,7 +92,7 @@ export const CandidateDetailsHeader = () => {
                     <span
                       className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${option.color}`}
                     >
-                      {option.label}...
+                      {option.label}
                     </span>
                   </SelectItem>
                 ))}
