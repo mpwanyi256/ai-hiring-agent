@@ -165,11 +165,10 @@ export default function CandidateResponses() {
                     <div className="space-y-3">
                       <div>
                         <h4 className="font-medium text-gray-900 mb-2">Question:</h4>
-                        <p className="text-gray-700 text-sm">{response.questionText}</p>
+                        <p className="text-gray-700 text-sm">{response.question}</p>
                       </div>
 
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Response:</h4>
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                           <p className="text-gray-700 text-sm whitespace-pre-wrap">
                             {response.responseText}

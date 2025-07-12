@@ -6,7 +6,7 @@ import CandidatesOverview from './CandidatesOverview';
 import CandidatesList from './CandidatesList';
 import CandidateAnalytics from '@/components/evaluations/CandidateAnalytics';
 import CandidateResponses from '@/components/candidates/CandidateResponses';
-import { CurrentJob } from '@/types/jobs';
+import { Job } from '@/types/jobs';
 import { AppDispatch, RootState } from '@/store';
 import { fetchJobCandidates } from '@/store/candidates/candidatesThunks';
 import {
@@ -28,7 +28,7 @@ import {
 } from '@/store/selectedCandidate/selectedCandidateSelectors';
 
 interface JobCandidatesProps {
-  job: CurrentJob;
+  job: Job;
 }
 
 const candidateTabs = [
