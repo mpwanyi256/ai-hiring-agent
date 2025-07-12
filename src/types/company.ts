@@ -4,6 +4,7 @@ export interface ClientCompany {
   slug: string;
   bio: string;
   logo_url: string | null;
+  logo_path: string | null;
 }
 
 export interface CompanyState {

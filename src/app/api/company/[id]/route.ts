@@ -6,7 +6,6 @@ import { SupabaseResponse } from '@/types';
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = await params;
-    console.log('id', id);
     const supabase = await createClient();
 
     const { data, error } = <SupabaseResponse<ClientCompany>>(
