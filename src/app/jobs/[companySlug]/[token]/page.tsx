@@ -8,12 +8,7 @@ import JobOverviewTab from './JobOverviewTab';
 import JobApplicationTab from './JobApplicationTab';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchInterview } from '@/store/interview/interviewThunks';
-import { fetchCompanyBySlug } from '@/store/company/companyThunks';
-import {
-  selectIsLoading,
-  loadedInterview,
-  selectInterviewCompany,
-} from '@/store/interview/interviewSelectors';
+import { selectIsLoading } from '@/store/interview/interviewSelectors';
 
 export default function PublicJobPage() {
   const { token, companySlug } = useParams<{ token: string; companySlug: string }>();
@@ -21,10 +16,6 @@ export default function PublicJobPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'application'>('overview');
   const dispatch = useAppDispatch();
   const isLoading = useAppSelector(selectIsLoading);
-  const company = useAppSelector(selectInterviewCompany);
-  const interview = useAppSelector(loadedInterview);
-
-  console.log('companySlug', companySlug);
 
   useEffect(() => {
     if (!token) return;

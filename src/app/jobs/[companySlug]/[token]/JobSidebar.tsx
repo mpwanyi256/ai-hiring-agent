@@ -11,40 +11,9 @@ export default function JobSidebar() {
       <div className="text-2xl font-semibold text-gray-900 mb-6 leading-tight">{job.title}</div>
       {/* Job Details */}
       <div className="mb-6 text-sm text-gray-700 space-y-3">
-        {/* {job.fields?.location && (
-          <div>
-            <span className="font-medium text-gray-500">Location:</span> {job.fields.location}
-          </div>
-        )}
-        {job.fields?.employmentType && (
-          <div>
-            <span className="font-medium text-gray-500">Employment Type:</span>{' '}
-            {job.fields.employmentType}
-          </div>
-        )} */}
-        {/* {job.fields?.workplaceType && (
-          <div>
-            <span className="font-medium text-gray-500">Location Type:</span>{' '}
-            {job.fields.workplaceType}
-          </div>
-        )}
-        {job.fields?.department && (
-          <div>
-            <span className="font-medium text-gray-500">Department:</span> {job.fields.department}
-          </div>
-        )} */}
-        {/* {job.fields?.compensation && (
-          <div>
-            <span className="font-medium text-gray-500">Compensation:</span>{' '}
-            <pre className="inline whitespace-pre-wrap font-sans text-gray-700">
-              {job.fields.compensation}
-            </pre>
-          </div>
-        )} */}
-        {/* <div>
-          <span className="font-medium text-gray-500">Application Format:</span>{' '}
-          {job.interviewFormat === 'video' ? 'Video' : 'Text'}
-        </div> */}
+        <div>
+          <span className="font-medium text-gray-500">Employment Type:</span> {job.jobType}
+        </div>
         <div>
           <span className="font-medium text-gray-500">Duration:</span> 5-10 minutes
         </div>

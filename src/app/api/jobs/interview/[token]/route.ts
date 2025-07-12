@@ -65,13 +65,13 @@ export async function GET(
       interviewToken: job.interviewToken,
       isActive: job.isActive,
       status: job.status,
-      candidateCount: job.candidateCount,
       profileId: job.profileId,
       companyName: job.companyName,
       companyLogo: job.companyLogo,
       companySlug: job.companySlug,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
+      jobType: job.jobType,
     };
 
     return NextResponse.json({
