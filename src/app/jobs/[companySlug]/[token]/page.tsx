@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import TopNavigation from '@/components/navigation/TopNavigation';
+import CompanyTopNavigation from '@/components/navigation/CompanyTopNavigation';
 import JobSidebar from './JobSidebar';
 import JobOverviewTab from './JobOverviewTab';
 import JobApplicationTab from './JobApplicationTab';
@@ -17,28 +17,26 @@ import {
 
 export default function PublicJobPage() {
   const { token, companySlug } = useParams<{ token: string; companySlug: string }>();
-  // const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'application'>('overview');
   const dispatch = useAppDispatch();
   const isLoading = useAppSelector(selectIsLoading);
-  // const company = useAppSelector(selectInterviewCompany);
-  // const interview = useAppSelector(loadedInterview);
+  const company = useAppSelector(selectInterviewCompany);
+  const interview = useAppSelector(loadedInterview);
 
   console.log('companySlug', companySlug);
 
   useEffect(() => {
     if (!token) return;
-    // setLoading(true);
     setError(null);
 
-    Promise.all([dispatch(fetchInterview(token)), dispatch(fetchCompanyBySlug(companySlug))]);
+    Promise.all([dispatch(fetchInterview(token))]);
   }, [token, dispatch, companySlug]);
 
   return (
     <div className="min-h-screen w-full bg-[#f7f7f8] flex flex-col">
-      {/* Top Navigation at the very top */}
-      <TopNavigation showAuthButtons={false} />
+      {/* Company Top Navigation */}
+      <CompanyTopNavigation />
       <div className="flex-1 w-full max-w-6xl flex flex-col items-center mx-auto mb-10 mt-8 px-2">
         {isLoading && <div className="text-gray-500 text-lg py-20">Loading job details...</div>}
         {error && <div className="text-red-600 text-lg py-20">{error}</div>}

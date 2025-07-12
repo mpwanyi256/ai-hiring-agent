@@ -264,10 +264,10 @@ export const getScoreColor = (score: number) => {
   return 'text-red-600 bg-red-50';
 };
 
-export const shareJob = async (job: Job) => {
+export const shareJob = async (job: Job, companySlug: string) => {
   try {
     if (!job) return;
-    const link = job.interviewLink || `${app.baseUrl}/job/${job.interviewToken}`;
+    const link = job.interviewLink || `${app.baseUrl}/jobs/${companySlug}/${job.interviewToken}`;
 
     if (navigator.share) {
       try {

@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { useAppSelector } from '@/store';
 import { loadedInterview } from '@/store/interview/interviewSelectors';
 
@@ -8,22 +7,6 @@ export default function JobSidebar() {
 
   return (
     <div className="p-6">
-      {/* Company Branding */}
-      {(job.companyLogo || job.companyName) && (
-        <div className="mb-6">
-          {job.companyLogo && (
-            <Image
-              src={job.companyLogo}
-              alt={job.companyName || 'Company Logo'}
-              width={56}
-              height={56}
-              className="rounded-full object-cover border border-gray-200 bg-white mb-2"
-            />
-          )}
-          <div className="text-2xl font-bold text-gray-900">{job.companyName}</div>
-          {job.companySlug && <div className="text-xs text-gray-400 mt-0.5">{job.companySlug}</div>}
-        </div>
-      )}
       {/* Job Title */}
       <div className="text-2xl font-semibold text-gray-900 mb-6 leading-tight">{job.title}</div>
       {/* Job Details */}

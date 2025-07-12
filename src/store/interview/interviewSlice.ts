@@ -60,6 +60,10 @@ const interviewSlice = createSlice({
       .addCase(fetchCompanyBySlug.fulfilled, (state, action) => {
         state.company = action.payload;
         state.isLoading = false;
+      })
+      .addCase(fetchCompanyBySlug.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to fetch company';
+        state.isLoading = false;
       });
   },
 });
