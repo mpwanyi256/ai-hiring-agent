@@ -213,7 +213,7 @@ function transformJobFromDB(dbJob: JobComprehensiveRow): JobData {
     workplaceType: dbJob.workplace_type || '',
     jobType: dbJob.job_type || '',
     companyName: dbJob.company_name || '',
-    companyLogo: '',
+    companyLogo: dbJob.company_logo_url || '',
     companySlug: dbJob.company_slug || '',
   };
 }

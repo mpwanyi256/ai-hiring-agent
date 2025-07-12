@@ -53,7 +53,7 @@ export default function CompanySettingsPage() {
       setModalField(null);
       dispatch(fetchCompanyData());
     } catch (error) {
-      setModalError('Failed to update');
+      setModalError(error instanceof Error ? error.message : 'Failed to update');
     } finally {
       setModalLoading(false);
     }
@@ -66,7 +66,7 @@ export default function CompanySettingsPage() {
       await dispatch(uploadCompanyLogo(file)).unwrap();
       dispatch(fetchCompanyData());
     } catch (error) {
-      // TODO: show error toast
+      apiError(error instanceof Error ? error.message : 'Failed to upload logo');
     } finally {
       setLogoUploading(false);
     }

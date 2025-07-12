@@ -77,14 +77,7 @@ export type Database = {
             foreignKeyName: 'ai_evaluations_candidate_id_fkey';
             columns: ['candidate_id'];
             isOneToOne: false;
-            referencedRelation: 'candidate_details';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'ai_evaluations_candidate_id_fkey';
-            columns: ['candidate_id'];
-            isOneToOne: false;
-            referencedRelation: 'candidates';
+            referencedRelation: 'candidates_info';
             referencedColumns: ['id'];
           },
           {
@@ -427,7 +420,7 @@ export type Database = {
           candidate_info_id: string;
           created_at?: string | null;
           current_step?: number | null;
-          id: string;
+          id?: string;
           interview_token: string;
           is_completed?: boolean | null;
           job_id: string;
@@ -456,13 +449,6 @@ export type Database = {
             foreignKeyName: 'candidates_candidate_info_id_fkey';
             columns: ['candidate_info_id'];
             isOneToOne: false;
-            referencedRelation: 'candidates_info';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'candidates_id_fkey';
-            columns: ['id'];
-            isOneToOne: true;
             referencedRelation: 'candidates_info';
             referencedColumns: ['id'];
           },
@@ -574,22 +560,31 @@ export type Database = {
       };
       companies: {
         Row: {
+          bio: string | null;
           created_at: string | null;
           id: string;
+          logo_path: string | null;
+          logo_url: string | null;
           name: string;
           slug: string | null;
           updated_at: string | null;
         };
         Insert: {
+          bio?: string | null;
           created_at?: string | null;
           id?: string;
+          logo_path?: string | null;
+          logo_url?: string | null;
           name: string;
           slug?: string | null;
           updated_at?: string | null;
         };
         Update: {
+          bio?: string | null;
           created_at?: string | null;
           id?: string;
+          logo_path?: string | null;
+          logo_url?: string | null;
           name?: string;
           slug?: string | null;
           updated_at?: string | null;
@@ -876,20 +871,6 @@ export type Database = {
           triggered_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: 'function_logs_candidate_id_fkey';
-            columns: ['candidate_id'];
-            isOneToOne: false;
-            referencedRelation: 'candidate_details';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'function_logs_candidate_id_fkey';
-            columns: ['candidate_id'];
-            isOneToOne: false;
-            referencedRelation: 'candidates';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'function_logs_job_id_fkey';
             columns: ['job_id'];
@@ -1741,13 +1722,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'candidates_id_fkey';
-            columns: ['id'];
-            isOneToOne: true;
-            referencedRelation: 'candidates_info';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'candidates_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
@@ -2002,7 +1976,10 @@ export type Database = {
         Row: {
           average_score: number | null;
           candidate_count: number | null;
+          company_bio: string | null;
           company_id: string | null;
+          company_logo_path: string | null;
+          company_logo_url: string | null;
           company_name: string | null;
           company_slug: string | null;
           completed_interviews: number | null;
