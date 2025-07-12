@@ -9,9 +9,10 @@ import JobApplicationTab from './JobApplicationTab';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchInterview } from '@/store/interview/interviewThunks';
 import { selectIsLoading } from '@/store/interview/interviewSelectors';
+import { setInterview } from '@/store/interview/interviewSlice';
 
 export default function PublicJobPage() {
-  const { token, companySlug } = useParams<{ token: string; companySlug: string }>();
+  const { token } = useParams<{ token: string }>();
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'application'>('overview');
   const dispatch = useAppDispatch();
@@ -22,7 +23,11 @@ export default function PublicJobPage() {
     setError(null);
 
     Promise.all([dispatch(fetchInterview(token))]);
-  }, [token, dispatch, companySlug]);
+
+    return () => {
+      dispatch(setInterview(null));
+    };
+  }, [token, dispatch]);
 
   return (
     <div className="min-h-screen w-full bg-[#f7f7f8] flex flex-col">

@@ -1,3 +1,5 @@
+import { JobData } from '@/lib/services/jobsService';
+
 export interface ClientCompany {
   id: string;
   name: string;
@@ -10,4 +12,5 @@ export interface ClientCompany {
 export interface CompanyState {
   company: ClientCompany | null;
   loading: boolean;
+  jobs: JobData[];
 }

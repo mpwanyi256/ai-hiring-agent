@@ -17,7 +17,7 @@ const interviewSlice = createSlice({
   name: 'interview',
   initialState,
   reducers: {
-    setInterview: (state, action: PayloadAction<JobData>) => {
+    setInterview: (state, action: PayloadAction<JobData | null>) => {
       state.interview = action.payload;
     },
     setInterviewStep: (state, action: PayloadAction<number>) => {

@@ -1,10 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { CompanyState } from '@/types/company';
-import { fetchCompanyData } from './companyThunks';
+import { fetchCompanyData, fetchCompanyJobsBySlug } from './companyThunks';
 
 const initialState: CompanyState = {
   company: null,
   loading: false,
+  jobs: [],
 };
 
 const companySlice = createSlice({
@@ -20,6 +21,16 @@ const companySlice = createSlice({
       state.loading = false;
     });
     builder.addCase(fetchCompanyData.rejected, (state) => {
+      state.loading = false;
+    });
+    builder.addCase(fetchCompanyJobsBySlug.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(fetchCompanyJobsBySlug.fulfilled, (state, action) => {
+      state.jobs = action.payload;
+      state.loading = false;
+    });
+    builder.addCase(fetchCompanyJobsBySlug.rejected, (state) => {
       state.loading = false;
     });
   },

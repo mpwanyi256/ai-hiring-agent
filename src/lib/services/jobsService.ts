@@ -667,6 +667,42 @@ class JobsService {
     return this.getJobById(id);
   }
 
+  async getJobsByCompanySlug(companySlug: string): Promise<JobData[] | null> {
+    try {
+      const supabase = await createClient();
+
+      const { data: job, error } = (await supabase
+        .from('jobs_comprehensive')
+        .select('*')
+        .eq('company_slug', companySlug)
+        .eq('status', 'interviewing')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })) as unknown as {
+        data: JobComprehensiveRow[] | null;
+        error: any | null;
+      };
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // Job not found
+        }
+        throw new Error(error.message);
+      }
+
+      if (!job) {
+        return null;
+      }
+
+      return job.map((job) => {
+        const transformed = transformJobFromDB(job);
+        return this.addInterviewLink(transformed);
+      });
+    } catch (error) {
+      console.error('Error fetching jobs by company slug:', error);
+      throw error;
+    }
+  }
+
   async getJobByToken(token: string): Promise<JobData | null> {
     try {
       const supabase = await createClient();

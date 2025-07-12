@@ -3,6 +3,19 @@ import { RootState } from '..';
 import { apiUtils } from '../api';
 import { ClientCompany } from '@/types/company';
 import { APIResponse } from '@/types';
+import { JobData } from '@/lib/services/jobsService';
+
+export const fetchCompanyJobsBySlug = createAsyncThunk<
+  JobData[],
+  string,
+  {
+    rejectValue: string;
+  }
+>('company/fetchCompanyJobsBySlug', async (slug, { rejectWithValue }) => {
+  const response = await apiUtils.get<APIResponse<JobData[]>>(`/api/company/slug/${slug}/jobs`);
+  if (response.error) return rejectWithValue(response.error);
+  return response.data;
+});
 
 export const fetchCompanyBySlug = createAsyncThunk<
   ClientCompany,
