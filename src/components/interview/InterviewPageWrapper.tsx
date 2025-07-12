@@ -8,6 +8,7 @@ import InterviewComplete from '@/components/interview/InterviewComplete';
 import ResumeUpload from '@/components/interview/ResumeUpload';
 import InterviewIntro from '@/components/interview/InterviewIntro';
 import CandidateInfoForm from '@/components/interview/CandidateInfoForm';
+import { apiError } from '@/lib/notification';
 
 type pageParams = {
   token: string;
@@ -39,7 +40,8 @@ export default function InterviewPage() {
 
         setJob(data.job);
       } catch (err) {
-        setError('Failed to load interview');
+        apiError(err instanceof Error ? err.message : 'Failed to load interview');
+        setError(err instanceof Error ? err.message : 'Failed to load interview');
       } finally {
         setIsLoading(false);
       }
