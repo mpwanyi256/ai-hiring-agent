@@ -295,3 +295,5 @@ export const jobSchema = z.object({
 });
 
 export type JobFormData = z.infer<typeof jobSchema>;
+
+export type AppJobsFields = [string, Record<string, string>];

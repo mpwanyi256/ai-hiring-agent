@@ -119,7 +119,7 @@ export default function JobsPage() {
   }, [loadMore]);
 
   const copyInterviewLink = async (job: CompanyJobs) => {
-    const link = `${window.location.origin}/${companySlug}/${job.interview_token}`;
+    const link = `${window.location.origin}/jobs/${companySlug}/${job.interview_token}`;
 
     try {
       await navigator.clipboard.writeText(link);

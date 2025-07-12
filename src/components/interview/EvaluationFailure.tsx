@@ -1,9 +1,5 @@
 import { ResumeEvaluation, InterviewEvaluation } from '@/types/interview';
-import {
-  XCircleIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
+import { DocumentTextIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import { domainEmails } from '@/lib/constants';
 import Image from 'next/image';

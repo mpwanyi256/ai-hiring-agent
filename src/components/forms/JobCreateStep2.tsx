@@ -9,6 +9,7 @@ import Modal from '@/components/ui/Modal';
 import { useAppDispatch } from '@/store';
 import { generateJobDescriptionWithAI } from '@/store/jobs/jobsThunks';
 import { useToast } from '@/components/providers/ToastProvider';
+import { apiError } from '@/lib/notification';
 
 interface JobCreateStep2Props {
   form: UseFormReturn<JobFormData>;
@@ -60,6 +61,7 @@ const JobCreateStep2: React.FC<JobCreateStep2Props> = ({ form, onPrev, onNext, i
         showError('Failed to generate job description.');
       }
     } catch (e) {
+      apiError(e instanceof Error ? e.message : 'Failed to generate job description.');
       showError('Failed to generate job description.');
     } finally {
       setIsGenerating(false);

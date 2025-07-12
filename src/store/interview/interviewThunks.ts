@@ -3,7 +3,6 @@ import { apiUtils } from '../api';
 import { JobData } from '@/lib/services/jobsService';
 import { APIResponse, CandidateBasic } from '@/types';
 import { createCandidateAccountPayload } from '@/types/interview';
-import { getResumeEvaluation } from '../evaluation/evaluationThunks';
 
 export const fetchInterview = createAsyncThunk(
   'interview/fetchInterview',

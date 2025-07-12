@@ -701,7 +701,11 @@ class ResumeService {
     try {
       const supabase = await createClient();
 
-      const updateData: any = {
+      const updateData: {
+        parsing_status: 'pending' | 'success' | 'failed';
+        parsing_error?: string;
+        updated_at: string;
+      } = {
         parsing_status: status,
         updated_at: new Date().toISOString(),
       };
@@ -782,6 +786,12 @@ ${jobDescription}
 
 RESUME CONTENT:
 ${resumeContent}
+
+SKILLS:
+${skills.join(', ')}
+
+EXPERIENCE LEVEL:
+${experienceLevel}
 
 Respond in the following JSON format (no markdown):
 

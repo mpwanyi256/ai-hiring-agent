@@ -1,0 +1,16 @@
+import { JobData } from '@/lib/services/jobsService';
+
+export interface ClientCompany {
+  id: string;
+  name: string;
+  slug: string;
+  bio: string;
+  logo_url: string | null;
+  logo_path: string | null;
+}
+
+export interface CompanyState {
+  company: ClientCompany | null;
+  loading: boolean;
+  jobs: JobData[];
+}

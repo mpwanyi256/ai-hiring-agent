@@ -55,6 +55,7 @@
     "pdf-parse": "^1.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.59.0",
     "react-redux": "^9.2.0",
     "shadcn": "^2.7.0",

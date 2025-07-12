@@ -35,6 +35,7 @@ export interface JobData {
   employmentTypeId: string;
   workplaceType: string;
   jobType: string;
+  companyId: string;
   companyName?: string;
   companyLogo?: string;
   companySlug?: string;
@@ -212,8 +213,9 @@ function transformJobFromDB(dbJob: JobComprehensiveRow): JobData {
     employmentTypeId: dbJob.employment_type_id || '',
     workplaceType: dbJob.workplace_type || '',
     jobType: dbJob.job_type || '',
+    companyId: dbJob.company_id || '',
     companyName: dbJob.company_name || '',
-    companyLogo: '',
+    companyLogo: dbJob.company_logo_url || '',
     companySlug: dbJob.company_slug || '',
   };
 }
@@ -263,7 +265,7 @@ class JobsService {
   private addInterviewLink(job: JobData): JobData {
     return {
       ...job,
-      interviewLink: `${app.baseUrl}/job/${job.interviewToken}`,
+      interviewLink: `${app.baseUrl}/jobs/${job.companySlug}/${job.interviewToken}`,
     };
   }
 
@@ -342,7 +344,7 @@ class JobsService {
         createdAt: job.created_at,
         updatedAt: job.updated_at,
         fields: dbToSimplifiedFields(job.fields),
-        interviewLink: `${app.baseUrl}/job/${job.interview_token}`,
+        interviewLink: `${app.baseUrl}/jobs/${job.company_slug}/${job.interview_token}`,
       }));
     } catch (error) {
       console.error('Error fetching detailed jobs:', error);
@@ -665,6 +667,42 @@ class JobsService {
     return this.getJobById(id);
   }
 
+  async getJobsByCompanySlug(companySlug: string): Promise<JobData[] | null> {
+    try {
+      const supabase = await createClient();
+
+      const { data: job, error } = (await supabase
+        .from('jobs_comprehensive')
+        .select('*')
+        .eq('company_slug', companySlug)
+        .eq('status', 'interviewing')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })) as unknown as {
+        data: JobComprehensiveRow[] | null;
+        error: any | null;
+      };
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // Job not found
+        }
+        throw new Error(error.message);
+      }
+
+      if (!job) {
+        return null;
+      }
+
+      return job.map((job) => {
+        const transformed = transformJobFromDB(job);
+        return this.addInterviewLink(transformed);
+      });
+    } catch (error) {
+      console.error('Error fetching jobs by company slug:', error);
+      throw error;
+    }
+  }
+
   async getJobByToken(token: string): Promise<JobData | null> {
     try {
       const supabase = await createClient();
@@ -792,7 +830,7 @@ class JobsService {
       const supabase = await createClient();
 
       const { data: job, error } = await supabase
-        .from('jobs')
+        .from('jobs_comprehensive')
         .select('*')
         .eq('interview_token', interviewToken)
         .eq('is_active', true)
@@ -818,6 +856,10 @@ class JobsService {
         employmentTypeId: job.employment_type_id || '',
         workplaceType: job.workplace_type || '',
         jobType: job.job_type || '',
+        companyId: job.company_id || '',
+        companyName: job.company_name || '',
+        companyLogo: job.company_logo_url || '',
+        companySlug: job.company_slug || '',
       };
     } catch (error) {
       console.error('Error getting job by interview token:', error);
