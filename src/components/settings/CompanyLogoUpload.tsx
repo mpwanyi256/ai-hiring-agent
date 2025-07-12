@@ -1,46 +1,42 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Image from 'next/image';
-import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { selectCompany } from '@/store/company/companySelectors';
-import { useAppSelector } from '@/store';
+import { PhotoIcon } from '@heroicons/react/24/outline';
+import { apiError } from '@/lib/notification';
 
 interface CompanyLogoUploadProps {
-  currentLogoUrl?: string | null;
+  logoUrl?: string | null;
   disabled?: boolean;
+  onFileSelected?: (file: File) => void;
+  isUploading?: boolean;
 }
 
-export default function CompanyLogoUpload({ disabled = false }: CompanyLogoUploadProps) {
-  const [isUploading, setIsUploading] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const company = useAppSelector(selectCompany);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(company?.logo_url || null);
+export default function CompanyLogoUpload({
+  logoUrl,
+  disabled = false,
+  onFileSelected,
+  isUploading = false,
+}: CompanyLogoUploadProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(logoUrl || null);
 
-  const handleLogoChange = useCallback((file: File) => {
-    if (file) {
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
-    }
-  }, []);
+  useEffect(() => {
+    setPreviewUrl(logoUrl || null);
+  }, [logoUrl]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles.length === 0) return;
-
       const file = acceptedFiles[0];
-      setIsUploading(true);
-
-      // Create preview URL
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-      handleLogoChange(file);
-
-      setIsUploading(false);
+      if (file.size > 5 * 1024 * 1024) {
+        apiError('File size must be less than 5MB');
+        return;
+      }
+      setPreviewUrl(URL.createObjectURL(file));
+      if (onFileSelected) onFileSelected(file);
     },
-    [handleLogoChange],
+    [onFileSelected],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -53,71 +49,47 @@ export default function CompanyLogoUpload({ disabled = false }: CompanyLogoUploa
     disabled,
   });
 
-  const handleRemove = () => {
-    setPreviewUrl(null);
-    setLogoPreview(null);
-  };
-
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Company Logo</label>
-        <p className="text-xs text-gray-500 mb-4">
-          Upload your company logo. Recommended size: 200x200px. Max file size: 5MB.
-        </p>
-      </div>
-
-      <div className="flex items-start space-x-4">
-        {/* Logo Preview */}
-        {(previewUrl || company?.logo_url) && (
-          <div className="relative">
-            <div className="w-20 h-20 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
-              <Image
-                src={previewUrl || company?.logo_url || ''}
-                alt="Company logo"
-                width={80}
-                height={80}
-                className="object-cover w-full h-full"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={handleRemove}
-              disabled={disabled}
-              className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors disabled:opacity-50"
+    <div className="flex flex-col gap-2 items-center w-full space-y-2">
+      <h2 className="block font-medium text-gray-700 mb-2">Company Branding</h2>
+      <div
+        {...getRootProps()}
+        className={`relative w-32 h-32 rounded-full border-2 border-dashed flex items-center justify-center bg-gray-50 cursor-pointer transition-colors overflow-hidden
+          ${isDragActive ? 'border-primary bg-primary/10' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-100'}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        aria-disabled={disabled}
+      >
+        <input {...getInputProps()} />
+        {isUploading ? (
+          <div className="flex items-center justify-center w-full h-full">
+            <svg
+              className="animate-spin h-8 w-8 text-primary"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
             >
-              <XMarkIcon className="w-4 h-4" />
-            </button>
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            </svg>
           </div>
+        ) : previewUrl ? (
+          <Image
+            src={previewUrl}
+            alt="Company logo"
+            width={128}
+            height={128}
+            className="object-cover w-full h-full rounded-full"
+          />
+        ) : (
+          <PhotoIcon className="w-16 h-16 text-gray-300" />
         )}
-
-        {/* Upload Area */}
-        <div
-          {...getRootProps()}
-          className={`flex-1 min-h-[120px] border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-            isDragActive
-              ? 'border-primary bg-primary/5'
-              : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-          } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          <input {...getInputProps()} />
-          <div className="space-y-2">
-            <PhotoIcon className="mx-auto h-8 w-8 text-gray-400" />
-            <div className="text-sm text-gray-600">
-              {isDragActive ? (
-                <p>Drop the logo here...</p>
-              ) : (
-                <div>
-                  <p className="font-medium">
-                    {previewUrl || company?.logo_url ? 'Change logo' : 'Upload logo'}
-                  </p>
-                  <p className="text-xs text-gray-500">Drag and drop, or click to select</p>
-                </div>
-              )}
-            </div>
-            {isUploading && <div className="text-xs text-primary">Uploading...</div>}
-          </div>
-        </div>
       </div>
     </div>
   );

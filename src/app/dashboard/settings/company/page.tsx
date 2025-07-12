@@ -6,7 +6,11 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import CompanyLogoUpload from '@/components/settings/CompanyLogoUpload';
 import CompanyFieldRow from '@/components/settings/CompanyFieldRow';
 import EditFieldModal from '@/components/settings/EditFieldModal';
-import { fetchCompanyData } from '@/store/company/companyThunks';
+import {
+  updateCompanyDetails,
+  fetchCompanyData,
+  uploadCompanyLogo,
+} from '@/store/company/companyThunks';
 import { useAppDispatch } from '@/store';
 import { selectCompany, selectCompanyLoading } from '@/store/company/companySelectors';
 import { apiError } from '@/lib/notification';
@@ -17,6 +21,7 @@ export default function CompanySettingsPage() {
   const [modalField, setModalField] = useState<null | 'name' | 'bio'>(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
   const company = useAppSelector(selectCompany);
   const isLoading = useAppSelector(selectCompanyLoading);
   const user = useAppSelector(selectUser);
@@ -40,31 +45,51 @@ export default function CompanySettingsPage() {
 
   // Modal save handler
   const handleModalSave = async (newValue: string) => {
-    // if (!company || !modalField) return;
-    // setModalLoading(true);
-    // setModalError(null);
-    // try {
-    //   const response = await apiUtils.put<APIResponse<ClientCompany>>(`/api/company/${company.id}`, {
-    //     [modalField]: newValue,
-    //   });
-    //   if (response.error) throw response.error;
-    //   dispatch(fetchCompanyData());
-    //   setModalField(null);
-    //   setMessage({ type: 'success', text: 'Updated successfully!' });
-    // } catch (error) {
-    //   setModalError('Failed to update');
-    // } finally {
-    //   setModalLoading(false);
-    // }
+    if (!modalField) return;
+    setModalLoading(true);
+    setModalError(null);
+    try {
+      await dispatch(updateCompanyDetails({ [modalField]: newValue })).unwrap();
+      setModalField(null);
+      dispatch(fetchCompanyData());
+    } catch (error) {
+      setModalError('Failed to update');
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  // Logo upload handler
+  const handleLogoFileSelected = async (file: File) => {
+    setLogoUploading(true);
+    try {
+      await dispatch(uploadCompanyLogo(file)).unwrap();
+      dispatch(fetchCompanyData());
+    } catch (error) {
+      // TODO: show error toast
+    } finally {
+      setLogoUploading(false);
+    }
   };
 
   return (
     <DashboardLayout>
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 p-8 flex flex-col items-center">
+        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-gray-100 p-16 flex flex-col items-center">
           {/* Logo Upload */}
           <div className="mb-8 flex flex-col items-center w-full">
-            <CompanyLogoUpload currentLogoUrl={company?.logo_url} disabled={isLoading} />
+            <CompanyLogoUpload
+              logoUrl={company?.logo_url}
+              disabled={isLoading}
+              isUploading={logoUploading}
+              onFileSelected={handleLogoFileSelected}
+            />
+            <div className="text-xs text-gray-500 mt-2">
+              Drag and drop or Click to upload a new logo
+            </div>
+            <p className="text-xs text-gray-500 mb-2 text-center">
+              Recommended size: 200x200px. Max file size: 5MB.
+            </p>
           </div>
 
           {/* Fields */}
@@ -75,8 +100,17 @@ export default function CompanySettingsPage() {
               onEdit={() => setModalField('name')}
             />
             <CompanyFieldRow
-              label="About"
-              value={company?.bio || <span className="text-gray-400">Not set</span>}
+              label="Bio"
+              value={
+                company?.bio ? (
+                  <span
+                    className="text-sm text-gray-900 break-all prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: company.bio }}
+                  />
+                ) : (
+                  <span className="text-gray-400">Not set</span>
+                )
+              }
               onEdit={() => setModalField('bio')}
             />
           </div>
@@ -90,6 +124,7 @@ export default function CompanySettingsPage() {
           value={modalField ? company?.[modalField] || '' : ''}
           onSave={handleModalSave}
           inputType={modalField === 'bio' ? 'textarea' : 'text'}
+          richText={modalField === 'bio'}
           loading={modalLoading}
           error={modalError}
         />

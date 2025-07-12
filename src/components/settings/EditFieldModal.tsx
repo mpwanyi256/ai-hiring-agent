@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 
 interface EditFieldModalProps {
   open: boolean;
@@ -11,6 +12,7 @@ interface EditFieldModalProps {
   inputType?: 'text' | 'textarea';
   loading?: boolean;
   error?: string | null;
+  richText?: boolean;
 }
 
 const EditFieldModal: React.FC<EditFieldModalProps> = ({
@@ -22,6 +24,7 @@ const EditFieldModal: React.FC<EditFieldModalProps> = ({
   inputType = 'text',
   loading = false,
   error = null,
+  richText = false,
 }) => {
   const [inputValue, setInputValue] = useState(value);
 
@@ -37,7 +40,14 @@ const EditFieldModal: React.FC<EditFieldModalProps> = ({
     <Modal isOpen={open} onClose={onClose} title={`Edit ${label}`}>
       <div className="space-y-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-        {inputType === 'textarea' ? (
+        {richText ? (
+          <RichTextEditor
+            content={inputValue}
+            onChange={setInputValue}
+            placeholder={`Enter ${label.toLowerCase()}...`}
+            className="min-h-[180px]"
+          />
+        ) : inputType === 'textarea' ? (
           <textarea
             className="w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary text-sm p-2 min-h-[80px]"
             value={inputValue}

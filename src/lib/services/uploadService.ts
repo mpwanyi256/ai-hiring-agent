@@ -11,6 +11,7 @@ class ServerUploadService {
   async uploadFile({
     file,
     bucketName,
+    path: filePath,
   }: {
     file: File;
     bucketName: string;
@@ -19,8 +20,7 @@ class ServerUploadService {
     try {
       const supabase = await createClient();
 
-      const fileName = this.validateFile(file);
-      const filePath = `${bucketName}/${fileName}`;
+      this.validateFile(file);
 
       const { error } = await supabase.storage.from(bucketName).upload(filePath, file, {
         cacheControl: '3600',
