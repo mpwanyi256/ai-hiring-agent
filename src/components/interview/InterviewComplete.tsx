@@ -32,6 +32,13 @@ export default function InterviewComplete() {
               isCompleted: true,
               currentStep: 5,
               totalSteps: 5,
+              candidateInfo: {
+                id: candidate.candidateInfoId,
+                jobId: candidate.jobId,
+                firstName: candidate.firstName,
+                lastName: candidate.lastName,
+                email: candidate.email,
+              },
             }),
           });
         } catch {

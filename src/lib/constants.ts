@@ -20,6 +20,8 @@ export const app = {
   name: 'Intervio',
   domain: 'intervio.com',
   description: 'AI Hiring Platform',
+  projectRef: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 };
 
 export const ai = {

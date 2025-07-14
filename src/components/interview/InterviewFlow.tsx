@@ -190,6 +190,8 @@ export default function InterviewFlow({
           candidateId: candidate.id,
           jobToken,
           candidateInfo: {
+            id: candidate.candidateInfoId,
+            jobId: candidate.jobId,
             firstName: candidate.firstName,
             lastName: candidate.lastName,
             email: candidate.email,

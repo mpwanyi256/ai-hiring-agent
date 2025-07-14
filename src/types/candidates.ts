@@ -62,6 +62,7 @@ export interface Candidate {
   jobTitle: string;
   jobStatus: string;
   interviewToken: string;
+  candidateInfoId: string;
   email: string;
   firstName: string;
   lastName: string;
