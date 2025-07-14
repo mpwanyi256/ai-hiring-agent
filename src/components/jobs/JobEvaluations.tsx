@@ -10,7 +10,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
-import { CurrentJob } from '@/types';
+import { Job as CurrentJob } from '@/types';
 
 interface Evaluation {
   id: string;

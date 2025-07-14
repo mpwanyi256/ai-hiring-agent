@@ -1,11 +1,7 @@
 'use client';
 
-import { CurrentJob } from '@/types';
-import { 
-  CalendarIcon,
-  ClockIcon,
-  BriefcaseIcon
-} from '@heroicons/react/24/outline';
+import { Job as CurrentJob } from '@/types';
+import { CalendarIcon, ClockIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 
 interface JobOverviewProps {
   job: CurrentJob;
@@ -16,7 +12,7 @@ export default function JobOverview({ job }: JobOverviewProps) {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -24,15 +20,17 @@ export default function JobOverview({ job }: JobOverviewProps) {
     <div className="space-y-6">
       {/* Job Info Summary */}
       <div className="bg-white rounded-lg border border-gray-light p-6 md:p-4">
-        <h2 className="text-lg md:text-base font-semibold text-text mb-4 md:mb-2">Job Information</h2>
-        
+        <h2 className="text-lg md:text-base font-semibold text-text mb-4 md:mb-2">
+          Job Information
+        </h2>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-2 text-sm md:text-xs">
           <div className="flex items-center space-x-2">
             <CalendarIcon className="w-4 h-4 text-muted-text" />
             <span className="text-muted-text">Created:</span>
             <span className="text-text font-medium">{formatDate(job.createdAt)}</span>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <ClockIcon className="w-4 h-4 text-muted-text" />
             <span className="text-muted-text">Interview Format:</span>
@@ -40,18 +38,24 @@ export default function JobOverview({ job }: JobOverviewProps) {
               {job.interviewFormat === 'text' ? 'Text-based' : 'Video'} Interview
             </span>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <BriefcaseIcon className="w-4 h-4 text-muted-text" />
             <span className="text-muted-text">Status:</span>
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-              job.status === 'draft' 
-                ? 'bg-gray-100 text-gray-600'
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded-full ${
+                job.status === 'draft'
+                  ? 'bg-gray-100 text-gray-600'
+                  : job.status === 'interviewing'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'bg-green-100 text-green-600'
+              }`}
+            >
+              {job.status === 'draft'
+                ? 'Draft'
                 : job.status === 'interviewing'
-                ? 'bg-blue-100 text-blue-600'
-                : 'bg-green-100 text-green-600'
-            }`}>
-              {job.status === 'draft' ? 'Draft' : job.status === 'interviewing' ? 'Interviewing' : 'Closed'}
+                  ? 'Interviewing'
+                  : 'Closed'}
             </span>
           </div>
         </div>
@@ -61,8 +65,10 @@ export default function JobOverview({ job }: JobOverviewProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-4">
         {/* Skills & Experience */}
         <div className="bg-white rounded-lg border border-gray-light p-6 md:p-4">
-          <h2 className="text-lg md:text-base font-semibold text-text mb-4 md:mb-2">Requirements</h2>
-          
+          <h2 className="text-lg md:text-base font-semibold text-text mb-4 md:mb-2">
+            Requirements
+          </h2>
+
           {job.fields?.experienceLevel && (
             <div className="mb-4">
               <h3 className="text-sm font-medium text-muted-text mb-2">Experience Level</h3>
@@ -71,14 +77,14 @@ export default function JobOverview({ job }: JobOverviewProps) {
               </span>
             </div>
           )}
-          
+
           {job.fields?.skills && job.fields.skills.length > 0 && (
             <div className="mb-4">
               <h3 className="text-sm font-medium text-muted-text mb-2">Required Skills</h3>
               <div className="flex flex-wrap gap-2">
                 {job.fields.skills.map((skill, index) => (
-                  <span 
-                    key={index} 
+                  <span
+                    key={index}
                     className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
                   >
                     {skill}
@@ -87,14 +93,14 @@ export default function JobOverview({ job }: JobOverviewProps) {
               </div>
             </div>
           )}
-          
+
           {job.fields?.traits && job.fields.traits.length > 0 && (
             <div>
               <h3 className="text-sm font-medium text-muted-text mb-2">Desired Traits</h3>
               <div className="flex flex-wrap gap-2">
                 {job.fields.traits.map((trait, index) => (
-                  <span 
-                    key={index} 
+                  <span
+                    key={index}
                     className="px-3 py-1 bg-accent-blue/10 text-accent-blue rounded-full text-sm font-medium"
                   >
                     {trait}
@@ -103,7 +109,7 @@ export default function JobOverview({ job }: JobOverviewProps) {
               </div>
             </div>
           )}
-          
+
           {!job.fields?.skills && !job.fields?.traits && !job.fields?.experienceLevel && (
             <p className="text-muted-text text-sm">No specific requirements specified.</p>
           )}
@@ -112,14 +118,15 @@ export default function JobOverview({ job }: JobOverviewProps) {
         {/* Custom Fields */}
         <div className="bg-white rounded-lg border border-gray-light p-6">
           <h2 className="text-lg font-semibold text-text mb-4">Additional Information</h2>
-          
+
           {job.fields?.customFields && Object.keys(job.fields.customFields).length > 0 ? (
             <div className="space-y-3">
               {Object.entries(job.fields.customFields).map(([key, field]) => (
                 <div key={key}>
                   <h3 className="text-sm font-medium text-text mb-1">{key}</h3>
                   <p className="text-sm text-muted-text">
-                    {typeof field === 'string' ? field : field.value} <span className="text-xs">({field.toString()})</span>
+                    {typeof field === 'string' ? field : field.value}{' '}
+                    <span className="text-xs">({field.toString()})</span>
                   </p>
                 </div>
               ))}
@@ -133,9 +140,9 @@ export default function JobOverview({ job }: JobOverviewProps) {
       {/* Job Description */}
       <div className="bg-white rounded-lg border border-gray-light p-6">
         <h2 className="text-lg font-semibold text-text mb-4">Job Description</h2>
-        
+
         {job.fields?.jobDescription ? (
-          <div 
+          <div
             className="prose prose-sm max-w-none text-text"
             dangerouslySetInnerHTML={{ __html: job.fields.jobDescription }}
           />
@@ -146,8 +153,10 @@ export default function JobOverview({ job }: JobOverviewProps) {
 
       {/* Interview Process */}
       <div className="bg-white rounded-lg border border-gray-light p-6 md:p-4">
-        <h2 className="text-lg md:text-base font-semibold text-text mb-4 md:mb-2">Interview Process</h2>
-        
+        <h2 className="text-lg md:text-base font-semibold text-text mb-4 md:mb-2">
+          Interview Process
+        </h2>
+
         <div className="bg-gray-50 rounded-lg p-4 md:p-3">
           <div className="flex items-center space-x-3 mb-3 md:mb-2">
             <div className="w-10 h-10 md:w-8 md:h-8 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -156,11 +165,12 @@ export default function JobOverview({ job }: JobOverviewProps) {
             <div>
               <h3 className="font-medium text-text md:text-sm">AI-Powered Interview</h3>
               <p className="text-sm md:text-xs text-muted-text">
-                Candidates will participate in an automated {job.interviewFormat === 'text' ? 'text-based' : 'video'} interview
+                Candidates will participate in an automated{' '}
+                {job.interviewFormat === 'text' ? 'text-based' : 'video'} interview
               </p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-2 text-sm md:text-xs">
             <div>
               <span className="font-medium text-muted-text">Format:</span>
@@ -185,4 +195,4 @@ export default function JobOverview({ job }: JobOverviewProps) {
       </div>
     </div>
   );
-} 
+}

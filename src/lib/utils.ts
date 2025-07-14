@@ -1,5 +1,5 @@
 import { type ClassValue, clsx } from 'clsx';
-import { CandidateStatus, CandidateStatusOptions, CurrentJob, Job } from '@/types';
+import { CandidateStatus, CandidateStatusOptions, Job } from '@/types';
 import { JobStatus } from '@/types/jobs';
 import { apiError, apiSuccess } from './notification';
 import { twMerge } from 'tailwind-merge';
@@ -107,7 +107,7 @@ export const parseJobFields = (jobFields: Job['fields']): Job['fields'] => {
   };
 };
 
-export const parseJobDetails = (jobData: Job): CurrentJob => {
+export const parseJobDetails = (jobData: Job): Job => {
   return {
     id: jobData.id,
     profileId: jobData.profileId,
