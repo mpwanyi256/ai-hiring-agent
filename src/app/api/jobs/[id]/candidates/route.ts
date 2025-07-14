@@ -85,7 +85,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         p_job_id: jobId,
         p_profile_id: profileId,
         p_search: search,
-        p_status: status,
         p_limit: limit,
         p_offset: offset,
         p_min_score: minScore ? parseInt(minScore) : null,

@@ -109,7 +109,10 @@ export default function CandidatesList({
         maxScore: newFilters.maxScore ? parseInt(newFilters.maxScore) : undefined,
         startDate: newFilters.startDate || undefined,
         endDate: newFilters.endDate || undefined,
-        candidateStatus: newFilters.candidateStatus as CandidateStatus | undefined,
+        candidateStatus:
+          newFilters.candidateStatus === 'all'
+            ? undefined
+            : (newFilters.candidateStatus as CandidateStatus | undefined),
         sortBy: newFilters.sortBy,
         sortOrder: newFilters.sortOrder,
       });
