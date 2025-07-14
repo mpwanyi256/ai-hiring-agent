@@ -73,7 +73,7 @@ export default function CompanySettingsPage() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout loading={isLoading}>
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
         <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-gray-100 p-16 flex flex-col items-center">
           {/* Logo Upload */}
