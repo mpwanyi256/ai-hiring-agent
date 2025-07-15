@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { AppRequestParams } from '@/types/api';
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: AppRequestParams<{ id: string }>) {
   try {
     const supabase = await createClient();
-    const candidateId = params.id;
+    const { id: candidateId } = await params;
     const { status } = await request.json();
     if (!status) {
       return NextResponse.json({ success: false, error: 'Missing status' }, { status: 400 });

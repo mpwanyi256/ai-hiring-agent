@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UpdateInterviewData } from '@/types/interviews';
 import { createClient } from '@/lib/supabase/server';
+import { getValidGoogleAccessToken } from '@/lib/services/googleIntegrationService';
+import { updateInterviewEvent } from '@/lib/services/googleCalendarService';
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -12,12 +14,83 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Fetch the interview and check ownership
     const { data: interview, error: interviewError } = await supabase
       .from('interviews')
-      .select('id, job_id, application_id')
+      .select(
+        'id, job_id, application_id, calendar_event_id, date, time, timezone_id, duration, notes',
+      )
       .eq('id', interviewId)
       .single();
 
     if (interviewError || !interview) {
       return NextResponse.json({ success: false, error: 'Interview not found' }, { status: 404 });
+    }
+
+    // Get current user from Supabase session
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+    }
+
+    // Get user's company_id from profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, company_id')
+      .eq('id', user.id)
+      .single();
+    if (!profile) {
+      return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
+    }
+
+    // Google Calendar Integration: update event if integrated
+    const calendarEventId = interview.calendar_event_id;
+    let meetLink = null;
+    const accessToken = await getValidGoogleAccessToken({
+      userId: user.id,
+      companyId: profile.company_id,
+    });
+    if (accessToken && calendarEventId) {
+      try {
+        // Fetch candidate and timezone info for event details
+        const { data: candidate } = await supabase
+          .from('candidate_details')
+          .select('first_name, last_name, email, job_title')
+          .eq('id', interview.application_id)
+          .single();
+        const { data: timezone } = await supabase
+          .from('timezones')
+          .select('name')
+          .eq('id', body.timezoneId || interview.timezone_id)
+          .single();
+        if (!candidate || !timezone) {
+          console.warn(
+            'Missing candidate or timezone for Google Calendar update. Skipping event update.',
+          );
+        } else {
+          const eventInput = {
+            summary: `Interview with ${candidate.first_name} ${candidate.last_name} for ${candidate.job_title}`,
+            description: 'Automated interview invite from AI Hiring Agent.',
+            start: {
+              dateTime: `${body.date || interview.date}T${body.time || interview.time}:00`,
+              timeZone: timezone.name,
+            },
+            end: {
+              dateTime: `${body.date || interview.date}T${body.time || interview.time}:00`,
+              timeZone: timezone.name,
+            },
+            attendees: [{ email: candidate.email }],
+          };
+          const eventResult = await updateInterviewEvent({
+            accessToken,
+            eventId: calendarEventId,
+            eventInput,
+          });
+          meetLink = eventResult.meetLink;
+        }
+      } catch (calendarError) {
+        console.error('Google Calendar event update failed:', calendarError);
+      }
     }
 
     // Prepare update fields
@@ -28,6 +101,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (body.duration) updateFields.duration = body.duration;
     if (body.notes !== undefined) updateFields.notes = body.notes;
     if (body.status) updateFields.status = body.status;
+    if (meetLink) updateFields.meet_link = meetLink;
     updateFields.updated_at = new Date().toISOString();
 
     // Update the interview

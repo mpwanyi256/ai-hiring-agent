@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { CreateInterviewData } from '@/types/interviews';
+import { createInterviewEvent } from '@/lib/services/googleCalendarService';
+import { getValidGoogleAccessToken } from '@/lib/services/googleIntegrationService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -92,11 +94,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Google Calendar Integration
-    // This is where you would integrate with Google Calendar API
-    // For now, we'll create the interview without calendar integration
-    const calendarEventId = null;
-    const meetLink = null;
+    // Get current user from Supabase session
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+    }
+
+    // Get user's company_id from profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, company_id')
+      .eq('id', user.id)
+      .single();
+    if (!profile) {
+      return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
+    }
+
+    // Google Calendar Integration
+    let calendarEventId = null;
+    let meetLink = null;
+    const accessToken = await getValidGoogleAccessToken({
+      userId: user.id,
+      companyId: profile.company_id,
+    });
+    if (accessToken) {
+      try {
+        const eventInput = {
+          summary: `Interview with ${candidate.first_name} ${candidate.last_name} for ${candidate.job_title}`,
+          description: 'Automated interview invite from AI Hiring Agent.',
+          start: {
+            dateTime: `${body.date}T${body.time}:00`,
+            timeZone: timezone.name,
+          },
+          end: {
+            dateTime: `${body.date}T${body.time}:00`,
+            timeZone: timezone.name,
+          },
+          attendees: [
+            { email: candidate.email },
+            // Optionally add employer email here
+          ],
+        };
+        const eventResult = await createInterviewEvent({ accessToken, eventInput });
+        calendarEventId = eventResult.eventId;
+        meetLink = eventResult.meetLink;
+      } catch (calendarError) {
+        console.error('Google Calendar event creation failed:', calendarError);
+      }
+    }
 
     // Create the interview
     const { data: interview, error: insertError } = await supabase
@@ -108,7 +156,7 @@ export async function POST(request: NextRequest) {
         time: body.time,
         timezone_id: body.timezoneId,
         duration: body.duration,
-        status: 'scheduled', // scheduled, confirmed, cancelled, completed, no_show, rescheduled
+        status: 'scheduled',
         notes: body.notes || null,
         calendar_event_id: calendarEventId,
         meet_link: meetLink,
@@ -161,8 +209,8 @@ export async function POST(request: NextRequest) {
         createdAt: timezone.created_at,
       },
       duration: interview.duration,
-      calendarEventId: interview.calendar_event_id,
-      meetLink: interview.meet_link,
+      calendarEventId: calendarEventId || interview.calendar_event_id,
+      meetLink: meetLink || interview.meet_link,
       status: interview.status,
       notes: interview.notes,
       createdAt: interview.createdAt,

@@ -46,6 +46,7 @@
     "clsx": "^2.1.1",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
+    "googleapis": "^152.0.0",
     "langchain": "^0.3.29",
     "lucide-react": "^0.525.0",
     "mammoth": "^1.9.1",

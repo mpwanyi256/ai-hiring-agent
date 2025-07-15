@@ -31,6 +31,14 @@ export const ai = {
   temperature: 0.7, // Balanced creativity for question generation
 };
 
+export const integrations = {
+  google: {
+    clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    clientSecret: process.env.NEXT_PUBLIC_GOOGLE_SECRET_ID,
+    redirectUri: process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI,
+  },
+};
+
 export const domainEmails = {
   support: `support@${app.domain}`,
   noReply: `no-reply@${app.domain}`,
