@@ -1,54 +1,50 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
 import { selectUser } from '@/store/auth/authSelectors';
 import { CandidateWithEvaluation } from '@/types/candidates';
 import { Loading } from '@/components/ui/Loading';
 import { UserIcon, CalendarIcon, StarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import Button from '../ui/Button';
+import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
+import { fetchShortlistedCandidates } from '@/store/candidates/candidatesThunks';
 
 interface JobShortlistedProps {
   jobId: string;
 }
 
 export default function JobShortlisted({ jobId }: JobShortlistedProps) {
-  const user = useAppSelector(selectUser);
-  const [candidates, setCandidates] = useState<CandidateWithEvaluation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const candidates = useAppSelector((state) => state.candidates.shortlistedCandidates);
+  const loading = useAppSelector((state) => state.candidates.isLoading);
+  const error = useAppSelector((state) => state.candidates.error);
+  const [schedulingModal, setSchedulingModal] = useState<{
+    isOpen: boolean;
+    candidate: CandidateWithEvaluation | null;
+  }>({
+    isOpen: false,
+    candidate: null,
+  });
 
   useEffect(() => {
-    const fetchShortlistedCandidates = async () => {
-      if (!user?.id) return;
-
-      try {
-        setLoading(true);
-        const params = new URLSearchParams({
-          profileId: user.id,
-          jobId: jobId,
-          candidateStatus: 'shortlisted',
-          limit: '50',
-        });
-
-        const response = await fetch(`/api/candidates?${params}`);
-        const data = await response.json();
-
-        if (data.success) {
-          setCandidates(data.candidates);
-        } else {
-          setError(data.error || 'Failed to fetch shortlisted candidates');
-        }
-      } catch (err) {
-        setError('Failed to fetch shortlisted candidates');
-        console.error('Error fetching shortlisted candidates:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchShortlistedCandidates();
-  }, [user?.id, jobId]);
+    dispatch(
+      fetchShortlistedCandidates({
+        jobId,
+        status: [
+          'interview_scheduled',
+          'shortlisted',
+          'reference_check',
+          'offer_extended',
+          'offer_accepted',
+          'hired',
+          'withdrawn',
+        ],
+        page: 1,
+        limit: 50,
+      }),
+    );
+  }, [dispatch, jobId]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -79,6 +75,20 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
       default:
         return 'text-gray-600 bg-gray-50';
     }
+  };
+
+  const handleScheduleInterview = (candidate: CandidateWithEvaluation) => {
+    setSchedulingModal({
+      isOpen: true,
+      candidate,
+    });
+  };
+
+  const handleCloseSchedulingModal = () => {
+    setSchedulingModal({
+      isOpen: false,
+      candidate: null,
+    });
   };
 
   if (loading) {
@@ -153,7 +163,7 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  &nbsp;
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -186,7 +196,7 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getScoreColor(candidate.evaluation.score)}`}
                       >
-                        {candidate.evaluation.score}/100
+                        {candidate.evaluation.score}%
                       </span>
                     ) : (
                       <span className="text-gray-400 text-sm">No score</span>
@@ -206,19 +216,19 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                       <StarIcon className="w-3 h-3 mr-1" />
-                      Shortlisted
+                      {candidate.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        console.log('Schedule interview');
-                      }}
-                    >
-                      Schedule
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => handleScheduleInterview(candidate)}
+                      >
+                        Schedule Interview
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -226,6 +236,17 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
           </table>
         </div>
       </div>
+
+      {/* Interview Scheduling Modal */}
+      {schedulingModal.candidate && (
+        <InterviewSchedulingModal
+          isOpen={schedulingModal.isOpen}
+          onClose={handleCloseSchedulingModal}
+          candidate={schedulingModal.candidate}
+          jobId={jobId}
+          jobTitle={schedulingModal.candidate.jobTitle}
+        />
+      )}
     </div>
   );
 }

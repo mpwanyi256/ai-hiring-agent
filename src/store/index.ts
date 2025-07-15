@@ -8,6 +8,7 @@ import skillsSlice from './skills/skillsSlice';
 import traitsSlice from './traits/traitsSlice';
 import jobTemplatesSlice from './jobTemplates/jobTemplatesSlice';
 import interviewSlice from './interview/interviewSlice';
+import interviewsSlice from './interviews/interviewsSlice';
 import selectedCandidateSlice from './selectedCandidate/selectedCandidateSlice';
 import companySlice from './company/companySlice';
 
@@ -21,6 +22,7 @@ export const store = configureStore({
     traits: traitsSlice,
     jobTemplates: jobTemplatesSlice,
     interview: interviewSlice,
+    interviews: interviewsSlice,
     selectedCandidate: selectedCandidateSlice,
     company: companySlice,
   },

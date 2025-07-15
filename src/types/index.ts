@@ -7,6 +7,31 @@ export * from './jobs';
 // Export all candidate types
 export * from './candidates';
 
+// Interview types
+export type {
+  Interview,
+  InterviewStatus,
+  CreateInterviewData,
+  UpdateInterviewData,
+  InterviewFilters,
+  InterviewsState,
+  InterviewsListResponse,
+  InterviewDetailResponse,
+  CreateInterviewResponse,
+  UpdateInterviewResponse,
+  DeleteInterviewResponse,
+  GoogleCalendarEvent,
+  CreateCalendarEventData,
+  TimezoneOption,
+  TimeSlot,
+  DateAvailability,
+  Country,
+  Timezone,
+} from './interviews';
+
+// Company types
+export type { Company, UpdateCompanyData, CompanyState } from './company';
+
 // Export all common types
 export * from './common';
 

@@ -20,6 +20,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { app } from '@/lib/constants';
+import { fetchCompanyData } from '@/store/company/companyThunks';
 
 interface TopNavigationProps {
   showAuthButtons?: boolean;
@@ -40,6 +41,12 @@ export default function TopNavigation({
   const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated && user?.companyId) {
+      dispatch(fetchCompanyData());
+    }
+  }, [isAuthenticated, user, dispatch]);
 
   const handleSignOut = async () => {
     try {
