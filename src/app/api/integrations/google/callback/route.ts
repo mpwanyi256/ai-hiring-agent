@@ -9,17 +9,19 @@ const GOOGLE_REDIRECT_URI = integrations.google.redirectUri!;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  console.log('Google callback response', searchParams);
   const code = searchParams.get('code');
   const error = searchParams.get('error');
 
+  // Get the base URL from the request
+  const baseUrl = request.nextUrl.origin;
+
   if (error) {
     return NextResponse.redirect(
-      `/dashboard/settings?google=error&message=${encodeURIComponent(error)}`,
+      `${baseUrl}/dashboard/settings?google=error&message=${encodeURIComponent(error)}`,
     );
   }
   if (!code) {
-    return NextResponse.redirect('/dashboard/settings?google=error&message=Missing+code');
+    return NextResponse.redirect(`${baseUrl}/dashboard/settings?google=error&message=Missing+code`);
   }
 
   // Exchange code for tokens
@@ -32,8 +34,10 @@ export async function GET(request: NextRequest) {
   try {
     const { tokens: tokenResult } = await oauth2Client.getToken(code);
     tokens = tokenResult;
-  } catch (err) {
-    return NextResponse.redirect('/dashboard/settings?google=error&message=Token+exchange+failed');
+  } catch (_err) {
+    return NextResponse.redirect(
+      `${baseUrl}/dashboard/settings?google=error&message=Token+exchange+failed`,
+    );
   }
 
   // Get user info from Google
@@ -43,9 +47,9 @@ export async function GET(request: NextRequest) {
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const { data } = await oauth2.userinfo.get();
     googleUser = data;
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.redirect(
-      '/dashboard/settings?google=error&message=Failed+to+fetch+user+info',
+      `${baseUrl}/dashboard/settings?google=error&message=Failed+to+fetch+user+info`,
     );
   }
 
@@ -56,7 +60,9 @@ export async function GET(request: NextRequest) {
     error: userError,
   } = await supabase.auth.getUser();
   if (userError || !user) {
-    return NextResponse.redirect('/dashboard/settings?google=error&message=Not+authenticated');
+    return NextResponse.redirect(
+      `${baseUrl}/dashboard/settings?google=error&message=Not+authenticated`,
+    );
   }
 
   // Get user's company_id from profile
@@ -66,34 +72,63 @@ export async function GET(request: NextRequest) {
     .eq('id', user.id)
     .single();
   if (!profile) {
-    return NextResponse.redirect('/dashboard/settings?google=error&message=Profile+not+found');
-  }
-
-  // Upsert integration
-  const { error: upsertError } = await supabase.from('integrations').upsert(
-    {
-      company_id: profile.company_id,
-      user_id: user.id,
-      provider: 'google',
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      expires_at: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : null,
-      scope: tokens.scope,
-      metadata: {
-        email: googleUser.email,
-        google_id: googleUser.id,
-        name: googleUser.name,
-      },
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'company_id,provider' },
-  );
-
-  if (upsertError) {
+    console.error('Profile not found for user:', user.id);
     return NextResponse.redirect(
-      '/dashboard/settings?google=error&message=Failed+to+save+integration',
+      `${baseUrl}/dashboard/settings?google=error&message=Profile+not+found`,
     );
   }
 
-  return NextResponse.redirect('/dashboard/settings?google=success');
+  // Check if integration already exists
+  const { data: existingIntegration, error: checkError } = await supabase
+    .from('integrations')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('provider', 'google')
+    .maybeSingle();
+
+  if (checkError) {
+    console.error('Error checking existing integration:', checkError);
+    return NextResponse.redirect(
+      `${baseUrl}/dashboard/settings?google=error&message=Failed+to+check+existing+integration`,
+    );
+  }
+
+  const integrationData = {
+    company_id: profile.company_id,
+    user_id: user.id,
+    provider: 'google',
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
+    expires_at: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : null,
+    scope: tokens.scope,
+    metadata: {
+      email: googleUser.email,
+      google_id: googleUser.id,
+      name: googleUser.name,
+    },
+    updated_at: new Date().toISOString(),
+  };
+
+  let saveError;
+  if (existingIntegration) {
+    // Update existing integration
+    const { error } = await supabase
+      .from('integrations')
+      .update(integrationData)
+      .eq('id', existingIntegration.id);
+    saveError = error;
+  } else {
+    // Insert new integration
+    const { error } = await supabase.from('integrations').insert(integrationData);
+    saveError = error;
+  }
+
+  if (saveError) {
+    console.error('Failed to save integration:', saveError);
+    return NextResponse.redirect(
+      `${baseUrl}/dashboard/settings?google=error&message=Failed+to+save+integration`,
+    );
+  }
+
+  return NextResponse.redirect(`${baseUrl}/dashboard/settings?google=success`);
 }

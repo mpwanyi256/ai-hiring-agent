@@ -95,7 +95,16 @@ export async function PUT(request: NextRequest, { params }: AppRequestParams<{ i
     }
 
     // Prepare update fields
-    const updateFields: any = {};
+    const updateFields: {
+      date?: string;
+      time?: string;
+      timezone_id?: string;
+      duration?: number;
+      notes?: string;
+      status?: string;
+      meet_link?: string | null;
+      updated_at?: string;
+    } = {};
     if (body.date) updateFields.date = body.date;
     if (body.time) updateFields.time = body.time;
     if (body.timezoneId) updateFields.timezone_id = body.timezoneId;
