@@ -1,6 +1,6 @@
 import { JobData } from '@/lib/services/jobsService';
 import { CandidateBasic } from './candidates';
-import { ClientCompany } from './company';
+import { Company as ClientCompany } from './company';
 
 export interface JobQuestion {
   id: string;
@@ -183,3 +183,14 @@ export interface InterviewCompletePayload {
   resumeContent: string;
   totalTimeSpent: number;
 }
+
+export interface CreateInterviewScheduleRequest {
+  date: string;
+  time: string;
+  duration: number;
+  type: InterviewType;
+  location: string;
+  notes: string;
+}
+
+export type InterviewType = 'video' | 'phone' | 'in_person';

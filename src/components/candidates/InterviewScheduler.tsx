@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { CalendarIcon, ClockIcon, UserIcon, MapPinIcon } from '@heroicons/react/24/outline';
-import { InterviewType, CreateInterviewScheduleRequest } from '@/types/interviews';
+import { InterviewType, CreateInterviewScheduleRequest } from '@/types/interview';
 
 interface InterviewSchedulerProps {
   candidateId: string;
@@ -10,13 +10,12 @@ interface InterviewSchedulerProps {
   onScheduled: () => void;
   onCancel: () => void;
 }
-
 export default function InterviewScheduler({
   candidateId,
   candidateName,
   jobTitle,
   onScheduled,
-  onCancel
+  onCancel,
 }: InterviewSchedulerProps) {
   const [schedule, setSchedule] = useState<Omit<CreateInterviewScheduleRequest, 'candidateId'>>({
     date: '',
@@ -24,7 +23,7 @@ export default function InterviewScheduler({
     duration: 30,
     type: 'video',
     location: '',
-    notes: ''
+    notes: '',
   });
   const [isScheduling, setIsScheduling] = useState(false);
 
@@ -40,7 +39,7 @@ export default function InterviewScheduler({
         },
         body: JSON.stringify({
           candidateId,
-          ...schedule
+          ...schedule,
         }),
       });
 
@@ -77,9 +76,7 @@ export default function InterviewScheduler({
         {/* Date and Time */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
             <div className="relative">
               <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -94,9 +91,7 @@ export default function InterviewScheduler({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Time
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
             <div className="relative">
               <ClockIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -131,9 +126,7 @@ export default function InterviewScheduler({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Interview Type
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Interview Type</label>
             <select
               value={schedule.type}
               onChange={(e) => setSchedule({ ...schedule, type: e.target.value as InterviewType })}
@@ -149,9 +142,7 @@ export default function InterviewScheduler({
         {/* Location (for in-person interviews) */}
         {schedule.type === 'in_person' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Location
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
             <input
               type="text"
               placeholder="Enter interview location"
@@ -164,9 +155,7 @@ export default function InterviewScheduler({
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Additional Notes
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
           <textarea
             rows={3}
             placeholder="Any additional information for the candidate..."
@@ -178,22 +167,14 @@ export default function InterviewScheduler({
 
         {/* Actions */}
         <div className="flex justify-end space-x-3 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isScheduling}
-          >
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isScheduling}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={isScheduling || !schedule.date || !schedule.time}
-          >
+          <Button type="submit" disabled={isScheduling || !schedule.date || !schedule.time}>
             {isScheduling ? 'Scheduling...' : 'Schedule Interview'}
           </Button>
         </div>
       </form>
     </div>
   );
-} 
+}

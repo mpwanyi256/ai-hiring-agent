@@ -3,12 +3,13 @@ import { UpdateInterviewData } from '@/types/interviews';
 import { createClient } from '@/lib/supabase/server';
 import { getValidGoogleAccessToken } from '@/lib/services/googleIntegrationService';
 import { updateInterviewEvent } from '@/lib/services/googleCalendarService';
+import { AppRequestParams } from '@/types/api';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: AppRequestParams<{ id: string }>) {
   try {
     const supabase = await createClient();
 
-    const interviewId = params.id;
+    const { id: interviewId } = await params;
     const body: UpdateInterviewData = await request.json();
 
     // Fetch the interview and check ownership
