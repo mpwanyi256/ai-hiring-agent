@@ -101,19 +101,17 @@ const TimezonePicker: React.FC<TimezonePickerProps> = ({
           )}
         >
           {selectedTimezone ? (
-            <div className="flex items-center">
-              <GlobeAltIcon className="w-4 h-4 mr-2 text-gray-400" />
-              <span className="font-medium">{selectedTimezone.displayName}</span>
-              <span className="ml-2 text-sm text-gray-500">
+            <div className="flex-col gap-1 items-center">
+              <span className="font-medium text-sm">{selectedTimezone.displayName}</span>
+              <span className="text-sm text-gray-500">
                 ({formatOffset(selectedTimezone.offsetHours, selectedTimezone.offsetMinutes)})
               </span>
+              {/* <GlobeAltIcon className="w-4 h-4 text-gray-400" /> */}
             </div>
           ) : (
             <span className="text-gray-500">{placeholder}</span>
           )}
         </button>
-
-        <GlobeAltIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
       </div>
 
       {isOpen && !disabled && (

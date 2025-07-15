@@ -23,9 +23,11 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
   const [schedulingModal, setSchedulingModal] = useState<{
     isOpen: boolean;
     candidate: CandidateWithEvaluation | null;
+    isEdit?: boolean;
   }>({
     isOpen: false,
     candidate: null,
+    isEdit: false,
   });
 
   useEffect(() => {
@@ -90,10 +92,6 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
       isOpen: false,
       candidate: null,
     });
-  };
-
-  const handleViewInterview = (candidate: CandidateWithEvaluation) => {
-    console.log(candidate);
   };
 
   if (loading) {
@@ -236,11 +234,13 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                         </Button>
                       ) : (
                         <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewInterview(candidate)}
+                          className="text-xs h-8"
+                          variant="secondary"
+                          onClick={() =>
+                            setSchedulingModal({ isOpen: true, candidate, isEdit: true })
+                          }
                         >
-                          View Interview
+                          Edit/Reschedule
                         </Button>
                       )}
                     </div>
@@ -260,6 +260,8 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
           candidate={schedulingModal.candidate}
           jobId={jobId}
           jobTitle={schedulingModal.candidate.jobTitle}
+          isEdit={schedulingModal.isEdit}
+          interview={schedulingModal.candidate.interviewDetails}
         />
       )}
     </div>

@@ -113,21 +113,23 @@ export interface Candidate {
 
 export type CandidateBasic = Omit<Candidate, 'evaluation' | 'resume'>;
 
+export interface InterviewDetails {
+  calendar_event_id: string | null;
+  created_at: string;
+  date: string;
+  duration: number;
+  id: string;
+  meet_link: string | null;
+  notes: string;
+  status: string;
+  time: string;
+  timezone_id: string;
+  updated_at: string;
+}
+
 // New type for candidates returned by the API that includes evaluation
 export interface CandidateWithEvaluation extends Omit<Candidate, 'evaluation' | 'resume'> {
-  interviewDetails: {
-    calendar_event_id: string | null;
-    created_at: string;
-    date: string;
-    duration: number;
-    id: string;
-    meet_link: string | null;
-    notes: string;
-    status: string;
-    time: string;
-    timezone_id: string;
-    updated_at: string;
-  } | null;
+  interviewDetails: InterviewDetails | null;
   evaluation: {
     id: string;
     score: number;

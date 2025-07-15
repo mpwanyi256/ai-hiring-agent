@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon, CalendarIcon, ClockIcon, UserIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { scheduleInterview } from '@/store/interviews/interviewsThunks';
+import { scheduleInterview, updateInterview } from '@/store/interviews/interviewsThunks';
 import { selectIsInterviewScheduling } from '@/store/interviews/interviewsSelectors';
 import { selectCompany } from '@/store/company/companySelectors';
-import { CandidateWithEvaluation } from '@/types/candidates';
+import { CandidateWithEvaluation, InterviewDetails } from '@/types/candidates';
 import { CreateInterviewData, Timezone } from '@/types/interviews';
 import DatePicker from './DatePicker';
 import TimePicker from './TimePicker';
@@ -14,6 +14,7 @@ import DurationPicker from './DurationPicker';
 import TimezonePicker from './TimezonePicker';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
+import { apiSuccess } from '@/lib/notification';
 
 interface InterviewSchedulingModalProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ interface InterviewSchedulingModalProps {
   candidate: CandidateWithEvaluation;
   jobId: string;
   jobTitle: string;
+  isEdit?: boolean;
+  interview?: InterviewDetails | null;
 }
 
 const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
@@ -29,6 +32,8 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
   candidate,
   jobId,
   jobTitle,
+  isEdit = false,
+  interview = null,
 }) => {
   const dispatch = useAppDispatch();
   const company = useAppSelector(selectCompany);
@@ -77,22 +82,32 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      // Set default timezone to company's timezone or UTC
-      const defaultTimezoneId =
-        company?.timezoneId || timezones.find((tz) => tz.name === 'UTC')?.id || '';
-
-      setFormData({
-        applicationId: candidate.id,
-        jobId: jobId,
-        date: '',
-        time: '09:00',
-        timezoneId: defaultTimezoneId,
-        duration: 30,
-        notes: '',
-      });
+      if (isEdit && interview) {
+        setFormData({
+          applicationId: candidate.id,
+          jobId: jobId,
+          date: interview.date,
+          time: interview.time,
+          timezoneId: interview.timezone_id,
+          duration: interview.duration,
+          notes: interview.notes || '',
+        });
+      } else {
+        const defaultTimezoneId =
+          company?.timezoneId || timezones.find((tz) => tz.name === 'UTC')?.id || '';
+        setFormData({
+          applicationId: candidate.id,
+          jobId: jobId,
+          date: '',
+          time: '09:00',
+          timezoneId: defaultTimezoneId,
+          duration: 30,
+          notes: '',
+        });
+      }
       setErrors({});
     }
-  }, [isOpen, candidate.id, jobId, company?.timezoneId, timezones]);
+  }, [isOpen, candidate.id, jobId, company?.timezoneId, timezones, isEdit, interview]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -133,10 +148,21 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
     }
 
     try {
-      await dispatch(scheduleInterview(formData)).unwrap();
+      if (isEdit && interview) {
+        await dispatch(
+          updateInterview({
+            id: interview.id,
+            ...formData,
+          }),
+        ).unwrap();
+      } else {
+        await dispatch(scheduleInterview(formData)).unwrap();
+      }
+
+      apiSuccess(isEdit ? 'Interview updated successfully' : 'Interview scheduled successfully');
       onClose();
     } catch (error) {
-      console.error('Failed to schedule interview:', error);
+      console.error('Failed to schedule/update interview:', error);
     }
   };
 
@@ -176,12 +202,14 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal size="lg" isOpen={isOpen} onClose={onClose}>
       <div className="w-full max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Schedule Interview</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              {isEdit ? 'Update Interview' : 'Schedule Interview'}
+            </h2>
             <p className="text-gray-600 mt-1">Set up an interview with the candidate</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -234,20 +262,35 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
             />
 
             {/* Timezone */}
-            <div>
+            <div className="flex flex-col w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
               {timezoneLoading ? (
                 <div className="text-sm text-gray-500">Loading timezones...</div>
               ) : timezoneError ? (
                 <div className="text-sm text-red-500">{timezoneError}</div>
               ) : (
                 <TimezonePicker
-                  label="Timezone"
+                  label=""
                   value={formData.timezoneId}
                   onChange={(timezoneId) => handleInputChange('timezoneId', timezoneId)}
                   timezones={timezones}
                   error={errors.timezoneId}
                   placeholder="Select timezone"
                 />
+              )}
+              {formData.timezoneId && getSelectedTimezone() && (
+                <div className="text-xs flex-col gap-1 text-gray-500 mt-1">
+                  <span className="text-gray-500">{getSelectedTimezone()!.displayName}</span>
+                  <span className="text-gray-500">
+                    {' '}
+                    (
+                    {formatOffset(
+                      getSelectedTimezone()!.offsetHours,
+                      getSelectedTimezone()!.offsetMinutes,
+                    )}
+                    )
+                  </span>
+                </div>
               )}
             </div>
           </div>
@@ -302,7 +345,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
               Cancel
             </Button>
             <Button type="submit" isLoading={isScheduling} disabled={isScheduling}>
-              Schedule Interview
+              {isEdit ? 'Update Interview' : 'Schedule Interview'}
             </Button>
           </div>
         </form>
