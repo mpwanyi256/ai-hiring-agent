@@ -14,6 +14,7 @@ import {
   ArrowRightIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import GoogleCalendarIntegration from '@/components/settings/GoogleCalendarIntegration';
 
 interface SettingsCardProps {
   title: string;
@@ -115,6 +116,7 @@ export default function SettingsPage() {
 
       {/* Settings Grid */}
       <div className="space-y-4">
+        <GoogleCalendarIntegration />
         {settingsSections.map((section) => (
           <SettingsCard
             key={section.href}

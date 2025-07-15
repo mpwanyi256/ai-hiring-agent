@@ -46,7 +46,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Get query parameters
     const search = searchParams.get('search') || null;
-    const status = searchParams.get('status') || null;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = (page - 1) * limit;
@@ -59,24 +58,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const candidateStatus = searchParams.get('candidateStatus');
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
-
-    // Verify job ownership
-    const { data: job, error: jobError } = await supabase
-      .from('jobs')
-      .select('id, title, profile_id')
-      .eq('id', jobId)
-      .eq('profile_id', profileId)
-      .single();
-
-    if (jobError || !job) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Job not found or access denied',
-        },
-        { status: 404 },
-      );
-    }
 
     // Get candidate details using the database function (now includes resume data)
     const { data: candidates, error: candidatesError } = await supabase.rpc(
@@ -193,10 +174,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         total: totalCandidates,
         totalPages,
         hasMore: page < totalPages,
-      },
-      job: {
-        id: job.id,
-        title: job.title,
       },
     });
   } catch (error) {

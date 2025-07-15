@@ -6,6 +6,9 @@ const initialState: CompanyState = {
   company: null,
   loading: false,
   jobs: [],
+  error: null,
+  isUpdating: false,
+  isUploadingLogo: false,
 };
 
 const companySlice = createSlice({

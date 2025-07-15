@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import CompanyLogoUpload from '@/components/settings/CompanyLogoUpload';
 import CompanyFieldRow from '@/components/settings/CompanyFieldRow';
 import EditFieldModal from '@/components/settings/EditFieldModal';
+import TimezonePicker from '@/components/interviews/TimezonePicker';
 import {
   updateCompanyDetails,
   fetchCompanyData,
@@ -15,6 +16,8 @@ import { useAppDispatch } from '@/store';
 import { selectCompany, selectCompanyLoading } from '@/store/company/companySelectors';
 import { apiError } from '@/lib/notification';
 import { selectUser } from '@/store/auth/authSelectors';
+import { Timezone } from '@/types/interviews';
+import Button from '@/components/ui/Button';
 
 export default function CompanySettingsPage() {
   const dispatch = useAppDispatch();
@@ -22,9 +25,37 @@ export default function CompanySettingsPage() {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [timezones, setTimezones] = useState<Timezone[]>([]);
+  const [timezoneLoading, setTimezoneLoading] = useState(false);
+  const [timezoneError, setTimezoneError] = useState<string | null>(null);
+  const [updatingTimezone, setUpdatingTimezone] = useState(false);
   const company = useAppSelector(selectCompany);
   const isLoading = useAppSelector(selectCompanyLoading);
   const user = useAppSelector(selectUser);
+
+  // Fetch timezones on component mount
+  useEffect(() => {
+    const fetchTimezones = async () => {
+      setTimezoneLoading(true);
+      try {
+        const response = await fetch('/api/timezones');
+        const data = await response.json();
+
+        if (data.success) {
+          setTimezones(data.timezones);
+        } else {
+          setTimezoneError(data.error || 'Failed to load timezones');
+        }
+      } catch (error) {
+        setTimezoneError('Failed to load timezones');
+        console.error('Error fetching timezones:', error);
+      } finally {
+        setTimezoneLoading(false);
+      }
+    };
+
+    fetchTimezones();
+  }, []);
 
   useEffect(() => {
     if (!user?.companyId) return;
@@ -72,6 +103,49 @@ export default function CompanySettingsPage() {
     }
   };
 
+  // Timezone update handler
+  const handleTimezoneUpdate = async (timezoneId: string) => {
+    setUpdatingTimezone(true);
+    try {
+      await dispatch(updateCompanyDetails({ timezoneId })).unwrap();
+      dispatch(fetchCompanyData());
+    } catch (error) {
+      apiError(error instanceof Error ? error.message : 'Failed to update timezone');
+    } finally {
+      setUpdatingTimezone(false);
+    }
+  };
+
+  const getCurrentTimezoneDisplay = () => {
+    if (!company?.timezoneId) {
+      return <span className="text-gray-400">Not set</span>;
+    }
+
+    const timezone = timezones.find((tz) => tz.id === company.timezoneId);
+    if (!timezone) {
+      return <span className="text-gray-400">Unknown timezone</span>;
+    }
+
+    const formatOffset = (hours: number, minutes: number) => {
+      const sign = hours >= 0 ? '+' : '';
+      const hourStr = Math.abs(hours).toString().padStart(2, '0');
+      const minuteStr = minutes.toString().padStart(2, '0');
+      return `${sign}${hourStr}:${minuteStr}`;
+    };
+
+    return (
+      <div>
+        <div className="font-medium text-gray-900">{timezone.displayName}</div>
+        <div className="text-sm text-gray-500">
+          {timezone.city && timezone.country
+            ? `${timezone.city}, ${timezone.country.name}`
+            : timezone.country?.name || timezone.name}{' '}
+          ({formatOffset(timezone.offsetHours, timezone.offsetMinutes)})
+        </div>
+      </div>
+    );
+  };
+
   return (
     <DashboardLayout loading={isLoading}>
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
@@ -113,6 +187,43 @@ export default function CompanySettingsPage() {
               }
               onEdit={() => setModalField('bio')}
             />
+
+            {/* Timezone Field */}
+            <div className="py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900">Default Timezone</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    This timezone will be used as the default for scheduling interviews
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3">
+                {timezoneLoading ? (
+                  <div className="text-sm text-gray-500">Loading timezones...</div>
+                ) : timezoneError ? (
+                  <div className="text-sm text-red-500">{timezoneError}</div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-gray-50 rounded-lg">{getCurrentTimezoneDisplay()}</div>
+
+                    <TimezonePicker
+                      value={company?.timezoneId || ''}
+                      onChange={handleTimezoneUpdate}
+                      timezones={timezones}
+                      disabled={updatingTimezone}
+                      label="Change Timezone"
+                      placeholder="Select a new timezone"
+                    />
+
+                    {updatingTimezone && (
+                      <div className="text-sm text-gray-500">Updating timezone...</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

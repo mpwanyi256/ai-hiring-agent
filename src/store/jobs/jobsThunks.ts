@@ -73,12 +73,15 @@ export const fetchJobsPaginated = createAsyncThunk<
     throw new Error('You must be authenticated to fetch jobs');
   }
 
-  const response = await apiUtils.get<APIResponse<GetCompanyJobsResponse>>(`/api/company`, {
-    params: {
-      ...params,
-      company_id: user.companyId,
+  const response = await apiUtils.get<APIResponse<GetCompanyJobsResponse>>(
+    `/api/company/${user.companyId}/jobs`,
+    {
+      params: {
+        ...params,
+        company_id: user.companyId,
+      },
     },
-  });
+  );
 
   return response.data;
 });

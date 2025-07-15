@@ -15,9 +15,37 @@ import {
   EvaluationResponse,
   TeamAssessmentResponse,
   ShortlistResponse,
+  GetShortlistedCandidatesPayload,
+  ShortlistedCandidatesResponse,
+  CandidateWithEvaluation,
 } from '@/types/candidates';
 import { APIResponse } from '@/types';
 import { RootState } from '..';
+
+export const fetchShortlistedCandidates = createAsyncThunk<
+  ShortlistedCandidatesResponse,
+  GetShortlistedCandidatesPayload
+>('candidates/fetchShortlistedCandidates', async (params) => {
+  try {
+    const { jobId, status, search, page, limit } = params;
+
+    const queryParams = new URLSearchParams({
+      ...(status && { status: status.join(',') }),
+      ...(search && { search }),
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    const response = await apiUtils.get<ShortlistedCandidatesResponse>(
+      `/api/jobs/${jobId}/shortlisted?${queryParams}`,
+    );
+    return response;
+  } catch (error: unknown) {
+    throw new Error(
+      error instanceof Error ? error.message : 'Failed to fetch shortlisted candidates',
+    );
+  }
+});
 
 // Async thunks for candidates using API routes
 export const fetchCandidatesByJob = createAsyncThunk(
@@ -326,5 +354,16 @@ export const removeFromShortlist = createAsyncThunk(
     } catch (error: unknown) {
       throw new Error(error instanceof Error ? error.message : 'Failed to remove from shortlist');
     }
+  },
+);
+
+export const updateCandidateStatus = createAsyncThunk(
+  'candidates/updateCandidateStatus',
+  async ({ candidateId, status }: { candidateId: string; status: string }) => {
+    const response = await apiUtils.patch<APIResponse<CandidateWithEvaluation>>(
+      `/api/candidates/${candidateId}/status`,
+      { status },
+    );
+    return response.data;
   },
 );

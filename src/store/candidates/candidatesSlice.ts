@@ -9,10 +9,22 @@ import {
   createCandidate,
   deleteCandidate,
   fetchCandidateResponses,
+  fetchShortlistedCandidates,
 } from './candidatesThunks';
 
 const initialState: CandidatesState = {
   candidates: [],
+  shortlistedCandidates: {
+    success: false,
+    candidates: [],
+    pagination: {
+      page: 1,
+      limit: 50,
+      total: 0,
+      totalPages: 0,
+      hasMore: false,
+    },
+  },
   currentCandidate: null,
   isLoading: false,
   error: null,
@@ -96,6 +108,18 @@ const candidatesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchShortlistedCandidates.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchShortlistedCandidates.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.shortlistedCandidates = action.payload;
+      })
+      .addCase(fetchShortlistedCandidates.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to fetch shortlisted candidates';
+      })
       // Fetch Candidates by Job
       .addCase(fetchCandidatesByJob.pending, (state) => {
         state.isLoading = true;

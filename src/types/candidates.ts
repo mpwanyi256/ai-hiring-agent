@@ -113,9 +113,24 @@ export interface Candidate {
 
 export type CandidateBasic = Omit<Candidate, 'evaluation' | 'resume'>;
 
+export interface InterviewDetails {
+  calendar_event_id: string | null;
+  created_at: string;
+  date: string;
+  duration: number;
+  id: string;
+  meet_link: string | null;
+  notes: string;
+  status: string;
+  time: string;
+  timezone_id: string;
+  updated_at: string;
+}
+
 // New type for candidates returned by the API that includes evaluation
 export interface CandidateWithEvaluation extends Omit<Candidate, 'evaluation' | 'resume'> {
-  evaluation?: {
+  interviewDetails: InterviewDetails | null;
+  evaluation: {
     id: string;
     score: number;
     recommendation: RecommendationType;
@@ -352,6 +367,7 @@ export interface CandidateStatusOptions {
 // Redux State Types
 export interface CandidatesState {
   candidates: Candidate[];
+  shortlistedCandidates: ShortlistedCandidatesResponse;
   currentCandidate: InterviewingCandidate | null;
   isLoading: boolean;
   error: string | null;
@@ -548,4 +564,24 @@ export interface CreateCandidatePayload {
   email: string;
   firstName: string;
   lastName: string;
+}
+
+export interface GetShortlistedCandidatesPayload {
+  jobId: string;
+  status?: CandidateStatus[];
+  search?: string;
+  page: number;
+  limit: number;
+}
+
+export interface ShortlistedCandidatesResponse {
+  success: boolean;
+  candidates: CandidateWithEvaluation[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
 }
