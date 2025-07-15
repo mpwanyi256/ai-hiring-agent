@@ -20,15 +20,29 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-gray-400 mb-5 max-w-md text-sm">
-              Our advanced artificial intelligence platform combines cutting-edge technologies to streamline your talent selection process, making hiring faster and more accurate than ever before.
+              Our advanced artificial intelligence platform combines cutting-edge technologies to
+              streamline your talent selection process, making hiring faster and more accurate than
+              ever before.
             </p>
             <div className="flex space-x-3">
-              <Button variant="outline" size="sm" className="border-gray-600 text-gray-400 hover:text-white text-xs">
-                Privacy Policy
-              </Button>
-              <Button variant="outline" size="sm" className="border-gray-600 text-gray-400 hover:text-white text-xs">
-                Terms of Service
-              </Button>
+              <Link href="/privacy">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-gray-600 text-gray-400 hover:text-white text-xs"
+                >
+                  Privacy Policy
+                </Button>
+              </Link>
+              <Link href="/terms">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-gray-600 text-gray-400 hover:text-white text-xs"
+                >
+                  Terms of Service
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -36,10 +50,30 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-3 text-sm">Company</h4>
             <div className="space-y-2">
-              <Link href="/about" className="block text-gray-400 hover:text-white transition-colors text-sm">About Us</Link>
-              <Link href="/careers" className="block text-gray-400 hover:text-white transition-colors text-sm">Careers</Link>
-              <Link href="/contact" className="block text-gray-400 hover:text-white transition-colors text-sm">Contact</Link>
-              <Link href="/blog" className="block text-gray-400 hover:text-white transition-colors text-sm">Blog</Link>
+              <Link
+                href="#"
+                className="block text-gray-400 hover:text-white transition-colors text-sm"
+              >
+                About Us
+              </Link>
+              <Link
+                href="#"
+                className="block text-gray-400 hover:text-white transition-colors text-sm"
+              >
+                Careers
+              </Link>
+              <Link
+                href="#"
+                className="block text-gray-400 hover:text-white transition-colors text-sm"
+              >
+                Contact
+              </Link>
+              <Link
+                href="#"
+                className="block text-gray-400 hover:text-white transition-colors text-sm"
+              >
+                Blog
+              </Link>
             </div>
           </div>
 
@@ -47,17 +81,24 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-3 text-sm">Contact Us</h4>
             <div className="space-y-2 text-gray-400 text-sm">
-              <p>+1 (555) 123-4567</p>
-              <p>hello@intervio.com</p>
-              <p>123 Business Ave<br />Suite 100<br />San Francisco, CA 94102</p>
+              <p>+256 (706) 101-601</p>
+              <p>intervio@prodevkampala.com</p>
+              <p>
+                Innovations Village
+                <br />
+                Block B<br />
+                Kampala, Uganda
+              </p>
             </div>
           </div>
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-6 text-center text-gray-400 text-sm">
-          <p>© {`${new Date().getFullYear()}`} {app.name}. All rights reserved.</p>
+          <p>
+            © {`${new Date().getFullYear()}`} {app.name}. All rights reserved.
+          </p>
         </div>
       </Container>
     </footer>
   );
-} 
+}

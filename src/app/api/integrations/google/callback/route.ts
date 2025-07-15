@@ -9,6 +9,7 @@ const GOOGLE_REDIRECT_URI = integrations.google.redirectUri!;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
+  console.log('Google callback response', searchParams);
   const code = searchParams.get('code');
   const error = searchParams.get('error');
 
