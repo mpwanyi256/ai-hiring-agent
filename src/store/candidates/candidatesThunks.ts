@@ -17,6 +17,7 @@ import {
   ShortlistResponse,
   GetShortlistedCandidatesPayload,
   ShortlistedCandidatesResponse,
+  CandidateWithEvaluation,
 } from '@/types/candidates';
 import { APIResponse } from '@/types';
 import { RootState } from '..';
@@ -353,5 +354,16 @@ export const removeFromShortlist = createAsyncThunk(
     } catch (error: unknown) {
       throw new Error(error instanceof Error ? error.message : 'Failed to remove from shortlist');
     }
+  },
+);
+
+export const updateCandidateStatus = createAsyncThunk(
+  'candidates/updateCandidateStatus',
+  async ({ candidateId, status }: { candidateId: string; status: string }) => {
+    const response = await apiUtils.patch<APIResponse<CandidateWithEvaluation>>(
+      `/api/candidates/${candidateId}/status`,
+      { status },
+    );
+    return response.data;
   },
 );

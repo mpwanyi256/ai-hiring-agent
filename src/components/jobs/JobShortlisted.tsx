@@ -2,12 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { CandidateWithEvaluation } from '@/types/candidates';
+import { CandidateWithEvaluation, CandidateStatus } from '@/types/candidates';
 import { Loading } from '@/components/ui/Loading';
 import { UserIcon, CalendarIcon, StarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import Button from '../ui/Button';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
 import { fetchShortlistedCandidates } from '@/store/candidates/candidatesThunks';
+import { updateCandidateStatus } from '@/store/candidates/candidatesThunks';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import { CheckIcon } from '@heroicons/react/24/solid';
+import { apiSuccess, apiError } from '@/lib/notification';
 
 interface JobShortlistedProps {
   jobId: string;
@@ -29,6 +38,18 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     candidate: null,
     isEdit: false,
   });
+  const candidateStatuses: { value: CandidateStatus; label: string }[] = [
+    { value: 'under_review', label: 'Under Review' },
+    { value: 'interview_scheduled', label: 'Interview Scheduled' },
+    { value: 'shortlisted', label: 'Shortlisted' },
+    { value: 'reference_check', label: 'Reference Check' },
+    { value: 'offer_extended', label: 'Offer Extended' },
+    { value: 'offer_accepted', label: 'Offer Accepted' },
+    { value: 'hired', label: 'Hired' },
+    { value: 'rejected', label: 'Rejected' },
+    { value: 'withdrawn', label: 'Withdrawn' },
+  ];
+  const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(
@@ -92,6 +113,19 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
       isOpen: false,
       candidate: null,
     });
+  };
+
+  const handleStatusChange = async (candidateId: string, newStatus: CandidateStatus) => {
+    setStatusUpdating(candidateId);
+    try {
+      await dispatch(updateCandidateStatus({ candidateId, status: newStatus })).unwrap();
+      apiSuccess('Candidate status updated successfully');
+    } catch (error) {
+      apiError('Failed to update candidate status');
+      console.error('Failed to update candidate status:', error);
+    } finally {
+      setStatusUpdating(null);
+    }
   };
 
   if (loading) {
@@ -224,6 +258,36 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-8 min-w-[120px] justify-between"
+                            disabled={statusUpdating === candidate.id}
+                          >
+                            {candidateStatuses.find((s) => s.value === candidate.status)?.label ||
+                              candidate.status}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-44">
+                          {candidateStatuses.map((status) => (
+                            <DropdownMenuItem
+                              key={status.value}
+                              onClick={() => handleStatusChange(candidate.id, status.value)}
+                              disabled={
+                                statusUpdating === candidate.id || candidate.status === status.value
+                              }
+                              className="flex items-center justify-between"
+                            >
+                              <span>{status.label}</span>
+                              {candidate.status === status.value && (
+                                <CheckIcon className="w-4 h-4 text-green-500" />
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       {!candidate.interviewDetails?.id ? (
                         <Button
                           size="sm"
