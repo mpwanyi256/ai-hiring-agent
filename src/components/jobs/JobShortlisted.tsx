@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { selectUser } from '@/store/auth/authSelectors';
 import { CandidateWithEvaluation } from '@/types/candidates';
 import { Loading } from '@/components/ui/Loading';
 import { UserIcon, CalendarIcon, StarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
