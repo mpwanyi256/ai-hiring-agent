@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { CreateInterviewData, InterviewFilters } from '@/types/interviews';
+import { CreateInterviewData } from '@/types/interviews';
 
 export async function GET(request: NextRequest) {
   try {
@@ -134,11 +134,11 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (
-      !body.candidateId ||
+      !body.applicationId ||
       !body.jobId ||
       !body.date ||
       !body.time ||
-      !body.timezone ||
+      !body.timezoneId ||
       !body.duration
     ) {
       return NextResponse.json(
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     const { data: candidate, error: candidateError } = await supabase
       .from('candidates')
       .select('id, jobId, firstName, lastName, email, jobTitle')
-      .eq('id', body.candidateId)
+      .eq('id', body.applicationId)
       .single();
 
     if (candidateError || !candidate) {
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
     const { data: existingInterview } = await supabase
       .from('interviews')
       .select('id')
-      .eq('candidateId', body.candidateId)
+      .eq('candidateId', body.applicationId)
       .eq('jobId', body.jobId)
       .eq('status', 'scheduled')
       .single();
@@ -192,12 +192,12 @@ export async function POST(request: NextRequest) {
     const { data: interview, error: insertError } = await supabase
       .from('interviews')
       .insert({
-        applicationId: body.candidateId, // Using candidateId as applicationId for now
-        candidateId: body.candidateId,
+        applicationId: body.applicationId, // Using candidateId as applicationId for now
+        candidateId: body.applicationId,
         jobId: body.jobId,
         date: body.date,
         time: body.time,
-        timezone: body.timezone,
+        timezone: body.timezoneId,
         duration: body.duration,
         status: 'scheduled',
         notes: body.notes || null,

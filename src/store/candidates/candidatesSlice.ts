@@ -14,7 +14,17 @@ import {
 
 const initialState: CandidatesState = {
   candidates: [],
-  shortlistedCandidates: [],
+  shortlistedCandidates: {
+    success: false,
+    candidates: [],
+    pagination: {
+      page: 1,
+      limit: 50,
+      total: 0,
+      totalPages: 0,
+      hasMore: false,
+    },
+  },
   currentCandidate: null,
   isLoading: false,
   error: null,

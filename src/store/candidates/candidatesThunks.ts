@@ -16,14 +16,13 @@ import {
   TeamAssessmentResponse,
   ShortlistResponse,
   GetShortlistedCandidatesPayload,
-  CandidateWithEvaluation,
   ShortlistedCandidatesResponse,
 } from '@/types/candidates';
 import { APIResponse } from '@/types';
 import { RootState } from '..';
 
 export const fetchShortlistedCandidates = createAsyncThunk<
-  CandidateWithEvaluation[],
+  ShortlistedCandidatesResponse,
   GetShortlistedCandidatesPayload
 >('candidates/fetchShortlistedCandidates', async (params) => {
   try {
@@ -39,7 +38,7 @@ export const fetchShortlistedCandidates = createAsyncThunk<
     const response = await apiUtils.get<ShortlistedCandidatesResponse>(
       `/api/jobs/${jobId}/shortlisted?${queryParams}`,
     );
-    return response.candidates;
+    return response;
   } catch (error: unknown) {
     throw new Error(
       error instanceof Error ? error.message : 'Failed to fetch shortlisted candidates',

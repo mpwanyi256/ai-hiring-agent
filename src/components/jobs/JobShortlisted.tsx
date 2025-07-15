@@ -15,7 +15,9 @@ interface JobShortlistedProps {
 
 export default function JobShortlisted({ jobId }: JobShortlistedProps) {
   const dispatch = useAppDispatch();
-  const candidates = useAppSelector((state) => state.candidates.shortlistedCandidates);
+  const { candidates, pagination } = useAppSelector(
+    (state) => state.candidates.shortlistedCandidates,
+  );
   const loading = useAppSelector((state) => state.candidates.isLoading);
   const error = useAppSelector((state) => state.candidates.error);
   const [schedulingModal, setSchedulingModal] = useState<{
@@ -90,6 +92,10 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     });
   };
 
+  const handleViewInterview = (candidate: CandidateWithEvaluation) => {
+    console.log(candidate);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -135,7 +141,7 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Shortlisted Candidates</h2>
           <p className="text-gray-600 mt-1">
-            {candidates.length} candidate{candidates.length !== 1 ? 's' : ''} shortlisted
+            {pagination.total} candidate{pagination.total !== 1 ? 's' : ''} shortlisted
           </p>
         </div>
       </div>
@@ -220,13 +226,23 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={() => handleScheduleInterview(candidate)}
-                      >
-                        Schedule Interview
-                      </Button>
+                      {!candidate.interviewDetails?.id ? (
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onClick={() => handleScheduleInterview(candidate)}
+                        >
+                          Schedule Interview
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewInterview(candidate)}
+                        >
+                          View Interview
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -365,7 +365,7 @@ export interface CandidateStatusOptions {
 // Redux State Types
 export interface CandidatesState {
   candidates: Candidate[];
-  shortlistedCandidates: CandidateWithEvaluation[];
+  shortlistedCandidates: ShortlistedCandidatesResponse;
   currentCandidate: InterviewingCandidate | null;
   isLoading: boolean;
   error: string | null;
