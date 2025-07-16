@@ -83,3 +83,20 @@ export async function updateInterviewEvent({
       null,
   };
 }
+
+export async function deleteInterviewEvent({
+  accessToken,
+  eventId,
+}: {
+  accessToken: string;
+  eventId: string;
+}): Promise<void> {
+  const calendar = google.calendar('v3');
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({ access_token: accessToken });
+  await calendar.events.delete({
+    auth,
+    calendarId: 'primary',
+    eventId,
+  });
+}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ModalProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
           aria-label="Close"
         >
-          <span aria-hidden="true">&times;</span>
+          <XMarkIcon className="w-6 h-6" />
         </button>
         {title && (
           <div className="px-6 pt-6 pb-2 text-lg font-semibold border-b border-gray-200">

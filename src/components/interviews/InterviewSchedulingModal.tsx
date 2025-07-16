@@ -234,9 +234,6 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
             </h2>
             <p className="text-gray-600 mt-1">Set up an interview with the candidate</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <XMarkIcon className="w-6 h-6" />
-          </button>
         </div>
 
         {/* Candidate Info */}

@@ -208,3 +208,85 @@ export async function sendInterviewUpdateNotification(data: InterviewEmailData):
     return false;
   }
 }
+
+export async function sendInterviewCancellationNotification(
+  data: InterviewEmailData,
+): Promise<boolean> {
+  try {
+    if (!data.interviewDate || !data.interviewTime) {
+      console.error('Missing interviewDate or interviewTime in email data:', data);
+      return false;
+    }
+    const startDateTime = new Date(`${data.interviewDate}T${data.interviewTime}`);
+    if (isNaN(startDateTime.getTime())) {
+      console.error('Invalid startDateTime in email data:', data);
+      return false;
+    }
+    const endDateTime = new Date(startDateTime.getTime() + data.duration * 60 * 1000);
+    if (isNaN(endDateTime.getTime())) {
+      console.error('Invalid endDateTime in email data:', data);
+      return false;
+    }
+
+    // ICS with METHOD:CANCEL
+    const event: CalendarEvent = {
+      summary: `Interview with ${data.candidateName} for ${data.jobTitle}`,
+      description: `Interview for ${data.jobTitle} position at ${data.companyName}${data.notes ? `\n\nNotes: ${data.notes}` : ''}`,
+      startTime: startDateTime.toISOString(),
+      endTime: endDateTime.toISOString(),
+      timezone: data.timezone,
+      attendees: [data.candidateEmail],
+      meetLink: data.meetLink,
+    };
+    let icsContent = generateICSContent(event);
+    // Replace METHOD:REQUEST with METHOD:CANCEL for cancellation
+    icsContent = icsContent.replace('METHOD:REQUEST', 'METHOD:CANCEL');
+
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #BD6762;">Interview Cancelled</h2>
+        <p>Hi ${data.candidateName},</p>
+        <p>Your interview for the <strong>${data.jobTitle}</strong> position at <strong>${data.companyName}</strong> has been <strong>cancelled</strong>.</p>
+        <div style="background-color: #f8d7da; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #BD6762;">Cancelled Interview Details</h3>
+          <p><strong>Date:</strong> ${new Date(data.interviewDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p><strong>Time:</strong> ${data.interviewTime} (${data.timezone})</p>
+          <p><strong>Duration:</strong> ${data.duration} minutes</p>
+          ${data.notes ? `<p><strong>Notes:</strong> ${data.notes}</p>` : ''}
+        </div>
+        <p>A calendar cancellation has been attached to this email. Please remove the event from your calendar.</p>
+        <p>If you have any questions, please contact us.</p>
+        <p>Best regards,<br>The ${data.companyName} Hiring Team</p>
+      </div>
+    `;
+
+    if (!resend) {
+      console.error('Resend client not initialized. Cannot send interview cancellation email.');
+      return false;
+    }
+
+    const { data: emailResult, error } = await resend.emails.send({
+      from: 'Intavia <no-reply@intavia.app>',
+      to: [data.candidateEmail],
+      subject: `Interview Cancelled - ${data.jobTitle} at ${data.companyName}`,
+      html: emailContent,
+      attachments: [
+        {
+          filename: 'interview-cancellation.ics',
+          content: Buffer.from(icsContent).toString('base64'),
+        },
+      ],
+    });
+
+    if (error) {
+      console.error('Failed to send interview cancellation email:', error);
+      return false;
+    }
+
+    console.log('Interview cancellation email sent successfully:', emailResult);
+    return true;
+  } catch (error) {
+    console.error('Error sending interview cancellation email:', error);
+    return false;
+  }
+}

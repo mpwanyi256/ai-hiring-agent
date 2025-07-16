@@ -6,7 +6,7 @@ export interface InterviewEmailData {
   interviewDate: string;
   interviewTime: string;
   timezone: string;
-  meetLink?: string;
+  meetLink: string | null;
   duration: number;
   notes?: string;
 }
