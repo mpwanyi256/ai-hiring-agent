@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
     // Google Calendar Integration
     let calendarEventId = null;
     let meetLink = null;
+    const employerEmail = body.employerEmail || null;
     const accessToken = await getValidGoogleAccessToken({
       userId: user.id,
       companyId: profile.company_id,
@@ -137,7 +138,7 @@ export async function POST(request: NextRequest) {
           },
           attendees: [
             { email: candidate.email },
-            // Optionally add employer email here
+            ...(employerEmail ? [{ email: employerEmail }] : []),
           ],
         };
         const eventResult = await createInterviewEvent({ accessToken, eventInput });

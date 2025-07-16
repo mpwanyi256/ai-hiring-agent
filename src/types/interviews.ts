@@ -58,6 +58,7 @@ export interface CreateInterviewData {
   timezoneId: string; // Changed from timezone string
   duration: number;
   notes?: string;
+  employerEmail?: string; // Added for calendar attendee
 }
 
 export interface UpdateInterviewData {

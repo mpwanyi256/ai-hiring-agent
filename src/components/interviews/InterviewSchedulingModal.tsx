@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { scheduleInterview, updateInterview } from '@/store/interviews/interviewsThunks';
 import { selectIsInterviewScheduling } from '@/store/interviews/interviewsSelectors';
 import { selectCompany } from '@/store/company/companySelectors';
+import { selectUser } from '@/store/auth/authSelectors';
 import { CandidateWithEvaluation, InterviewDetails } from '@/types/candidates';
 import { CreateInterviewData, Timezone } from '@/types/interviews';
 import DatePicker from './DatePicker';
@@ -38,6 +39,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
   const dispatch = useAppDispatch();
   const company = useAppSelector(selectCompany);
   const isScheduling = useAppSelector((state) => selectIsInterviewScheduling(state, candidate.id));
+  const user = useAppSelector(selectUser);
 
   const [timezones, setTimezones] = useState<Timezone[]>([]);
   const [timezoneLoading, setTimezoneLoading] = useState(false);
@@ -156,7 +158,12 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
           }),
         ).unwrap();
       } else {
-        await dispatch(scheduleInterview(formData)).unwrap();
+        await dispatch(
+          scheduleInterview({
+            ...formData,
+            employerEmail: user?.email || '',
+          }),
+        ).unwrap();
       }
 
       apiSuccess(isEdit ? 'Interview updated successfully' : 'Interview scheduled successfully');
