@@ -37,6 +37,7 @@ interface DashboardState {
   recentActivity: RecentActivityItem[];
   recentActivityLoading: boolean;
   recentActivityError: string | null;
+  totalUpcomingInterviews: number;
 }
 
 const initialState: DashboardState = {
@@ -49,6 +50,7 @@ const initialState: DashboardState = {
   recentActivity: [],
   recentActivityLoading: false,
   recentActivityError: null,
+  totalUpcomingInterviews: 0,
 };
 
 const dashboardSlice = createSlice({
@@ -63,6 +65,9 @@ const dashboardSlice = createSlice({
     },
     setUpcomingInterviews(state, action: PayloadAction<UpcomingInterview[]>) {
       state.upcomingInterviews = action.payload;
+    },
+    setTotalUpcomingInterviews(state, action: PayloadAction<number>) {
+      state.totalUpcomingInterviews = action.payload;
     },
     setCandidatePipeline(state, action: PayloadAction<CandidatePipelineItem[]>) {
       state.candidatePipeline = action.payload;
@@ -89,6 +94,7 @@ export const {
   setLoading,
   setError,
   setUpcomingInterviews,
+  setTotalUpcomingInterviews,
   setCandidatePipeline,
   setPipelineLoading,
   setPipelineError,
