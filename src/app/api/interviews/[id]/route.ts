@@ -198,7 +198,7 @@ export async function PATCH(request: NextRequest, { params }: AppRequestParams<{
   }
   try {
     const supabase = await createClient();
-    const { id: interviewId } = params;
+    const { id: interviewId } = await params;
     // Fetch interview
     const { data: interview, error: interviewError } = await supabase
       .from('interviews')
