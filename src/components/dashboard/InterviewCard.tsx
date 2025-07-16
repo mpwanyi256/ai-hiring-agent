@@ -7,12 +7,11 @@ interface InterviewCardProps {
 }
 
 export default function InterviewCard({ interview }: InterviewCardProps) {
-  // Calendar icon inspired by Google Calendar, themed for the app
   return (
     <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
       {/* Calendar Icon */}
-      <div className="flex flex-col items-center justify-center w-14 h-16 rounded-lg bg-blue-100 border border-blue-200 mr-2 flex-shrink-0">
-        <div className="w-full bg-blue-500 rounded-t-lg text-white text-xs font-semibold text-center py-1">
+      <div className="flex flex-col items-center justify-center w-14 h-16 rounded-lg bg-primary-100 border border-primary-200 mr-2 flex-shrink-0">
+        <div className="w-full bg-primary rounded-t-lg text-white text-xs font-semibold text-center py-1">
           {new Date(interview.interview_date).toLocaleString('en-US', { month: 'short' })}
         </div>
         <div className="flex-1 flex flex-col justify-center">
@@ -25,10 +24,12 @@ export default function InterviewCard({ interview }: InterviewCardProps) {
         </div>
       </div>
       {/* Interview Info */}
-      <div className="flex-1 min-w-0">
-        <div className="font-medium text-gray-900">
-          {interview.candidate_first_name} {interview.candidate_last_name}
-          <span className="ml-2 text-xs text-gray-500">({interview.candidate_email})</span>
+      <div className="flex-1 min-w-0 border-l border-gray-200 pl-4">
+        <div className="flex flex-col gap-1 font-medium text-gray-900 pb-2">
+          <span className="text-primary">
+            {interview.candidate_first_name} {interview.candidate_last_name}
+          </span>
+          <span className="text-xs text-gray-500">{interview.candidate_email}</span>
         </div>
         <div className="text-sm text-gray-600">{interview.job_title}</div>
         <div className="text-xs text-gray-500 mt-1">
@@ -46,9 +47,9 @@ export default function InterviewCard({ interview }: InterviewCardProps) {
           href={interview.meet_link}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center text-xs text-blue-600 hover:underline ml-2"
+          className="inline-flex items-center text-xs text-green-700 hover:underline ml-2"
         >
-          <VideoCameraIcon className="w-4 h-4 mr-1" />
+          <VideoCameraIcon className="w-4 h-4 mr-1 text-green-600" />
           Join Meet
         </a>
       )}

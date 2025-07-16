@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { XMarkIcon, CalendarIcon, ClockIcon, UserIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, ClockIcon, UserIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '@/store';
 import {
   scheduleInterview,
