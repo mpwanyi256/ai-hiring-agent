@@ -3,7 +3,9 @@ import { UpdateInterviewData } from '@/types/interviews';
 import { createClient } from '@/lib/supabase/server';
 import { getValidGoogleAccessToken } from '@/lib/services/googleIntegrationService';
 import { updateInterviewEvent } from '@/lib/services/googleCalendarService';
+import { sendInterviewUpdateNotification } from '@/lib/services/emailService';
 import { AppRequestParams } from '@/types/api';
+import { InterviewEmailData } from '@/types/integrations';
 
 export async function PUT(request: NextRequest, { params }: AppRequestParams<{ id: string }>) {
   try {
@@ -128,6 +130,52 @@ export async function PUT(request: NextRequest, { params }: AppRequestParams<{ i
         { success: false, error: 'Failed to update interview' },
         { status: 500 },
       );
+    }
+
+    // Send email notification for interview update
+    try {
+      // Fetch candidate and company info for email
+      const { data: candidate } = await supabase
+        .from('candidate_details')
+        .select('first_name, last_name, email, job_title')
+        .eq('id', interview.application_id)
+        .single();
+
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', profile.company_id)
+        .single();
+
+      const { data: timezone } = await supabase
+        .from('timezones')
+        .select('name')
+        .eq('id', updatedInterview.timezone_id)
+        .single();
+
+      if (candidate && company && timezone) {
+        const emailData: InterviewEmailData = {
+          candidateName: `${candidate.first_name} ${candidate.last_name}`,
+          candidateEmail: candidate.email,
+          companyName: company.name,
+          jobTitle: candidate.job_title,
+          interviewDate: updatedInterview.date,
+          interviewTime: updatedInterview.time,
+          timezone: timezone.name,
+          meetLink: updatedInterview.meet_link,
+          duration: updatedInterview.duration,
+        };
+
+        if (updatedInterview.notes) {
+          emailData.notes = updatedInterview.notes;
+        }
+
+        await sendInterviewUpdateNotification(emailData);
+        console.log('Interview update email notification sent successfully.');
+      }
+    } catch (emailError) {
+      console.error('Error sending interview update email notification:', emailError);
+      // Don't fail the entire request if email fails
     }
 
     return NextResponse.json({

@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
     const { tokens: tokenResult } = await oauth2Client.getToken(code);
     tokens = tokenResult;
   } catch (_err) {
+    console.log('Error exchanging code for tokens:', _err);
     return NextResponse.redirect(
       `${baseUrl}/dashboard/settings?google=error&message=Token+exchange+failed`,
     );
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest) {
     const { data } = await oauth2.userinfo.get();
     googleUser = data;
   } catch (_err) {
+    console.log('Error exchanging code for tokens:', _err);
     return NextResponse.redirect(
       `${baseUrl}/dashboard/settings?google=error&message=Failed+to+fetch+user+info`,
     );

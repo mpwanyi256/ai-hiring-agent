@@ -13,7 +13,7 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
-                <Image src="/images/logo.png" alt="Intervio Logo" width={40} height={40} />
+                <Image src="/images/logo.png" alt={`${app.name} Logo`} width={40} height={40} />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent text-2xl">
                 {app.name}
@@ -81,13 +81,14 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-3 text-sm">Contact Us</h4>
             <div className="space-y-2 text-gray-400 text-sm">
-              <p>+256 (706) 101-601</p>
-              <p>intervio@prodevkampala.com</p>
+              <p>{app.address.phone}</p>
+              <p>{app.email}</p>
               <p>
-                Innovations Village
+                {app.address.street}
                 <br />
-                Block B<br />
-                Kampala, Uganda
+                {app.address.block}
+                <br />
+                {app.address.city}
               </p>
             </div>
           </div>

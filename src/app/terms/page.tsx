@@ -171,7 +171,7 @@ export default function TermsPage() {
           <section id="contact" className="mb-8">
             <h2 className="text-xl font-semibold mb-3">13. Contact</h2>
             <p className="text-sm">
-              For legal questions or support, contact <b>legal@prodevkampala.com</b>.
+              For legal questions or support, contact <b>connect@intavia.app</b>.
             </p>
           </section>
         </main>

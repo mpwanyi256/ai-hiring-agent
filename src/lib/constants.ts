@@ -17,11 +17,18 @@ export const inputTypes = [
 
 export const app = {
   baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-  name: 'Intervio',
-  domain: 'intervio.com',
+  name: 'Intavia',
+  domain: 'intavia.app',
   description: 'AI Hiring Platform',
   projectRef: process.env.NEXT_PUBLIC_SUPABASE_URL,
   anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  email: 'connect@intavia.app',
+  address: {
+    street: 'Innovations Village',
+    city: 'Kampala, Uganda',
+    phone: '+256 (780) 101-601',
+    block: 'Block B',
+  },
 };
 
 export const ai = {
@@ -36,6 +43,19 @@ export const integrations = {
     clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
     clientSecret: process.env.NEXT_PUBLIC_GOOGLE_SECRET_ID,
     redirectUri: process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI,
+  },
+  resend: {
+    apiKey: process.env.NEXT_PUBLIC_RESEND_API_KEY,
+  },
+};
+
+export const mail = {
+  host: process.env.NEXT_PUBLIC_EMAIL_HOST,
+  port: process.env.NEXT_PUBLIC_EMAIL_PORT,
+  secure: true,
+  auth: {
+    username: process.env.NEXT_PUBLIC_USERNAME,
+    password: process.env.NEXT_PUBLIC_PASSWORD,
   },
 };
 

@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import { useAppSelector } from '@/store';
 import Image from 'next/image';
+import { app } from '@/lib/constants';
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -45,14 +46,14 @@ export default function Navigation() {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
               <Image
                 src="/images/logo.png"
-                alt="Intervio Logo"
+                alt={`${app.name} Logo`}
                 width={40}
                 height={40}
                 objectFit="contain"
               />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent text-2xl">
-              Intervio
+              {app.name}
             </span>
           </Link>
 

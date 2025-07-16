@@ -170,7 +170,7 @@ export default function PrivacyPage() {
               <li>File a complaint with your data protection authority</li>
             </ul>
             <p className="mb-6 text-sm">
-              To exercise your rights, email <b>privacy@prodevkampala.com</b>
+              To exercise your rights, email <b>legal@intavia.app</b>
             </p>
           </section>
 
@@ -213,7 +213,7 @@ export default function PrivacyPage() {
           <section id="contact" className="mb-8">
             <h2 className="text-xl font-semibold mb-3">11. Contact</h2>
             <p className="text-sm">
-              If you have questions or complaints, email us at <b>privacy@prodevkampala.com</b>.
+              If you have questions or complaints, email us at <b>connect@intavia.app</b>.
             </p>
           </section>
         </main>

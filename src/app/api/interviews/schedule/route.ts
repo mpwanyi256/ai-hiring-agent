@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { CreateInterviewData } from '@/types/interviews';
-import { createInterviewEvent } from '@/lib/services/googleCalendarService';
+import { createClient } from '@/lib/supabase/server';
 import { getValidGoogleAccessToken } from '@/lib/services/googleIntegrationService';
+import { createInterviewEvent } from '@/lib/services/googleCalendarService';
+import { sendInterviewNotification } from '@/lib/services/emailService';
+import { AppRequestParams } from '@/types/api';
 
 export async function POST(request: NextRequest) {
   try {
@@ -172,8 +174,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Send email notification to candidate and employer
-    // This is where you would integrate with your email service (Resend, SendGrid, etc.)
+    // Send email notification to candidate
+    try {
+      // Get company name for the email
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', profile.company_id)
+        .single();
+
+      const companyName = company?.name || 'Our Company';
+
+      const emailData: any = {
+        candidateName: `${candidate.first_name} ${candidate.last_name}`,
+        candidateEmail: candidate.email,
+        companyName: companyName,
+        jobTitle: candidate.job_title,
+        interviewDate: body.date,
+        interviewTime: body.time,
+        timezone: timezone.name,
+        meetLink: meetLink,
+        duration: body.duration,
+      };
+
+      if (body.notes) {
+        emailData.notes = body.notes;
+      }
+
+      await sendInterviewNotification(emailData);
+
+      console.log('Interview email notification sent successfully.');
+    } catch (emailError) {
+      console.error('Error sending interview email notification:', emailError);
+      // Don't fail the entire request if email fails
+    }
 
     // Transform the response
     const transformedInterview = {
