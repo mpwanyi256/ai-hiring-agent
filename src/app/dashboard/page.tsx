@@ -9,6 +9,7 @@ import MetricCard from '@/components/dashboard/MetricCard';
 import InsightCard from '@/components/dashboard/InsightCard';
 import QuickActionCard from '@/components/dashboard/QuickActionCard';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import UpcomingInterviewsWidget from '@/components/dashboard/UpcomingInterviewsWidget';
 import { RootState } from '@/store';
 import { User } from '@/types';
 import {
@@ -279,8 +280,9 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Right Column - Activity & Plan */}
+        {/* Right Column - Upcoming Interviews */}
         <div className="space-y-6">
+          <UpcomingInterviewsWidget />
           {/* Recent Activity */}
           <InsightCard
             title="Recent Activity"

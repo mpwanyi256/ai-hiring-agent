@@ -11,21 +11,26 @@ import interviewSlice from './interview/interviewSlice';
 import interviewsSlice from './interviews/interviewsSlice';
 import selectedCandidateSlice from './selectedCandidate/selectedCandidateSlice';
 import companySlice from './company/companySlice';
+import dashboardReducer from './dashboard/dashboardSlice';
+import { combineReducers } from 'redux';
+
+const rootReducer = combineReducers({
+  auth: authSlice,
+  jobs: jobsSlice,
+  candidates: candidatesSlice,
+  evaluation: evaluationSlice,
+  skills: skillsSlice,
+  traits: traitsSlice,
+  jobTemplates: jobTemplatesSlice,
+  interview: interviewSlice,
+  interviews: interviewsSlice,
+  selectedCandidate: selectedCandidateSlice,
+  company: companySlice,
+  dashboard: dashboardReducer,
+});
 
 export const store = configureStore({
-  reducer: {
-    auth: authSlice,
-    jobs: jobsSlice,
-    candidates: candidatesSlice,
-    evaluation: evaluationSlice,
-    skills: skillsSlice,
-    traits: traitsSlice,
-    jobTemplates: jobTemplatesSlice,
-    interview: interviewSlice,
-    interviews: interviewsSlice,
-    selectedCandidate: selectedCandidateSlice,
-    company: companySlice,
-  },
+  reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
