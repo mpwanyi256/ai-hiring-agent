@@ -8,19 +8,30 @@ import {
   setPipelineLoading,
   setPipelineError,
   CandidatePipelineItem,
+  setRecentActivity,
+  setRecentActivityLoading,
+  setRecentActivityError,
+  RecentActivityItem,
 } from './dashboardSlice';
+import { RootState } from '@/store';
 
 export const fetchUpcomingInterviews = createAsyncThunk<
   UpcomingInterview[],
-  { companyId: string; limit?: number },
+  { limit?: number },
   { rejectValue: string }
 >(
   'dashboard/fetchUpcomingInterviews',
-  async ({ companyId, limit = 5 }, { dispatch, rejectWithValue }) => {
+  async ({ limit = 5 }, { dispatch, rejectWithValue, getState }) => {
+    const user = (getState() as RootState).auth.user;
+    if (!user) {
+      return rejectWithValue('User not found');
+    }
     dispatch(setLoading(true));
     dispatch(setError(null));
     try {
-      const res = await fetch(`/api/interviews/upcoming?companyId=${companyId}&limit=${limit}`);
+      const res = await fetch(
+        `/api/interviews/upcoming?companyId=${user.companyId}&limit=${limit}`,
+      );
       const data = await res.json();
       if (data.success) {
         dispatch(setUpcomingInterviews(data.interviews || []));
@@ -40,13 +51,18 @@ export const fetchUpcomingInterviews = createAsyncThunk<
 
 export const fetchCandidatePipeline = createAsyncThunk<
   CandidatePipelineItem[],
-  { companyId: string },
+  void,
   { rejectValue: string }
->('dashboard/fetchCandidatePipeline', async ({ companyId }, { dispatch, rejectWithValue }) => {
+>('dashboard/fetchCandidatePipeline', async (_, { dispatch, rejectWithValue, getState }) => {
+  const user = (getState() as RootState).auth.user;
+  if (!user) {
+    return rejectWithValue('User not found');
+  }
+
   dispatch(setPipelineLoading(true));
   dispatch(setPipelineError(null));
   try {
-    const res = await fetch(`/api/dashboard/candidate-pipeline?companyId=${companyId}`);
+    const res = await fetch(`/api/dashboard/candidate-pipeline?companyId=${user.companyId}`);
     const data = await res.json();
     if (data.success) {
       dispatch(setCandidatePipeline(data.pipeline || []));
@@ -62,3 +78,38 @@ export const fetchCandidatePipeline = createAsyncThunk<
     dispatch(setPipelineLoading(false));
   }
 });
+
+export const fetchRecentActivity = createAsyncThunk<
+  RecentActivityItem[],
+  { limit?: number },
+  { rejectValue: string }
+>(
+  'dashboard/fetchRecentActivity',
+  async ({ limit = 5 }, { dispatch, rejectWithValue, getState }) => {
+    const user = (getState() as RootState).auth.user;
+    if (!user) {
+      return rejectWithValue('User not found');
+    }
+
+    dispatch(setRecentActivityLoading(true));
+    dispatch(setRecentActivityError(null));
+    try {
+      const res = await fetch(
+        `/api/dashboard/recent-activity?companyId=${user.companyId}&limit=${limit}`,
+      );
+      const data = await res.json();
+      if (data.success) {
+        dispatch(setRecentActivity(data.activities || []));
+        return data.activities || [];
+      } else {
+        dispatch(setRecentActivityError(data.error || 'Failed to load activity'));
+        return rejectWithValue(data.error || 'Failed to load activity');
+      }
+    } catch (err) {
+      dispatch(setRecentActivityError('Failed to load activity'));
+      return rejectWithValue('Failed to load activity');
+    } finally {
+      dispatch(setRecentActivityLoading(false));
+    }
+  },
+);

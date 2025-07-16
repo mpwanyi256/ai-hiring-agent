@@ -158,8 +158,6 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Left Column - Insights */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Candidate Pipeline Widget */}
-          <CandidatePipelineWidget />
           {/* Quick Actions */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
@@ -209,17 +207,7 @@ export default function DashboardPage() {
 
           {/* Insights Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InsightCard
-              title="Candidate Pipeline"
-              subtitle="Applications by status"
-              data={candidatesByStatus}
-              type="list"
-              icon={ArrowTrendingUpIcon}
-              action={{
-                label: 'View All',
-                onClick: () => router.push('/dashboard/candidates'),
-              }}
-            />
+            <CandidatePipelineWidget />
 
             <InsightCard
               title="Interview Activity"

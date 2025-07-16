@@ -1,13 +1,14 @@
 import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '@/store';
+import { useSelector } from 'react-redux';
+import { RootState, useAppDispatch, useAppSelector } from '@/store';
 import { fetchCandidatePipeline } from '@/store/dashboard/dashboardThunks';
 import {
   selectCandidatePipeline,
   selectPipelineLoading,
   selectPipelineError,
 } from '@/store/dashboard/dashboardSelectors';
-import { UserGroupIcon } from '@heroicons/react/24/outline';
+import { ArrowTrendingUpIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { selectUser } from '@/store/auth/authSelectors';
 
 const STATUS_LABELS: Record<string, string> = {
   under_review: 'Under Review',
@@ -34,15 +35,15 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function CandidatePipelineWidget() {
-  const dispatch = useDispatch();
-  const { user } = useSelector((state: RootState) => state.auth);
-  const pipeline = useSelector(selectCandidatePipeline);
-  const loading = useSelector(selectPipelineLoading);
-  const error = useSelector(selectPipelineError);
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectUser);
+  const pipeline = useAppSelector(selectCandidatePipeline);
+  const loading = useAppSelector(selectPipelineLoading);
+  const error = useAppSelector(selectPipelineError);
 
   useEffect(() => {
     if (user?.companyId) {
-      dispatch(fetchCandidatePipeline({ companyId: user.companyId }) as any);
+      dispatch(fetchCandidatePipeline());
     }
   }, [user?.companyId, dispatch]);
 
@@ -50,8 +51,10 @@ export default function CandidatePipelineWidget() {
 
   return (
     <div className="bg-white rounded-lg shadow border p-5">
-      <div className="flex items-center mb-4">
-        <UserGroupIcon className="w-5 h-5 text-primary mr-2" />
+      <div className="flex gap-1 items-center mb-4">
+        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+          <ArrowTrendingUpIcon className="w-5 h-5 text-primary mr-2" />
+        </div>
         <h2 className="text-lg font-semibold text-gray-900">Candidate Pipeline</h2>
       </div>
       {loading ? (

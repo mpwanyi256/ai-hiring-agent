@@ -1,127 +1,109 @@
 'use client';
 
-import React from 'react';
-import { 
-  UserPlusIcon, 
-  BriefcaseIcon, 
+import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, useAppDispatch, useAppSelector } from '@/store';
+import { fetchRecentActivity } from '@/store/dashboard/dashboardThunks';
+import {
+  selectRecentActivity,
+  selectRecentActivityLoading,
+  selectRecentActivityError,
+} from '@/store/dashboard/dashboardSelectors';
+import {
+  UserGroupIcon,
+  BriefcaseIcon,
   ChatBubbleLeftRightIcon,
   CheckCircleIcon,
-  ClockIcon 
+  ClockIcon,
 } from '@heroicons/react/24/outline';
-
-interface ActivityItem {
-  id: string;
-  type: 'interview' | 'job_created' | 'candidate_applied' | 'evaluation_completed';
-  title: string;
-  description: string;
-  timestamp: string;
-  status?: 'success' | 'pending' | 'info';
-}
-
-interface RecentActivityProps {
-  activities?: ActivityItem[];
-  maxItems?: number;
-}
+import { selectUser } from '@/store/auth/authSelectors';
 
 const activityIcons = {
-  interview: ChatBubbleLeftRightIcon,
+  candidate_applied: UserGroupIcon,
+  interview_scheduled: ChatBubbleLeftRightIcon,
   job_created: BriefcaseIcon,
-  candidate_applied: UserPlusIcon,
   evaluation_completed: CheckCircleIcon,
 };
 
 const activityColors = {
-  interview: { icon: 'text-blue-600', bg: 'bg-blue-50' },
-  job_created: { icon: 'text-green-600', bg: 'bg-green-50' },
-  candidate_applied: { icon: 'text-purple-600', bg: 'bg-purple-50' },
-  evaluation_completed: { icon: 'text-emerald-600', bg: 'bg-emerald-50' },
+  candidate_applied: 'text-purple-500 bg-purple-50',
+  interview_scheduled: 'text-blue-500 bg-blue-50',
+  job_created: 'text-green-600 bg-green-50',
+  evaluation_completed: 'text-emerald-600 bg-emerald-50',
 };
 
-export default function RecentActivity({ 
-  activities = [], 
-  maxItems = 5 
-}: RecentActivityProps) {
-  // Mock data if no activities provided
-  const mockActivities: ActivityItem[] = [
-    {
-      id: '1',
-      type: 'candidate_applied',
-      title: 'New candidate applied',
-      description: 'John Smith applied for Senior Developer position',
-      timestamp: '2 hours ago',
-      status: 'info'
-    },
-    {
-      id: '2',
-      type: 'interview',
-      title: 'Interview completed',
-      description: 'AI interview finished for Marketing Specialist role',
-      timestamp: '4 hours ago',
-      status: 'success'
-    },
-    {
-      id: '3',
-      type: 'evaluation_completed',
-      title: 'Evaluation generated',
-      description: 'AI evaluation completed for Sarah Johnson',
-      timestamp: '6 hours ago',
-      status: 'success'
-    },
-    {
-      id: '4',
-      type: 'job_created',
-      title: 'New job posted',
-      description: 'Product Manager position was created',
-      timestamp: '1 day ago',
-      status: 'success'
-    },
-    {
-      id: '5',
-      type: 'candidate_applied',
-      title: 'Candidate shortlisted',
-      description: 'Alex Chen moved to shortlist for Designer role',
-      timestamp: '2 days ago',
-      status: 'success'
-    }
-  ];
+function timeAgo(dateString: string) {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+  return `${Math.floor(diff / 86400)} day${Math.floor(diff / 86400) > 1 ? 's' : ''} ago`;
+}
 
-  const displayActivities = activities.length > 0 ? activities : mockActivities;
-  const limitedActivities = displayActivities.slice(0, maxItems);
+export default function RecentActivity({ maxItems = 5 }: { maxItems?: number }) {
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectUser);
+  const activities = useAppSelector(selectRecentActivity);
+  const loading = useAppSelector(selectRecentActivityLoading);
+  const error = useAppSelector(selectRecentActivityError);
+
+  useEffect(() => {
+    if (user?.companyId) {
+      dispatch(fetchRecentActivity({ limit: maxItems }));
+    }
+  }, [user?.companyId, maxItems, dispatch]);
+
+  if (loading) {
+    return <div className="text-gray-500 py-6 text-center">Loading...</div>;
+  }
+  if (error) {
+    return <div className="text-red-500 py-6 text-center">{error}</div>;
+  }
+  if (!activities.length) {
+    return (
+      <div className="flex flex-col items-center py-8">
+        <ClockIcon className="w-10 h-10 text-gray-300 mb-2" />
+        <div className="text-gray-500 text-sm font-medium mb-1">No recent activity</div>
+        <div className="text-xs text-gray-400">Recent events will appear here.</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {limitedActivities.map((activity) => {
-        const IconComponent = activityIcons[activity.type];
-        const colors = activityColors[activity.type];
-        
+      {activities.slice(0, maxItems).map((activity) => {
+        const IconComponent =
+          activityIcons[activity.event_type as keyof typeof activityIcons] || ClockIcon;
+        const color =
+          activityColors[activity.event_type as keyof typeof activityColors] ||
+          'text-gray-400 bg-gray-50';
         return (
           <div key={activity.id} className="flex items-start space-x-3 group">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${colors.bg} flex-shrink-0`}>
-              <IconComponent className={`w-4 h-4 ${colors.icon}`} />
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center ${color} flex-shrink-0`}
+            >
+              <IconComponent className="w-4 h-4" />
             </div>
-            
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 group-hover:text-primary transition-colors">
-                    {activity.title}
+                    {activity.message}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                    {activity.description}
-                  </p>
-                </div>
-                
-                <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
-                  {activity.status && (
-                    <div className={`w-2 h-2 rounded-full ${
-                      activity.status === 'success' ? 'bg-green-400' :
-                      activity.status === 'pending' ? 'bg-amber-400' :
-                      'bg-blue-400'
-                    }`} />
+                  {activity.meta && activity.meta.job_title && (
+                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                      {activity.meta.job_title}
+                    </p>
                   )}
+                </div>
+                <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
                   <div className="flex items-center text-xs text-gray-400">
-                    <ClockIcon className="w-3 h-3 mr-1" />
-                    {activity.timestamp}
+                    <span
+                      className={`inline-block w-2 h-2 rounded-full ${activity.event_type === 'candidate_applied' ? 'bg-blue-400' : 'bg-green-400'} mr-1`}
+                    />
+                    {timeAgo(activity.created_at)}
                   </div>
                 </div>
               </div>
@@ -129,13 +111,6 @@ export default function RecentActivity({
           </div>
         );
       })}
-      
-      {limitedActivities.length === 0 && (
-        <div className="text-center py-6">
-          <ClockIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-          <p className="text-sm text-gray-500">No recent activity</p>
-        </div>
-      )}
     </div>
   );
-} 
+}

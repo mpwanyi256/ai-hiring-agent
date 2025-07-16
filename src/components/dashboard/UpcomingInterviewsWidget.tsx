@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchUpcomingInterviews } from '@/store/dashboard/dashboardThunks';
 import {
   selectUpcomingInterviews,
@@ -9,17 +8,18 @@ import {
 } from '@/store/dashboard/dashboardSelectors';
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import InterviewCard from './InterviewCard';
+import { selectUser } from '@/store/auth/authSelectors';
 
 export default function UpcomingInterviewsWidget() {
-  const dispatch = useDispatch();
-  const { user } = useSelector((state: RootState) => state.auth);
-  const interviews = useSelector(selectUpcomingInterviews);
-  const loading = useSelector(selectDashboardLoading);
-  const error = useSelector(selectDashboardError);
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectUser);
+  const interviews = useAppSelector(selectUpcomingInterviews);
+  const loading = useAppSelector(selectDashboardLoading);
+  const error = useAppSelector(selectDashboardError);
 
   useEffect(() => {
     if (user?.companyId) {
-      dispatch(fetchUpcomingInterviews({ companyId: user.companyId, limit: 5 }) as any);
+      dispatch(fetchUpcomingInterviews({ limit: 5 }));
     }
   }, [user?.companyId, dispatch]);
 

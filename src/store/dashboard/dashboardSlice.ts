@@ -17,6 +17,16 @@ export interface CandidatePipelineItem {
   count: number;
 }
 
+export interface RecentActivityItem {
+  id: string;
+  event_type: string;
+  entity_id: string | null;
+  entity_type: string | null;
+  message: string;
+  meta: any;
+  created_at: string;
+}
+
 interface DashboardState {
   upcomingInterviews: UpcomingInterview[];
   isLoading: boolean;
@@ -24,6 +34,9 @@ interface DashboardState {
   candidatePipeline: CandidatePipelineItem[];
   pipelineLoading: boolean;
   pipelineError: string | null;
+  recentActivity: RecentActivityItem[];
+  recentActivityLoading: boolean;
+  recentActivityError: string | null;
 }
 
 const initialState: DashboardState = {
@@ -33,6 +46,9 @@ const initialState: DashboardState = {
   candidatePipeline: [],
   pipelineLoading: false,
   pipelineError: null,
+  recentActivity: [],
+  recentActivityLoading: false,
+  recentActivityError: null,
 };
 
 const dashboardSlice = createSlice({
@@ -57,6 +73,15 @@ const dashboardSlice = createSlice({
     setPipelineError(state, action: PayloadAction<string | null>) {
       state.pipelineError = action.payload;
     },
+    setRecentActivity(state, action: PayloadAction<RecentActivityItem[]>) {
+      state.recentActivity = action.payload;
+    },
+    setRecentActivityLoading(state, action: PayloadAction<boolean>) {
+      state.recentActivityLoading = action.payload;
+    },
+    setRecentActivityError(state, action: PayloadAction<string | null>) {
+      state.recentActivityError = action.payload;
+    },
   },
 });
 
@@ -67,5 +92,8 @@ export const {
   setCandidatePipeline,
   setPipelineLoading,
   setPipelineError,
+  setRecentActivity,
+  setRecentActivityLoading,
+  setRecentActivityError,
 } = dashboardSlice.actions;
 export default dashboardSlice.reducer;
