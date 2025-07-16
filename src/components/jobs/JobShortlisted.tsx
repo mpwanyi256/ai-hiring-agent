@@ -21,6 +21,17 @@ import { apiSuccess, apiError } from '@/lib/notification';
 interface JobShortlistedProps {
   jobId: string;
 }
+const candidateStatuses: { value: CandidateStatus; label: string }[] = [
+  { value: 'under_review', label: 'Under Review' },
+  { value: 'interview_scheduled', label: 'Interview Scheduled' },
+  { value: 'shortlisted', label: 'Shortlisted' },
+  { value: 'reference_check', label: 'Reference Check' },
+  { value: 'offer_extended', label: 'Offer Extended' },
+  { value: 'offer_accepted', label: 'Offer Accepted' },
+  { value: 'hired', label: 'Hired' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'withdrawn', label: 'Withdrawn' },
+];
 
 export default function JobShortlisted({ jobId }: JobShortlistedProps) {
   const dispatch = useAppDispatch();
@@ -38,17 +49,6 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     candidate: null,
     isEdit: false,
   });
-  const candidateStatuses: { value: CandidateStatus; label: string }[] = [
-    { value: 'under_review', label: 'Under Review' },
-    { value: 'interview_scheduled', label: 'Interview Scheduled' },
-    { value: 'shortlisted', label: 'Shortlisted' },
-    { value: 'reference_check', label: 'Reference Check' },
-    { value: 'offer_extended', label: 'Offer Extended' },
-    { value: 'offer_accepted', label: 'Offer Accepted' },
-    { value: 'hired', label: 'Hired' },
-    { value: 'rejected', label: 'Rejected' },
-    { value: 'withdrawn', label: 'Withdrawn' },
-  ];
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
 
   useEffect(() => {
