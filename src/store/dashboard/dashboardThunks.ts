@@ -1,5 +1,14 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { setLoading, setError, setUpcomingInterviews, UpcomingInterview } from './dashboardSlice';
+import {
+  setLoading,
+  setError,
+  setUpcomingInterviews,
+  UpcomingInterview,
+  setCandidatePipeline,
+  setPipelineLoading,
+  setPipelineError,
+  CandidatePipelineItem,
+} from './dashboardSlice';
 
 export const fetchUpcomingInterviews = createAsyncThunk<
   UpcomingInterview[],
@@ -28,3 +37,28 @@ export const fetchUpcomingInterviews = createAsyncThunk<
     }
   },
 );
+
+export const fetchCandidatePipeline = createAsyncThunk<
+  CandidatePipelineItem[],
+  { companyId: string },
+  { rejectValue: string }
+>('dashboard/fetchCandidatePipeline', async ({ companyId }, { dispatch, rejectWithValue }) => {
+  dispatch(setPipelineLoading(true));
+  dispatch(setPipelineError(null));
+  try {
+    const res = await fetch(`/api/dashboard/candidate-pipeline?companyId=${companyId}`);
+    const data = await res.json();
+    if (data.success) {
+      dispatch(setCandidatePipeline(data.pipeline || []));
+      return data.pipeline || [];
+    } else {
+      dispatch(setPipelineError(data.error || 'Failed to load pipeline data'));
+      return rejectWithValue(data.error || 'Failed to load pipeline data');
+    }
+  } catch (err) {
+    dispatch(setPipelineError('Failed to load pipeline data'));
+    return rejectWithValue('Failed to load pipeline data');
+  } finally {
+    dispatch(setPipelineLoading(false));
+  }
+});

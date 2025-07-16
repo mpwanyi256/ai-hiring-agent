@@ -10,6 +10,7 @@ import InsightCard from '@/components/dashboard/InsightCard';
 import QuickActionCard from '@/components/dashboard/QuickActionCard';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import UpcomingInterviewsWidget from '@/components/dashboard/UpcomingInterviewsWidget';
+import CandidatePipelineWidget from '@/components/dashboard/CandidatePipelineWidget';
 import { RootState } from '@/store';
 import { User } from '@/types';
 import {
@@ -157,6 +158,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Left Column - Insights */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Candidate Pipeline Widget */}
+          <CandidatePipelineWidget />
           {/* Quick Actions */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
