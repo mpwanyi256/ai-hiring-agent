@@ -1,32 +1,33 @@
 import { Resend } from 'resend';
 import { integrations } from '../constants';
 import { InterviewEmailData, CalendarEvent } from '@/types/integrations';
+import { DateTime } from 'luxon';
 
 const resend = integrations.resend.apiKey ? new Resend(integrations.resend.apiKey) : null;
 
 export function generateICSContent(event: CalendarEvent): string {
-  const formatDate = (date: string) => {
-    return new Date(date).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-  };
-
   const escapeText = (text: string) => {
     return text.replace(/[\\;,]/g, '\\$&').replace(/\n/g, '\\n');
   };
 
+  // Use luxon to handle timezone and formatting
+  const start = DateTime.fromISO(event.startTime, { zone: event.timezone });
+  const end = DateTime.fromISO(event.endTime, { zone: event.timezone });
+
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//AI Hiring Agent//Interview Calendar//EN',
+    'PRODID:-//Intavia//Interview Calendar//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:REQUEST',
     'BEGIN:VEVENT',
-    `UID:${Date.now()}@ai-hiring-agent.com`,
-    `DTSTAMP:${formatDate(new Date().toISOString())}`,
-    `DTSTART;TZID=${event.timezone}:${formatDate(event.startTime)}`,
-    `DTEND;TZID=${event.timezone}:${formatDate(event.endTime)}`,
+    `UID:${Date.now()}@intavia.app`,
+    `DTSTAMP:${DateTime.utc().toFormat("yyyyLLdd'T'HHmmss'Z'")}`,
+    `DTSTART;TZID=${event.timezone}:${start.toFormat("yyyyLLdd'T'HHmmss")}`,
+    `DTEND;TZID=${event.timezone}:${end.toFormat("yyyyLLdd'T'HHmmss")}`,
     `SUMMARY:${escapeText(event.summary)}`,
     `DESCRIPTION:${escapeText(event.description)}`,
-    `ORGANIZER;CN=AI Hiring Agent:mailto:noreply@ai-hiring-agent.com`,
+    `ORGANIZER;CN=Intavia:mailto:no-reply@intavia.app`,
     ...event.attendees.map(
       (email) =>
         `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=${email}:mailto:${email}`,
