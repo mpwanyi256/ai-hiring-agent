@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { GlobeAltIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { Timezone } from '@/types/interviews';
@@ -28,6 +28,7 @@ const TimezonePicker: React.FC<TimezonePickerProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedTimezone = useMemo(() => {
     return timezones.find((tz) => tz.id === value);
@@ -83,8 +84,22 @@ const TimezonePicker: React.FC<TimezonePickerProps> = ({
     });
   }, [groupedTimezones]);
 
+  // Click-outside support
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn('relative', className)} ref={dropdownRef}>
       {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
 
       <div className="relative">

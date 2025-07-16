@@ -3,7 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon, CalendarIcon, ClockIcon, UserIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { scheduleInterview, updateInterview } from '@/store/interviews/interviewsThunks';
+import {
+  scheduleInterview,
+  updateInterview,
+  cancelInterview,
+} from '@/store/interviews/interviewsThunks';
 import { selectIsInterviewScheduling } from '@/store/interviews/interviewsSelectors';
 import { selectCompany } from '@/store/company/companySelectors';
 import { selectUser } from '@/store/auth/authSelectors';
@@ -173,6 +177,17 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
     }
   };
 
+  const handleCancelInterview = async () => {
+    if (!interview) return;
+    try {
+      await dispatch(cancelInterview({ interviewId: interview.id })).unwrap();
+      apiSuccess('Interview cancelled successfully');
+      onClose();
+    } catch (error) {
+      console.error('Failed to cancel interview:', error);
+    }
+  };
+
   const handleInputChange = (field: keyof CreateInterviewData, value: string | number) => {
     setFormData((prev) => ({
       ...prev,
@@ -210,7 +225,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
 
   return (
     <Modal size="lg" isOpen={isOpen} onClose={onClose}>
-      <div className="w-full max-w-2xl mx-auto">
+      <div className="w-full max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -225,7 +240,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
         </div>
 
         {/* Candidate Info */}
-        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+        <div className="bg-gray-50 rounded-lg p-4 mb-6 relative flex items-center justify-between">
           <div className="flex items-center">
             <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
               <UserIcon className="w-5 h-5 text-white" />
@@ -236,6 +251,11 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
               <p className="text-sm text-gray-600">{jobTitle}</p>
             </div>
           </div>
+          {isEdit && interview && (
+            <Button type="button" size="sm" variant="secondary" onClick={handleCancelInterview}>
+              Cancel Interview
+            </Button>
+          )}
         </div>
 
         {/* Form */}
@@ -276,14 +296,18 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
               ) : timezoneError ? (
                 <div className="text-sm text-red-500">{timezoneError}</div>
               ) : (
-                <TimezonePicker
-                  label=""
-                  value={formData.timezoneId}
-                  onChange={(timezoneId) => handleInputChange('timezoneId', timezoneId)}
-                  timezones={timezones}
-                  error={errors.timezoneId}
-                  placeholder="Select timezone"
-                />
+                <div className="min-h-[40px]">
+                  {/* TODO: Add click-outside support in TimezonePicker for better UX */}
+                  <TimezonePicker
+                    label=""
+                    value={formData.timezoneId}
+                    onChange={(timezoneId) => handleInputChange('timezoneId', timezoneId)}
+                    timezones={timezones}
+                    error={errors.timezoneId}
+                    placeholder="Select timezone"
+                    className="h-10 text-sm"
+                  />
+                </div>
               )}
               {formData.timezoneId && getSelectedTimezone() && (
                 <div className="text-xs flex-col gap-1 text-gray-500 mt-1">
@@ -316,9 +340,9 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
 
           {/* Summary */}
           {formData.date && formData.time && formData.timezoneId && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-medium text-blue-900 mb-2">Interview Summary</h4>
-              <div className="text-sm text-blue-800 space-y-1">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h4 className="font-medium text-green-900 mb-2">Interview Summary</h4>
+              <div className="text-sm text-green-800 space-y-1">
                 <p>
                   <CalendarIcon className="w-4 h-4 inline mr-2" />
                   {new Date(formData.date).toLocaleDateString('en-US', {
@@ -348,10 +372,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
 
           {/* Actions */}
           <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isScheduling}>
-              Cancel
-            </Button>
-            <Button type="submit" isLoading={isScheduling} disabled={isScheduling}>
+            <Button type="submit" size="sm" isLoading={isScheduling} disabled={isScheduling}>
               {isEdit ? 'Update Interview' : 'Schedule Interview'}
             </Button>
           </div>

@@ -212,3 +212,22 @@ export const getInterviewAvailability = createAsyncThunk(
     }
   },
 );
+
+export const cancelInterview = createAsyncThunk(
+  'interviews/cancelInterview',
+  async ({ interviewId }: { interviewId: string }, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`/api/interviews/${interviewId}/cancel`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+      if (!data.success) {
+        return rejectWithValue(data.error || 'Failed to cancel interview');
+      }
+      return data.interview;
+    } catch {
+      return rejectWithValue('Failed to cancel interview');
+    }
+  },
+);
