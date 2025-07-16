@@ -62,7 +62,7 @@ export async function sendInterviewNotification(data: InterviewEmailData): Promi
       endTime: endDateTime.toISOString(),
       timezone: data.timezone,
       attendees: [data.candidateEmail],
-      meetLink: data.meetLink,
+      meetLink: data.meetLink || undefined,
     };
 
     const icsContent = generateICSContent(event);
@@ -148,7 +148,7 @@ export async function sendInterviewUpdateNotification(data: InterviewEmailData):
       endTime: endDateTime.toISOString(),
       timezone: data.timezone,
       attendees: [data.candidateEmail],
-      meetLink: data.meetLink,
+      meetLink: data.meetLink || undefined,
     };
 
     const icsContent = generateICSContent(event);
@@ -236,7 +236,7 @@ export async function sendInterviewCancellationNotification(
       endTime: endDateTime.toISOString(),
       timezone: data.timezone,
       attendees: [data.candidateEmail],
-      meetLink: data.meetLink,
+      meetLink: data.meetLink || undefined,
     };
     let icsContent = generateICSContent(event);
     // Replace METHOD:REQUEST with METHOD:CANCEL for cancellation
@@ -287,6 +287,86 @@ export async function sendInterviewCancellationNotification(
     return true;
   } catch (error) {
     console.error('Error sending interview cancellation email:', error);
+    return false;
+  }
+}
+
+export async function sendInterviewReminderNotification(
+  data: InterviewEmailData,
+): Promise<boolean> {
+  try {
+    if (!data.interviewDate || !data.interviewTime) {
+      console.error('Missing interviewDate or interviewTime in email data:', data);
+      return false;
+    }
+    const startDateTime = new Date(`${data.interviewDate}T${data.interviewTime}`);
+    if (isNaN(startDateTime.getTime())) {
+      console.error('Invalid startDateTime in email data:', data);
+      return false;
+    }
+    const endDateTime = new Date(startDateTime.getTime() + data.duration * 60 * 1000);
+    if (isNaN(endDateTime.getTime())) {
+      console.error('Invalid endDateTime in email data:', data);
+      return false;
+    }
+
+    const event: CalendarEvent = {
+      summary: `Interview with ${data.candidateName} for ${data.jobTitle}`,
+      description: `Interview for ${data.jobTitle} position at ${data.companyName}${data.notes ? `\n\nNotes: ${data.notes}` : ''}`,
+      startTime: startDateTime.toISOString(),
+      endTime: endDateTime.toISOString(),
+      timezone: data.timezone,
+      attendees: [data.candidateEmail],
+      meetLink: data.meetLink || undefined,
+    };
+
+    const icsContent = generateICSContent(event);
+
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #386B43;">Interview Reminder</h2>
+        <p>Hi ${data.candidateName},</p>
+        <p>This is a reminder for your upcoming interview for the <strong>${data.jobTitle}</strong> position at <strong>${data.companyName}</strong>.</p>
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #386B43;">Interview Details</h3>
+          <p><strong>Date:</strong> ${new Date(data.interviewDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p><strong>Time:</strong> ${data.interviewTime} (${data.timezone})</p>
+          <p><strong>Duration:</strong> ${data.duration} minutes</p>
+          ${data.meetLink ? `<p><strong>Meeting Link:</strong> <a href="${data.meetLink}" style="color: #386B43;">Join Meeting</a></p>` : ''}
+          ${data.notes ? `<p><strong>Notes:</strong> ${data.notes}</p>` : ''}
+        </div>
+        <p>A calendar invite is attached for your convenience.</p>
+        <p>Best regards,<br>The ${data.companyName} Hiring Team</p>
+      </div>
+    `;
+
+    if (!resend) {
+      console.error('Resend client not initialized. Cannot send interview reminder email.');
+      return false;
+    }
+
+    const { data: emailResult, error } = await resend.emails.send({
+      from: 'Intavia <no-reply@intavia.app>',
+      to: [data.candidateEmail],
+      subject: `Interview Reminder - ${data.jobTitle} at ${data.companyName}`,
+      html: emailContent,
+      attachments: [
+        {
+          filename: 'interview-reminder.ics',
+          content: Buffer.from(icsContent).toString('base64'),
+        },
+      ],
+    });
+
+    if (error) {
+      console.error('Failed to send interview reminder email:', error);
+      return false;
+    }
+
+    console.log('Interview reminder email sent successfully:', emailResult);
+    return true;
+  } catch (error) {
+    console.error('Error sending interview reminder email:', error);
     return false;
   }
 }
