@@ -20,6 +20,7 @@ import TimezonePicker from './TimezonePicker';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import { apiSuccess } from '@/lib/notification';
+import { Loading } from '@/components/ui/Loading';
 
 interface InterviewSchedulingModalProps {
   isOpen: boolean;
@@ -48,6 +49,9 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
   const [timezones, setTimezones] = useState<Timezone[]>([]);
   const [timezoneLoading, setTimezoneLoading] = useState(false);
   const [timezoneError, setTimezoneError] = useState<string | null>(null);
+
+  // Add a new loading state for all async actions
+  const [actionLoading, setActionLoading] = useState(false);
 
   const [formData, setFormData] = useState<CreateInterviewData>({
     applicationId: candidate.id,
@@ -153,6 +157,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
       return;
     }
 
+    setActionLoading(true);
     try {
       if (isEdit && interview) {
         await dispatch(
@@ -174,17 +179,22 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
       onClose();
     } catch (error) {
       console.error('Failed to schedule/update interview:', error);
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleCancelInterview = async () => {
     if (!interview) return;
+    setActionLoading(true);
     try {
       await dispatch(cancelInterview({ interviewId: interview.id })).unwrap();
       apiSuccess('Interview cancelled successfully');
       onClose();
     } catch (error) {
       console.error('Failed to cancel interview:', error);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -225,7 +235,12 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
 
   return (
     <Modal size="lg" isOpen={isOpen} onClose={onClose}>
-      <div className="w-full max-w-4xl mx-auto">
+      <div className="w-full max-w-4xl mx-auto relative">
+        {(actionLoading || timezoneLoading) && (
+          <div className="absolute inset-0 bg-white bg-opacity-70 z-50 flex items-center justify-center">
+            <Loading message={actionLoading ? 'Processing...' : 'Loading timezones...'} />
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -237,7 +252,9 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
         </div>
 
         {/* Candidate Info */}
-        <div className="bg-gray-50 rounded-lg p-4 mb-6 relative flex items-center justify-between">
+        <div
+          className={`rounded-lg p-4 mb-6 relative flex items-center justify-between ${isEdit && interview && interview.status === 'cancelled' ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}
+        >
           <div className="flex items-center">
             <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
               <UserIcon className="w-5 h-5 text-white" />
@@ -246,9 +263,22 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
               <h3 className="font-medium text-gray-900">{formatCandidateName()}</h3>
               <p className="text-sm text-gray-600">{candidate.email}</p>
               <p className="text-sm text-gray-600">{jobTitle}</p>
+              {isEdit && interview && (
+                <span
+                  className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-semibold ${
+                    interview.status === 'cancelled'
+                      ? 'bg-red-100 text-red-700'
+                      : interview.status === 'interview_scheduled'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {interview.status?.replace('_', ' ').toUpperCase()}
+                </span>
+              )}
             </div>
           </div>
-          {isEdit && interview && (
+          {isEdit && interview && interview.status !== 'cancelled' && (
             <Button type="button" size="sm" variant="secondary" onClick={handleCancelInterview}>
               Cancel Interview
             </Button>

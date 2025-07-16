@@ -7,7 +7,7 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md' }) => {
@@ -22,13 +22,15 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
             : size === 'md'
               ? 'max-w-md'
               : size === 'lg'
-                ? 'max-w-lg'
-                : 'max-w-xl',
+                ? 'max-w-2xl'
+                : size === 'xl'
+                  ? 'max-w-4xl'
+                  : 'max-w-md',
         )}
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10"
           aria-label="Close"
         >
           <XMarkIcon className="w-6 h-6" />

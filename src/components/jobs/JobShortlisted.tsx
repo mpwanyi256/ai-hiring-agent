@@ -101,6 +101,17 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'interview_scheduled':
+        return 'bg-green-100 text-green-700';
+      case 'cancelled':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
   const handleScheduleInterview = (candidate: CandidateWithEvaluation) => {
     setSchedulingModal({
       isOpen: true,
@@ -251,9 +262,11 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(candidate.status)}`}
+                    >
                       <StarIcon className="w-3 h-3 mr-1" />
-                      {candidate.status}
+                      {candidate.status?.replace('_', ' ').toUpperCase()}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
