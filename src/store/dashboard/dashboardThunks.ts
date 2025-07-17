@@ -3,6 +3,7 @@ import {
   setLoading,
   setError,
   setUpcomingInterviews,
+  setTotalUpcomingInterviews,
   UpcomingInterview,
   setCandidatePipeline,
   setPipelineLoading,
@@ -16,12 +17,12 @@ import {
 import { RootState } from '@/store';
 
 export const fetchUpcomingInterviews = createAsyncThunk<
-  UpcomingInterview[],
-  { limit?: number },
+  { interviews: UpcomingInterview[]; total: number },
+  { limit?: number; page?: number },
   { rejectValue: string }
 >(
   'dashboard/fetchUpcomingInterviews',
-  async ({ limit = 5 }, { dispatch, rejectWithValue, getState }) => {
+  async ({ limit = 5, page = 1 }, { dispatch, rejectWithValue, getState }) => {
     const user = (getState() as RootState).auth.user;
     if (!user) {
       return rejectWithValue('User not found');
@@ -30,17 +31,18 @@ export const fetchUpcomingInterviews = createAsyncThunk<
     dispatch(setError(null));
     try {
       const res = await fetch(
-        `/api/interviews/upcoming?companyId=${user.companyId}&limit=${limit}`,
+        `/api/interviews/upcoming?companyId=${user.companyId}&limit=${limit}&page=${page}`,
       );
       const data = await res.json();
       if (data.success) {
         dispatch(setUpcomingInterviews(data.interviews || []));
-        return data.interviews || [];
+        dispatch(setTotalUpcomingInterviews(data.total || 0));
+        return { interviews: data.interviews || [], total: data.total || 0 };
       } else {
         dispatch(setError(data.error || 'Failed to load interviews'));
         return rejectWithValue(data.error || 'Failed to load interviews');
       }
-    } catch (err) {
+    } catch {
       dispatch(setError('Failed to load interviews'));
       return rejectWithValue('Failed to load interviews');
     } finally {
@@ -71,7 +73,7 @@ export const fetchCandidatePipeline = createAsyncThunk<
       dispatch(setPipelineError(data.error || 'Failed to load pipeline data'));
       return rejectWithValue(data.error || 'Failed to load pipeline data');
     }
-  } catch (err) {
+  } catch {
     dispatch(setPipelineError('Failed to load pipeline data'));
     return rejectWithValue('Failed to load pipeline data');
   } finally {
@@ -105,7 +107,7 @@ export const fetchRecentActivity = createAsyncThunk<
         dispatch(setRecentActivityError(data.error || 'Failed to load activity'));
         return rejectWithValue(data.error || 'Failed to load activity');
       }
-    } catch (err) {
+    } catch {
       dispatch(setRecentActivityError('Failed to load activity'));
       return rejectWithValue('Failed to load activity');
     } finally {

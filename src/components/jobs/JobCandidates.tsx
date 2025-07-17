@@ -6,8 +6,7 @@ import CandidatesOverview from './CandidatesOverview';
 import CandidatesList from './CandidatesList';
 import CandidateAnalytics from '@/components/evaluations/CandidateAnalytics';
 import CandidateResponses from '@/components/candidates/CandidateResponses';
-import { Job } from '@/types/jobs';
-import { AppDispatch, RootState } from '@/store';
+import { AppDispatch, useAppSelector } from '@/store';
 import { fetchJobCandidates } from '@/store/candidates/candidatesThunks';
 import {
   UserCircleIcon,
@@ -26,10 +25,11 @@ import {
   selectSelectedCandidate,
   selectSelectedCandidateId,
 } from '@/store/selectedCandidate/selectedCandidateSelectors';
-
-interface JobCandidatesProps {
-  job: Job;
-}
+import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
+import {
+  selectCandidatesList,
+  selectJobCandidatesStats,
+} from '@/store/candidates/candidatesSelectors';
 
 const candidateTabs = [
   { id: 'overview', label: 'Overview' },
@@ -51,11 +51,10 @@ const getResumeScoreTextColor = (score: number) => {
   return 'text-red-600';
 };
 
-export default function JobCandidates({ job }: JobCandidatesProps) {
+export default function JobCandidates() {
+  const job = useAppSelector(selectCurrentJob);
   const dispatch = useDispatch<AppDispatch>();
-  const { candidates, jobCandidatesStats, error } = useSelector(
-    (state: RootState) => state.candidates,
-  );
+  const jobCandidatesStats = useAppSelector(selectJobCandidatesStats);
 
   const selectedCandidateId = useSelector(selectSelectedCandidateId);
   const selectedCandidate = useSelector(selectSelectedCandidate);
@@ -89,7 +88,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
 
   // Fetch candidates when component mounts or job changes
   useEffect(() => {
-    if (job.id) {
+    if (job && job.id) {
       dispatch(
         fetchJobCandidates({
           jobId: job.id,
@@ -99,12 +98,13 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
         }),
       );
     }
-  }, [dispatch, job.id, searchQuery, filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, job?.id, searchQuery, filters]);
 
   // Transform data for components
   const overviewData = {
     totalCandidates: jobCandidatesStats.total,
-    inProgress: jobCandidatesStats.inProgress,
+    shortlisted: job?.shortlistedCount || 0,
     completed: jobCandidatesStats.completed,
     averageScore: jobCandidatesStats.averageScore,
   };
@@ -121,15 +121,8 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
     }
   };
 
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <CandidatesOverview {...overviewData} />
-        <div className="flex items-center justify-center py-12">
-          <div className="text-red-500">Error: {error}</div>
-        </div>
-      </div>
-    );
+  if (!job) {
+    return <div>No job found</div>;
   }
 
   return (
@@ -142,7 +135,6 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
         {/* Candidates List - Fixed height with internal scroll */}
         <div className="lg:col-span-4 h-full max-h-[800px] overflow-y-auto">
           <CandidatesList
-            candidates={candidates}
             selectedCandidateId={selectedCandidateId}
             onCandidateSelect={() => {
               setActiveTab('overview');
@@ -233,7 +225,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                         Resume
                       </h3>
                       {selectedCandidate?.resume ? (
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <>
                           <div className="flex items-center justify-between flex-wrap gap-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
@@ -271,15 +263,15 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                           </div>
                           {/* Resume evaluation summary - visually prominent */}
                           {selectedCandidate?.evaluation && (
-                            <div className="mt-6 flex items-center gap-4">
+                            <div className="flex items-center gap-4">
                               <div
-                                className={`flex items-center justify-center w-20 h-20 rounded-full ${getResumeScoreStyle(selectedCandidate?.evaluation?.resumeScore)}`}
+                                className={`flex items-center justify-center w-10 h-10 rounded-full ${getResumeScoreStyle(selectedCandidate?.evaluation?.resumeScore)}`}
                               >
                                 <span
                                   className={`text-lg font-bold ${getResumeScoreTextColor(selectedCandidate?.evaluation?.resumeScore)}`}
                                 >
                                   {selectedCandidate?.evaluation?.resumeScore}
-                                  <span className="text-base font-semibold">/100</span>
+                                  <span className="text-base font-semibold">%</span>
                                 </span>
                               </div>
                               <div className="flex-1">
@@ -289,15 +281,16 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
                               </div>
                             </div>
                           )}
-                          {/* AI Evaluation Card below resume */}
-                          {selectedCandidate ? <AIEvaluationCard /> : null}
-                        </div>
+                        </>
                       ) : (
                         <div className="text-sm text-gray-500 italic bg-gray-50 border border-gray-200 rounded-lg p-4">
                           No resume uploaded for this candidate.
                         </div>
                       )}
                     </div>
+
+                    {/* AI Evaluation Card below resume */}
+                    {selectedCandidate ? <AIEvaluationCard /> : null}
                   </div>
                 )}
                 {activeTab === 'responses' && <CandidateResponses />}

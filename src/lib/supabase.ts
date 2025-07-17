@@ -84,6 +84,13 @@ export type Database = {
             foreignKeyName: 'ai_evaluations_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
+          },
+          {
+            foreignKeyName: 'ai_evaluations_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
             referencedRelation: 'job_questions_overview';
             referencedColumns: ['job_id'];
           },
@@ -213,6 +220,20 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'candidate_analytics_candidate_id_fkey';
+            columns: ['candidate_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['candidate_id'];
+          },
+          {
+            foreignKeyName: 'candidate_analytics_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
+          },
+          {
             foreignKeyName: 'candidate_analytics_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
@@ -309,6 +330,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'candidate_response_analytics_candidate_id_fkey';
+            columns: ['candidate_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['candidate_id'];
+          },
+          {
             foreignKeyName: 'candidate_response_analytics_response_id_fkey';
             columns: ['response_id'];
             isOneToOne: false;
@@ -377,6 +405,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'candidates';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'candidate_resumes_candidate_id_fkey';
+            columns: ['candidate_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['candidate_id'];
+          },
+          {
+            foreignKeyName: 'candidate_resumes_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
           },
           {
             foreignKeyName: 'candidate_resumes_job_id_fkey';
@@ -451,6 +493,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'candidates_info';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'candidates_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
           },
           {
             foreignKeyName: 'candidates_job_id_fkey';
@@ -567,6 +616,7 @@ export type Database = {
           logo_url: string | null;
           name: string;
           slug: string | null;
+          timezone_id: string | null;
           updated_at: string | null;
         };
         Insert: {
@@ -577,6 +627,7 @@ export type Database = {
           logo_url?: string | null;
           name: string;
           slug?: string | null;
+          timezone_id?: string | null;
           updated_at?: string | null;
         };
         Update: {
@@ -587,7 +638,40 @@ export type Database = {
           logo_url?: string | null;
           name?: string;
           slug?: string | null;
+          timezone_id?: string | null;
           updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fk_companies_timezone_id';
+            columns: ['timezone_id'];
+            isOneToOne: false;
+            referencedRelation: 'timezones';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      countries: {
+        Row: {
+          code: string;
+          continent: string;
+          created_at: string | null;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          code: string;
+          continent: string;
+          created_at?: string | null;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          code?: string;
+          continent?: string;
+          created_at?: string | null;
+          id?: string;
+          name?: string;
         };
         Relationships: [];
       };
@@ -683,6 +767,13 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'evaluation_analytics_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
+          },
           {
             foreignKeyName: 'evaluation_analytics_job_id_fkey';
             columns: ['job_id'];
@@ -797,6 +888,20 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'evaluations_candidate_id_fkey';
+            columns: ['candidate_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['candidate_id'];
+          },
+          {
+            foreignKeyName: 'evaluations_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
+          },
+          {
             foreignKeyName: 'evaluations_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
@@ -875,6 +980,13 @@ export type Database = {
             foreignKeyName: 'function_logs_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
+          },
+          {
+            foreignKeyName: 'function_logs_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
             referencedRelation: 'job_questions_overview';
             referencedColumns: ['job_id'];
           },
@@ -894,94 +1006,199 @@ export type Database = {
           },
         ];
       };
-      interview_schedules: {
+      integrations: {
         Row: {
-          candidate_id: string;
+          access_token: string;
+          company_id: string;
           created_at: string | null;
-          created_by: string;
-          duration_minutes: number;
+          expires_at: string | null;
           id: string;
-          interview_type: Database['public']['Enums']['interview_type'];
-          job_id: string;
-          location: string | null;
-          notes: string | null;
-          scheduled_date: string;
-          status: Database['public']['Enums']['interview_schedule_status'];
+          metadata: Json | null;
+          provider: string;
+          refresh_token: string | null;
+          scope: string | null;
           updated_at: string | null;
+          user_id: string;
         };
         Insert: {
-          candidate_id: string;
+          access_token: string;
+          company_id: string;
           created_at?: string | null;
-          created_by: string;
-          duration_minutes?: number;
+          expires_at?: string | null;
           id?: string;
-          interview_type: Database['public']['Enums']['interview_type'];
-          job_id: string;
-          location?: string | null;
-          notes?: string | null;
-          scheduled_date: string;
-          status?: Database['public']['Enums']['interview_schedule_status'];
+          metadata?: Json | null;
+          provider: string;
+          refresh_token?: string | null;
+          scope?: string | null;
           updated_at?: string | null;
+          user_id: string;
         };
         Update: {
-          candidate_id?: string;
+          access_token?: string;
+          company_id?: string;
           created_at?: string | null;
-          created_by?: string;
-          duration_minutes?: number;
+          expires_at?: string | null;
           id?: string;
-          interview_type?: Database['public']['Enums']['interview_type'];
-          job_id?: string;
-          location?: string | null;
-          notes?: string | null;
-          scheduled_date?: string;
-          status?: Database['public']['Enums']['interview_schedule_status'];
+          metadata?: Json | null;
+          provider?: string;
+          refresh_token?: string | null;
+          scope?: string | null;
           updated_at?: string | null;
+          user_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'interview_schedules_candidate_id_fkey';
-            columns: ['candidate_id'];
+            foreignKeyName: 'integrations_company_id_fkey';
+            columns: ['company_id'];
             isOneToOne: false;
-            referencedRelation: 'candidate_details';
+            referencedRelation: 'companies';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'interview_schedules_candidate_id_fkey';
-            columns: ['candidate_id'];
+            foreignKeyName: 'integrations_company_id_fkey';
+            columns: ['company_id'];
             isOneToOne: false;
-            referencedRelation: 'candidates';
-            referencedColumns: ['id'];
+            referencedRelation: 'company_candidate_pipeline';
+            referencedColumns: ['company_id'];
           },
           {
-            foreignKeyName: 'interview_schedules_created_by_fkey';
-            columns: ['created_by'];
+            foreignKeyName: 'integrations_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['company_id'];
+          },
+          {
+            foreignKeyName: 'integrations_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'interview_details';
+            referencedColumns: ['company_id'];
+          },
+          {
+            foreignKeyName: 'integrations_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'jobs_comprehensive';
+            referencedColumns: ['company_id'];
+          },
+          {
+            foreignKeyName: 'integrations_user_id_fkey';
+            columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'interview_schedules_created_by_fkey';
-            columns: ['created_by'];
+            foreignKeyName: 'integrations_user_id_fkey';
+            columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'user_details';
             referencedColumns: ['id'];
           },
+        ];
+      };
+      interviews: {
+        Row: {
+          application_id: string;
+          calendar_event_id: string | null;
+          created_at: string | null;
+          date: string;
+          duration: number;
+          id: string;
+          job_id: string;
+          meet_link: string | null;
+          notes: string | null;
+          reminder_sent_at: string | null;
+          status: string;
+          time: string;
+          timezone_id: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          application_id: string;
+          calendar_event_id?: string | null;
+          created_at?: string | null;
+          date: string;
+          duration?: number;
+          id?: string;
+          job_id: string;
+          meet_link?: string | null;
+          notes?: string | null;
+          reminder_sent_at?: string | null;
+          status?: string;
+          time: string;
+          timezone_id: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          application_id?: string;
+          calendar_event_id?: string | null;
+          created_at?: string | null;
+          date?: string;
+          duration?: number;
+          id?: string;
+          job_id?: string;
+          meet_link?: string | null;
+          notes?: string | null;
+          reminder_sent_at?: string | null;
+          status?: string;
+          time?: string;
+          timezone_id?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
           {
-            foreignKeyName: 'interview_schedules_job_id_fkey';
+            foreignKeyName: 'fk_interviews_timezone_id';
+            columns: ['timezone_id'];
+            isOneToOne: false;
+            referencedRelation: 'timezones';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'interviews_application_id_fkey';
+            columns: ['application_id'];
+            isOneToOne: false;
+            referencedRelation: 'candidate_details';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'interviews_application_id_fkey';
+            columns: ['application_id'];
+            isOneToOne: false;
+            referencedRelation: 'candidates';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'interviews_application_id_fkey';
+            columns: ['application_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['candidate_id'];
+          },
+          {
+            foreignKeyName: 'interviews_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
+          },
+          {
+            foreignKeyName: 'interviews_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
             referencedRelation: 'job_questions_overview';
             referencedColumns: ['job_id'];
           },
           {
-            foreignKeyName: 'interview_schedules_job_id_fkey';
+            foreignKeyName: 'interviews_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
             referencedRelation: 'jobs';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'interview_schedules_job_id_fkey';
+            foreignKeyName: 'interviews_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
             referencedRelation: 'jobs_comprehensive';
@@ -1033,6 +1250,13 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'job_questions_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
+          },
           {
             foreignKeyName: 'job_questions_job_id_fkey';
             columns: ['job_id'];
@@ -1246,6 +1470,27 @@ export type Database = {
             foreignKeyName: 'profiles_company_id_fkey';
             columns: ['company_id'];
             isOneToOne: false;
+            referencedRelation: 'company_candidate_pipeline';
+            referencedColumns: ['company_id'];
+          },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['company_id'];
+          },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'interview_details';
+            referencedColumns: ['company_id'];
+          },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
             referencedRelation: 'jobs_comprehensive';
             referencedColumns: ['company_id'];
           },
@@ -1302,6 +1547,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'candidates';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'responses_candidate_id_fkey';
+            columns: ['candidate_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['candidate_id'];
+          },
+          {
+            foreignKeyName: 'responses_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
           },
           {
             foreignKeyName: 'responses_job_id_fkey';
@@ -1556,6 +1815,20 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'team_assessments_candidate_id_fkey';
+            columns: ['candidate_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['candidate_id'];
+          },
+          {
+            foreignKeyName: 'team_assessments_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
+          },
+          {
             foreignKeyName: 'team_assessments_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
@@ -1574,6 +1847,53 @@ export type Database = {
             columns: ['job_id'];
             isOneToOne: false;
             referencedRelation: 'jobs_comprehensive';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      timezones: {
+        Row: {
+          city: string | null;
+          country_id: string | null;
+          created_at: string | null;
+          display_name: string;
+          id: string;
+          is_dst: boolean;
+          name: string;
+          offset_hours: number;
+          offset_minutes: number;
+          region: string;
+        };
+        Insert: {
+          city?: string | null;
+          country_id?: string | null;
+          created_at?: string | null;
+          display_name: string;
+          id?: string;
+          is_dst?: boolean;
+          name: string;
+          offset_hours: number;
+          offset_minutes?: number;
+          region: string;
+        };
+        Update: {
+          city?: string | null;
+          country_id?: string | null;
+          created_at?: string | null;
+          display_name?: string;
+          id?: string;
+          is_dst?: boolean;
+          name?: string;
+          offset_hours?: number;
+          offset_minutes?: number;
+          region?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'timezones_country_id_fkey';
+            columns: ['country_id'];
+            isOneToOne: false;
+            referencedRelation: 'countries';
             referencedColumns: ['id'];
           },
         ];
@@ -1612,6 +1932,54 @@ export type Database = {
             columns: ['category_id'];
             isOneToOne: false;
             referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_activities: {
+        Row: {
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string | null;
+          event_type: string;
+          id: string;
+          message: string | null;
+          meta: Json | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          event_type: string;
+          id?: string;
+          message?: string | null;
+          meta?: Json | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          event_type?: string;
+          id?: string;
+          message?: string | null;
+          meta?: Json | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fk_user_activities_user_id';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fk_user_activities_user_id';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_details';
             referencedColumns: ['id'];
           },
         ];
@@ -1679,6 +2047,7 @@ export type Database = {
           first_name: string | null;
           full_name: string | null;
           id: string | null;
+          interview_details: Json | null;
           interview_token: string | null;
           is_completed: boolean | null;
           job_fields: Json | null;
@@ -1725,6 +2094,13 @@ export type Database = {
             foreignKeyName: 'candidates_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
+          },
+          {
+            foreignKeyName: 'candidates_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
             referencedRelation: 'job_questions_overview';
             referencedColumns: ['job_id'];
           },
@@ -1758,55 +2134,125 @@ export type Database = {
           },
         ];
       };
-      interview_sessions: {
+      company_candidate_pipeline: {
         Row: {
-          completion_percentage: number | null;
-          email: string | null;
-          first_name: string | null;
-          interview_token: string | null;
-          is_completed: boolean | null;
+          company_id: string | null;
+          count: number | null;
+          name: string | null;
+          status: Database['public']['Enums']['candidate_status'] | null;
+        };
+        Relationships: [];
+      };
+      company_upcoming_interviews: {
+        Row: {
+          calendar_event_id: string | null;
+          candidate_email: string | null;
+          candidate_first_name: string | null;
+          candidate_id: string | null;
+          candidate_last_name: string | null;
+          company_id: string | null;
+          company_name: string | null;
+          interview_date: string | null;
+          interview_id: string | null;
+          interview_status: string | null;
+          interview_time: string | null;
           job_id: string | null;
           job_title: string | null;
-          last_name: string | null;
-          last_response_at: string | null;
-          profile_id: string | null;
-          started_at: string | null;
-          total_questions: number | null;
-          total_responses: number | null;
-          total_time_spent: number | null;
+          meet_link: string | null;
+        };
+        Relationships: [];
+      };
+      interview_details: {
+        Row: {
+          application_id: string | null;
+          calendar_event_id: string | null;
+          candidate_email: string | null;
+          candidate_first_name: string | null;
+          candidate_last_name: string | null;
+          candidate_name: string | null;
+          company_id: string | null;
+          company_name: string | null;
+          created_at: string | null;
+          duration: number | null;
+          interview_date: string | null;
+          interview_id: string | null;
+          interview_status: string | null;
+          interview_time: string | null;
+          job_id: string | null;
+          job_owner_id: string | null;
+          job_title: string | null;
+          meet_link: string | null;
+          notes: string | null;
+          timezone_id: string | null;
+          updated_at: string | null;
         };
         Relationships: [
           {
-            foreignKeyName: 'responses_job_id_fkey';
+            foreignKeyName: 'fk_interviews_timezone_id';
+            columns: ['timezone_id'];
+            isOneToOne: false;
+            referencedRelation: 'timezones';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'interviews_application_id_fkey';
+            columns: ['application_id'];
+            isOneToOne: false;
+            referencedRelation: 'candidate_details';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'interviews_application_id_fkey';
+            columns: ['application_id'];
+            isOneToOne: false;
+            referencedRelation: 'candidates';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'interviews_application_id_fkey';
+            columns: ['application_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['candidate_id'];
+          },
+          {
+            foreignKeyName: 'interviews_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
+          },
+          {
+            foreignKeyName: 'interviews_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
             referencedRelation: 'job_questions_overview';
             referencedColumns: ['job_id'];
           },
           {
-            foreignKeyName: 'responses_job_id_fkey';
+            foreignKeyName: 'interviews_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
             referencedRelation: 'jobs';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'responses_job_id_fkey';
+            foreignKeyName: 'interviews_job_id_fkey';
             columns: ['job_id'];
             isOneToOne: false;
             referencedRelation: 'jobs_comprehensive';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'responses_profile_id_fkey';
-            columns: ['profile_id'];
+            foreignKeyName: 'jobs_profile_id_fkey';
+            columns: ['job_owner_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'responses_profile_id_fkey';
-            columns: ['profile_id'];
+            foreignKeyName: 'jobs_profile_id_fkey';
+            columns: ['job_owner_id'];
             isOneToOne: false;
             referencedRelation: 'user_details';
             referencedColumns: ['id'];
@@ -1846,6 +2292,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'candidates';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'evaluations_candidate_id_fkey';
+            columns: ['candidate_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['candidate_id'];
+          },
+          {
+            foreignKeyName: 'evaluations_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
           },
           {
             foreignKeyName: 'evaluations_job_id_fkey';
@@ -1891,6 +2351,13 @@ export type Database = {
           question_updated_at: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'job_questions_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['job_id'];
+          },
           {
             foreignKeyName: 'job_questions_job_id_fkey';
             columns: ['job_id'];
@@ -2068,6 +2535,71 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_activities_resolved: {
+        Row: {
+          company_id: string | null;
+          company_name: string | null;
+          created_at: string | null;
+          entity_id: string | null;
+          entity_type: string | null;
+          event_type: string | null;
+          id: string | null;
+          message: string | null;
+          meta: Json | null;
+          user_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fk_user_activities_user_id';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fk_user_activities_user_id';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_details';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_candidate_pipeline';
+            referencedColumns: ['company_id'];
+          },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['company_id'];
+          },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'interview_details';
+            referencedColumns: ['company_id'];
+          },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'jobs_comprehensive';
+            referencedColumns: ['company_id'];
+          },
+        ];
+      };
       user_details: {
         Row: {
           active_jobs_count: number | null;
@@ -2102,6 +2634,27 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'companies';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_candidate_pipeline';
+            referencedColumns: ['company_id'];
+          },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_upcoming_interviews';
+            referencedColumns: ['company_id'];
+          },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'interview_details';
+            referencedColumns: ['company_id'];
           },
           {
             foreignKeyName: 'profiles_company_id_fkey';

@@ -60,7 +60,7 @@ export async function POST(request: Request) {
           candidate_id: candidateId,
           job_id: responses[0]?.job_id || null,
           evaluation_type: 'combined',
-          summary: `Interview completed successfully with ${responses.length} responses. Resume evaluation score: ${resumeEvaluation.score}/100. Combined assessment score: ${combinedScore}/100.`,
+          summary: `Interview completed successfully with ${responses.length} responses. Resume evaluation score: ${resumeEvaluation.score}%. Combined assessment score: ${combinedScore}%.`,
           score: combinedScore,
           resume_score: resumeEvaluation.score,
           resume_summary: resumeEvaluation.summary,

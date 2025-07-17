@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get('status'); // e.g. 'scheduled'
   const daysAhead = parseInt(searchParams.get('daysAhead') || '7');
   const limit = parseInt(searchParams.get('limit') || '10');
+  const page = parseInt(searchParams.get('page') || '1');
+  const offset = (page - 1) * limit;
 
   // Date range: today to today + daysAhead
   const today = new Date();
@@ -31,19 +33,19 @@ export async function GET(request: NextRequest) {
   // Query the view
   let query = supabase
     .from('company_upcoming_interviews')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('company_id', companyId)
     .gte('interview_date', todayStr)
     .lte('interview_date', endDateStr)
     .order('interview_date', { ascending: true })
     .order('interview_time', { ascending: true })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
   if (status) {
     query = query.eq('interview_status', status);
   }
-  const { data: interviews, error } = await query;
+  const { data: interviews, error, count } = await query;
   if (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ success: true, interviews });
+  return NextResponse.json({ success: true, interviews, total: count });
 }

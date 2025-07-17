@@ -132,7 +132,9 @@ const jobsSlice = createSlice({
       })
       // Fetch Job by ID
       .addCase(fetchJobById.pending, (state) => {
-        state.isLoading = true;
+        if (!state.currentJob) {
+          state.isLoading = true;
+        }
         state.error = null;
       })
       .addCase(fetchJobById.fulfilled, (state, action) => {

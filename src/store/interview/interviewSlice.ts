@@ -1,8 +1,9 @@
 import { JobData } from '@/lib/services/jobsService';
 import { InterviewState } from '@/types/interview';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { fetchInterview, getCandidateDetails } from './interviewThunks';
+import { checkInterviewConflicts, fetchInterview, getCandidateDetails } from './interviewThunks';
 import { fetchCompanyBySlug } from '../company/companyThunks';
+import { apiError } from '@/lib/notification';
 
 const initialState: InterviewState = {
   interview: null,
@@ -11,6 +12,7 @@ const initialState: InterviewState = {
   error: null,
   candidate: null,
   company: null,
+  conflicts: [],
 };
 
 const interviewSlice = createSlice({
@@ -23,9 +25,24 @@ const interviewSlice = createSlice({
     setInterviewStep: (state, action: PayloadAction<number>) => {
       state.interviewStep = action.payload;
     },
+    resetInterviewConflicts: (state) => {
+      state.conflicts = [];
+    },
   },
   extraReducers: (builder) => {
     builder
+      .addCase(checkInterviewConflicts.pending, (state) => {
+        state.isLoading = true;
+        state.conflicts = [];
+      })
+      .addCase(checkInterviewConflicts.fulfilled, (state, action) => {
+        state.conflicts = action.payload;
+        state.isLoading = false;
+      })
+      .addCase(checkInterviewConflicts.rejected, (state) => {
+        apiError('Failed to check conflicts');
+        state.isLoading = false;
+      })
       .addCase(getCandidateDetails.pending, (state) => {
         state.isLoading = true;
       })

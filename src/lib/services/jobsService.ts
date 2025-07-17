@@ -39,6 +39,7 @@ export interface JobData {
   companyName?: string;
   companyLogo?: string;
   companySlug?: string;
+  shortlistedCount?: number;
 }
 
 // Company stats interface matching the database view
@@ -269,13 +270,40 @@ class JobsService {
     };
   }
 
+  private async getShortlistedCount(jobId: string): Promise<number> {
+    const supabase = await createClient();
+    const { count, error } = await supabase
+      .from('candidates')
+      .select('*', { count: 'exact', head: true })
+      .eq('job_id', jobId)
+      .eq('is_completed', true)
+      .in('status', [
+        'interview_scheduled',
+        'shortlisted',
+        'reference_check',
+        'offer_extended',
+        'offer_accepted',
+        'hired',
+        'withdrawn',
+      ]);
+
+    if (error) {
+      console.error('Error counting shortlisted candidates:', error);
+      return 0;
+    }
+
+    return count || 0;
+  }
+
   private async getCandidateCount(jobId: string): Promise<number> {
     try {
       const supabase = await createClient();
       const { count, error } = await supabase
         .from('candidates')
         .select('*', { count: 'exact', head: true })
-        .eq('job_id', jobId);
+        .eq('job_id', jobId)
+        .eq('is_completed', true);
+      // .in('status', ['under_review', 'rejected']);
 
       if (error) {
         console.error('Error counting candidates:', error);
@@ -549,6 +577,7 @@ class JobsService {
 
       // Add candidate count
       jobWithLink.candidateCount = await this.getCandidateCount(id);
+      jobWithLink.shortlistedCount = await this.getShortlistedCount(id);
 
       return jobWithLink;
     } catch (error) {

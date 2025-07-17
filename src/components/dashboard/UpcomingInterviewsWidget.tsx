@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchUpcomingInterviews } from '@/store/dashboard/dashboardThunks';
 import {
@@ -9,6 +9,7 @@ import {
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import InterviewCard from './InterviewCard';
 import { selectUser } from '@/store/auth/authSelectors';
+import UpcomingInterviewsModal from './UpcomingInterviewsModal';
 
 export default function UpcomingInterviewsWidget() {
   const dispatch = useAppDispatch();
@@ -16,6 +17,7 @@ export default function UpcomingInterviewsWidget() {
   const interviews = useAppSelector(selectUpcomingInterviews);
   const loading = useAppSelector(selectDashboardLoading);
   const error = useAppSelector(selectDashboardError);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (user?.companyId) {
@@ -25,9 +27,17 @@ export default function UpcomingInterviewsWidget() {
 
   return (
     <div className="bg-white rounded-lg shadow border p-5">
-      <div className="flex items-center mb-4">
-        <CalendarDaysIcon className="w-5 h-5 text-primary mr-2" />
-        <h2 className="text-lg font-semibold text-gray-900">Upcoming Interviews</h2>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <CalendarDaysIcon className="w-5 h-5 text-primary mr-2" />
+          <h2 className="text-lg font-semibold text-gray-900">Upcoming Interviews</h2>
+        </div>
+        <button
+          className="text-xs text-primary hover:underline font-medium"
+          onClick={() => setModalOpen(true)}
+        >
+          View All
+        </button>
       </div>
       {loading ? (
         <div className="text-gray-500 py-6 text-center">Loading...</div>
@@ -42,10 +52,13 @@ export default function UpcomingInterviewsWidget() {
       ) : (
         <ul className="space-y-3">
           {interviews.map((iv) => (
-            <InterviewCard key={iv.interview_id} interview={iv} />
+            <li key={iv.interview_id}>
+              <InterviewCard interview={iv} />
+            </li>
           ))}
         </ul>
       )}
+      <UpcomingInterviewsModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   );
 }

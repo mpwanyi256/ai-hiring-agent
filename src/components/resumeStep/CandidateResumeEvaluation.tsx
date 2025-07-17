@@ -31,38 +31,6 @@ export const CandidateResumeEvaluation = ({ evaluation, job }: CandidateResumeEv
           </p>
         </div>
 
-        {/* Overall Score Card */}
-        {/* <div className={`bg-white rounded-xl shadow-lg p-8 mb-8 border-2 ${getScoreBgColor(evaluation.score)} transition-all duration-300`}>
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-6">
-                  {getScoreIcon(evaluation.score)}
-                </div>
-                <div className="mb-4">
-                  <div className={`text-5xl font-bold mb-2 ${getScoreColor(evaluation.score)}`}>
-                    {evaluation.score}<span className="text-2xl text-muted-text">/100</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
-                    <div 
-                      className={`h-3 rounded-full transition-all duration-1000 ${
-                        evaluation.score >= 80 ? 'bg-green-500' :
-                        evaluation.score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${evaluation.score}%` }}
-                    ></div>
-                  </div>
-                </div>
-                <h2 className={`text-2xl font-bold mb-3 ${getScoreColor(evaluation.score)}`}>
-                  {evaluation.passesThreshold ? 
-                    '🎉 Congratulations! You qualify for the interview' : 
-                    'Resume needs improvement to meet requirements'
-                  }
-                </h2>
-                <p className="text-lg text-muted-text max-w-3xl mx-auto leading-relaxed">
-                  {evaluation.summary}
-                </p>
-              </div>
-            </div> */}
-
         {/* Analysis Grid */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           {/* Skills Analysis */}
@@ -188,7 +156,7 @@ export const CandidateResumeEvaluation = ({ evaluation, job }: CandidateResumeEv
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-text">Overall Score</span>
                 <span className={`text-sm font-medium ${getScoreColor(evaluation.score)}`}>
-                  {evaluation.score}/100
+                  {evaluation.score}%
                 </span>
               </div>
               <div className="flex justify-between items-center">

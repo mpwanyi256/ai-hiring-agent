@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface UpcomingInterview {
   interview_id: string;
+  candidate_id?: string;
   interview_date: string;
   interview_time: string;
   interview_status: string;
@@ -10,6 +11,7 @@ export interface UpcomingInterview {
   candidate_email: string;
   job_title: string;
   meet_link?: string;
+  job_id: string;
 }
 
 export interface CandidatePipelineItem {
@@ -23,7 +25,7 @@ export interface RecentActivityItem {
   entity_id: string | null;
   entity_type: string | null;
   message: string;
-  meta: any;
+  meta: Record<string, string | number | boolean>;
   created_at: string;
 }
 
@@ -37,6 +39,7 @@ interface DashboardState {
   recentActivity: RecentActivityItem[];
   recentActivityLoading: boolean;
   recentActivityError: string | null;
+  totalUpcomingInterviews: number;
 }
 
 const initialState: DashboardState = {
@@ -49,6 +52,7 @@ const initialState: DashboardState = {
   recentActivity: [],
   recentActivityLoading: false,
   recentActivityError: null,
+  totalUpcomingInterviews: 0,
 };
 
 const dashboardSlice = createSlice({
@@ -63,6 +67,9 @@ const dashboardSlice = createSlice({
     },
     setUpcomingInterviews(state, action: PayloadAction<UpcomingInterview[]>) {
       state.upcomingInterviews = action.payload;
+    },
+    setTotalUpcomingInterviews(state, action: PayloadAction<number>) {
+      state.totalUpcomingInterviews = action.payload;
     },
     setCandidatePipeline(state, action: PayloadAction<CandidatePipelineItem[]>) {
       state.candidatePipeline = action.payload;
@@ -89,6 +96,7 @@ export const {
   setLoading,
   setError,
   setUpcomingInterviews,
+  setTotalUpcomingInterviews,
   setCandidatePipeline,
   setPipelineLoading,
   setPipelineError,

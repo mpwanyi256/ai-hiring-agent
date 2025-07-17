@@ -3,16 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarIcon, ClockIcon, UserIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '@/store';
-import {
-  scheduleInterview,
-  updateInterview,
-  cancelInterview,
-} from '@/store/interviews/interviewsThunks';
+import { scheduleInterview, updateInterview } from '@/store/interviews/interviewsThunks';
 import { selectIsInterviewScheduling } from '@/store/interviews/interviewsSelectors';
-import { selectCompany } from '@/store/company/companySelectors';
+import { selectCompany, selectCompanyTimezones } from '@/store/company/companySelectors';
 import { selectUser } from '@/store/auth/authSelectors';
 import { CandidateWithEvaluation, InterviewDetails } from '@/types/candidates';
-import { CreateInterviewData, Timezone } from '@/types/interviews';
+import { CreateInterviewData } from '@/types/interviews';
 import DatePicker from './DatePicker';
 import TimePicker from './TimePicker';
 import DurationPicker from './DurationPicker';
@@ -46,9 +42,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
   const isScheduling = useAppSelector((state) => selectIsInterviewScheduling(state, candidate.id));
   const user = useAppSelector(selectUser);
 
-  const [timezones, setTimezones] = useState<Timezone[]>([]);
-  const [timezoneLoading, setTimezoneLoading] = useState(false);
-  const [timezoneError, setTimezoneError] = useState<string | null>(null);
+  const timezones = useAppSelector(selectCompanyTimezones);
 
   // Add a new loading state for all async actions
   const [actionLoading, setActionLoading] = useState(false);
@@ -64,30 +58,6 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Fetch timezones on component mount
-  useEffect(() => {
-    const fetchTimezones = async () => {
-      setTimezoneLoading(true);
-      try {
-        const response = await fetch('/api/timezones');
-        const data = await response.json();
-
-        if (data.success) {
-          setTimezones(data.timezones);
-        } else {
-          setTimezoneError(data.error || 'Failed to load timezones');
-        }
-      } catch (error) {
-        setTimezoneError('Failed to load timezones');
-        console.error('Error fetching timezones:', error);
-      } finally {
-        setTimezoneLoading(false);
-      }
-    };
-
-    fetchTimezones();
-  }, []);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -184,20 +154,6 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
     }
   };
 
-  const handleCancelInterview = async () => {
-    if (!interview) return;
-    setActionLoading(true);
-    try {
-      await dispatch(cancelInterview({ interviewId: interview.id })).unwrap();
-      apiSuccess('Interview cancelled successfully');
-      onClose();
-    } catch (error) {
-      console.error('Failed to cancel interview:', error);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const handleInputChange = (field: keyof CreateInterviewData, value: string | number) => {
     setFormData((prev) => ({
       ...prev,
@@ -236,7 +192,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
   return (
     <Modal size="lg" isOpen={isOpen} onClose={onClose}>
       <div className="w-full max-w-4xl mx-auto relative">
-        {(actionLoading || timezoneLoading) && (
+        {actionLoading && (
           <div className="absolute inset-0 bg-white bg-opacity-70 z-50 flex items-center justify-center">
             <Loading message={actionLoading ? 'Processing...' : 'Loading timezones...'} />
           </div>
@@ -278,11 +234,6 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
               )}
             </div>
           </div>
-          {isEdit && interview && interview.status !== 'cancelled' && (
-            <Button type="button" size="sm" variant="secondary" onClick={handleCancelInterview}>
-              Cancel Interview
-            </Button>
-          )}
         </div>
 
         {/* Form */}
@@ -318,24 +269,18 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
             {/* Timezone */}
             <div className="flex flex-col w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
-              {timezoneLoading ? (
-                <div className="text-sm text-gray-500">Loading timezones...</div>
-              ) : timezoneError ? (
-                <div className="text-sm text-red-500">{timezoneError}</div>
-              ) : (
-                <div className="min-h-[40px]">
-                  {/* TODO: Add click-outside support in TimezonePicker for better UX */}
-                  <TimezonePicker
-                    label=""
-                    value={formData.timezoneId}
-                    onChange={(timezoneId) => handleInputChange('timezoneId', timezoneId)}
-                    timezones={timezones}
-                    error={errors.timezoneId}
-                    placeholder="Select timezone"
-                    className="h-10 text-sm"
-                  />
-                </div>
-              )}
+              <div className="min-h-[40px]">
+                {/* TODO: Add click-outside support in TimezonePicker for better UX */}
+                <TimezonePicker
+                  label=""
+                  value={formData.timezoneId}
+                  onChange={(timezoneId) => handleInputChange('timezoneId', timezoneId)}
+                  timezones={timezones}
+                  error={errors.timezoneId}
+                  placeholder="Select timezone"
+                  className="h-10 text-sm"
+                />
+              </div>
               {formData.timezoneId && getSelectedTimezone() && (
                 <div className="text-xs flex-col gap-1 text-gray-500 mt-1">
                   <span className="text-gray-500">{getSelectedTimezone()!.displayName}</span>

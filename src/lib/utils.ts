@@ -121,6 +121,7 @@ export const parseJobDetails = (jobData: Job): Job => {
     updatedAt: jobData.updatedAt,
     candidateCount: jobData.candidateCount,
     interviewLink: jobData.interviewLink,
+    shortlistedCount: jobData.shortlistedCount,
   };
 };
 

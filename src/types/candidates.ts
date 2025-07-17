@@ -195,8 +195,8 @@ export interface CandidateEvaluationDetailed {
   score: number;
   strengths: string[];
   redFlags: string[];
-  skillsAssessment: Record<string, any>;
-  traitsAssessment: Record<string, any>;
+  skillsAssessment: Record<string, AIAssesment>;
+  traitsAssessment: Record<string, AIAssesment>;
   recommendation: RecommendationType;
   feedback: string | null;
   createdAt: string;
@@ -584,4 +584,18 @@ export interface ShortlistedCandidatesResponse {
     totalPages: number;
     hasMore: boolean;
   };
+}
+
+export interface UpdateCandidateResponse {
+  candidate_info_id: string;
+  created_at: string;
+  current_step: number;
+  id: string;
+  interview_token: string;
+  is_completed: boolean;
+  job_id: string;
+  profile_id: string | null;
+  status: CandidateStatus;
+  submitted_at: string;
+  total_steps: number;
 }

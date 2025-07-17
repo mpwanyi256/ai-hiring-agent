@@ -1,13 +1,12 @@
 'use client';
 
-import { Job as CurrentJob } from '@/types';
 import { CalendarIcon, ClockIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
+import { useAppSelector } from '@/store';
+import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
 
-interface JobOverviewProps {
-  job: CurrentJob;
-}
+export default function JobOverview() {
+  const job = useAppSelector(selectCurrentJob);
 
-export default function JobOverview({ job }: JobOverviewProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -15,6 +14,10 @@ export default function JobOverview({ job }: JobOverviewProps) {
       day: 'numeric',
     });
   };
+
+  if (!job) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">

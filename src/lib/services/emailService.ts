@@ -296,17 +296,17 @@ export async function sendInterviewReminderNotification(
 ): Promise<boolean> {
   try {
     if (!data.interviewDate || !data.interviewTime) {
-      console.error('Missing interviewDate or interviewTime in email data:', data);
+      console.error('Missing interviewDate or interviewTime in reminder email data:', data);
       return false;
     }
     const startDateTime = new Date(`${data.interviewDate}T${data.interviewTime}`);
     if (isNaN(startDateTime.getTime())) {
-      console.error('Invalid startDateTime in email data:', data);
+      console.error('Invalid startDateTime in reminder email data:', data);
       return false;
     }
     const endDateTime = new Date(startDateTime.getTime() + data.duration * 60 * 1000);
     if (isNaN(endDateTime.getTime())) {
-      console.error('Invalid endDateTime in email data:', data);
+      console.error('Invalid endDateTime in reminder email data:', data);
       return false;
     }
 
@@ -325,8 +325,11 @@ export async function sendInterviewReminderNotification(
     const emailContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #386B43;">Interview Reminder</h2>
+        
         <p>Hi ${data.candidateName},</p>
+        
         <p>This is a reminder for your upcoming interview for the <strong>${data.jobTitle}</strong> position at <strong>${data.companyName}</strong>.</p>
+        
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #386B43;">Interview Details</h3>
           <p><strong>Date:</strong> ${new Date(data.interviewDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
@@ -335,7 +338,9 @@ export async function sendInterviewReminderNotification(
           ${data.meetLink ? `<p><strong>Meeting Link:</strong> <a href="${data.meetLink}" style="color: #386B43;">Join Meeting</a></p>` : ''}
           ${data.notes ? `<p><strong>Notes:</strong> ${data.notes}</p>` : ''}
         </div>
-        <p>A calendar invite is attached for your convenience.</p>
+        
+        <p>Please ensure you're available at the scheduled time. If you need to reschedule, please contact us immediately.</p>
+        
         <p>Best regards,<br>The ${data.companyName} Hiring Team</p>
       </div>
     `;
@@ -367,6 +372,101 @@ export async function sendInterviewReminderNotification(
     return true;
   } catch (error) {
     console.error('Error sending interview reminder email:', error);
+    return false;
+  }
+}
+
+export async function sendInterviewRescheduledEmail(data: {
+  candidateName: string;
+  candidateEmail: string;
+  jobTitle: string;
+  companyName: string;
+  interviewDate: string;
+  interviewTime: string;
+  timezone: string;
+  meetLink?: string;
+  notes?: string;
+}): Promise<boolean> {
+  try {
+    if (!data.interviewDate || !data.interviewTime) {
+      console.error('Missing interviewDate or interviewTime in reschedule email data:', data);
+      return false;
+    }
+    const startDateTime = new Date(`${data.interviewDate}T${data.interviewTime}`);
+    if (isNaN(startDateTime.getTime())) {
+      console.error('Invalid startDateTime in reschedule email data:', data);
+      return false;
+    }
+    const endDateTime = new Date(startDateTime.getTime() + 30 * 60 * 1000); // 30 minutes duration
+    if (isNaN(endDateTime.getTime())) {
+      console.error('Invalid endDateTime in reschedule email data:', data);
+      return false;
+    }
+
+    const event: CalendarEvent = {
+      summary: `Interview with ${data.candidateName} for ${data.jobTitle}`,
+      description: `Interview for ${data.jobTitle} position at ${data.companyName}${data.notes ? `\n\nNotes: ${data.notes}` : ''}`,
+      startTime: startDateTime.toISOString(),
+      endTime: endDateTime.toISOString(),
+      timezone: data.timezone,
+      attendees: [data.candidateEmail],
+      meetLink: data.meetLink || undefined,
+    };
+
+    const icsContent = generateICSContent(event);
+
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #386B43;">Interview Rescheduled</h2>
+        
+        <p>Hi ${data.candidateName},</p>
+        
+        <p>Your interview for the <strong>${data.jobTitle}</strong> position at <strong>${data.companyName}</strong> has been rescheduled.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #386B43;">New Interview Details</h3>
+          <p><strong>Date:</strong> ${new Date(data.interviewDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p><strong>Time:</strong> ${data.interviewTime} (${data.timezone})</p>
+          <p><strong>Duration:</strong> 30 minutes</p>
+          ${data.meetLink ? `<p><strong>Meeting Link:</strong> <a href="${data.meetLink}" style="color: #386B43;">Join Meeting</a></p>` : ''}
+          ${data.notes ? `<p><strong>Notes:</strong> ${data.notes}</p>` : ''}
+        </div>
+        
+        <p>An updated calendar invite has been attached to this email. Please update your calendar accordingly.</p>
+        
+        <p>If you have any questions or need to reschedule, please contact us as soon as possible.</p>
+        
+        <p>Best regards,<br>The ${data.companyName} Hiring Team</p>
+      </div>
+    `;
+
+    if (!resend) {
+      console.error('Resend client not initialized. Cannot send interview reschedule email.');
+      return false;
+    }
+
+    const { data: emailResult, error } = await resend.emails.send({
+      from: 'Intavia <no-reply@intavia.app>',
+      to: [data.candidateEmail],
+      subject: `Interview Rescheduled - ${data.jobTitle} at ${data.companyName}`,
+      html: emailContent,
+      attachments: [
+        {
+          filename: 'interview-rescheduled.ics',
+          content: Buffer.from(icsContent).toString('base64'),
+        },
+      ],
+    });
+
+    if (error) {
+      console.error('Failed to send interview reschedule email:', error);
+      return false;
+    }
+
+    console.log('Interview reschedule email sent successfully:', emailResult);
+    return true;
+  } catch (error) {
+    console.error('Error sending interview reschedule email:', error);
     return false;
   }
 }

@@ -27,11 +27,8 @@ const DatePicker: React.FC<DatePickerProps> = ({
   label,
   error,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onChange(event.target.value);
-    setIsOpen(false);
   };
 
   const formatDisplayDate = (dateString: string) => {
@@ -64,8 +61,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
             disabled && 'bg-gray-50 text-gray-500 cursor-not-allowed',
           )}
           placeholder={placeholder}
-          onFocus={() => setIsOpen(true)}
-          onBlur={() => setTimeout(() => setIsOpen(false), 200)}
         />
 
         <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />

@@ -2,9 +2,21 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from '..';
 import { apiUtils } from '../api';
 import { Company } from '@/types/company';
-import { APIResponse } from '@/types';
+import { APIResponse, Timezone } from '@/types';
 import { JobData } from '@/lib/services/jobsService';
 import { UpdateCompanyData } from '@/types/company';
+
+export const fetchTimezones = createAsyncThunk<
+  Timezone[],
+  void,
+  {
+    rejectValue: string;
+  }
+>('company/fetchTimezones', async (_, { rejectWithValue }) => {
+  const response = await apiUtils.get<APIResponse<Timezone[]>>(`/api/timezones`);
+  if (response.error) return rejectWithValue(response.error);
+  return response.data;
+});
 
 export const fetchCompanyJobsBySlug = createAsyncThunk<
   JobData[],

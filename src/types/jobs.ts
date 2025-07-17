@@ -105,6 +105,7 @@ export interface Job {
   employmentTypeId?: string;
   workplaceType?: WorkplaceType;
   jobType?: JobType;
+  shortlistedCount?: number;
 }
 
 export interface QuestionStats {

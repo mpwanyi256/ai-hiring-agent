@@ -17,10 +17,11 @@ import {
   ShortlistResponse,
   GetShortlistedCandidatesPayload,
   ShortlistedCandidatesResponse,
-  CandidateWithEvaluation,
+  UpdateCandidateResponse,
 } from '@/types/candidates';
 import { APIResponse } from '@/types';
 import { RootState } from '..';
+import { fetchJobById } from '../jobs/jobsThunks';
 
 export const fetchShortlistedCandidates = createAsyncThunk<
   ShortlistedCandidatesResponse,
@@ -64,8 +65,16 @@ export const fetchCandidatesByJob = createAsyncThunk(
 export const fetchJobCandidates = createAsyncThunk<
   CandidateListResponse,
   FetchCandidatesByJobIdPayload
->('candidates/fetchJobCandidates', async (params) => {
+>('candidates/fetchJobCandidates', async (params, { getState }) => {
   try {
+    const state = getState() as RootState;
+    const job = state.jobs.currentJob;
+    const profileId = state.auth.user?.id;
+
+    if (!job) {
+      throw new Error('No job found');
+    }
+
     const {
       jobId,
       search,
@@ -93,6 +102,7 @@ export const fetchJobCandidates = createAsyncThunk<
       ...(sortOrder && { sortOrder }),
       page: page.toString(),
       limit: limit.toString(),
+      profileId: profileId || '',
     });
 
     const response = await apiUtils.get<CandidateListResponse>(
@@ -359,11 +369,20 @@ export const removeFromShortlist = createAsyncThunk(
 
 export const updateCandidateStatus = createAsyncThunk(
   'candidates/updateCandidateStatus',
-  async ({ candidateId, status }: { candidateId: string; status: string }) => {
-    const response = await apiUtils.patch<APIResponse<CandidateWithEvaluation>>(
+  async (
+    { candidateId, status }: { candidateId: string; status: string },
+    { dispatch, getState },
+  ) => {
+    const response = await apiUtils.patch<APIResponse<UpdateCandidateResponse>>(
       `/api/candidates/${candidateId}/status`,
       { status },
     );
+
+    const state = getState() as RootState;
+    const jobId = state.jobs.currentJob?.id;
+    if (jobId) {
+      dispatch(fetchJobById(jobId));
+    }
     return response.data;
   },
 );

@@ -22,7 +22,6 @@ import {
   ClockIcon,
   EyeIcon,
   DocumentTextIcon,
-  ArrowTrendingUpIcon,
   UsersIcon,
   CalendarDaysIcon,
 } from '@heroicons/react/24/outline';
@@ -41,14 +40,6 @@ export default function DashboardPage() {
   const interviewUsagePercentage = user.subscription
     ? (user.usageCounts.interviewsThisMonth / user.subscription.maxInterviewsPerMonth) * 100
     : 0;
-
-  // Mock data for enhanced insights
-  const candidatesByStatus = [
-    { label: 'Shortlisted', value: 8, color: '#10B981' },
-    { label: 'In Review', value: 12, color: '#F59E0B' },
-    { label: 'Interviewed', value: 24, color: '#3B82F6' },
-    { label: 'Applied', value: 35, color: '#6B7280' },
-  ];
 
   const interviewStats = [
     { label: 'This Week', value: 15, color: '#8B5CF6' },

@@ -38,9 +38,9 @@ export const EvaluationFailure = ({ evaluation }: EvaluationFailureProps) => {
             </div>
           </div>
           <p className="text-center text-red-700 font-semibold">
-            Resume Match Score: {resumeScore || 0}/100
+            Resume Match Score: {resumeScore || 0}%
           </p>
-          <p className="text-center text-red-600 text-sm mt-2">Minimum required score: 50/100</p>
+          <p className="text-center text-red-600 text-sm mt-2">Minimum required score: 50%</p>
         </div>
 
         {/* Evaluation Summary */}

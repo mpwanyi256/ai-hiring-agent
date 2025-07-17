@@ -265,7 +265,7 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
                     <div className="flex items-center space-x-2">
                       {getScoreIcon(evaluation.score)}
                       <span className={`text-xl font-bold ${getScoreColor(evaluation.score)}`}>
-                        {evaluation.score}/100
+                        {evaluation.score}%
                       </span>
                     </div>
                     <div
@@ -326,7 +326,7 @@ export default function JobEvaluations({ job }: JobEvaluationsProps) {
 
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                   <div className="flex items-center space-x-4 text-sm text-muted-text">
-                    {evaluation.resumeScore && <span>Resume: {evaluation.resumeScore}/100</span>}
+                    {evaluation.resumeScore && <span>Resume: {evaluation.resumeScore}%</span>}
                     <span className="capitalize">{evaluation.evaluationType} evaluation</span>
                   </div>
 

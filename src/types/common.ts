@@ -1,5 +1,5 @@
 // Common API response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
@@ -37,4 +37,4 @@ export interface ValidationError {
 export interface AsyncThunkState {
   status: ApiStatus;
   error: string | null;
-} 
+}

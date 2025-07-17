@@ -8,8 +8,9 @@ import {
   SelectItem,
   SelectValue,
 } from '@/components/ui/select';
-import { useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
 import { selectSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSelectors';
+import { updateCandidateStatus } from '@/store/candidates/candidatesThunks';
 
 const statusOptions: { value: CandidateStatus; label: string; color: string }[] = [
   { value: 'under_review', label: 'Under Review', color: 'bg-gray-100 text-gray-800' },
@@ -18,31 +19,27 @@ const statusOptions: { value: CandidateStatus; label: string; color: string }[] 
 ];
 
 export const CandidateDetailsHeader = () => {
+  const dispatch = useAppDispatch();
   const candidate = useAppSelector(selectSelectedCandidate);
   const [isUpdating, setIsUpdating] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<CandidateStatus>(
     candidate?.candidateStatus || 'under_review',
   );
 
+  const statusIsListed = statusOptions.some((option) => option.value === currentStatus);
+
   const handleStatusUpdate = async (newStatus: CandidateStatus) => {
     if (newStatus === currentStatus || !candidate) return;
     setIsUpdating(true);
     try {
-      const response = await fetch(`/api/candidates/${candidate.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      const data = await response.json();
-      if (data.success) {
+      const ok = await dispatch(
+        updateCandidateStatus({ candidateId: candidate.id, status: newStatus }),
+      ).unwrap();
+      if (ok) {
         setCurrentStatus(newStatus);
-        apiSuccess(
-          `Candidate status updated to ${statusOptions.find((opt) => opt.value === newStatus)?.label}`,
-        );
+        apiSuccess('Status updated successfully');
       } else {
-        apiError(data.error || 'Failed to update candidate status');
+        apiError('Failed to update candidate status');
       }
     } catch (error) {
       apiError('Failed to update candidate status');
@@ -77,7 +74,9 @@ export const CandidateDetailsHeader = () => {
             </div>
           </div>
           {/* Status Dropdown (shadcn/ui Select) */}
-          <div className="bg-primary/20 rounded-lg p-2 min-w-[200px]">
+          <div
+            className={`bg-primary/20 rounded-lg p-2 min-w-[200px] ${!statusIsListed ? 'hidden' : ''}`}
+          >
             <Select
               value={candidate?.candidateStatus}
               onValueChange={(value) => handleStatusUpdate(value as CandidateStatus)}

@@ -20,7 +20,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { app } from '@/lib/constants';
-import { fetchCompanyData } from '@/store/company/companyThunks';
+import { fetchCompanyData, fetchTimezones } from '@/store/company/companyThunks';
 
 interface TopNavigationProps {
   showAuthButtons?: boolean;
@@ -44,7 +44,9 @@ export default function TopNavigation({
 
   useEffect(() => {
     if (isAuthenticated && user?.companyId) {
+      // Load company data and timezones
       dispatch(fetchCompanyData());
+      dispatch(fetchTimezones());
     }
   }, [isAuthenticated, user, dispatch]);
 
