@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { Database } from '@/lib/supabase';
+
+type InterviewDetails = Database['public']['Views']['interview_details']['Row'] & {
+  duration: number;
+};
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -56,7 +61,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Format conflicts for frontend
-    const formattedConflicts = timeConflicts.map((conflict: any) => ({
+    const formattedConflicts = timeConflicts.map((conflict: InterviewDetails) => ({
       id: conflict.interview_id,
       candidate_name: conflict.candidate_name,
       job_title: conflict.job_title,
