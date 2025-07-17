@@ -102,7 +102,7 @@ export default function JobCandidates() {
   // Transform data for components
   const overviewData = {
     totalCandidates: jobCandidatesStats.total,
-    inProgress: jobCandidatesStats.inProgress,
+    shortlisted: job?.shortlistedCount || 0,
     completed: jobCandidatesStats.completed,
     averageScore: jobCandidatesStats.averageScore,
   };
@@ -281,7 +281,7 @@ export default function JobCandidates() {
                                   className={`text-lg font-bold ${getResumeScoreTextColor(selectedCandidate?.evaluation?.resumeScore)}`}
                                 >
                                   {selectedCandidate?.evaluation?.resumeScore}
-                                  <span className="text-base font-semibold">/100</span>
+                                  <span className="text-base font-semibold">%</span>
                                 </span>
                               </div>
                               <div className="flex-1">

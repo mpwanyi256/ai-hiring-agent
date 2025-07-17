@@ -104,6 +104,11 @@ body {
   margin: 0;
   padding: 0;
   line-height: 1.6;
+
+  /* Make scrollbar width 4px */
+  scrollbar-width: 4px;
+  scrollbar-color: var(--primary) var(--surface);
+  scrollbar-gutter: stable;
 }
 
 * {

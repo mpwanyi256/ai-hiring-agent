@@ -301,7 +301,7 @@ export default function CandidateEvaluationSection({
                 <div key={category} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-gray-900 text-sm">{category}</span>
-                    <span className="text-xs text-gray-500">Score: {data.score}/100</span>
+                    <span className="text-xs text-gray-500">Score: {data.score}%</span>
                   </div>
                   <p className="text-xs text-gray-600 mb-2">{data.explanation}</p>
                   {data.strengths.length > 0 && (

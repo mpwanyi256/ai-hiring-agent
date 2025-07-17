@@ -1,25 +1,25 @@
 'use client';
 
 import React from 'react';
-import { 
+import {
   UserGroupIcon,
   ClockIcon,
   CheckCircleIcon,
-  ChartBarIcon
+  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 
 interface CandidatesOverviewProps {
   totalCandidates: number;
-  inProgress: number;
+  shortlisted: number;
   completed: number;
   averageScore: number;
 }
 
 export default function CandidatesOverview({
   totalCandidates,
-  inProgress,
+  shortlisted,
   completed,
-  averageScore
+  averageScore,
 }: CandidatesOverviewProps) {
   const metrics = [
     {
@@ -27,21 +27,21 @@ export default function CandidatesOverview({
       value: totalCandidates,
       icon: UserGroupIcon,
       color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
+      bgColor: 'bg-blue-50',
     },
     {
-      label: 'In Progress',
-      value: inProgress,
+      label: 'Shortlisted',
+      value: shortlisted,
       icon: ClockIcon,
       color: 'text-amber-600',
-      bgColor: 'bg-amber-50'
+      bgColor: 'bg-amber-50',
     },
     {
       label: 'Completed',
       value: completed,
       icon: CheckCircleIcon,
       color: 'text-green-600',
-      bgColor: 'bg-green-50'
+      bgColor: 'bg-green-50',
     },
     {
       label: 'Avg Score',
@@ -49,8 +49,8 @@ export default function CandidatesOverview({
       icon: ChartBarIcon,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
-      isScore: true
-    }
+      isScore: true,
+    },
   ];
 
   return (
@@ -58,14 +58,16 @@ export default function CandidatesOverview({
       {metrics.map((metric, index) => (
         <div key={index} className="bg-white rounded-lg border border-gray-100 p-4">
           <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${metric.bgColor}`}>
+            <div
+              className={`w-10 h-10 rounded-lg flex items-center justify-center ${metric.bgColor}`}
+            >
               <metric.icon className={`w-5 h-5 ${metric.color}`} />
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500">{metric.label}</p>
               <p className="text-2xl font-bold text-gray-900">
                 {metric.isScore ? metric.value : metric.value}
-                {metric.isScore && <span className="text-sm font-normal text-gray-500">/100</span>}
+                {metric.isScore && <span className="text-sm font-normal text-gray-500">%</span>}
               </p>
             </div>
           </div>
@@ -73,4 +75,4 @@ export default function CandidatesOverview({
       ))}
     </div>
   );
-} 
+}

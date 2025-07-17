@@ -294,7 +294,7 @@ export default function CandidatesList({
                       <div
                         className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(candidate?.evaluation?.score || 0)}`}
                       >
-                        {candidate.evaluation?.score || 0}/100
+                        {candidate.evaluation?.score || 0}%
                       </div>
                     </div>
 

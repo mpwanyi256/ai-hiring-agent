@@ -133,7 +133,7 @@ export default function CTASection() {
                       </div>
                     </div>
                     <div className="text-lg font-bold text-gray-900">
-                      85<span className="text-xs">/100</span>
+                      85<span className="text-xs">%</span>
                     </div>
                   </div>
                 </div>

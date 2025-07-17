@@ -621,7 +621,7 @@ class InterviewService {
       skillsAssessment: {}, // Would be populated by AI analysis
       traitsAssessment: {}, // Would be populated by AI analysis
       recommendation,
-      feedback: `Overall score: ${score}/100. ${strengths.length > 0 ? 'Strengths: ' + strengths.join(', ') + '. ' : ''}${redFlags.length > 0 ? 'Areas for consideration: ' + redFlags.join(', ') + '.' : ''}`,
+      feedback: `Overall score: ${score}%. ${strengths.length > 0 ? 'Strengths: ' + strengths.join(', ') + '. ' : ''}${redFlags.length > 0 ? 'Areas for consideration: ' + redFlags.join(', ') + '.' : ''}`,
     };
   }
 

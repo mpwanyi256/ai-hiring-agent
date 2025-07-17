@@ -431,7 +431,7 @@ class ResumeService {
     const totalSkills = skillsAnalysis.matchingSkills.length + skillsAnalysis.missingSkills.length;
 
     return (
-      `Resume evaluation complete. Overall match: ${score}/100. ` +
+      `Resume evaluation complete. Overall match: ${score}%. ` +
       `Skills: ${skillsMatch}/${totalSkills} required skills found. ` +
       `Experience level: ${experienceAnalysis.match}. ` +
       `${score >= this.MINIMUM_SCORE_THRESHOLD ? 'Candidate qualifies for interview.' : 'Candidate does not meet minimum requirements.'}`
@@ -448,10 +448,10 @@ class ResumeService {
     const { score, skillsAnalysis, experienceAnalysis, traitsAnalysis, jobDescriptionMatch } =
       analysisData;
 
-    let feedback = `Overall Score: ${score}/100\n\n`;
+    let feedback = `Overall Score: ${score}%\n\n`;
 
     // Skills feedback
-    feedback += `Skills Assessment (${skillsAnalysis.score}/100):\n`;
+    feedback += `Skills Assessment (${skillsAnalysis.score}%):\n`;
     if (skillsAnalysis.matchingSkills.length > 0) {
       feedback += `✓ Found: ${skillsAnalysis.matchingSkills.join(', ')}\n`;
     }
@@ -461,7 +461,7 @@ class ResumeService {
     feedback += '\n';
 
     // Experience feedback
-    feedback += `Experience Assessment (${experienceAnalysis.score}/100):\n`;
+    feedback += `Experience Assessment (${experienceAnalysis.score}%):\n`;
     feedback += `Experience level appears to be ${experienceAnalysis.match} the requirements.\n\n`;
 
     // Traits feedback
