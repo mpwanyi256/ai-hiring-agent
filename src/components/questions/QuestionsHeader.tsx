@@ -15,6 +15,7 @@ export const QuestionsHeader = () => {
   const job = useAppSelector(selectCurrentJob);
   const questions = useAppSelector(selectJobQuestions);
   const dispatch = useAppDispatch();
+  const isDraft = job?.status === 'draft';
 
   const handleGenerateQuestions = async () => {
     try {
@@ -50,13 +51,13 @@ export const QuestionsHeader = () => {
           </p>
           {!isJobInDraft && (
             <p className="text-amber-600 text-sm mt-1">
-              ⚠️ Questions can only be modified when the job is in draft state
+              Questions can only be modified when the job is in draft state
             </p>
           )}
         </div>
 
-        <div className="flex gap-3">
-          {isJobInDraft && (
+        {isJobInDraft && (
+          <div className="flex gap-3">
             <Button
               onClick={() => setIsAddModalOpen(true)}
               variant="outline"
@@ -65,20 +66,20 @@ export const QuestionsHeader = () => {
               <PlusIcon className="w-4 h-4 mr-2" />
               Add Question
             </Button>
-          )}
-          <Button
-            onClick={handleGenerateQuestions}
-            disabled={isGenerating}
-            className="flex items-center"
-          >
-            <SparklesIcon className="w-4 h-4 mr-2" />
-            {isGenerating
-              ? 'Generating...'
-              : questions.length > 0
-                ? 'Regenerate'
-                : 'Generate Questions'}
-          </Button>
-        </div>
+            <Button
+              onClick={handleGenerateQuestions}
+              disabled={isGenerating}
+              className="flex items-center"
+            >
+              <SparklesIcon className="w-4 h-4 mr-2" />
+              {isGenerating
+                ? 'Generating...'
+                : questions.length > 0
+                  ? 'Regenerate'
+                  : 'Generate Questions'}
+            </Button>
+          </div>
+        )}
       </div>
       <QuestionStats />
 

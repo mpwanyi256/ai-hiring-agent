@@ -26,6 +26,8 @@ export const CandidateDetailsHeader = () => {
     candidate?.candidateStatus || 'under_review',
   );
 
+  const statusIsListed = statusOptions.some((option) => option.value === currentStatus);
+
   const handleStatusUpdate = async (newStatus: CandidateStatus) => {
     if (newStatus === currentStatus || !candidate) return;
     setIsUpdating(true);
@@ -72,7 +74,9 @@ export const CandidateDetailsHeader = () => {
             </div>
           </div>
           {/* Status Dropdown (shadcn/ui Select) */}
-          <div className="bg-primary/20 rounded-lg p-2 min-w-[200px]">
+          <div
+            className={`bg-primary/20 rounded-lg p-2 min-w-[200px] ${!statusIsListed ? 'hidden' : ''}`}
+          >
             <Select
               value={candidate?.candidateStatus}
               onValueChange={(value) => handleStatusUpdate(value as CandidateStatus)}
