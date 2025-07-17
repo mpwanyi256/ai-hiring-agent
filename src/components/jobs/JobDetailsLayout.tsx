@@ -331,6 +331,11 @@ export default function JobDetailsLayout({
                       {job.candidateCount}
                     </span>
                   )}
+                  {tab.id === 'shortlisted' && (job.shortlistedCount || 0) > 0 && (
+                    <span className="bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 text-xs font-medium">
+                      {job.shortlistedCount}
+                    </span>
+                  )}
                 </button>
               );
             })}

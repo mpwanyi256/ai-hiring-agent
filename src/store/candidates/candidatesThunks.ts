@@ -64,8 +64,16 @@ export const fetchCandidatesByJob = createAsyncThunk(
 export const fetchJobCandidates = createAsyncThunk<
   CandidateListResponse,
   FetchCandidatesByJobIdPayload
->('candidates/fetchJobCandidates', async (params) => {
+>('candidates/fetchJobCandidates', async (params, { getState }) => {
   try {
+    const state = getState() as RootState;
+    const job = state.jobs.currentJob;
+    const profileId = state.auth.user?.id;
+
+    if (!job) {
+      throw new Error('No job found');
+    }
+
     const {
       jobId,
       search,
@@ -93,6 +101,7 @@ export const fetchJobCandidates = createAsyncThunk<
       ...(sortOrder && { sortOrder }),
       page: page.toString(),
       limit: limit.toString(),
+      profileId: profileId || '',
     });
 
     const response = await apiUtils.get<CandidateListResponse>(

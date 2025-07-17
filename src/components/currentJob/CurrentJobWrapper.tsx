@@ -72,15 +72,15 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
-        return <JobOverview job={job} />;
+        return <JobOverview />;
       case 'questions':
         return <QuestionManager />;
       case 'candidates':
-        return <JobCandidates job={job} />;
+        return <JobCandidates />;
       case 'shortlisted':
         return <JobShortlisted jobId={job.id} />;
       default:
-        return <JobOverview job={job} />;
+        return <JobOverview />;
     }
   };
 

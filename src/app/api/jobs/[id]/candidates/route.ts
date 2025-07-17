@@ -6,75 +6,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const supabase = await createClient();
 
-    // Await params before accessing properties (Next.js 15 requirement)
     const { id: jobId } = await params;
     const searchParams = request.nextUrl.searchParams;
-
-    // Get current user profile
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Authentication required',
-        },
-        { status: 401 },
-      );
-    }
-
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Profile not found',
-        },
-        { status: 404 },
-      );
-    }
-
-    const profileId = profile.id;
 
     // Get query parameters
     const search = searchParams.get('search') || null;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = (page - 1) * limit;
+    const status = searchParams.get('status') || null;
 
-    // New filter parameters
-    const minScore = searchParams.get('minScore');
-    const maxScore = searchParams.get('maxScore');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const candidateStatus = searchParams.get('candidateStatus');
-    const sortBy = searchParams.get('sortBy') || 'created_at';
-    const sortOrder = searchParams.get('sortOrder') || 'desc';
-
-    // Get candidate details using the database function (now includes resume data)
+    // Get candidate details using the database function (now only returns completed candidates)
     const { data: candidates, error: candidatesError } = await supabase.rpc(
       'get_job_candidate_details',
       {
         p_job_id: jobId,
-        p_profile_id: profileId,
         p_search: search,
+        p_status: status,
         p_limit: limit,
         p_offset: offset,
-        p_min_score: minScore ? parseInt(minScore) : null,
-        p_max_score: maxScore ? parseInt(maxScore) : null,
-        p_start_date: startDate,
-        p_end_date: endDate,
-        p_candidate_status: candidateStatus,
-        p_sort_by: sortBy,
-        p_sort_order: sortOrder,
       },
     );
 
@@ -83,10 +33,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       throw new Error(candidatesError.message);
     }
 
-    // Get candidate statistics
+    // Get candidate statistics (note: this function still uses profile_id, but we'll pass null)
     const { data: stats, error: statsError } = await supabase.rpc('get_job_candidate_stats', {
       p_job_id: jobId,
-      p_profile_id: profileId,
+      p_profile_id: null,
     });
 
     if (statsError) {
@@ -153,6 +103,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             uploadedAt: candidate.resume_uploaded_at as string,
           }
         : null,
+      interviewDetails: candidate.interview_details as Record<string, any> | null,
     }));
 
     const totalCandidates = parseInt(statsData.total_candidates?.toString() || '0');

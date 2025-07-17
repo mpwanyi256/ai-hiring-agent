@@ -6,8 +6,7 @@ import CandidatesOverview from './CandidatesOverview';
 import CandidatesList from './CandidatesList';
 import CandidateAnalytics from '@/components/evaluations/CandidateAnalytics';
 import CandidateResponses from '@/components/candidates/CandidateResponses';
-import { Job } from '@/types/jobs';
-import { AppDispatch, RootState } from '@/store';
+import { AppDispatch, RootState, useAppSelector } from '@/store';
 import { fetchJobCandidates } from '@/store/candidates/candidatesThunks';
 import {
   UserCircleIcon,
@@ -26,10 +25,7 @@ import {
   selectSelectedCandidate,
   selectSelectedCandidateId,
 } from '@/store/selectedCandidate/selectedCandidateSelectors';
-
-interface JobCandidatesProps {
-  job: Job;
-}
+import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
 
 const candidateTabs = [
   { id: 'overview', label: 'Overview' },
@@ -51,7 +47,8 @@ const getResumeScoreTextColor = (score: number) => {
   return 'text-red-600';
 };
 
-export default function JobCandidates({ job }: JobCandidatesProps) {
+export default function JobCandidates() {
+  const job = useAppSelector(selectCurrentJob);
   const dispatch = useDispatch<AppDispatch>();
   const { candidates, jobCandidatesStats, error } = useSelector(
     (state: RootState) => state.candidates,
@@ -89,7 +86,7 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
 
   // Fetch candidates when component mounts or job changes
   useEffect(() => {
-    if (job.id) {
+    if (job && job.id) {
       dispatch(
         fetchJobCandidates({
           jobId: job.id,
@@ -99,7 +96,8 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
         }),
       );
     }
-  }, [dispatch, job.id, searchQuery, filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, job?.id, searchQuery, filters]);
 
   // Transform data for components
   const overviewData = {
@@ -130,6 +128,10 @@ export default function JobCandidates({ job }: JobCandidatesProps) {
         </div>
       </div>
     );
+  }
+
+  if (!job) {
+    return <div>No job found</div>;
   }
 
   return (
