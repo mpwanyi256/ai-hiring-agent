@@ -37,3 +37,48 @@ export const getCandidateDetails = createAsyncThunk(
     return data;
   },
 );
+
+export const rescheduleInterview = createAsyncThunk(
+  'interview/rescheduleInterview',
+  async ({
+    interviewId,
+    date,
+    time,
+    timezoneId,
+    timezoneName,
+    notes,
+  }: {
+    interviewId: string;
+    date: string;
+    time: string;
+    timezoneId: string;
+    timezoneName?: string;
+    notes?: string;
+  }) => {
+    const response = await fetch(`/api/interviews/${interviewId}/reschedule`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, time, timezoneId, timezoneName, notes }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Failed to reschedule interview');
+    }
+    return data;
+  },
+);
+
+export const cancelInterview = createAsyncThunk(
+  'interview/cancelInterview',
+  async ({ interviewId }: { interviewId: string }) => {
+    const response = await fetch(`/api/interviews/${interviewId}/cancel`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Failed to cancel interview');
+    }
+    return data;
+  },
+);

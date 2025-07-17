@@ -1,12 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { CandidateWithEvaluation, CandidateStatus } from '@/types/candidates';
 import { Loading } from '@/components/ui/Loading';
-import { UserIcon, CalendarIcon, StarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import {
+  UserIcon,
+  CalendarIcon,
+  StarIcon,
+  CheckCircleIcon,
+  ChevronDownIcon,
+} from '@heroicons/react/24/outline';
 import Button from '../ui/Button';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
+import RescheduleInterviewModal from '../dashboard/RescheduleInterviewModal';
 import { fetchShortlistedCandidates } from '@/store/candidates/candidatesThunks';
 import { updateCandidateStatus } from '@/store/candidates/candidatesThunks';
 import {
@@ -48,6 +55,13 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     isOpen: false,
     candidate: null,
     isEdit: false,
+  });
+  const [rescheduleModal, setRescheduleModal] = useState<{
+    isOpen: boolean;
+    interview: any;
+  }>({
+    isOpen: false,
+    interview: null,
   });
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
 
@@ -124,6 +138,56 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
       isOpen: false,
       candidate: null,
     });
+  };
+
+  const handleRescheduleInterview = (candidate: CandidateWithEvaluation) => {
+    if (candidate.interviewDetails) {
+      setRescheduleModal({
+        isOpen: true,
+        interview: {
+          interview_id: candidate.interviewDetails.id,
+          candidate_id: candidate.id,
+          job_id: jobId,
+          interview_date: candidate.interviewDetails.date,
+          interview_time: candidate.interviewDetails.time,
+          timezone: candidate.interviewDetails.timezone_id,
+          notes: candidate.interviewDetails.notes,
+          candidate_first_name: candidate.firstName,
+          candidate_last_name: candidate.lastName,
+          job_title: candidate.jobTitle,
+          meet_link: candidate.interviewDetails.meet_link,
+          interview_status: candidate.interviewDetails.status,
+        },
+      });
+    }
+  };
+
+  const handleCloseRescheduleModal = () => {
+    setRescheduleModal({
+      isOpen: false,
+      interview: null,
+    });
+  };
+
+  const handleRescheduleSuccess = () => {
+    // Refresh the candidates list to show updated interview details
+    dispatch(
+      fetchShortlistedCandidates({
+        jobId,
+        status: [
+          'interview_scheduled',
+          'shortlisted',
+          'reference_check',
+          'offer_extended',
+          'offer_accepted',
+          'hired',
+          'withdrawn',
+        ],
+        page: 1,
+        limit: 50,
+      }),
+    );
+    handleCloseRescheduleModal();
   };
 
   const handleStatusChange = async (candidateId: string, newStatus: CandidateStatus) => {
@@ -262,45 +326,37 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(candidate.status)}`}
-                    >
-                      <StarIcon className="w-3 h-3 mr-1" />
-                      {candidate.status?.replace('_', ' ').toUpperCase()}
-                    </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium hover:cursor-pointer ${getStatusColor(candidate.status)}`}
+                        >
+                          <StarIcon className="w-3 h-3 mr-1" />
+                          {candidate.status?.replace('_', ' ').toUpperCase()}
+                          <ChevronDownIcon className="w-3 h-3 ml-1" />
+                        </span>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-44">
+                        {candidateStatuses.map((status) => (
+                          <DropdownMenuItem
+                            key={status.value}
+                            onClick={() => handleStatusChange(candidate.id, status.value)}
+                            disabled={
+                              statusUpdating === candidate.id || candidate.status === status.value
+                            }
+                            className="flex items-center justify-between"
+                          >
+                            <span>{status.label}</span>
+                            {candidate.status === status.value && (
+                              <CheckIcon className="w-4 h-4 text-green-500" />
+                            )}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs h-8 min-w-[120px] justify-between"
-                            disabled={statusUpdating === candidate.id}
-                          >
-                            {candidateStatuses.find((s) => s.value === candidate.status)?.label ||
-                              candidate.status}
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-44">
-                          {candidateStatuses.map((status) => (
-                            <DropdownMenuItem
-                              key={status.value}
-                              onClick={() => handleStatusChange(candidate.id, status.value)}
-                              disabled={
-                                statusUpdating === candidate.id || candidate.status === status.value
-                              }
-                              className="flex items-center justify-between"
-                            >
-                              <span>{status.label}</span>
-                              {candidate.status === status.value && (
-                                <CheckIcon className="w-4 h-4 text-green-500" />
-                              )}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                       {!candidate.interviewDetails?.id ? (
                         <Button
                           size="sm"
@@ -313,9 +369,7 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                         <Button
                           className="text-xs h-8"
                           variant="secondary"
-                          onClick={() =>
-                            setSchedulingModal({ isOpen: true, candidate, isEdit: true })
-                          }
+                          onClick={() => handleRescheduleInterview(candidate)}
                         >
                           Edit/Reschedule
                         </Button>
@@ -339,6 +393,16 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
           jobTitle={schedulingModal.candidate.jobTitle}
           isEdit={schedulingModal.isEdit}
           interview={schedulingModal.candidate.interviewDetails}
+        />
+      )}
+
+      {/* Reschedule Interview Modal */}
+      {rescheduleModal.interview && (
+        <RescheduleInterviewModal
+          interview={rescheduleModal.interview}
+          isOpen={rescheduleModal.isOpen}
+          onClose={handleCloseRescheduleModal}
+          onSuccess={handleRescheduleSuccess}
         />
       )}
     </div>

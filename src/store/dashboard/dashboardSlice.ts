@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface UpcomingInterview {
   interview_id: string;
+  candidate_id?: string;
   interview_date: string;
   interview_time: string;
   interview_status: string;
@@ -10,6 +11,7 @@ export interface UpcomingInterview {
   candidate_email: string;
   job_title: string;
   meet_link?: string;
+  job_id: string;
 }
 
 export interface CandidatePipelineItem {

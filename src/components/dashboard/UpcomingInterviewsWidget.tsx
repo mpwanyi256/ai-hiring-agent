@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchUpcomingInterviews } from '@/store/dashboard/dashboardThunks';
 import {
@@ -10,7 +9,6 @@ import {
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import InterviewCard from './InterviewCard';
 import { selectUser } from '@/store/auth/authSelectors';
-import Modal from '@/components/ui/Modal';
 import UpcomingInterviewsModal from './UpcomingInterviewsModal';
 
 export default function UpcomingInterviewsWidget() {

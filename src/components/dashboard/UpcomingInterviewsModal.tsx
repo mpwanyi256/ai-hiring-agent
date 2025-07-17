@@ -9,6 +9,8 @@ import {
 } from '@/store/dashboard/dashboardSelectors';
 import Modal from '@/components/ui/Modal';
 import InterviewCard from './InterviewCard';
+import InterviewDetailsModal from './InterviewDetailsModal';
+import { UpcomingInterview } from '@/store/dashboard/dashboardSlice';
 
 interface UpcomingInterviewsModalProps {
   isOpen: boolean;
@@ -25,6 +27,7 @@ const UpcomingInterviewsModal: React.FC<UpcomingInterviewsModalProps> = ({ isOpe
   const total = useAppSelector(selectTotalUpcomingInterviews);
   const [page, setPage] = useState(1);
   const totalPages = Math.ceil(total / PAGE_SIZE);
+  const [selectedInterview, setSelectedInterview] = useState<UpcomingInterview | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -49,7 +52,8 @@ const UpcomingInterviewsModal: React.FC<UpcomingInterviewsModalProps> = ({ isOpe
             {interviews.map((iv) => (
               <li
                 key={iv.interview_id}
-                className="bg-gray-50 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between"
+                className="bg-gray-50 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between cursor-pointer hover:bg-primary/10"
+                onClick={() => setSelectedInterview(iv)}
               >
                 <InterviewCard interview={iv} />
                 <a
@@ -57,6 +61,7 @@ const UpcomingInterviewsModal: React.FC<UpcomingInterviewsModalProps> = ({ isOpe
                   className="text-primary text-xs mt-2 md:mt-0 md:ml-4 hover:underline font-medium"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   View Job Details
                 </a>
@@ -82,6 +87,13 @@ const UpcomingInterviewsModal: React.FC<UpcomingInterviewsModalProps> = ({ isOpe
               Next
             </button>
           </div>
+          {selectedInterview && (
+            <InterviewDetailsModal
+              interview={selectedInterview}
+              isOpen={!!selectedInterview}
+              onClose={() => setSelectedInterview(null)}
+            />
+          )}
         </div>
       )}
     </Modal>

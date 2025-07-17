@@ -3,11 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarIcon, ClockIcon, UserIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '@/store';
-import {
-  scheduleInterview,
-  updateInterview,
-  cancelInterview,
-} from '@/store/interviews/interviewsThunks';
+import { scheduleInterview, updateInterview } from '@/store/interviews/interviewsThunks';
 import { selectIsInterviewScheduling } from '@/store/interviews/interviewsSelectors';
 import { selectCompany } from '@/store/company/companySelectors';
 import { selectUser } from '@/store/auth/authSelectors';
@@ -184,20 +180,6 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
     }
   };
 
-  const handleCancelInterview = async () => {
-    if (!interview) return;
-    setActionLoading(true);
-    try {
-      await dispatch(cancelInterview({ interviewId: interview.id })).unwrap();
-      apiSuccess('Interview cancelled successfully');
-      onClose();
-    } catch (error) {
-      console.error('Failed to cancel interview:', error);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const handleInputChange = (field: keyof CreateInterviewData, value: string | number) => {
     setFormData((prev) => ({
       ...prev,
@@ -278,11 +260,6 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
               )}
             </div>
           </div>
-          {isEdit && interview && interview.status !== 'cancelled' && (
-            <Button type="button" size="sm" variant="secondary" onClick={handleCancelInterview}>
-              Cancel Interview
-            </Button>
-          )}
         </div>
 
         {/* Form */}
