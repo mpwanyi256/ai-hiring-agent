@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { CalendarIcon, ClockIcon } from '@heroicons/react/24/outline';
-import { useAppDispatch } from '@/store';
-import { cancelInterview, rescheduleInterview } from '@/store/interview/interviewThunks';
+import { useAppDispatch, useAppSelector } from '@/store';
+import {
+  cancelInterview,
+  checkInterviewConflicts,
+  rescheduleInterview,
+} from '@/store/interview/interviewThunks';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import InterviewCard from './InterviewCard';
@@ -11,7 +15,8 @@ import DurationPicker from '../interviews/DurationPicker';
 import TimezonePicker from '../interviews/TimezonePicker';
 import { apiSuccess, apiError } from '@/lib/notification';
 import { Loading } from '@/components/ui/Loading';
-import { Timezone } from '@/types/interviews';
+import { selectInterviewConflicts } from '@/store/interview/interviewSelectors';
+import { selectCompanyTimezones } from '@/store/company/companySelectors';
 
 interface RescheduleInterviewModalProps {
   interview: {
@@ -41,9 +46,7 @@ const RescheduleInterviewModal: React.FC<RescheduleInterviewModalProps> = ({
 }) => {
   const dispatch = useAppDispatch();
 
-  const [timezones, setTimezones] = useState<Timezone[]>([]);
-  const [timezoneLoading, setTimezoneLoading] = useState(false);
-  const [timezoneError, setTimezoneError] = useState<string | null>(null);
+  const timezones = useAppSelector(selectCompanyTimezones);
 
   const [formData, setFormData] = useState({
     date: '',
@@ -53,44 +56,12 @@ const RescheduleInterviewModal: React.FC<RescheduleInterviewModalProps> = ({
     notes: '',
   });
   const [loading, setLoading] = useState(false);
-  const [conflicts, setConflicts] = useState<
-    Array<{
-      id: string;
-      candidate_name: string;
-      job_title: string;
-      date: string;
-      time: string;
-    }>
-  >([]);
+  const conflicts = useAppSelector(selectInterviewConflicts);
   const [googleTokenError, setGoogleTokenError] = useState(false);
 
   const getSelectedTimezone = useCallback(() => {
     return timezones.find((tz) => tz.id === formData.timezoneId);
   }, [formData.timezoneId, timezones]);
-
-  // Fetch timezones on component mount
-  useEffect(() => {
-    const fetchTimezones = async () => {
-      setTimezoneLoading(true);
-      try {
-        const response = await fetch('/api/timezones');
-        const data = await response.json();
-
-        if (data.success) {
-          setTimezones(data.timezones);
-        } else {
-          setTimezoneError(data.error || 'Failed to load timezones');
-        }
-      } catch (error) {
-        setTimezoneError('Failed to load timezones');
-        console.error('Error fetching timezones:', error);
-      } finally {
-        setTimezoneLoading(false);
-      }
-    };
-
-    fetchTimezones();
-  }, []);
 
   useEffect(() => {
     if (interview && isOpen) {
@@ -113,33 +84,34 @@ const RescheduleInterviewModal: React.FC<RescheduleInterviewModalProps> = ({
     if (!formData.date || !formData.time) return;
 
     try {
-      const response = await fetch('/api/interviews/check-conflicts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          candidateId: interview.candidate_id,
-          jobId: interview.job_id,
-          date: formData.date,
-          time: formData.time,
-          timezone: getSelectedTimezone()?.name || 'UTC',
-          excludeInterviewId: interview.interview_id,
-        }),
-      });
+      const timezone = getSelectedTimezone();
 
-      const data = await response.json();
-      if (data.success) {
-        setConflicts(data.conflicts || []);
+      if (!timezone) {
+        apiError('Please select a timezone');
+        return;
       }
+
+      const payload = {
+        candidateId: interview.candidate_id,
+        jobId: interview.job_id,
+        date: formData.date,
+        time: formData.time,
+        timezone: timezone.name,
+        excludeInterviewId: interview.interview_id,
+      };
+
+      await dispatch(checkInterviewConflicts(payload)).unwrap();
     } catch (error) {
       console.error('Error checking conflicts:', error);
     }
   }, [
     formData.date,
     formData.time,
+    getSelectedTimezone,
     interview.candidate_id,
     interview.job_id,
     interview.interview_id,
-    getSelectedTimezone,
+    dispatch,
   ]);
 
   useEffect(() => {
@@ -178,12 +150,15 @@ const RescheduleInterviewModal: React.FC<RescheduleInterviewModalProps> = ({
       apiSuccess('Interview rescheduled successfully');
       onSuccess?.();
       onClose();
-    } catch (error: any) {
-      if (error.message?.includes('Google Calendar') || error.message?.includes('token')) {
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.message?.includes('Google Calendar') || error.message?.includes('token'))
+      ) {
         setGoogleTokenError(true);
         apiError('Google Calendar connection issue. Please reconnect your Google account.');
       } else {
-        apiError(error.message || 'Failed to reschedule interview');
+        apiError(error instanceof Error ? error.message : 'Failed to reschedule interview');
       }
     } finally {
       setLoading(false);
@@ -240,7 +215,7 @@ const RescheduleInterviewModal: React.FC<RescheduleInterviewModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Reschedule Interview" size="lg">
       <div className="w-full max-w-4xl mx-auto relative">
-        {(loading || timezoneLoading) && (
+        {loading && (
           <div className="absolute inset-0 bg-white bg-opacity-70 z-50 flex items-center justify-center">
             <Loading message={loading ? 'Processing...' : 'Loading timezones...'} />
           </div>
@@ -294,22 +269,16 @@ const RescheduleInterviewModal: React.FC<RescheduleInterviewModalProps> = ({
             {/* Timezone */}
             <div className="flex flex-col w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
-              {timezoneLoading ? (
-                <div className="text-sm text-gray-500">Loading timezones...</div>
-              ) : timezoneError ? (
-                <div className="text-sm text-red-500">{timezoneError}</div>
-              ) : (
-                <div className="min-h-[40px]">
-                  <TimezonePicker
-                    label=""
-                    value={formData.timezoneId}
-                    onChange={(timezoneId) => handleInputChange('timezoneId', timezoneId)}
-                    timezones={timezones}
-                    placeholder="Select timezone"
-                    className="h-10 text-sm"
-                  />
-                </div>
-              )}
+              <div className="min-h-[40px]">
+                <TimezonePicker
+                  label=""
+                  value={formData.timezoneId}
+                  onChange={(timezoneId) => handleInputChange('timezoneId', timezoneId)}
+                  timezones={timezones}
+                  placeholder="Select timezone"
+                  className="h-10 text-sm"
+                />
+              </div>
               {formData.timezoneId && getSelectedTimezone() && (
                 <div className="text-xs flex-col gap-1 text-gray-500 mt-1">
                   <span className="text-gray-500">{getSelectedTimezone()!.displayName}</span>

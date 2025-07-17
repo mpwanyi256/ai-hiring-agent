@@ -13,11 +13,13 @@ import {
   uploadCompanyLogo,
 } from '@/store/company/companyThunks';
 import { useAppDispatch } from '@/store';
-import { selectCompany, selectCompanyLoading } from '@/store/company/companySelectors';
+import {
+  selectCompany,
+  selectCompanyLoading,
+  selectCompanyTimezones,
+} from '@/store/company/companySelectors';
 import { apiError } from '@/lib/notification';
 import { selectUser } from '@/store/auth/authSelectors';
-import { Timezone } from '@/types/interviews';
-import Button from '@/components/ui/Button';
 
 export default function CompanySettingsPage() {
   const dispatch = useAppDispatch();
@@ -25,37 +27,11 @@ export default function CompanySettingsPage() {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
-  const [timezones, setTimezones] = useState<Timezone[]>([]);
-  const [timezoneLoading, setTimezoneLoading] = useState(false);
-  const [timezoneError, setTimezoneError] = useState<string | null>(null);
+  const timezones = useAppSelector(selectCompanyTimezones);
   const [updatingTimezone, setUpdatingTimezone] = useState(false);
   const company = useAppSelector(selectCompany);
   const isLoading = useAppSelector(selectCompanyLoading);
   const user = useAppSelector(selectUser);
-
-  // Fetch timezones on component mount
-  useEffect(() => {
-    const fetchTimezones = async () => {
-      setTimezoneLoading(true);
-      try {
-        const response = await fetch('/api/timezones');
-        const data = await response.json();
-
-        if (data.success) {
-          setTimezones(data.timezones);
-        } else {
-          setTimezoneError(data.error || 'Failed to load timezones');
-        }
-      } catch (error) {
-        setTimezoneError('Failed to load timezones');
-        console.error('Error fetching timezones:', error);
-      } finally {
-        setTimezoneLoading(false);
-      }
-    };
-
-    fetchTimezones();
-  }, []);
 
   useEffect(() => {
     if (!user?.companyId) return;
@@ -200,28 +176,22 @@ export default function CompanySettingsPage() {
               </div>
 
               <div className="mt-3">
-                {timezoneLoading ? (
-                  <div className="text-sm text-gray-500">Loading timezones...</div>
-                ) : timezoneError ? (
-                  <div className="text-sm text-red-500">{timezoneError}</div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="p-3 bg-gray-50 rounded-lg">{getCurrentTimezoneDisplay()}</div>
+                <div className="space-y-3">
+                  <div className="p-3 bg-gray-50 rounded-lg">{getCurrentTimezoneDisplay()}</div>
 
-                    <TimezonePicker
-                      value={company?.timezoneId || ''}
-                      onChange={handleTimezoneUpdate}
-                      timezones={timezones}
-                      disabled={updatingTimezone}
-                      label="Change Timezone"
-                      placeholder="Select a new timezone"
-                    />
+                  <TimezonePicker
+                    value={company?.timezoneId || ''}
+                    onChange={handleTimezoneUpdate}
+                    timezones={timezones}
+                    disabled={updatingTimezone}
+                    label="Change Timezone"
+                    placeholder="Select a new timezone"
+                  />
 
-                    {updatingTimezone && (
-                      <div className="text-sm text-gray-500">Updating timezone...</div>
-                    )}
-                  </div>
-                )}
+                  {updatingTimezone && (
+                    <div className="text-sm text-gray-500">Updating timezone...</div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

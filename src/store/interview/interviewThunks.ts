@@ -3,6 +3,20 @@ import { apiUtils } from '../api';
 import { JobData } from '@/lib/services/jobsService';
 import { APIResponse, CandidateBasic } from '@/types';
 import { createCandidateAccountPayload } from '@/types/interview';
+import { CheckConflictsPayload, InterviewConflict } from '@/types/interviews';
+
+export const checkInterviewConflicts = createAsyncThunk<
+  InterviewConflict[],
+  CheckConflictsPayload,
+  { rejectValue: string }
+>('interview/checkConflicts', async ({ candidateId, jobId, date, time, excludeInterviewId }) => {
+  const { data } = await apiUtils.post<APIResponse<InterviewConflict[]>>(
+    `/api/interviews/check-conflicts`,
+    { candidateId, jobId, date, time, excludeInterviewId },
+  );
+
+  return data;
+});
 
 export const fetchInterview = createAsyncThunk(
   'interview/fetchInterview',

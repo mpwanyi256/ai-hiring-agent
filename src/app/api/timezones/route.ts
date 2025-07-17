@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      timezones: transformedTimezones,
+      data: transformedTimezones,
     });
   } catch (error) {
     console.error('Error in timezones GET:', error);

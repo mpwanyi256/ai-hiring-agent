@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { CompanyState } from '@/types/company';
-import { fetchCompanyData, fetchCompanyJobsBySlug } from './companyThunks';
+import { fetchCompanyData, fetchCompanyJobsBySlug, fetchTimezones } from './companyThunks';
+import { apiError } from '@/lib/notification';
 
 const initialState: CompanyState = {
   company: null,
@@ -9,6 +10,7 @@ const initialState: CompanyState = {
   error: null,
   isUpdating: false,
   isUploadingLogo: false,
+  timezones: [],
 };
 
 const companySlice = createSlice({
@@ -16,6 +18,13 @@ const companySlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
+    builder.addCase(fetchTimezones.fulfilled, (state, action) => {
+      state.timezones = action.payload;
+      state.loading = false;
+    });
+    builder.addCase(fetchTimezones.rejected, () => {
+      apiError('Failed to fetch timezones');
+    });
     builder.addCase(fetchCompanyData.pending, (state) => {
       state.loading = true;
     });

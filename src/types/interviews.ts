@@ -196,3 +196,20 @@ export interface DateAvailability {
   available: boolean;
   slots: TimeSlot[];
 }
+
+export interface InterviewConflict {
+  id: string;
+  candidate_name: string;
+  job_title: string;
+  date: string;
+  time: string;
+}
+
+export interface CheckConflictsPayload {
+  candidateId: string;
+  jobId: string;
+  date: string;
+  time: string;
+  timezone: string;
+  excludeInterviewId: string;
+}

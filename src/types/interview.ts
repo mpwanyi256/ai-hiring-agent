@@ -1,6 +1,7 @@
 import { JobData } from '@/lib/services/jobsService';
 import { CandidateBasic } from './candidates';
 import { Company as ClientCompany } from './company';
+import { InterviewConflict } from './interviews';
 
 export interface JobQuestion {
   id: string;
@@ -158,6 +159,7 @@ export interface InterviewState {
   isLoading: boolean;
   error: string | null;
   company: Omit<ClientCompany, 'id'> | null;
+  conflicts: InterviewConflict[];
 }
 
 export interface createCandidateAccountPayload {

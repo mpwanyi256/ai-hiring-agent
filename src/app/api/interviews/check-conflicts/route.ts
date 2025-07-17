@@ -4,15 +4,6 @@ import { createClient } from '@/lib/supabase/server';
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
-  // Check authentication
-  // const {
-  //   data: { user },
-  //   error: userError,
-  // } = await supabase.auth.getUser();
-  // if (userError || !user) {
-  //   return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
-  // }
-
   try {
     const { candidateId, jobId, date, time, excludeInterviewId } = await request.json();
 
@@ -75,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      conflicts: formattedConflicts,
+      data: formattedConflicts,
     });
   } catch (error) {
     console.error('Error checking conflicts:', error);

@@ -29,3 +29,8 @@ export const selectInterviewCompany = createSelector(
   [selectInterview],
   (interview) => interview.company,
 );
+
+export const selectInterviewConflicts = createSelector(
+  [selectInterview],
+  (interview) => interview.conflicts,
+);

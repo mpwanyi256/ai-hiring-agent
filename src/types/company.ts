@@ -49,4 +49,5 @@ export interface CompanyState {
   isUpdating: boolean;
   isUploadingLogo: boolean;
   jobs: JobData[];
+  timezones: Timezone[];
 }
