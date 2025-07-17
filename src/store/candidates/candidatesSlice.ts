@@ -10,6 +10,7 @@ import {
   deleteCandidate,
   fetchCandidateResponses,
   fetchShortlistedCandidates,
+  updateCandidateStatus,
 } from './candidatesThunks';
 
 const initialState: CandidatesState = {
@@ -108,6 +109,21 @@ const candidatesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(updateCandidateStatus.fulfilled, (state, { payload }) => {
+        const updatedCandidateId = payload.id;
+        const foundCandidateIdx = state.candidates.findIndex((c) => c.id === updatedCandidateId);
+        if (foundCandidateIdx >= 0) {
+          state.candidates[foundCandidateIdx].candidateStatus = payload.status;
+        }
+
+        // update shortlisted candidates
+        const shortlistedCandidateIdx = state.shortlistedCandidates.candidates.findIndex(
+          (c) => c.id === updatedCandidateId,
+        );
+        if (shortlistedCandidateIdx >= 0) {
+          state.shortlistedCandidates.candidates[shortlistedCandidateIdx].status = payload.status;
+        }
+      })
       .addCase(fetchShortlistedCandidates.pending, (state) => {
         state.isLoading = true;
         state.error = null;

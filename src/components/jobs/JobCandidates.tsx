@@ -6,7 +6,7 @@ import CandidatesOverview from './CandidatesOverview';
 import CandidatesList from './CandidatesList';
 import CandidateAnalytics from '@/components/evaluations/CandidateAnalytics';
 import CandidateResponses from '@/components/candidates/CandidateResponses';
-import { AppDispatch, RootState, useAppSelector } from '@/store';
+import { AppDispatch, useAppSelector } from '@/store';
 import { fetchJobCandidates } from '@/store/candidates/candidatesThunks';
 import {
   UserCircleIcon,
@@ -26,6 +26,10 @@ import {
   selectSelectedCandidateId,
 } from '@/store/selectedCandidate/selectedCandidateSelectors';
 import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
+import {
+  selectCandidatesList,
+  selectJobCandidatesStats,
+} from '@/store/candidates/candidatesSelectors';
 
 const candidateTabs = [
   { id: 'overview', label: 'Overview' },
@@ -50,9 +54,7 @@ const getResumeScoreTextColor = (score: number) => {
 export default function JobCandidates() {
   const job = useAppSelector(selectCurrentJob);
   const dispatch = useDispatch<AppDispatch>();
-  const { candidates, jobCandidatesStats, error } = useSelector(
-    (state: RootState) => state.candidates,
-  );
+  const jobCandidatesStats = useAppSelector(selectJobCandidatesStats);
 
   const selectedCandidateId = useSelector(selectSelectedCandidateId);
   const selectedCandidate = useSelector(selectSelectedCandidate);
@@ -119,17 +121,6 @@ export default function JobCandidates() {
     }
   };
 
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <CandidatesOverview {...overviewData} />
-        <div className="flex items-center justify-center py-12">
-          <div className="text-red-500">Error: {error}</div>
-        </div>
-      </div>
-    );
-  }
-
   if (!job) {
     return <div>No job found</div>;
   }
@@ -144,7 +135,6 @@ export default function JobCandidates() {
         {/* Candidates List - Fixed height with internal scroll */}
         <div className="lg:col-span-4 h-full max-h-[800px] overflow-y-auto">
           <CandidatesList
-            candidates={candidates}
             selectedCandidateId={selectedCandidateId}
             onCandidateSelect={() => {
               setActiveTab('overview');
@@ -235,7 +225,7 @@ export default function JobCandidates() {
                         Resume
                       </h3>
                       {selectedCandidate?.resume ? (
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <>
                           <div className="flex items-center justify-between flex-wrap gap-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
@@ -273,9 +263,9 @@ export default function JobCandidates() {
                           </div>
                           {/* Resume evaluation summary - visually prominent */}
                           {selectedCandidate?.evaluation && (
-                            <div className="mt-6 flex items-center gap-4">
+                            <div className="flex items-center gap-4">
                               <div
-                                className={`flex items-center justify-center w-20 h-20 rounded-full ${getResumeScoreStyle(selectedCandidate?.evaluation?.resumeScore)}`}
+                                className={`flex items-center justify-center w-10 h-10 rounded-full ${getResumeScoreStyle(selectedCandidate?.evaluation?.resumeScore)}`}
                               >
                                 <span
                                   className={`text-lg font-bold ${getResumeScoreTextColor(selectedCandidate?.evaluation?.resumeScore)}`}
@@ -291,15 +281,16 @@ export default function JobCandidates() {
                               </div>
                             </div>
                           )}
-                          {/* AI Evaluation Card below resume */}
-                          {selectedCandidate ? <AIEvaluationCard /> : null}
-                        </div>
+                        </>
                       ) : (
                         <div className="text-sm text-gray-500 italic bg-gray-50 border border-gray-200 rounded-lg p-4">
                           No resume uploaded for this candidate.
                         </div>
                       )}
                     </div>
+
+                    {/* AI Evaluation Card below resume */}
+                    {selectedCandidate ? <AIEvaluationCard /> : null}
                   </div>
                 )}
                 {activeTab === 'responses' && <CandidateResponses />}

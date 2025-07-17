@@ -24,11 +24,13 @@ import {
   getScoreColor,
 } from '@/lib/utils';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { selectCandidatesLoading } from '@/store/candidates/candidatesSelectors';
+import {
+  selectCandidatesList,
+  selectCandidatesLoading,
+} from '@/store/candidates/candidatesSelectors';
 import { setSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSlice';
 
 interface CandidatesListProps {
-  candidates: Candidate[];
   selectedCandidateId?: string;
   onCandidateSelect: () => void;
   searchQuery: string;
@@ -47,12 +49,12 @@ interface CandidatesListProps {
 const statusOptions = getCandidateStatusOptions();
 
 export default function CandidatesList({
-  candidates,
   selectedCandidateId,
   searchQuery,
   onSearchChange,
   onFiltersChange,
 }: CandidatesListProps) {
+  const candidates = useAppSelector(selectCandidatesList);
   const dispatch = useAppDispatch();
   const isLoading = useAppSelector(selectCandidatesLoading);
   const [filters, setFilters] = useState({

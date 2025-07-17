@@ -30,8 +30,8 @@ interface JobShortlistedProps {
 }
 const candidateStatuses: { value: CandidateStatus; label: string }[] = [
   { value: 'under_review', label: 'Under Review' },
-  { value: 'interview_scheduled', label: 'Interview Scheduled' },
   { value: 'shortlisted', label: 'Shortlisted' },
+  { value: 'interview_scheduled', label: 'Interview Scheduled' },
   { value: 'reference_check', label: 'Reference Check' },
   { value: 'offer_extended', label: 'Offer Extended' },
   { value: 'offer_accepted', label: 'Offer Accepted' },

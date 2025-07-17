@@ -9,6 +9,7 @@ export const selectCurrentCandidate = (state: RootState) => state.candidates.cur
 export const selectCandidatesLoading = (state: RootState) => state.candidates.isLoading;
 export const selectCandidatesError = (state: RootState) => state.candidates.error;
 export const selectTotalCandidates = (state: RootState) => state.candidates.totalCandidates;
+export const selectJobCandidatesStats = (state: RootState) => state.candidates.jobCandidatesStats;
 
 // Memoized selectors
 export const selectSubmittedCandidates = createSelector([selectCandidatesList], (candidates) =>

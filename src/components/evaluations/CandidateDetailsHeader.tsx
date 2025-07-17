@@ -8,8 +8,9 @@ import {
   SelectItem,
   SelectValue,
 } from '@/components/ui/select';
-import { useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
 import { selectSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSelectors';
+import { updateCandidateStatus } from '@/store/candidates/candidatesThunks';
 
 const statusOptions: { value: CandidateStatus; label: string; color: string }[] = [
   { value: 'under_review', label: 'Under Review', color: 'bg-gray-100 text-gray-800' },
@@ -18,6 +19,7 @@ const statusOptions: { value: CandidateStatus; label: string; color: string }[] 
 ];
 
 export const CandidateDetailsHeader = () => {
+  const dispatch = useAppDispatch();
   const candidate = useAppSelector(selectSelectedCandidate);
   const [isUpdating, setIsUpdating] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<CandidateStatus>(
@@ -28,21 +30,14 @@ export const CandidateDetailsHeader = () => {
     if (newStatus === currentStatus || !candidate) return;
     setIsUpdating(true);
     try {
-      const response = await fetch(`/api/candidates/${candidate.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      const data = await response.json();
-      if (data.success) {
+      const ok = await dispatch(
+        updateCandidateStatus({ candidateId: candidate.id, status: newStatus }),
+      ).unwrap();
+      if (ok) {
         setCurrentStatus(newStatus);
-        apiSuccess(
-          `Candidate status updated to ${statusOptions.find((opt) => opt.value === newStatus)?.label}`,
-        );
+        apiSuccess('Status updated successfully');
       } else {
-        apiError(data.error || 'Failed to update candidate status');
+        apiError('Failed to update candidate status');
       }
     } catch (error) {
       apiError('Failed to update candidate status');

@@ -17,10 +17,11 @@ import {
   ShortlistResponse,
   GetShortlistedCandidatesPayload,
   ShortlistedCandidatesResponse,
-  CandidateWithEvaluation,
+  UpdateCandidateResponse,
 } from '@/types/candidates';
 import { APIResponse } from '@/types';
 import { RootState } from '..';
+import { fetchJobById } from '../jobs/jobsThunks';
 
 export const fetchShortlistedCandidates = createAsyncThunk<
   ShortlistedCandidatesResponse,
@@ -368,11 +369,20 @@ export const removeFromShortlist = createAsyncThunk(
 
 export const updateCandidateStatus = createAsyncThunk(
   'candidates/updateCandidateStatus',
-  async ({ candidateId, status }: { candidateId: string; status: string }) => {
-    const response = await apiUtils.patch<APIResponse<CandidateWithEvaluation>>(
+  async (
+    { candidateId, status }: { candidateId: string; status: string },
+    { dispatch, getState },
+  ) => {
+    const response = await apiUtils.patch<APIResponse<UpdateCandidateResponse>>(
       `/api/candidates/${candidateId}/status`,
       { status },
     );
+
+    const state = getState() as RootState;
+    const jobId = state.jobs.currentJob?.id;
+    if (jobId) {
+      dispatch(fetchJobById(jobId));
+    }
     return response.data;
   },
 );

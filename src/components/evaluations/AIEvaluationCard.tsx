@@ -48,9 +48,9 @@ const getScoreColor = (score: number) => {
 };
 
 const getScoreIcon = (score: number) => {
-  if (score >= 80) return <TrophyIcon className="w-5 h-5 text-green-600" />;
-  if (score >= 60) return <StarIcon className="w-5 h-5 text-yellow-600" />;
-  return <ExclamationTriangleIcon className="w-5 h-5 text-red-600" />;
+  if (score >= 80) return <TrophyIcon className="w-4 h-4 text-green-600 mr-2" />;
+  if (score >= 60) return <StarIcon className="w-4 h-4 text-yellow-600 mr-2" />;
+  return <ExclamationTriangleIcon className="w-4 h-4 text-red-600 mr-2" />;
 };
 
 export const AIEvaluationCard: React.FC<AIEvaluationCardProps> = ({ className = '' }) => {
@@ -62,11 +62,11 @@ export const AIEvaluationCard: React.FC<AIEvaluationCardProps> = ({ className = 
     <div className={`bg-white border border-gray-200 rounded-lg p-4 mt-4 ${className}`}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
-          {getScoreIcon(selectedCandidate.evaluation.score)}
           <span
-            className={`text-xl font-bold ${getScoreColor(selectedCandidate.evaluation.score)}`}
+            className={`flex text-sm font-semibold text-gray-900 flex items-center ${getScoreColor(selectedCandidate.evaluation.score)}`}
           >
-            Interview score: {selectedCandidate.evaluation.score}%
+            {getScoreIcon(selectedCandidate.evaluation.score)}
+            Interview summary {selectedCandidate.evaluation.score}%
           </span>
         </div>
         <div

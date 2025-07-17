@@ -585,3 +585,17 @@ export interface ShortlistedCandidatesResponse {
     hasMore: boolean;
   };
 }
+
+export interface UpdateCandidateResponse {
+  candidate_info_id: string;
+  created_at: string;
+  current_step: number;
+  id: string;
+  interview_token: string;
+  is_completed: boolean;
+  job_id: string;
+  profile_id: string | null;
+  status: CandidateStatus;
+  submitted_at: string;
+  total_steps: number;
+}

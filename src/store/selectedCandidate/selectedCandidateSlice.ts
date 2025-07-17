@@ -1,6 +1,7 @@
 import { SelectedCandidateState } from '@/types/selectedCandidate';
 import { createSlice } from '@reduxjs/toolkit';
 import { fetchSelectedCandidateAnalytics } from './selectedCandidateThunks';
+import { updateCandidateStatus } from '../candidates/candidatesThunks';
 
 const initialState: SelectedCandidateState = {
   candidate: null,
@@ -16,6 +17,11 @@ const selectedCandidateSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
+    builder.addCase(updateCandidateStatus.fulfilled, (state, action) => {
+      if (state.candidate && state.candidate.id === action.payload.id) {
+        state.candidate = { ...state.candidate, candidateStatus: action.payload.status };
+      }
+    });
     builder.addCase(fetchSelectedCandidateAnalytics.fulfilled, (state, action) => {
       state.candidateAnalytics = action.payload;
     });
