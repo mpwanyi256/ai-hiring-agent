@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { integrations } from '@/lib/constants';
 
 const GOOGLE_CLIENT_ID = integrations.google.clientId!;
@@ -6,7 +6,7 @@ const GOOGLE_REDIRECT_URI = integrations.google.redirectUri!;
 const SCOPE =
   'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   // Optionally generate a state param for CSRF protection
   const state = Math.random().toString(36).substring(2);
   const params = new URLSearchParams({

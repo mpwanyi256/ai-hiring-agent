@@ -42,7 +42,7 @@ export const fetchUpcomingInterviews = createAsyncThunk<
         dispatch(setError(data.error || 'Failed to load interviews'));
         return rejectWithValue(data.error || 'Failed to load interviews');
       }
-    } catch (err) {
+    } catch {
       dispatch(setError('Failed to load interviews'));
       return rejectWithValue('Failed to load interviews');
     } finally {
@@ -73,7 +73,7 @@ export const fetchCandidatePipeline = createAsyncThunk<
       dispatch(setPipelineError(data.error || 'Failed to load pipeline data'));
       return rejectWithValue(data.error || 'Failed to load pipeline data');
     }
-  } catch (err) {
+  } catch {
     dispatch(setPipelineError('Failed to load pipeline data'));
     return rejectWithValue('Failed to load pipeline data');
   } finally {
@@ -107,7 +107,7 @@ export const fetchRecentActivity = createAsyncThunk<
         dispatch(setRecentActivityError(data.error || 'Failed to load activity'));
         return rejectWithValue(data.error || 'Failed to load activity');
       }
-    } catch (err) {
+    } catch {
       dispatch(setRecentActivityError('Failed to load activity'));
       return rejectWithValue('Failed to load activity');
     } finally {

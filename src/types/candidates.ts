@@ -195,8 +195,8 @@ export interface CandidateEvaluationDetailed {
   score: number;
   strengths: string[];
   redFlags: string[];
-  skillsAssessment: Record<string, any>;
-  traitsAssessment: Record<string, any>;
+  skillsAssessment: Record<string, AIAssesment>;
+  traitsAssessment: Record<string, AIAssesment>;
   recommendation: RecommendationType;
   feedback: string | null;
   createdAt: string;

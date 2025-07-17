@@ -23,7 +23,7 @@ export async function PATCH(request: NextRequest, { params }: AppRequestParams<{
       );
     }
     return NextResponse.json({ success: true, data: candidate });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

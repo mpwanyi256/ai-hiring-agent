@@ -25,7 +25,7 @@ export interface RecentActivityItem {
   entity_id: string | null;
   entity_type: string | null;
   message: string;
-  meta: any;
+  meta: Record<string, string | number | boolean>;
   created_at: string;
 }
 
