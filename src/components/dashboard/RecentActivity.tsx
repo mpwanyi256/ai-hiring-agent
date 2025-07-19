@@ -1,116 +1,123 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState, useAppDispatch, useAppSelector } from '@/store';
-import { fetchRecentActivity } from '@/store/dashboard/dashboardThunks';
+import { useEffect } from 'react';
+import { useAppSelector } from '@/store';
 import {
   selectRecentActivity,
   selectRecentActivityLoading,
   selectRecentActivityError,
 } from '@/store/dashboard/dashboardSelectors';
+import { selectUser } from '@/store/auth/authSelectors';
 import {
   UserGroupIcon,
-  BriefcaseIcon,
-  ChatBubbleLeftRightIcon,
-  CheckCircleIcon,
   ClockIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import { selectUser } from '@/store/auth/authSelectors';
 
-const activityIcons = {
-  candidate_applied: UserGroupIcon,
-  interview_scheduled: ChatBubbleLeftRightIcon,
-  job_created: BriefcaseIcon,
-  evaluation_completed: CheckCircleIcon,
-};
-
-const activityColors = {
-  candidate_applied: 'text-purple-500 bg-purple-50',
-  interview_scheduled: 'text-blue-500 bg-blue-50',
-  job_created: 'text-green-600 bg-green-50',
-  evaluation_completed: 'text-emerald-600 bg-emerald-50',
-};
-
-function timeAgo(dateString: string) {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
-  return `${Math.floor(diff / 86400)} day${Math.floor(diff / 86400) > 1 ? 's' : ''} ago`;
+interface RecentActivityProps {
+  maxItems?: number;
+  className?: string;
 }
 
-export default function RecentActivity({ maxItems = 5 }: { maxItems?: number }) {
-  const dispatch = useAppDispatch();
+export default function RecentActivity({ maxItems = 5, className = '' }: RecentActivityProps) {
   const user = useAppSelector(selectUser);
   const activities = useAppSelector(selectRecentActivity);
   const loading = useAppSelector(selectRecentActivityLoading);
   const error = useAppSelector(selectRecentActivityError);
 
-  useEffect(() => {
-    if (user?.companyId) {
-      dispatch(fetchRecentActivity({ limit: maxItems }));
-    }
-  }, [user?.companyId, maxItems, dispatch]);
+  // Remove the useEffect since this component should display static data
+  // The data should be loaded by the parent dashboard component
 
   if (loading) {
-    return <div className="text-gray-500 py-6 text-center">Loading...</div>;
-  }
-  if (error) {
-    return <div className="text-red-500 py-6 text-center">{error}</div>;
-  }
-  if (!activities.length) {
     return (
-      <div className="flex flex-col items-center py-8">
-        <ClockIcon className="w-10 h-10 text-gray-300 mb-2" />
-        <div className="text-gray-500 text-sm font-medium mb-1">No recent activity</div>
-        <div className="text-xs text-gray-400">Recent events will appear here.</div>
+      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="space-y-3">
+            <div className="h-8 bg-gray-200 rounded"></div>
+            <div className="h-8 bg-gray-200 rounded"></div>
+            <div className="h-8 bg-gray-200 rounded"></div>
+          </div>
+        </div>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+        <div className="text-center text-gray-500">
+          <ExclamationTriangleIcon className="w-8 h-8 mx-auto mb-2 text-red-400" />
+          <p>Failed to load recent activity</p>
+        </div>
+      </div>
+    );
+  }
+
+  const recentActivities = activities.slice(0, maxItems);
+
+  if (recentActivities.length === 0) {
+    return (
+      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+        <div className="text-center text-gray-500 py-8">
+          <ClockIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+          <p>No recent activity</p>
+        </div>
+      </div>
+    );
+  }
+
+  const getActivityIcon = (eventType: string) => {
+    switch (eventType) {
+      case 'candidate_applied':
+        return UserGroupIcon;
+      case 'interview_scheduled':
+        return ClockIcon;
+      case 'interview_completed':
+        return CheckCircleIcon;
+      default:
+        return ClockIcon;
+    }
+  };
+
+  const getActivityColor = (eventType: string) => {
+    switch (eventType) {
+      case 'candidate_applied':
+        return 'text-blue-600 bg-blue-50';
+      case 'interview_scheduled':
+        return 'text-yellow-600 bg-yellow-50';
+      case 'interview_completed':
+        return 'text-green-600 bg-green-50';
+      default:
+        return 'text-gray-600 bg-gray-50';
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      {activities.slice(0, maxItems).map((activity) => {
-        const IconComponent =
-          activityIcons[activity.event_type as keyof typeof activityIcons] || ClockIcon;
-        const color =
-          activityColors[activity.event_type as keyof typeof activityColors] ||
-          'text-gray-400 bg-gray-50';
-        return (
-          <div key={activity.id} className="flex items-start space-x-3 group">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center ${color} flex-shrink-0`}
-            >
-              <IconComponent className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 group-hover:text-primary transition-colors">
-                    {activity.message}
-                  </p>
-                  {activity.meta && activity.meta.job_title && (
-                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                      {activity.meta.job_title}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
-                  <div className="flex items-center text-xs text-gray-400">
-                    <span
-                      className={`inline-block w-2 h-2 rounded-full ${activity.event_type === 'candidate_applied' ? 'bg-blue-400' : 'bg-green-400'} mr-1`}
-                    />
-                    {timeAgo(activity.created_at)}
-                  </div>
-                </div>
+    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+      <div className="space-y-4">
+        {recentActivities.map((activity) => {
+          const Icon = getActivityIcon(activity.event_type);
+          const colorClasses = getActivityColor(activity.event_type);
+
+          return (
+            <div key={activity.id} className="flex items-start space-x-3">
+              <div className={`p-2 rounded-lg ${colorClasses}`}>
+                <Icon className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-gray-900">{activity.message}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {new Date(activity.created_at).toLocaleDateString()}
+                </p>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

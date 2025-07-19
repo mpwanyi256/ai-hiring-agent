@@ -48,6 +48,11 @@ export const integrations = {
     apiKey: process.env.NEXT_PUBLIC_RESEND_API_KEY,
     audienceId: process.env.NEXT_PUBLIC_RESEND_AUDIENCE_ID,
   },
+  stripe: {
+    secretKey: process.env.NEXT_PUBLIC_STRIPE_SECRET,
+    publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE,
+    webhookSecret: process.env.NEXT_PUBLIC_STRIPE_WEBHOOK_SECRET,
+  },
 };
 
 export const mail = {

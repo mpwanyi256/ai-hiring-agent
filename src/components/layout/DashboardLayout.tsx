@@ -6,12 +6,14 @@ import { RootState } from '@/store';
 import TopNavigation from '@/components/navigation/TopNavigation';
 import Sidebar from './Sidebar';
 import { LoadingOverlay } from '../generics/LoadingOverlay';
+import SubscriptionRequired from '@/components/billing/SubscriptionRequired';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   title?: string;
   loading?: boolean;
   loadingMessage?: string;
+  requireSubscription?: boolean;
 }
 
 export default function DashboardLayout({
@@ -19,11 +21,14 @@ export default function DashboardLayout({
   title,
   loading,
   loadingMessage,
+  requireSubscription = true,
 }: DashboardLayoutProps) {
+  // Always call hooks at the top level
   const { user, isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Render loading state
   if (isLoading || (!isAuthenticated && !user)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -35,12 +40,13 @@ export default function DashboardLayout({
     );
   }
 
-  // Don't render dashboard content if user is not authenticated
+  // Render nothing if not authenticated
   if (!isAuthenticated || !user) {
     return null;
   }
 
-  return (
+  // Create dashboard content
+  const dashboardContent = (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Centralized Top Navigation */}
       <TopNavigation
@@ -105,5 +111,12 @@ export default function DashboardLayout({
         </div>
       </div>
     </div>
+  );
+
+  // Return with or without subscription requirement
+  return requireSubscription ? (
+    <SubscriptionRequired>{dashboardContent}</SubscriptionRequired>
+  ) : (
+    dashboardContent
   );
 }

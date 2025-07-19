@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendInterviewReminderNotification } from '@/lib/services/emailService';
 import { InterviewEmailData } from '@/types/integrations';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   const supabase = await createClient();
   const now = new Date();
   const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);

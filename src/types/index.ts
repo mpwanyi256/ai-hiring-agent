@@ -7,6 +7,9 @@ export * from './jobs';
 // Export all candidate types
 export * from './candidates';
 
+// Export all billing types
+export * from './billing';
+
 // Interview types
 export type {
   Interview,

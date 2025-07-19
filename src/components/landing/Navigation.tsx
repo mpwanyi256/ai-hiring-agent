@@ -1,19 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
-import { useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { fetchSubscriptionPlans } from '@/store/billing/billingThunks';
+import { selectSubscriptionPlans } from '@/store/billing/billingSelectors';
 import Image from 'next/image';
 import { app } from '@/lib/constants';
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const dispatch = useAppDispatch();
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const plans = useAppSelector(selectSubscriptionPlans);
+
+  // Fetch subscription plans early so they're available when needed
+  useEffect(() => {
+    if (plans.length === 0) {
+      dispatch(fetchSubscriptionPlans());
+    }
+  }, [dispatch, plans.length]);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
