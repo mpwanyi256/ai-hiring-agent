@@ -30,6 +30,7 @@ import {
   selectCandidatesList,
   selectJobCandidatesStats,
 } from '@/store/candidates/candidatesSelectors';
+import { CandidateSkillsAnalysis } from './CandidateSkillsAnalysis';
 
 const candidateTabs = [
   { id: 'overview', label: 'Overview' },
@@ -263,22 +264,25 @@ export default function JobCandidates() {
                           </div>
                           {/* Resume evaluation summary - visually prominent */}
                           {selectedCandidate?.evaluation && (
-                            <div className="flex items-center gap-4">
-                              <div
-                                className={`flex items-center justify-center w-10 h-10 rounded-full ${getResumeScoreStyle(selectedCandidate?.evaluation?.resumeScore)}`}
-                              >
-                                <span
-                                  className={`text-lg font-bold ${getResumeScoreTextColor(selectedCandidate?.evaluation?.resumeScore)}`}
+                            <div className="flex flex-col gap-4">
+                              <div className="flex items-center gap-4">
+                                <div
+                                  className={`flex items-center justify-center w-10 h-10 rounded-full ${getResumeScoreStyle(selectedCandidate?.evaluation?.resumeScore)}`}
                                 >
-                                  {selectedCandidate?.evaluation?.resumeScore}
-                                  <span className="text-base font-semibold">%</span>
-                                </span>
+                                  <span
+                                    className={`text-lg font-bold ${getResumeScoreTextColor(selectedCandidate?.evaluation?.resumeScore)}`}
+                                  >
+                                    {selectedCandidate?.evaluation?.resumeScore}
+                                    <span className="text-base font-semibold">%</span>
+                                  </span>
+                                </div>
+                                <div className="flex-1">
+                                  <span className="block text-md font-semibold text-primary mb-1">
+                                    Resume Match Score
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex-1">
-                                <span className="block text-md font-semibold text-primary mb-1">
-                                  Resume Match Score
-                                </span>
-                              </div>
+                              <CandidateSkillsAnalysis />
                             </div>
                           )}
                         </>

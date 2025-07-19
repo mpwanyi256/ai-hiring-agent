@@ -26,16 +26,16 @@ export default function HeroSection() {
           <div className="space-y-6 fade-in">
             <div className="space-y-4">
               <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
-                AI-Powered{' '}
+                All-In-One <br />
                 <span className="bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
-                  Resume & Q&A Evaluation
+                  Hiring Platform
                 </span>
               </h1>
 
               <p className="text-lg lg:text-xl text-gray-600 leading-relaxed max-w-xl">
-                Transform your hiring process with intelligent resume analysis and comprehensive Q&A
-                evaluation. Get instant insights, automated ranking, and data-driven candidate
-                assessments to make better hiring decisions.
+                Our platform combines advanced artificial intelligence technologies with intuitive
+                features to streamline your talent selection process, saving you time, effort, and
+                resources.
               </p>
             </div>
 

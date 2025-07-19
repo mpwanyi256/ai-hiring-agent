@@ -1,22 +1,22 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import ReduxProvider from "@/components/providers/ReduxProvider";
-import AuthProvider from "@/components/providers/AuthProvider";
-import { ToastProvider } from "@/components/providers/ToastProvider";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import ReduxProvider from '@/components/providers/ReduxProvider';
+import AuthProvider from '@/components/providers/AuthProvider';
+import { ToastProvider } from '@/components/providers/ToastProvider';
 import { Toaster } from 'sonner';
 
 const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
+  subsets: ['latin'],
+  variable: '--font-inter',
 });
 
 export const metadata: Metadata = {
-  title: "AI Hiring Agent - Hire 5x Faster with AI",
-  description: "Skip job boards and long application queues. Our AI interviews, evaluates, and shortlists top candidates — automatically.",
-  keywords: "AI hiring, automated interviews, candidate screening, recruitment, HR technology",
-  authors: [{ name: "AI Hiring Agent" }],
-  // viewport: "width=device-width, initial-scale=1",
+  title: 'Intavia - Hire 5x Faster with AI',
+  description:
+    'Skip job boards and long application queues. Our AI interviews, evaluates, and shortlists top candidates — automatically.',
+  keywords: 'AI hiring, automated interviews, candidate screening, recruitment, HR technology',
+  authors: [{ name: 'Intavia' }],
 };
 
 export default function RootLayout({
@@ -33,9 +33,7 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <ReduxProvider>
           <AuthProvider>
-            <ToastProvider>
-              {children}
-            </ToastProvider>
+            <ToastProvider>{children}</ToastProvider>
           </AuthProvider>
         </ReduxProvider>
         <Toaster position="top-right" />

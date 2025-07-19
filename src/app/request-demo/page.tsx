@@ -92,8 +92,8 @@ export default function RequestDemoPage() {
           <div className="text-center mb-12">
             <h1 className="text-3xl lg:text-4xl font-bold text-text mb-4">Request a Demo</h1>
             <p className="text-lg text-muted-text">
-              See how AI Hiring Agent can transform your recruitment process. Get a personalized
-              demo tailored to your needs.
+              See how Intavia can transform your recruitment process. Get a personalized demo
+              tailored to your needs.
             </p>
           </div>
 
