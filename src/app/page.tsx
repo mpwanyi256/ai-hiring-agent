@@ -2,7 +2,7 @@
 
 import Navigation from '@/components/landing/Navigation';
 import HeroSection from '@/components/landing/HeroSection';
-import FeaturesSection from '@/components/landing/FeaturesSection';
+import HowItWorksSection from '@/components/landing/FeaturesSection';
 import WhyChooseSection from '@/components/landing/WhyChooseSection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import CTASection from '@/components/landing/CTASection';
@@ -15,7 +15,7 @@ export default function LandingPage() {
       <div className="fixed inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-br from-white via-gray-50 to-surface"></div>
         {/* Grid Pattern */}
-        <div 
+        <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3e%3cg fill='none' fill-rule='evenodd'%3e%3cg fill='%23000000' fill-opacity='1'%3e%3cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3e%3c/g%3e%3c/g%3e%3c/svg%3e")`,
@@ -38,7 +38,7 @@ export default function LandingPage() {
 
       {/* Features Section */}
       <section id="features" className="slide-up">
-        <FeaturesSection />
+        <HowItWorksSection />
       </section>
 
       {/* Why Choose Section */}

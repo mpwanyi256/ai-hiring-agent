@@ -2,8 +2,16 @@ import Image from 'next/image';
 import { ArrowRightIcon, PlayIcon, StarIcon } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
+import Link from 'next/link';
 
 export default function HeroSection() {
+  const scrollToHowItWorks = () => {
+    const element = document.getElementById('how-it-works');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <section className="relative z-10 pt-24 pb-16">
       <Container>
@@ -14,7 +22,7 @@ export default function HeroSection() {
               <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
                 All-In-One AI{' '}
                 <span className="bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
-                  Interview Platform
+                  Hiring Platform
                 </span>
               </h1>
 
@@ -26,17 +34,20 @@ export default function HeroSection() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 hover-lift"
-              >
-                Request Demo
-                <ArrowRightIcon className="w-4 h-4 ml-2" />
-              </Button>
+              <Link href="/request-demo">
+                <Button
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 hover-lift"
+                >
+                  Request Demo
+                  <ArrowRightIcon className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
               <Button
                 variant="outline"
                 size="lg"
-                className="border-2 border-gray-300 hover:border-primary text-gray-700 hover:text-primary font-semibold px-6 py-3 rounded-full transition-all hover-lift"
+                onClick={scrollToHowItWorks}
+                className="border-2 border-gray-300 hover:border-primary text-gray-700 hover:text-white font-semibold px-6 py-3 rounded-full transition-all hover-lift"
               >
                 <PlayIcon className="w-4 h-4 mr-2" />
                 Learn More

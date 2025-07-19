@@ -10,11 +10,11 @@ export default function WhyChooseSection() {
           <div>
             <h2 className="text-3xl lg:text-4xl font-bold mb-5 text-text">Why Choose Intervio?</h2>
             <p className="text-lg text-muted-text mb-6">
-              Our platform has been helping reduce hiring time by up to 40% while
-              increasing hiring accuracy, improving team productivity by 30%, and providing
-              comprehensive candidate evaluation tools.
+              Our platform has been helping reduce hiring time by up to 40% while increasing hiring
+              accuracy, improving team productivity by 30%, and providing comprehensive candidate
+              evaluation tools.
             </p>
-            
+
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-primary/10 p-4 rounded-xl">
                 <div className="text-2xl font-bold text-primary mb-1">100%</div>
@@ -41,15 +41,14 @@ export default function WhyChooseSection() {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-semibold mb-2">AI-Driven Assessments</h3>
-                  <p className="text-primary-light text-sm">
-                    Leverage cutting-edge AI to evaluate candidates through
-                    dynamic, skills, body language, and education by
-                    analyzing you spoken behavior hiring decisions.
+                  <p className="text-white text-sm">
+                    Leverage cutting-edge AI to evaluate candidates through dynamic interview
+                    questions and behavioral analysis.
                   </p>
                 </div>
                 <SparklesIcon className="w-6 h-6 text-white/80" />
               </div>
-              
+
               <div className="bg-white/20 rounded-lg p-3">
                 <div className="flex items-center space-x-3 mb-2">
                   <Image
@@ -60,18 +59,18 @@ export default function WhyChooseSection() {
                     className="w-7 h-7 rounded-full"
                   />
                   <div>
-                    <div className="text-sm font-medium">Jane Doe</div>
+                    <div className="text-sm font-medium">Rita</div>
                     <div className="text-xs text-white/70">Full Stack Developer</div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
                     <span>Technical Skills</span>
                     <span>89%</span>
                   </div>
                   <div className="w-full bg-white/20 rounded-full h-1.5">
-                    <div className="bg-white h-1.5 rounded-full" style={{width: '89%'}}></div>
+                    <div className="bg-white h-1.5 rounded-full" style={{ width: '89%' }}></div>
                   </div>
                 </div>
               </div>
@@ -81,11 +80,10 @@ export default function WhyChooseSection() {
             <div className="bg-white rounded-2xl p-6 border border-gray-200">
               <h3 className="text-lg font-semibold mb-3 text-text">Behavioral Analysis</h3>
               <p className="text-muted-text mb-4 text-sm">
-                Analyze soft-skills patterns such as voice pitch,
-                tone, body language, and critical-fit
-                analysis for you teams hiring decisions.
+                Analyze soft-skills patterns such as voice pitch, tone, body language, and
+                critical-fit analysis for you teams hiring decisions.
               </p>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center">
                   <div className="text-xl font-bold text-primary mb-1">85%</div>
@@ -110,12 +108,10 @@ export default function WhyChooseSection() {
             <div className="bg-white rounded-2xl p-6 border border-gray-200">
               <h3 className="text-lg font-semibold mb-3 text-text">Real-Time Feedback</h3>
               <p className="text-muted-text mb-4 text-sm">
-                Get instant AI-generated feedback during
-                the interviews, adaptive insights to
-                specific job requirements and real-time
-                interviewing analytical recommendations.
+                Get instant AI-generated feedback during the interviews, adaptive insights to
+                specific job requirements and real-time interviewing analytical recommendations.
               </p>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center space-x-3">
                   <Image
@@ -142,4 +138,4 @@ export default function WhyChooseSection() {
       </Container>
     </section>
   );
-} 
+}

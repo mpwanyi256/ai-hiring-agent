@@ -1,26 +1,40 @@
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import Container from '@/components/ui/Container';
 import { useToast } from '@/components/providers/ToastProvider';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { joinWaitlist } from '@/store/landing/landingThunks';
+import {
+  selectWaitlistLoading,
+  selectWaitlistError,
+  selectWaitlistSuccess,
+} from '@/store/landing/landingSelectors';
 
 export default function CTASection() {
   const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { success } = useToast();
+  const dispatch = useAppDispatch();
+  const { success, error: showError } = useToast();
+
+  const isLoading = useAppSelector(selectWaitlistLoading);
+  const error = useAppSelector(selectWaitlistError);
+  const isSuccess = useAppSelector(selectWaitlistSuccess);
 
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Here you would typically send to your API
-    // For now, just simulate a delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (!email.trim()) {
+      showError('Please enter your email address');
+      return;
+    }
 
-    setEmail('');
-    setIsSubmitting(false);
-
-    // Show success message
-    success('Thanks! We&apos;ll get in touch within 24h.');
+    try {
+      await dispatch(joinWaitlist({ email: email.trim() })).unwrap();
+      setEmail('');
+      success("Thanks! We'll get in touch within 24h.");
+    } catch (err) {
+      showError('Failed to join waitlist. Please try again.');
+    }
   };
 
   return (
@@ -46,9 +60,11 @@ export default function CTASection() {
                 <button className="bg-white text-primary hover:bg-gray-100 font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 hover-lift">
                   Try for Free Now
                 </button>
-                <button className="border-2 border-white text-white hover:bg-white hover:text-primary font-semibold px-6 py-3 rounded-full transition-all hover-lift">
-                  Request Demo
-                </button>
+                <Link href="/request-demo">
+                  <button className="border-2 border-white text-white hover:bg-white hover:text-primary font-semibold px-6 py-3 rounded-full transition-all hover-lift">
+                    Request Demo
+                  </button>
+                </Link>
               </div>
 
               <form onSubmit={handleWaitlistSubmit} className="space-y-3 pt-2">
@@ -60,13 +76,14 @@ export default function CTASection() {
                     placeholder="Enter your email"
                     className="flex-1 px-5 py-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all hover:bg-white/15"
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isLoading}
                     className="bg-white text-primary hover:bg-gray-100 px-6 py-3 font-semibold rounded-full shadow-lg hover:shadow-xl transition-all hover-lift whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? (
+                    {isLoading ? (
                       <span className="flex items-center">
                         <svg
                           className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary"
@@ -87,17 +104,13 @@ export default function CTASection() {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           />
                         </svg>
-                        Joining...
+                        Subscribing...
                       </span>
                     ) : (
-                      'Join Waitlist'
+                      'Subscribe'
                     )}
                   </button>
                 </div>
-                <p className="text-sm text-green-100 flex items-center">
-                  <span className="mr-2">✨</span>
-                  First 10 interviews free • No credit card required
-                </p>
               </form>
             </div>
 
@@ -107,7 +120,7 @@ export default function CTASection() {
               <div className="relative">
                 <div className="w-full h-80 bg-white/10 rounded-2xl flex items-end justify-center overflow-hidden hover:bg-white/15 transition-all duration-300">
                   <Image
-                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=400&fit=crop"
+                    src="https://images.unsplash.com/photo-1560264280-88b68371db39?w=400&h=300&fit=crop"
                     alt="Professional woman with headset - customer service representative"
                     width={280}
                     height={350}
@@ -140,13 +153,11 @@ export default function CTASection() {
 
                 <div className="absolute bottom-6 right-3 bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
                   <div className="text-center">
-                    <div className="text-xs font-medium text-gray-600 mb-2">
-                      AI Video Score Detail
-                    </div>
+                    <div className="text-xs font-medium text-gray-600 mb-2">Resume match</div>
                     <div className="text-2xl font-bold text-green-600 mb-2 hover:scale-110 transition-transform duration-300">
                       85%
                     </div>
-                    <div className="text-xs text-gray-500 mb-2">AI Video Score Summary</div>
+                    <div className="text-xs text-gray-500 mb-2">Interview Score Summary</div>
 
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       {[

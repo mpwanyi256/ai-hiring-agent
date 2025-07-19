@@ -46,6 +46,7 @@ export const integrations = {
   },
   resend: {
     apiKey: process.env.NEXT_PUBLIC_RESEND_API_KEY,
+    audienceId: process.env.NEXT_PUBLIC_RESEND_AUDIENCE_ID,
   },
 };
 

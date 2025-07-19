@@ -12,6 +12,7 @@ import interviewsSlice from './interviews/interviewsSlice';
 import selectedCandidateSlice from './selectedCandidate/selectedCandidateSlice';
 import companySlice from './company/companySlice';
 import dashboardReducer from './dashboard/dashboardSlice';
+import landingSlice from './landing/landingSlice';
 import { combineReducers } from 'redux';
 
 const rootReducer = combineReducers({
@@ -27,6 +28,7 @@ const rootReducer = combineReducers({
   selectedCandidate: selectedCandidateSlice,
   company: companySlice,
   dashboard: dashboardReducer,
+  landing: landingSlice,
 });
 
 export const store = configureStore({
