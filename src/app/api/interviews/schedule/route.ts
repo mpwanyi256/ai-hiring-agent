@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server';
 import { getValidGoogleAccessToken } from '@/lib/services/googleIntegrationService';
 import { createInterviewEvent } from '@/lib/services/googleCalendarService';
 import { sendInterviewNotification } from '@/lib/services/emailService';
-import { AppRequestParams } from '@/types/api';
 
 export async function POST(request: NextRequest) {
   try {

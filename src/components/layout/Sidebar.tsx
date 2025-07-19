@@ -23,6 +23,7 @@ import {
   UserIcon,
   BellIcon,
 } from '@heroicons/react/24/outline';
+import BillingButton from '@/components/billing/BillingButton';
 
 interface ChildRoute {
   name: string;
@@ -383,6 +384,15 @@ export default function Sidebar({
                 : user.subscription.maxInterviewsPerMonth}
             </span>
           </div>
+        </div>
+      )}
+
+      {/* Billing Button */}
+      {(!collapsed || isMobile) && (
+        <div className="p-3 border-t border-gray-100">
+          <BillingButton variant="outline" size="sm" className="w-full text-xs">
+            Manage Billing
+          </BillingButton>
         </div>
       )}
 

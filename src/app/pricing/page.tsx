@@ -1,113 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { fetchSubscriptionPlans } from '@/store/billing/billingThunks';
+import { selectSubscriptionPlans, selectCurrentPlan } from '@/store/billing/billingSelectors';
 import Navigation from '@/components/landing/Navigation';
 import Footer from '@/components/landing/Footer';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
+import SubscriptionCard from '@/components/billing/SubscriptionCard';
 
 export default function PricingPage() {
+  const dispatch = useAppDispatch();
+  const plans = useAppSelector(selectSubscriptionPlans);
+  const currentPlan = useAppSelector(selectCurrentPlan);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
-  const pricingPlans = [
-    {
-      name: 'Starter',
-      description: 'Perfect for small teams getting started with AI-powered hiring',
-      monthlyPrice: 49,
-      yearlyPrice: 490,
-      evaluations: 100,
-      features: [
-        'Up to 100 resume evaluations per month',
-        'Up to 100 Q&A assessments per month',
-        'Basic AI analysis and scoring',
-        'Email support',
-        'Standard evaluation templates',
-        'Basic analytics dashboard',
-        'Candidate ranking system',
-        '48-hour response time',
-      ],
-      limitations: [
-        'No custom branding',
-        'No API access',
-        'No advanced integrations',
-        'Limited customization',
-      ],
-      recommended: false,
-      buttonText: 'Start Free Trial',
-      buttonVariant: 'outline' as const,
-    },
-    {
-      name: 'Professional',
-      description: 'Ideal for growing companies with regular hiring needs',
-      monthlyPrice: 129,
-      yearlyPrice: 1290,
-      evaluations: 500,
-      features: [
-        'Up to 500 resume evaluations per month',
-        'Up to 500 Q&A assessments per month',
-        'Advanced AI analysis and scoring',
-        'Priority email & chat support',
-        'Custom evaluation criteria',
-        'Advanced analytics & reporting',
-        'Team collaboration tools',
-        'Custom branding options',
-        'Integration with ATS systems',
-        'Detailed candidate insights',
-        '24-hour response time',
-        'Bulk candidate processing',
-      ],
-      limitations: ['No white-label solution', 'Limited API calls', 'No custom AI models'],
-      recommended: true,
-      buttonText: 'Start Free Trial',
-      buttonVariant: 'primary' as const,
-    },
-    {
-      name: 'Enterprise',
-      description: 'For large organizations with complex hiring requirements',
-      monthlyPrice: 299,
-      yearlyPrice: 2990,
-      evaluations: 'Unlimited',
-      features: [
-        'Unlimited resume evaluations',
-        'Unlimited Q&A assessments',
-        'Advanced AI-driven analysis',
-        'Dedicated account manager',
-        'Custom evaluation workflows',
-        'Enterprise analytics suite',
-        'Advanced team management',
-        'White-label solution',
-        'Priority phone support',
-        'Full API access',
-        'Custom integrations',
-        'SAML/SSO authentication',
-        'Advanced security compliance',
-        'Custom AI model training',
-        'Custom reporting',
-        '2-hour response time',
-        'On-premise deployment options',
-      ],
-      limitations: [],
-      recommended: false,
-      buttonText: 'Contact Sales',
-      buttonVariant: 'outline' as const,
-    },
-  ];
+  useEffect(() => {
+    dispatch(fetchSubscriptionPlans());
+  }, [dispatch]);
 
-  const getPrice = (plan: (typeof pricingPlans)[0]) => {
-    if (plan.name === 'Enterprise') {
+  const getPrice = (plan: any) => {
+    if (plan.name.toLowerCase() === 'enterprise') {
       return 'Custom';
     }
-    const price =
-      billingPeriod === 'monthly' ? plan.monthlyPrice : Math.floor(plan.yearlyPrice / 12);
+    const price = billingPeriod === 'monthly' ? plan.price_monthly : plan.price_yearly;
     return `$${price}`;
   };
 
-  const getSavings = (plan: (typeof pricingPlans)[0]) => {
-    if (plan.name === 'Enterprise') return null;
-    const monthlyCost = plan.monthlyPrice * 12;
-    const savings = monthlyCost - plan.yearlyPrice;
+  const getSavings = (plan: any) => {
+    if (plan.name.toLowerCase() === 'enterprise') return null;
+    const monthlyCost = plan.price_monthly * 12;
+    const yearlyCost = plan.price_yearly;
+    const savings = monthlyCost - yearlyCost;
     return Math.round((savings / monthlyCost) * 100);
   };
+
+  // Don't render until plans are loaded
+  if (plans.length === 0) {
+    return (
+      <div className="min-h-screen bg-background text-text">
+        <Navigation />
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-text">
@@ -164,7 +103,7 @@ export default function PricingPage() {
               >
                 Yearly
                 <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                  Save up to 25%
+                  Save up to 20%
                 </span>
               </span>
             </div>
@@ -176,115 +115,14 @@ export default function PricingPage() {
       <section className="relative z-10 pb-16">
         <Container>
           <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {pricingPlans.map((plan) => (
-              <div
-                key={plan.name}
-                className={`relative rounded-2xl p-8 transition-all duration-300 hover:transform hover:scale-105 ${
-                  plan.recommended
-                    ? 'bg-primary text-white shadow-2xl ring-2 ring-primary/20'
-                    : 'bg-white border border-gray-200 hover:border-primary/20 shadow-lg hover:shadow-xl'
-                }`}
-              >
-                {plan.recommended && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <div className="bg-white text-primary px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-                      Most Popular
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-center mb-6">
-                  <h3
-                    className={`text-2xl font-bold mb-2 ${plan.recommended ? 'text-white' : 'text-gray-900'}`}
-                  >
-                    {plan.name}
-                  </h3>
-                  <p className={`text-sm ${plan.recommended ? 'text-green-100' : 'text-gray-600'}`}>
-                    {plan.description}
-                  </p>
-                </div>
-
-                <div className="text-center mb-6">
-                  <div
-                    className={`text-4xl font-bold mb-2 ${plan.recommended ? 'text-white' : 'text-gray-900'}`}
-                  >
-                    {getPrice(plan)}
-                    {plan.name !== 'Enterprise' && (
-                      <span
-                        className={`text-lg font-normal ${plan.recommended ? 'text-green-100' : 'text-gray-500'}`}
-                      >
-                        /month
-                      </span>
-                    )}
-                  </div>
-                  {billingPeriod === 'yearly' && getSavings(plan) && (
-                    <div className="text-sm text-green-600 font-medium">
-                      Save {getSavings(plan)}% annually
-                    </div>
-                  )}
-                  <div
-                    className={`text-sm ${plan.recommended ? 'text-green-100' : 'text-gray-500'}`}
-                  >
-                    {typeof plan.evaluations === 'number'
-                      ? `${plan.evaluations} evaluations included`
-                      : 'Unlimited evaluations'}
-                  </div>
-                </div>
-
-                <div className="mb-8">
-                  <Button
-                    className={`w-full py-3 font-semibold rounded-full transition-all ${
-                      plan.buttonVariant === 'primary'
-                        ? 'bg-white text-primary hover:bg-gray-100'
-                        : plan.recommended
-                          ? 'border-2 border-white text-white hover:bg-white/10'
-                          : 'bg-primary text-white hover:bg-primary/90'
-                    }`}
-                  >
-                    {plan.buttonText}
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  <h4
-                    className={`font-semibold ${plan.recommended ? 'text-white' : 'text-gray-900'}`}
-                  >
-                    What&apos;s included:
-                  </h4>
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-start space-x-3">
-                        <span
-                          className={`text-sm ${plan.recommended ? 'text-green-100' : 'text-gray-600'}`}
-                        >
-                          {feature}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {plan.limitations.length > 0 && (
-                    <>
-                      <h4
-                        className={`font-semibold mt-6 ${plan.recommended ? 'text-white' : 'text-gray-900'}`}
-                      >
-                        Not included:
-                      </h4>
-                      <ul className="space-y-3">
-                        {plan.limitations.map((limitation, limitIndex) => (
-                          <li key={limitIndex} className="flex items-start space-x-3">
-                            <span
-                              className={`text-sm ${plan.recommended ? 'text-red-100' : 'text-gray-600'}`}
-                            >
-                              {limitation}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  )}
-                </div>
-              </div>
+            {plans.map((plan, index) => (
+              <SubscriptionCard
+                key={plan.id}
+                plan={plan}
+                billingPeriod={billingPeriod}
+                isRecommended={plan.name.toLowerCase() === 'pro'}
+                isCurrentPlan={currentPlan?.id === plan.id}
+              />
             ))}
           </div>
         </Container>
@@ -316,7 +154,7 @@ export default function PricingPage() {
               {
                 question: 'Is there a free trial available?',
                 answer:
-                  'Yes, all plans come with a 14-day free trial. No credit card required to get started with resume analysis and Q&A evaluation.',
+                  'Yes, all plans come with a 30-day free trial. No credit card required to get started with resume analysis and Q&A evaluation.',
               },
               {
                 question: 'Do you offer custom enterprise solutions?',
@@ -346,27 +184,17 @@ export default function PricingPage() {
       {/* CTA Section */}
       <section className="relative z-10 py-16">
         <Container>
-          <div className="bg-gradient-to-r from-primary to-green-600 rounded-3xl p-12 text-center text-white">
-            <div className="max-w-3xl mx-auto">
-              <h2 className="text-3xl lg:text-4xl font-bold mb-4">
-                Ready to Transform Your Hiring Process?
-              </h2>
-              <p className="text-xl text-green-100 mb-8">
-                Join thousands of companies already using our AI platform to make better hiring
-                decisions faster with intelligent resume analysis and Q&A evaluation.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button className="bg-white text-primary hover:bg-gray-100 font-semibold px-8 py-3 rounded-full">
-                  Start Free Trial
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-2 border-white text-white hover:bg-white/10 font-semibold px-8 py-3 rounded-full"
-                >
-                  Schedule Demo
-                </Button>
-              </div>
-            </div>
+          <div className="text-center max-w-4xl mx-auto">
+            <h2 className="text-3xl lg:text-4xl font-bold mb-6">
+              Ready to Transform Your Hiring Process?
+            </h2>
+            <p className="text-xl text-gray-600 mb-8">
+              Join thousands of companies using AI to make better hiring decisions. Start your free
+              trial today.
+            </p>
+            <Button size="lg" className="text-lg px-8 py-4">
+              Get Started Free
+            </Button>
           </div>
         </Container>
       </section>
