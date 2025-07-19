@@ -90,21 +90,21 @@ export default function Navigation() {
                 onClick={() => scrollToSection('features')}
                 className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
               >
-                Features
+                How It Works
               </button>
             ) : (
               <Link
                 href="/#features"
                 className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
               >
-                Features
+                How It Works
               </Link>
             )}
 
             {/* Solutions Dropdown */}
             <div className="relative group">
               <button className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all flex items-center space-x-1 text-sm">
-                <span>Solutions</span>
+                <span>Features</span>
                 <svg
                   className="w-3 h-3 transform group-hover:rotate-180 transition-transform"
                   fill="none"
@@ -125,43 +125,43 @@ export default function Navigation() {
                   {pathname === '/' ? (
                     <>
                       <button
-                        onClick={() => scrollToSection('features')}
+                        onClick={() => scrollToSection('why-choose')}
                         className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                       >
-                        AI Assessments
+                        Resume Analysis
                       </button>
                       <button
                         onClick={() => scrollToSection('why-choose')}
                         className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                       >
-                        Behavioral Analysis
+                        Q&A Evaluation
                       </button>
                       <button
                         onClick={() => scrollToSection('why-choose')}
                         className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                       >
-                        Real-time Feedback
+                        Automated Ranking
                       </button>
                     </>
                   ) : (
                     <>
                       <Link
-                        href="/#features"
+                        href="/#why-choose"
                         className="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                       >
-                        AI Assessments
+                        Resume Analysis
                       </Link>
                       <Link
                         href="/#why-choose"
                         className="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                       >
-                        Behavioral Analysis
+                        Q&A Evaluation
                       </Link>
                       <Link
                         href="/#why-choose"
                         className="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                       >
-                        Real-time Feedback
+                        Automated Ranking
                       </Link>
                     </>
                   )}
@@ -195,6 +195,23 @@ export default function Navigation() {
                 className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
               >
                 Testimonials
+              </Link>
+            )}
+
+            {/* FAQ Link */}
+            {pathname === '/' ? (
+              <button
+                onClick={() => scrollToSection('faq')}
+                className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
+              >
+                FAQ
+              </button>
+            ) : (
+              <Link
+                href="/#faq"
+                className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
+              >
+                FAQ
               </Link>
             )}
           </div>
@@ -278,7 +295,7 @@ export default function Navigation() {
                   onClick={() => scrollToSection('features')}
                   className="block w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all"
                 >
-                  Features
+                  How It Works
                 </button>
               ) : (
                 <Link
@@ -286,7 +303,7 @@ export default function Navigation() {
                   className="block w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Features
+                  How It Works
                 </Link>
               )}
 
@@ -336,6 +353,24 @@ export default function Navigation() {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Testimonials
+                </Link>
+              )}
+
+              {/* Mobile FAQ Link */}
+              {pathname === '/' ? (
+                <button
+                  onClick={() => scrollToSection('faq')}
+                  className="block w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all"
+                >
+                  FAQ
+                </button>
+              ) : (
+                <Link
+                  href="/#faq"
+                  className="block w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  FAQ
                 </Link>
               )}
 

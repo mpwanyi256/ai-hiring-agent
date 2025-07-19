@@ -26,10 +26,7 @@ import {
   selectSelectedCandidateId,
 } from '@/store/selectedCandidate/selectedCandidateSelectors';
 import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
-import {
-  selectCandidatesList,
-  selectJobCandidatesStats,
-} from '@/store/candidates/candidatesSelectors';
+import { selectJobCandidatesStats } from '@/store/candidates/candidatesSelectors';
 import { CandidateSkillsAnalysis } from './CandidateSkillsAnalysis';
 
 const candidateTabs = [

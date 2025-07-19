@@ -5,6 +5,7 @@ import HeroSection from '@/components/landing/HeroSection';
 import HowItWorksSection from '@/components/landing/FeaturesSection';
 import WhyChooseSection from '@/components/landing/WhyChooseSection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
+import FAQSection from '@/components/landing/FAQSection';
 import CTASection from '@/components/landing/CTASection';
 import Footer from '@/components/landing/Footer';
 
@@ -49,6 +50,11 @@ export default function LandingPage() {
       {/* Testimonials */}
       <section id="testimonials" className="slide-up">
         <TestimonialsSection />
+      </section>
+
+      {/* FAQ Section */}
+      <section id="faq" className="fade-in">
+        <FAQSection />
       </section>
 
       {/* CTA Section */}

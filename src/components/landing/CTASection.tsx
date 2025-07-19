@@ -5,11 +5,12 @@ import Container from '@/components/ui/Container';
 import { useToast } from '@/components/providers/ToastProvider';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { joinWaitlist } from '@/store/landing/landingThunks';
+import { selectWaitlistLoading } from '@/store/landing/landingSelectors';
 import {
-  selectWaitlistLoading,
-  selectWaitlistError,
-  selectWaitlistSuccess,
-} from '@/store/landing/landingSelectors';
+  DocumentTextIcon,
+  ChatBubbleLeftRightIcon,
+  ChartBarIcon,
+} from '@heroicons/react/24/outline';
 
 export default function CTASection() {
   const [email, setEmail] = useState('');
@@ -17,8 +18,6 @@ export default function CTASection() {
   const { success, error: showError } = useToast();
 
   const isLoading = useAppSelector(selectWaitlistLoading);
-  const error = useAppSelector(selectWaitlistError);
-  const isSuccess = useAppSelector(selectWaitlistSuccess);
 
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +31,7 @@ export default function CTASection() {
       await dispatch(joinWaitlist({ email: email.trim() })).unwrap();
       setEmail('');
       success("Thanks! We'll get in touch within 24h.");
-    } catch (err) {
+    } catch {
       showError('Failed to join waitlist. Please try again.');
     }
   };
@@ -46,20 +45,41 @@ export default function CTASection() {
             <div className="text-white space-y-6 fade-in">
               <div className="space-y-4">
                 <h2 className="text-3xl lg:text-4xl font-bold leading-tight">
-                  Ready to Revolutionize
+                  Ready to Transform
                   <br />
-                  Your Hiring?
+                  Your Hiring Process?
                 </h2>
                 <p className="text-lg lg:text-xl text-green-100 leading-relaxed">
-                  Elevate your hiring process with Intervio&apos;s AI-powered platform. Join the
-                  future of hiring and unlock a new level of efficiency, fairness, and insights.
+                  Join thousands of companies using Intavia to make better hiring decisions faster.
+                  Start your free trial today.
                 </p>
               </div>
 
+              {/* Feature highlights */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <DocumentTextIcon className="w-8 h-8 mx-auto mb-2 text-green-200" />
+                  <div className="text-sm font-semibold">Resume Analysis</div>
+                  <div className="text-xs text-green-200">95% Accuracy</div>
+                </div>
+                <div className="text-center">
+                  <ChatBubbleLeftRightIcon className="w-8 h-8 mx-auto mb-2 text-green-200" />
+                  <div className="text-sm font-semibold">Q&A Evaluation</div>
+                  <div className="text-xs text-green-200">Instant Results</div>
+                </div>
+                <div className="text-center">
+                  <ChartBarIcon className="w-8 h-8 mx-auto mb-2 text-green-200" />
+                  <div className="text-sm font-semibold">Smart Ranking</div>
+                  <div className="text-xs text-green-200">AI-Powered</div>
+                </div>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-3">
-                <button className="bg-white text-primary hover:bg-gray-100 font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 hover-lift">
-                  Try for Free Now
-                </button>
+                <Link href="/signup">
+                  <button className="bg-white text-primary hover:bg-gray-100 font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 hover-lift">
+                    Start Free Trial
+                  </button>
+                </Link>
                 <Link href="/request-demo">
                   <button className="border-2 border-white text-white hover:bg-white hover:text-primary font-semibold px-6 py-3 rounded-full transition-all hover-lift">
                     Request Demo
@@ -73,7 +93,7 @@ export default function CTASection() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
+                    placeholder="Enter your email for early access"
                     className="flex-1 px-5 py-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all hover:bg-white/15"
                     required
                     disabled={isLoading}
@@ -107,113 +127,111 @@ export default function CTASection() {
                         Subscribing...
                       </span>
                     ) : (
-                      'Subscribe'
+                      'Join Waitlist'
                     )}
                   </button>
                 </div>
               </form>
             </div>
 
-            {/* Right Content - Woman with headsets and metrics */}
+            {/* Right Content - Dashboard mockup */}
             <div className="relative slide-up">
-              {/* Main woman image */}
+              {/* Main dashboard card */}
               <div className="relative">
-                <div className="w-full h-80 bg-white/10 rounded-2xl flex items-end justify-center overflow-hidden hover:bg-white/15 transition-all duration-300">
-                  <Image
-                    src="https://images.unsplash.com/photo-1560264280-88b68371db39?w=400&h=300&fit=crop"
-                    alt="Professional woman with headset - customer service representative"
-                    width={280}
-                    height={350}
-                    className="object-cover h-full w-full hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
+                <div className="w-full h-80 bg-white/10 rounded-2xl flex items-center justify-center overflow-hidden hover:bg-white/15 transition-all duration-300 p-4">
+                  <div className="bg-white rounded-xl p-4 w-full max-w-sm shadow-xl">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-gray-900">Candidate Evaluation</h3>
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    </div>
 
-                {/* Floating metrics cards */}
-                <div className="absolute top-6 left-3 bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
-                  <div className="flex items-center space-x-2">
-                    <Image
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=28&h=28&fit=crop&crop=face"
-                      alt="Seo Jan Im"
-                      width={24}
-                      height={24}
-                      className="w-6 h-6 rounded-full hover:scale-110 transition-transform duration-300"
-                    />
-                    <div>
-                      <div className="text-xs font-semibold text-gray-900">Seo Jan Im</div>
-                      <div className="text-xs text-green-600 font-medium flex items-center">
-                        <span className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
-                        Approved
+                    {/* Candidate profile */}
+                    <div className="flex items-center space-x-3 mb-4">
+                      <Image
+                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face"
+                        alt="Sarah Johnson"
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 rounded-full"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-900">Sarah Johnson</div>
+                        <div className="text-sm text-gray-500">Senior Frontend Developer</div>
+                      </div>
+                      <div className="ml-auto text-right">
+                        <div className="text-2xl font-bold text-primary">89%</div>
+                        <div className="text-xs text-gray-500">Overall Score</div>
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-gray-900">
-                      85<span className="text-xs">%</span>
+
+                    {/* Evaluation metrics */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Resume Match</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-16 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-green-500 h-2 rounded-full"
+                              style={{ width: '92%' }}
+                            ></div>
+                          </div>
+                          <span className="text-sm font-semibold text-gray-900">92%</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Q&A Performance</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-16 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-500 h-2 rounded-full"
+                              style={{ width: '85%' }}
+                            ></div>
+                          </div>
+                          <span className="text-sm font-semibold text-gray-900">85%</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Technical Skills</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-16 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-purple-500 h-2 rounded-full"
+                              style={{ width: '88%' }}
+                            ></div>
+                          </div>
+                          <span className="text-sm font-semibold text-gray-900">88%</span>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Action buttons */}
+                    <div className="flex space-x-2 mt-4">
+                      <button className="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors">
+                        Shortlist
+                      </button>
+                      <button className="flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors">
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating success metrics */}
+                <div className="absolute top-6 left-3 bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-green-600">65%</div>
+                    <div className="text-xs text-gray-600">Time Saved</div>
                   </div>
                 </div>
 
                 <div className="absolute bottom-6 right-3 bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift">
                   <div className="text-center">
-                    <div className="text-xs font-medium text-gray-600 mb-2">Resume match</div>
-                    <div className="text-2xl font-bold text-green-600 mb-2 hover:scale-110 transition-transform duration-300">
-                      85%
-                    </div>
-                    <div className="text-xs text-gray-500 mb-2">Interview Score Summary</div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      {[
-                        {
-                          percentage: '80%',
-                          label: 'Professionalism',
-                          color: 'border-green-500 text-green-600',
-                        },
-                        {
-                          percentage: '90%',
-                          label: 'Business Acumen',
-                          color: 'border-blue-500 text-blue-600',
-                        },
-                        {
-                          percentage: '65%',
-                          label: 'Opportunistic',
-                          color: 'border-orange-500 text-orange-600',
-                        },
-                        {
-                          percentage: '85%',
-                          label: 'Closing Technique',
-                          color: 'border-green-500 text-green-600',
-                        },
-                      ].map((metric, index) => (
-                        <div key={index} className="text-center">
-                          <div
-                            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mb-1 hover:scale-110 transition-transform duration-300 ${metric.color}`}
-                          >
-                            <span className={`font-bold text-xs ${metric.color.split(' ')[1]}`}>
-                              {metric.percentage}
-                            </span>
-                          </div>
-                          <div className="text-gray-600 text-xs">{metric.label}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-3 pt-2 border-t border-gray-200">
-                      <div className="flex items-center justify-between text-xs">
-                        <button className="bg-green-500 text-white px-2 py-1 rounded-full font-medium text-xs hover:bg-green-600 transition-colors hover-lift">
-                          Hire Talent
-                        </button>
-                        <div className="flex items-center space-x-1">
-                          <span className="text-green-600 text-xs hover:scale-110 transition-transform duration-300">
-                            ✓ Shortlist
-                          </span>
-                          <span className="text-red-500 text-xs hover:scale-110 transition-transform duration-300">
-                            ✗ Reject
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                    <div className="text-lg font-bold text-blue-600">1,000+</div>
+                    <div className="text-xs text-gray-600">Companies</div>
                   </div>
                 </div>
 
-                {/* Additional floating elements for more interactivity */}
+                {/* Additional floating elements */}
                 <div className="absolute top-1/2 -left-4 bg-blue-500/10 w-16 h-16 rounded-full animate-pulse hidden lg:block"></div>
                 <div className="absolute bottom-1/4 -right-4 bg-green-500/10 w-12 h-12 rounded-full animate-bounce hidden lg:block"></div>
               </div>
