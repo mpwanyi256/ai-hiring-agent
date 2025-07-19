@@ -1,11 +1,39 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
-import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
+import { useToast } from '@/components/providers/ToastProvider';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { joinWaitlist } from '@/store/landing/landingThunks';
+import { selectWaitlistLoading } from '@/store/landing/landingSelectors';
 import Image from 'next/image';
 import { app } from '@/lib/constants';
 import { EnvelopeIcon, PhoneIcon, MapPinIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 
 export default function Footer() {
+  const [email, setEmail] = useState('');
+  const dispatch = useAppDispatch();
+  const { success, error: showError } = useToast();
+  const isLoading = useAppSelector(selectWaitlistLoading);
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email.trim()) {
+      showError('Please enter your email address');
+      return;
+    }
+
+    try {
+      await dispatch(joinWaitlist({ email: email.trim() })).unwrap();
+      setEmail('');
+      success("Thanks for subscribing! We'll keep you updated with the latest news and features.");
+    } catch {
+      showError('Failed to subscribe. Please try again.');
+    }
+  };
+
   return (
     <footer className="relative z-10 py-16 bg-gray-900 text-white">
       <Container>
@@ -29,16 +57,42 @@ export default function Footer() {
             {/* Newsletter Signup */}
             <div className="mb-6">
               <h5 className="font-semibold mb-3 text-sm">Stay Updated</h5>
-              <div className="flex">
+              <form onSubmit={handleNewsletterSubmit} className="flex">
                 <input
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-l-lg text-white placeholder-gray-400 focus:outline-none focus:border-primary"
+                  required
+                  disabled={isLoading}
                 />
-                <button className="px-4 py-2 bg-primary hover:bg-primary/90 rounded-r-lg transition-colors">
-                  <ArrowRightIcon className="w-4 h-4" />
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-primary hover:bg-primary/90 rounded-r-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  ) : (
+                    <ArrowRightIcon className="w-4 h-4" />
+                  )}
                 </button>
-              </div>
+              </form>
             </div>
 
             {/* Social Links */}
@@ -142,16 +196,16 @@ export default function Footer() {
                 Blog
               </Link>
               <Link
-                href="/#faq"
+                href="/faq"
                 className="block text-gray-400 hover:text-white transition-colors text-sm"
               >
                 FAQ
               </Link>
               <Link
-                href="/request-demo"
+                href="/contact"
                 className="block text-gray-400 hover:text-white transition-colors text-sm"
               >
-                Request Demo
+                Talk to Us
               </Link>
             </div>
           </div>

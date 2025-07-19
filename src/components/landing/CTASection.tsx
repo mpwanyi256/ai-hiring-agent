@@ -2,10 +2,6 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Container from '@/components/ui/Container';
-import { useToast } from '@/components/providers/ToastProvider';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { joinWaitlist } from '@/store/landing/landingThunks';
-import { selectWaitlistLoading } from '@/store/landing/landingSelectors';
 import {
   DocumentTextIcon,
   ChatBubbleLeftRightIcon,
@@ -13,29 +9,6 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function CTASection() {
-  const [email, setEmail] = useState('');
-  const dispatch = useAppDispatch();
-  const { success, error: showError } = useToast();
-
-  const isLoading = useAppSelector(selectWaitlistLoading);
-
-  const handleWaitlistSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!email.trim()) {
-      showError('Please enter your email address');
-      return;
-    }
-
-    try {
-      await dispatch(joinWaitlist({ email: email.trim() })).unwrap();
-      setEmail('');
-      success("Thanks! We'll get in touch within 24h.");
-    } catch {
-      showError('Failed to join waitlist. Please try again.');
-    }
-  };
-
   return (
     <section className="relative z-10 py-0 overflow-hidden">
       <div className="bg-gradient-to-r from-primary via-green-500 to-green-600 rounded-3xl mx-4 lg:mx-8 mb-6 hover:shadow-2xl transition-all duration-500 hover-lift">
@@ -80,58 +53,12 @@ export default function CTASection() {
                     Start Free Trial
                   </button>
                 </Link>
-                <Link href="/request-demo">
+                <Link href="/contact">
                   <button className="border-2 border-white text-white hover:bg-white hover:text-primary font-semibold px-6 py-3 rounded-full transition-all hover-lift">
-                    Request Demo
+                    Talk to Us
                   </button>
                 </Link>
               </div>
-
-              <form onSubmit={handleWaitlistSubmit} className="space-y-3 pt-2">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email for early access"
-                    className="flex-1 px-5 py-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all hover:bg-white/15"
-                    required
-                    disabled={isLoading}
-                  />
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="bg-white text-primary hover:bg-gray-100 px-6 py-3 font-semibold rounded-full shadow-lg hover:shadow-xl transition-all hover-lift whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center">
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                        Subscribing...
-                      </span>
-                    ) : (
-                      'Join Waitlist'
-                    )}
-                  </button>
-                </div>
-              </form>
             </div>
 
             {/* Right Content - Dashboard mockup */}

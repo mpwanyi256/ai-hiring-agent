@@ -40,12 +40,12 @@ export default function HeroSection() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link href="/request-demo">
+              <Link href="/contact">
                 <Button
                   size="lg"
                   className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 hover-lift"
                 >
-                  Request Demo
+                  Talk to Us
                   <ArrowRightIcon className="w-4 h-4 ml-2" />
                 </Button>
               </Link>

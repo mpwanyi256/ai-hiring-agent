@@ -199,21 +199,16 @@ export default function Navigation() {
             )}
 
             {/* FAQ Link */}
-            {pathname === '/' ? (
-              <button
-                onClick={() => scrollToSection('faq')}
-                className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
-              >
-                FAQ
-              </button>
-            ) : (
-              <Link
-                href="/#faq"
-                className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
-              >
-                FAQ
-              </Link>
-            )}
+            <Link
+              href="/faq"
+              className={`px-5 py-2.5 rounded-full font-medium transition-all text-sm ${
+                isActivePage('/faq')
+                  ? 'bg-primary text-white'
+                  : 'text-gray-600 hover:text-primary hover:bg-gray-50'
+              }`}
+            >
+              FAQ
+            </Link>
           </div>
 
           {/* Desktop CTA Button */}
@@ -357,22 +352,17 @@ export default function Navigation() {
               )}
 
               {/* Mobile FAQ Link */}
-              {pathname === '/' ? (
-                <button
-                  onClick={() => scrollToSection('faq')}
-                  className="block w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all"
-                >
-                  FAQ
-                </button>
-              ) : (
-                <Link
-                  href="/#faq"
-                  className="block w-full text-left px-4 py-3 rounded-lg text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  FAQ
-                </Link>
-              )}
+              <Link
+                href="/faq"
+                className={`block w-full text-left px-4 py-3 rounded-lg font-medium transition-all ${
+                  isActivePage('/faq')
+                    ? 'bg-primary text-white'
+                    : 'text-gray-600 hover:text-primary hover:bg-gray-50'
+                }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                FAQ
+              </Link>
 
               {/* Mobile CTA */}
               <div className="pt-2 border-t border-gray-200">

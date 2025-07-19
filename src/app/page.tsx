@@ -52,11 +52,6 @@ export default function LandingPage() {
         <TestimonialsSection />
       </section>
 
-      {/* FAQ Section */}
-      <section id="faq" className="fade-in">
-        <FAQSection />
-      </section>
-
       {/* CTA Section */}
       <section id="cta" className="fade-in">
         <CTASection />
