@@ -2,10 +2,12 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { requestDemoStart, requestDemoSuccess, requestDemoFailure } from './landingSlice';
 import { joinWaitlistStart, joinWaitlistSuccess, joinWaitlistFailure } from './landingSlice';
 
-interface DemoRequestData {
+interface ContactFormData {
   name: string;
   email: string;
   company: string;
+  phone?: string;
+  subject: string;
   message: string;
 }
 
@@ -15,10 +17,10 @@ interface WaitlistData {
   company?: string;
 }
 
-// Demo Request Thunk
-export const requestDemo = createAsyncThunk(
-  'landing/requestDemo',
-  async (data: DemoRequestData, { dispatch }) => {
+// Contact Form Thunk (formerly requestDemo)
+export const submitContactForm = createAsyncThunk(
+  'landing/submitContactForm',
+  async (data: ContactFormData, { dispatch }) => {
     try {
       dispatch(requestDemoStart());
 
@@ -32,7 +34,7 @@ export const requestDemo = createAsyncThunk(
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send demo request');
+        throw new Error(errorData.error || 'Failed to send contact form');
       }
 
       dispatch(requestDemoSuccess());
@@ -44,6 +46,9 @@ export const requestDemo = createAsyncThunk(
     }
   },
 );
+
+// Backward compatibility export
+export const requestDemo = submitContactForm;
 
 // Join Waitlist Thunk
 export const joinWaitlist = createAsyncThunk(

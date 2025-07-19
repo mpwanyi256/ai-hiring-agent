@@ -1,10 +1,5 @@
 import Image from 'next/image';
-import {
-  SparklesIcon,
-  StarIcon,
-  DocumentTextIcon,
-  ChatBubbleLeftRightIcon,
-} from '@heroicons/react/24/outline';
+import { DocumentTextIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import Container from '@/components/ui/Container';
 
 export default function WhyChooseSection() {

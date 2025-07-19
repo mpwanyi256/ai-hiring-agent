@@ -55,7 +55,7 @@ export default function Footer() {
             </p>
 
             {/* Newsletter Signup */}
-            <div className="mb-6">
+            <div className="mb-6 flex flex-col gap-2">
               <h5 className="font-semibold mb-3 text-sm">Stay Updated</h5>
               <form onSubmit={handleNewsletterSubmit} className="flex">
                 <input
@@ -114,7 +114,8 @@ export default function Footer() {
                 </svg>
               </a>
               <a
-                href="#"
+                href="https://www.linkedin.com/company/intavia/"
+                target="_blank"
                 className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary transition-colors"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

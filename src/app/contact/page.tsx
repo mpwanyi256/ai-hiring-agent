@@ -6,6 +6,9 @@ import Footer from '@/components/landing/Footer';
 import Button from '@/components/ui/Button';
 import Container from '@/components/ui/Container';
 import { useToast } from '@/components/providers/ToastProvider';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { submitContactForm } from '@/store/landing/landingThunks';
+import { selectDemoRequestLoading } from '@/store/landing/landingSelectors';
 import { EnvelopeIcon, PhoneIcon, MapPinIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { app } from '@/lib/constants';
 
@@ -18,8 +21,9 @@ export default function ContactPage() {
     subject: '',
     message: '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const dispatch = useAppDispatch();
   const { success, error: showError } = useToast();
+  const isSubmitting = useAppSelector(selectDemoRequestLoading);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -33,12 +37,9 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
     try {
-      // Here you would typically send the form data to your backend
-      // For now, we'll simulate a successful submission
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await dispatch(submitContactForm(formData)).unwrap();
 
       success("Thank you for your message! We'll get back to you within 24 hours.");
       setFormData({
@@ -51,8 +52,6 @@ export default function ContactPage() {
       });
     } catch (err) {
       showError('Failed to send message. Please try again.');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
