@@ -1,5 +1,10 @@
 import Image from 'next/image';
-import { SparklesIcon, StarIcon } from '@heroicons/react/24/outline';
+import {
+  SparklesIcon,
+  StarIcon,
+  DocumentTextIcon,
+  ChatBubbleLeftRightIcon,
+} from '@heroicons/react/24/outline';
 import Container from '@/components/ui/Container';
 
 export default function WhyChooseSection() {
@@ -8,128 +13,142 @@ export default function WhyChooseSection() {
       <Container>
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="text-3xl lg:text-4xl font-bold mb-5 text-text">Why Choose Intervio?</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-5 text-text">
+              Why Choose Our AI Platform?
+            </h2>
             <p className="text-lg text-muted-text mb-6">
-              Our platform has been helping reduce hiring time by up to 40% while increasing hiring
-              accuracy, improving team productivity by 30%, and providing comprehensive candidate
-              evaluation tools.
+              Our AI-powered platform revolutionizes hiring through intelligent resume analysis and
+              comprehensive Q&A evaluation, helping you make data-driven hiring decisions with
+              confidence.
             </p>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-primary/10 p-4 rounded-xl">
-                <div className="text-2xl font-bold text-primary mb-1">100%</div>
-                <div className="text-xs text-muted-text">More Efficient</div>
+                <div className="text-2xl font-bold text-primary mb-1">95%</div>
+                <div className="text-xs text-muted-text">Accuracy Rate</div>
               </div>
               <div className="bg-blue-500/10 p-4 rounded-xl">
-                <div className="text-2xl font-bold text-blue-600 mb-1">Up to 40%</div>
-                <div className="text-xs text-muted-text">Reduced Hiring Time</div>
+                <div className="text-2xl font-bold text-blue-600 mb-1">60%</div>
+                <div className="text-xs text-muted-text">Faster Screening</div>
               </div>
               <div className="bg-green-500/10 p-4 rounded-xl">
-                <div className="text-2xl font-bold text-green-600 mb-1">30%</div>
-                <div className="text-xs text-muted-text">Workplace Accuracy</div>
+                <div className="text-2xl font-bold text-green-600 mb-1">40%</div>
+                <div className="text-xs text-muted-text">Cost Reduction</div>
               </div>
               <div className="bg-teal-500/10 p-4 rounded-xl">
-                <div className="text-2xl font-bold text-teal-600 mb-1">20%</div>
-                <div className="text-xs text-muted-text">Abandoned Chat</div>
+                <div className="text-2xl font-bold text-teal-600 mb-1">24/7</div>
+                <div className="text-xs text-muted-text">Evaluation</div>
               </div>
             </div>
           </div>
 
           <div className="grid gap-5">
-            {/* AI-Driven Assessments */}
+            {/* AI Resume Analysis */}
             <div className="bg-primary rounded-2xl p-6 text-white">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">AI-Driven Assessments</h3>
+                  <h3 className="text-lg font-semibold mb-2">AI Resume Analysis</h3>
                   <p className="text-white text-sm">
-                    Leverage cutting-edge AI to evaluate candidates through dynamic interview
-                    questions and behavioral analysis.
+                    Advanced AI algorithms analyze resumes for skills match, experience relevance,
+                    and cultural fit.
                   </p>
                 </div>
-                <SparklesIcon className="w-6 h-6 text-white/80" />
+                <DocumentTextIcon className="w-6 h-6 text-white/80" />
               </div>
 
               <div className="bg-white/20 rounded-lg p-3">
                 <div className="flex items-center space-x-3 mb-2">
                   <Image
                     src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=28&h=28&fit=crop&crop=face"
-                    alt="Jane Doe"
+                    alt="Sarah Johnson"
                     width={28}
                     height={28}
                     className="w-7 h-7 rounded-full"
                   />
                   <div>
-                    <div className="text-sm font-medium">Rita</div>
-                    <div className="text-xs text-white/70">Full Stack Developer</div>
+                    <div className="text-sm font-medium">Sarah Johnson</div>
+                    <div className="text-xs text-white/70">Senior Developer</div>
                   </div>
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span>Technical Skills</span>
-                    <span>89%</span>
+                    <span>Skills Match</span>
+                    <span>92%</span>
                   </div>
                   <div className="w-full bg-white/20 rounded-full h-1.5">
-                    <div className="bg-white h-1.5 rounded-full" style={{ width: '89%' }}></div>
+                    <div className="bg-white h-1.5 rounded-full" style={{ width: '92%' }}></div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Experience</span>
+                    <span>88%</span>
+                  </div>
+                  <div className="w-full bg-white/20 rounded-full h-1.5">
+                    <div className="bg-white h-1.5 rounded-full" style={{ width: '88%' }}></div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Behavioral Analysis */}
+            {/* Q&A Evaluation */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200">
-              <h3 className="text-lg font-semibold mb-3 text-text">Behavioral Analysis</h3>
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="text-lg font-semibold text-text">Q&A Evaluation</h3>
+                <ChatBubbleLeftRightIcon className="w-5 h-5 text-blue-600" />
+              </div>
               <p className="text-muted-text mb-4 text-sm">
-                Analyze soft-skills patterns such as voice pitch, tone, body language, and
-                critical-fit analysis for you teams hiring decisions.
+                Comprehensive assessment of candidate responses with detailed scoring across
+                multiple dimensions.
               </p>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center">
-                  <div className="text-xl font-bold text-primary mb-1">85%</div>
-                  <div className="text-xs text-muted-text">Communication</div>
+                  <div className="text-xl font-bold text-primary mb-1">89%</div>
+                  <div className="text-xs text-muted-text">Technical Knowledge</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-bold text-primary mb-1">78%</div>
-                  <div className="text-xs text-muted-text">Cultural Fit</div>
+                  <div className="text-xl font-bold text-primary mb-1">85%</div>
+                  <div className="text-xs text-muted-text">Communication</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xl font-bold text-primary mb-1">92%</div>
                   <div className="text-xs text-muted-text">Problem Solving</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-bold text-primary mb-1">86%</div>
-                  <div className="text-xs text-muted-text">Leadership</div>
+                  <div className="text-xl font-bold text-primary mb-1">78%</div>
+                  <div className="text-xs text-muted-text">Cultural Fit</div>
                 </div>
               </div>
             </div>
 
-            {/* Real-Time Feedback */}
+            {/* Automated Ranking */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200">
-              <h3 className="text-lg font-semibold mb-3 text-text">Real-Time Feedback</h3>
+              <h3 className="text-lg font-semibold mb-3 text-text">Automated Ranking</h3>
               <p className="text-muted-text mb-4 text-sm">
-                Get instant AI-generated feedback during the interviews, adaptive insights to
-                specific job requirements and real-time interviewing analytical recommendations.
+                Get instant candidate rankings based on resume analysis and Q&A performance with
+                detailed insights.
               </p>
 
               <div className="space-y-2">
-                <div className="flex items-center space-x-3">
-                  <Image
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=24&h=24&fit=crop&crop=face"
-                    alt="System Administrator"
-                    width={20}
-                    height={20}
-                    className="w-5 h-5 rounded-full"
-                  />
+                <div className="flex items-center space-x-3 p-2 bg-green-50 rounded-lg">
+                  <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                    1
+                  </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium">System Administrator</div>
-                    <div className="text-xs text-muted-text">Strong technical foundation</div>
+                    <div className="text-sm font-medium">Sarah Johnson</div>
+                    <div className="text-xs text-muted-text">Overall Score: 89%</div>
                   </div>
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <StarIcon key={i} className="w-2 h-2 text-yellow-400 fill-current" />
-                    ))}
+                  <div className="text-sm font-bold text-green-600">Top Match</div>
+                </div>
+                <div className="flex items-center space-x-3 p-2 bg-blue-50 rounded-lg">
+                  <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                    2
                   </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">Mike Chen</div>
+                    <div className="text-xs text-muted-text">Overall Score: 85%</div>
+                  </div>
+                  <div className="text-sm font-bold text-blue-600">Strong</div>
                 </div>
               </div>
             </div>

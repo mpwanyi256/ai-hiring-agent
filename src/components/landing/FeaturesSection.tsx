@@ -7,15 +7,15 @@ const steps = [
     svg: '/illustrations/resume_finder.svg',
   },
   {
-    text: 'Share a uniquee interview link with applicants.',
+    text: 'Candidates complete Q&A assessments via unique links.',
     svg: '/illustrations/candidate_selection.svg',
   },
   {
-    text: 'AI evaluates responses and ranks candidates for you.',
+    text: 'AI analyzes resumes and evaluates Q&A responses.',
     svg: '/illustrations/evaluation.svg',
   },
   {
-    text: 'Get a ranked shortlist and hire faster.',
+    text: 'Get ranked candidates with detailed insights.',
     svg: '/illustrations/success.svg',
   },
 ];
@@ -26,6 +26,10 @@ export default function HowItWorksSection() {
       <Container>
         <div className="text-center mb-12 fade-in">
           <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-text">How It Works</h2>
+          <p className="text-lg text-muted-text max-w-2xl mx-auto">
+            Our AI-powered platform streamlines your hiring process through intelligent resume
+            analysis and comprehensive Q&A evaluation.
+          </p>
         </div>
         {/* Stepper */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10 md:gap-0 relative">

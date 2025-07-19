@@ -12,19 +12,26 @@ export default function PricingPage() {
   const pricingPlans = [
     {
       name: 'Starter',
-      description: 'Perfect for small teams getting started with AI interviews',
-      monthlyPrice: 29,
-      yearlyPrice: 290,
-      interviews: 50,
+      description: 'Perfect for small teams getting started with AI-powered hiring',
+      monthlyPrice: 49,
+      yearlyPrice: 490,
+      evaluations: 100,
       features: [
-        'Up to 50 AI interviews per month',
-        'Basic candidate assessment',
+        'Up to 100 resume evaluations per month',
+        'Up to 100 Q&A assessments per month',
+        'Basic AI analysis and scoring',
         'Email support',
-        'Standard interview templates',
+        'Standard evaluation templates',
         'Basic analytics dashboard',
+        'Candidate ranking system',
         '48-hour response time',
       ],
-      limitations: ['No custom branding', 'No API access', 'No advanced integrations'],
+      limitations: [
+        'No custom branding',
+        'No API access',
+        'No advanced integrations',
+        'Limited customization',
+      ],
       recommended: false,
       buttonText: 'Start Free Trial',
       buttonVariant: 'outline' as const,
@@ -32,22 +39,24 @@ export default function PricingPage() {
     {
       name: 'Professional',
       description: 'Ideal for growing companies with regular hiring needs',
-      monthlyPrice: 79,
-      yearlyPrice: 790,
-      interviews: 200,
+      monthlyPrice: 129,
+      yearlyPrice: 1290,
+      evaluations: 500,
       features: [
-        'Up to 200 AI interviews per month',
-        'Advanced candidate assessment',
+        'Up to 500 resume evaluations per month',
+        'Up to 500 Q&A assessments per month',
+        'Advanced AI analysis and scoring',
         'Priority email & chat support',
-        'Custom interview templates',
+        'Custom evaluation criteria',
         'Advanced analytics & reporting',
         'Team collaboration tools',
         'Custom branding options',
-        '24-hour response time',
-        'Behavioral analysis',
         'Integration with ATS systems',
+        'Detailed candidate insights',
+        '24-hour response time',
+        'Bulk candidate processing',
       ],
-      limitations: ['No white-label solution', 'Limited API calls'],
+      limitations: ['No white-label solution', 'Limited API calls', 'No custom AI models'],
       recommended: true,
       buttonText: 'Start Free Trial',
       buttonVariant: 'primary' as const,
@@ -55,25 +64,27 @@ export default function PricingPage() {
     {
       name: 'Enterprise',
       description: 'For large organizations with complex hiring requirements',
-      monthlyPrice: 199,
-      yearlyPrice: 1990,
-      interviews: 'Unlimited',
+      monthlyPrice: 299,
+      yearlyPrice: 2990,
+      evaluations: 'Unlimited',
       features: [
-        'Unlimited AI interviews',
-        'Advanced AI-driven assessments',
+        'Unlimited resume evaluations',
+        'Unlimited Q&A assessments',
+        'Advanced AI-driven analysis',
         'Dedicated account manager',
-        'Custom interview workflows',
+        'Custom evaluation workflows',
         'Enterprise analytics suite',
         'Advanced team management',
         'White-label solution',
         'Priority phone support',
-        'Advanced behavioral analysis',
         'Full API access',
         'Custom integrations',
         'SAML/SSO authentication',
         'Advanced security compliance',
+        'Custom AI model training',
         'Custom reporting',
         '2-hour response time',
+        'On-premise deployment options',
       ],
       limitations: [],
       recommended: false,
@@ -125,7 +136,8 @@ export default function PricingPage() {
             </h1>
             <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
               Scale your hiring process with our flexible pricing plans. All plans include our core
-              AI interview features with varying levels of customization and support.
+              AI resume analysis and Q&A evaluation features with varying levels of customization
+              and support.
             </p>
 
             {/* Billing Toggle */}
@@ -213,9 +225,9 @@ export default function PricingPage() {
                   <div
                     className={`text-sm ${plan.recommended ? 'text-green-100' : 'text-gray-500'}`}
                   >
-                    {typeof plan.interviews === 'number'
-                      ? `${plan.interviews} interviews included`
-                      : 'Unlimited interviews'}
+                    {typeof plan.evaluations === 'number'
+                      ? `${plan.evaluations} evaluations included`
+                      : 'Unlimited evaluations'}
                   </div>
                 </div>
 
@@ -242,7 +254,6 @@ export default function PricingPage() {
                   <ul className="space-y-3">
                     {plan.features.map((feature, featureIndex) => (
                       <li key={featureIndex} className="flex items-start space-x-3">
-                        {/* Icon removed for linting compliance */}
                         <span
                           className={`text-sm ${plan.recommended ? 'text-green-100' : 'text-gray-600'}`}
                         >
@@ -262,7 +273,6 @@ export default function PricingPage() {
                       <ul className="space-y-3">
                         {plan.limitations.map((limitation, limitIndex) => (
                           <li key={limitIndex} className="flex items-start space-x-3">
-                            {/* Icon removed for linting compliance */}
                             <span
                               className={`text-sm ${plan.recommended ? 'text-red-100' : 'text-gray-600'}`}
                             >
@@ -287,7 +297,7 @@ export default function PricingPage() {
             <h2 className="text-3xl lg:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
               Got questions? We have answers. Here are some of the most common questions about our
-              pricing.
+              pricing and AI evaluation platform.
             </p>
           </div>
 
@@ -299,14 +309,14 @@ export default function PricingPage() {
                   'Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle.',
               },
               {
-                question: 'What happens if I exceed my interview limit?',
+                question: 'What happens if I exceed my evaluation limit?',
                 answer:
-                  "You'll receive notifications as you approach your limit. You can purchase additional interviews or upgrade your plan.",
+                  "You'll receive notifications as you approach your limit. You can purchase additional evaluations or upgrade your plan.",
               },
               {
                 question: 'Is there a free trial available?',
                 answer:
-                  'Yes, all plans come with a 14-day free trial. No credit card required to get started.',
+                  'Yes, all plans come with a 14-day free trial. No credit card required to get started with resume analysis and Q&A evaluation.',
               },
               {
                 question: 'Do you offer custom enterprise solutions?',
@@ -314,14 +324,14 @@ export default function PricingPage() {
                   'Absolutely! Our Enterprise plan can be customized to meet your specific needs. Contact our sales team for details.',
               },
               {
-                question: 'What kind of support do you provide?',
+                question: 'How accurate is the AI evaluation?',
                 answer:
-                  'Support varies by plan - from email support on Starter to dedicated account managers on Enterprise.',
+                  'Our AI achieves 95%+ accuracy in resume analysis and Q&A evaluation, with continuous improvements based on feedback.',
               },
               {
-                question: 'Are there any setup fees?',
+                question: 'Can I integrate with my existing ATS?',
                 answer:
-                  'No setup fees for any of our plans. You only pay the monthly or annual subscription fee.',
+                  'Yes, our Professional and Enterprise plans include ATS integrations. We support most major ATS platforms.',
               },
             ].map((faq, index) => (
               <div key={index} className="bg-gray-50 rounded-xl p-6">
@@ -342,8 +352,8 @@ export default function PricingPage() {
                 Ready to Transform Your Hiring Process?
               </h2>
               <p className="text-xl text-green-100 mb-8">
-                Join thousands of companies already using Intervio to make better hiring decisions
-                faster.
+                Join thousands of companies already using our AI platform to make better hiring
+                decisions faster with intelligent resume analysis and Q&A evaluation.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button className="bg-white text-primary hover:bg-gray-100 font-semibold px-8 py-3 rounded-full">
