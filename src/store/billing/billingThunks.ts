@@ -8,11 +8,12 @@ import {
 } from '@/types/billing';
 import { APIResponse } from '@/types';
 import { RootState } from '..';
+import { isDev } from '@/lib/constants';
 
 // Track ongoing requests to prevent duplicates
 let fetchSubscriptionPromise: Promise<any> | null = null;
 
-// Fetch user's current subscription
+// Fetch user's current subscription (using user_details view for consistency)
 export const fetchSubscription = createAsyncThunk<UserSubscription, void>(
   'billing/fetchSubscription',
   async (_, { rejectWithValue }) => {
@@ -35,33 +36,61 @@ export const fetchSubscription = createAsyncThunk<UserSubscription, void>(
 
       // Create the promise and store it
       fetchSubscriptionPromise = (async () => {
+        // Use the user_details view (same as auth API) for consistency
         const { data, error } = await supabase
-          .from('user_subscriptions')
-          .select(
-            `
-            *,
-            subscriptions (
-              id,
-              name,
-              max_jobs,
-              max_interviews_per_month,
-              stripe_price_id,
-              price_monthly,
-              features
-            )
-          `,
-          )
-          .eq('user_id', user.id)
-          .in('status', ['active', 'trialing'])
+          .from('user_details')
+          .select('*')
+          .eq('id', user.id)
           .single();
 
         if (error) {
-          console.error('Error fetching subscription:', error);
+          console.error('Error fetching user details:', error);
           throw error;
         }
 
-        console.log('Found subscription:', data);
-        return data as UserSubscription;
+        // Check if user has an active subscription
+        if (!data.subscription_id || !data.subscription_status) {
+          console.log('No active subscription found for user');
+          throw new Error('No active subscription found');
+        }
+
+        // Transform the user_details data to match UserSubscription format
+        const subscription: UserSubscription = {
+          id: data.subscription_id,
+          user_id: user.id,
+          subscription_id: data.subscription_id,
+          status: data.subscription_status,
+          started_at: data.subscription_started_at || new Date().toISOString(),
+          expires_at: data.subscription_expires_at,
+          current_period_start: data.subscription_started_at,
+          current_period_end: data.subscription_expires_at,
+          trial_start: undefined, // Not available in user_details
+          trial_end: undefined, // Not available in user_details
+          cancel_at_period_end: false, // Not available in user_details
+          stripe_customer_id: data.stripe_customer_id,
+          stripe_subscription_id: data.stripe_subscription_id,
+          created_at: data.user_created_at,
+          updated_at: data.user_updated_at,
+          subscriptions: {
+            id: data.subscription_id,
+            name: data.subscription_name,
+            description: data.subscription_description,
+            price_monthly: data.price_monthly,
+            price_yearly: data.price_yearly,
+            max_jobs: data.max_jobs,
+            max_interviews_per_month: data.max_interviews_per_month,
+            features: data.subscription_features,
+            trial_days: 30, // Default trial days
+            interval: 'month',
+            is_active: true,
+            stripe_price_id: data.stripe_price_id_dev, // Use dev price ID as default
+            created_at: data.company_created_at,
+            updated_at: data.user_updated_at,
+          },
+        };
+
+        console.log('Found subscription from user_details:', subscription);
+        return subscription;
       })();
 
       const result = await fetchSubscriptionPromise;
@@ -79,13 +108,13 @@ export const fetchSubscription = createAsyncThunk<UserSubscription, void>(
   },
 );
 
-// Fetch available subscription plans
+// Fetch available subscription plans from database
 export const fetchSubscriptionPlans = createAsyncThunk<SubscriptionPlan[], void>(
   'billing/fetchSubscriptionPlans',
   async (_, { rejectWithValue }) => {
     try {
+      console.log('Fetching subscription plans from database...');
       const supabase = createClient();
-      console.log('Fetching subscription plans...');
 
       const { data, error } = await supabase
         .from('subscriptions')
@@ -94,11 +123,11 @@ export const fetchSubscriptionPlans = createAsyncThunk<SubscriptionPlan[], void>
         .order('price_monthly');
 
       if (error) {
-        console.error('Error fetching subscription plans:', error);
+        console.error('Error fetching subscription plans from database:', error);
         throw error;
       }
 
-      console.log('Found subscription plans:', data);
+      console.log('Found subscription plans from database:', data);
       return data as SubscriptionPlan[];
     } catch (error: any) {
       console.error('Failed to fetch subscription plans:', error);
@@ -107,19 +136,53 @@ export const fetchSubscriptionPlans = createAsyncThunk<SubscriptionPlan[], void>
   },
 );
 
-// Create Stripe checkout session
+// Create Stripe checkout session using database
 export const createCheckoutSession = createAsyncThunk<{ url: string }, CreateCheckoutSessionData>(
   'billing/createCheckoutSession',
   async (checkoutData, { rejectWithValue, getState }) => {
     try {
       const state = getState() as RootState;
-
       const user = state.auth.user;
+
       if (!user) {
         throw new Error('User not authenticated');
       }
 
       console.log('Creating checkout session for plan:', checkoutData.planId);
+
+      // Get the plan from database to get the correct price ID
+      const supabase = createClient();
+      const { data: plan, error: planError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('name', checkoutData.planId.toLowerCase())
+        .eq('is_active', true)
+        .single();
+
+      if (planError || !plan) {
+        throw new Error(`Plan ${checkoutData.planId} not found in database`);
+      }
+
+      // Determine billing period and get appropriate price ID
+      const billingPeriod = checkoutData.billingPeriod || 'monthly';
+      const environment = isDev ? 'development' : 'production';
+
+      // Use the database helper function to get the correct price ID
+      const { data: priceIdResult, error: priceIdError } = await supabase.rpc(
+        'get_stripe_price_id',
+        {
+          subscription_name: plan.name,
+          environment: environment,
+          billing_period: billingPeriod,
+        },
+      );
+
+      if (priceIdError || !priceIdResult) {
+        throw new Error(`Failed to get price ID for plan ${plan.name}`);
+      }
+
+      const priceId = priceIdResult;
+      const price = billingPeriod === 'monthly' ? plan.price_monthly : plan.price_yearly;
 
       const response = await fetch('/api/billing/create-checkout-session', {
         method: 'POST',
@@ -130,6 +193,9 @@ export const createCheckoutSession = createAsyncThunk<{ url: string }, CreateChe
           ...checkoutData,
           userId: user.id,
           userEmail: user.email,
+          priceId, // Pass the price ID from database
+          price, // Pass the price from database
+          planName: plan.name, // Pass plan name for metadata
         }),
       });
 

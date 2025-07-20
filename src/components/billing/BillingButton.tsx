@@ -49,6 +49,8 @@ export default function BillingButton({
         setError(
           'Billing portal is not configured yet. Please contact support to manage your subscription.',
         );
+      } else if (error?.includes('not available')) {
+        setError('Billing portal is not available. Please contact support.');
       } else {
         setError('Unable to access billing portal at this time. Please try again later.');
       }

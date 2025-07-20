@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchSubscription } from '@/store/billing/billingThunks';
@@ -10,7 +10,9 @@ import {
   selectTrialDaysRemaining,
   selectIsTrialing,
   selectHasActiveSubscription,
+  selectBillingLoading,
 } from '@/store/billing/billingSelectors';
+import { selectUser } from '@/store/auth/authSelectors';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import BillingButton from '@/components/billing/BillingButton';
 import { CreditCardIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
@@ -23,9 +25,16 @@ function BillingPageContent() {
   const trialDaysRemaining = useAppSelector(selectTrialDaysRemaining);
   const isTrialing = useAppSelector(selectIsTrialing);
   const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
+  const isLoading = useAppSelector(selectBillingLoading);
+  const user = useAppSelector(selectUser);
 
   const isSuccess = searchParams.get('success') === 'true';
   const isCanceled = searchParams.get('canceled') === 'true';
+
+  // Fetch subscription data on component mount
+  useEffect(() => {
+    dispatch(fetchSubscription());
+  }, [dispatch]);
 
   return (
     <DashboardLayout title="Billing & Subscription" requireSubscription={false}>
@@ -64,15 +73,12 @@ function BillingPageContent() {
             )}
           </div>
 
-          {/* Configuration Notice */}
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> The billing portal requires configuration in Stripe Dashboard.
-              If you encounter issues, please refer to the setup guide or contact support.
-            </p>
-          </div>
-
-          {hasActiveSubscription ? (
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading subscription details...</p>
+            </div>
+          ) : hasActiveSubscription ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>
@@ -171,14 +177,18 @@ function BillingPageContent() {
                     <div
                       className="bg-primary h-2 rounded-full"
                       style={{
-                        width: `${Math.min((0 / (currentPlan?.max_jobs || 1)) * 100, 100)}%`,
+                        width: `${Math.min(((user?.usageCounts?.activeJobs || 0) / (currentPlan?.max_jobs || 1)) * 100, 100)}%`,
                       }}
                     />
                   </div>
                   <span className="text-sm text-gray-600">
-                    0 / {currentPlan?.max_jobs === -1 ? '∞' : currentPlan?.max_jobs}
+                    {user?.usageCounts?.activeJobs || 0} /{' '}
+                    {currentPlan?.max_jobs === -1 ? '∞' : currentPlan?.max_jobs}
                   </span>
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {user?.usageCounts?.activeJobs || 0} active jobs this month
+                </p>
               </div>
 
               <div>
@@ -188,16 +198,52 @@ function BillingPageContent() {
                     <div
                       className="bg-primary h-2 rounded-full"
                       style={{
-                        width: `${Math.min((0 / (currentPlan?.max_interviews_per_month || 1)) * 100, 100)}%`,
+                        width: `${Math.min(((user?.usageCounts?.interviewsThisMonth || 0) / (currentPlan?.max_interviews_per_month || 1)) * 100, 100)}%`,
                       }}
                     />
                   </div>
                   <span className="text-sm text-gray-600">
-                    0 /{' '}
+                    {user?.usageCounts?.interviewsThisMonth || 0} /{' '}
                     {currentPlan?.max_interviews_per_month === -1
                       ? '∞'
                       : currentPlan?.max_interviews_per_month}
                   </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {user?.usageCounts?.interviewsThisMonth || 0} successful interviews this month
+                </p>
+              </div>
+            </div>
+
+            {/* Enhanced Usage Details */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h3 className="font-medium text-gray-900 mb-4">Current Month Activity</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {user?.usageCounts?.activeJobs || 0}
+                  </div>
+                  <div className="text-xs text-blue-700">Active Jobs</div>
+                </div>
+                <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">
+                    {user?.usageCounts?.interviewsThisMonth || 0}
+                  </div>
+                  <div className="text-xs text-green-700">Interviews</div>
+                </div>
+                <div className="text-center p-3 bg-purple-50 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {currentPlan?.max_jobs === -1 ? '∞' : currentPlan?.max_jobs || 0}
+                  </div>
+                  <div className="text-xs text-purple-700">Job Limit</div>
+                </div>
+                <div className="text-center p-3 bg-orange-50 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {currentPlan?.max_interviews_per_month === -1
+                      ? '∞'
+                      : currentPlan?.max_interviews_per_month || 0}
+                  </div>
+                  <div className="text-xs text-orange-700">Interview Limit</div>
                 </div>
               </div>
             </div>

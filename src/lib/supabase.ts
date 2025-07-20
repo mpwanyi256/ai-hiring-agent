@@ -6,6 +6,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '12.2.3 (519615d)';
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+          extensions?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       ai_evaluations: {
@@ -1083,6 +1108,13 @@ export type Database = {
             referencedColumns: ['company_id'];
           },
           {
+            foreignKeyName: 'integrations_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_details';
+            referencedColumns: ['company_id'];
+          },
+          {
             foreignKeyName: 'integrations_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
@@ -1494,6 +1526,13 @@ export type Database = {
             referencedRelation: 'jobs_comprehensive';
             referencedColumns: ['company_id'];
           },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_details';
+            referencedColumns: ['company_id'];
+          },
         ];
       };
       responses: {
@@ -1687,12 +1726,23 @@ export type Database = {
           description: string | null;
           features: Json | null;
           id: string;
+          interval: string | null;
           is_active: boolean | null;
           max_interviews_per_month: number | null;
           max_jobs: number | null;
           name: string;
           price_monthly: number | null;
           price_yearly: number | null;
+          stripe_checkout_link_dev: string | null;
+          stripe_checkout_link_dev_yearly: string | null;
+          stripe_checkout_link_prod: string | null;
+          stripe_checkout_link_prod_yearly: string | null;
+          stripe_price_id_dev: string | null;
+          stripe_price_id_dev_yearly: string | null;
+          stripe_price_id_prod: string | null;
+          stripe_price_id_prod_yearly: string | null;
+          stripe_product_id: string | null;
+          trial_days: number | null;
           updated_at: string | null;
         };
         Insert: {
@@ -1700,12 +1750,23 @@ export type Database = {
           description?: string | null;
           features?: Json | null;
           id?: string;
+          interval?: string | null;
           is_active?: boolean | null;
           max_interviews_per_month?: number | null;
           max_jobs?: number | null;
           name: string;
           price_monthly?: number | null;
           price_yearly?: number | null;
+          stripe_checkout_link_dev?: string | null;
+          stripe_checkout_link_dev_yearly?: string | null;
+          stripe_checkout_link_prod?: string | null;
+          stripe_checkout_link_prod_yearly?: string | null;
+          stripe_price_id_dev?: string | null;
+          stripe_price_id_dev_yearly?: string | null;
+          stripe_price_id_prod?: string | null;
+          stripe_price_id_prod_yearly?: string | null;
+          stripe_product_id?: string | null;
+          trial_days?: number | null;
           updated_at?: string | null;
         };
         Update: {
@@ -1713,12 +1774,23 @@ export type Database = {
           description?: string | null;
           features?: Json | null;
           id?: string;
+          interval?: string | null;
           is_active?: boolean | null;
           max_interviews_per_month?: number | null;
           max_jobs?: number | null;
           name?: string;
           price_monthly?: number | null;
           price_yearly?: number | null;
+          stripe_checkout_link_dev?: string | null;
+          stripe_checkout_link_dev_yearly?: string | null;
+          stripe_checkout_link_prod?: string | null;
+          stripe_checkout_link_prod_yearly?: string | null;
+          stripe_price_id_dev?: string | null;
+          stripe_price_id_dev_yearly?: string | null;
+          stripe_price_id_prod?: string | null;
+          stripe_price_id_prod_yearly?: string | null;
+          stripe_product_id?: string | null;
+          trial_days?: number | null;
           updated_at?: string | null;
         };
         Relationships: [];
@@ -1986,32 +2058,53 @@ export type Database = {
       };
       user_subscriptions: {
         Row: {
+          cancel_at_period_end: boolean | null;
           created_at: string | null;
+          current_period_end: string | null;
+          current_period_start: string | null;
           expires_at: string | null;
           id: string;
           started_at: string | null;
           status: string | null;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
           subscription_id: string;
+          trial_end: string | null;
+          trial_start: string | null;
           updated_at: string | null;
           user_id: string;
         };
         Insert: {
+          cancel_at_period_end?: boolean | null;
           created_at?: string | null;
+          current_period_end?: string | null;
+          current_period_start?: string | null;
           expires_at?: string | null;
           id?: string;
           started_at?: string | null;
           status?: string | null;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
           subscription_id: string;
+          trial_end?: string | null;
+          trial_start?: string | null;
           updated_at?: string | null;
           user_id: string;
         };
         Update: {
+          cancel_at_period_end?: boolean | null;
           created_at?: string | null;
+          current_period_end?: string | null;
+          current_period_start?: string | null;
           expires_at?: string | null;
           id?: string;
           started_at?: string | null;
           status?: string | null;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
           subscription_id?: string;
+          trial_end?: string | null;
+          trial_start?: string | null;
           updated_at?: string | null;
           user_id?: string;
         };
@@ -2598,72 +2691,58 @@ export type Database = {
             referencedRelation: 'jobs_comprehensive';
             referencedColumns: ['company_id'];
           },
+          {
+            foreignKeyName: 'profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_details';
+            referencedColumns: ['company_id'];
+          },
         ];
       };
       user_details: {
         Row: {
           active_jobs_count: number | null;
-          closed_jobs: number | null;
+          cancel_at_period_end: boolean | null;
           company_created_at: string | null;
           company_id: string | null;
           company_name: string | null;
           company_slug: string | null;
-          draft_jobs: number | null;
+          current_period_end: string | null;
+          current_period_start: string | null;
           email: string | null;
           first_name: string | null;
           id: string | null;
-          interviewing_jobs: number | null;
           interviews_this_month: number | null;
           last_name: string | null;
           max_interviews_per_month: number | null;
           max_jobs: number | null;
+          price_monthly: number | null;
+          price_yearly: number | null;
           role: Database['public']['Enums']['user_role'] | null;
-          subscription_created_at: string | null;
+          stripe_checkout_link_dev: string | null;
+          stripe_checkout_link_dev_yearly: string | null;
+          stripe_checkout_link_prod: string | null;
+          stripe_checkout_link_prod_yearly: string | null;
+          stripe_customer_id: string | null;
+          stripe_price_id_dev: string | null;
+          stripe_price_id_dev_yearly: string | null;
+          stripe_price_id_prod: string | null;
+          stripe_price_id_prod_yearly: string | null;
+          stripe_subscription_id: string | null;
+          subscription_description: string | null;
+          subscription_features: Json | null;
           subscription_id: string | null;
           subscription_name: string | null;
+          subscription_started_at: string | null;
           subscription_status: string | null;
-          total_interviews: number | null;
-          total_jobs: number | null;
+          subscription_updated_at: string | null;
+          trial_end: string | null;
+          trial_start: string | null;
           user_created_at: string | null;
           user_updated_at: string | null;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'profiles_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'companies';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'profiles_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'company_candidate_pipeline';
-            referencedColumns: ['company_id'];
-          },
-          {
-            foreignKeyName: 'profiles_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'company_upcoming_interviews';
-            referencedColumns: ['company_id'];
-          },
-          {
-            foreignKeyName: 'profiles_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'interview_details';
-            referencedColumns: ['company_id'];
-          },
-          {
-            foreignKeyName: 'profiles_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'jobs_comprehensive';
-            referencedColumns: ['company_id'];
-          },
-        ];
+        Relationships: [];
       };
     };
     Functions: {
@@ -2790,6 +2869,30 @@ export type Database = {
         Args: { p_candidate_id: string };
         Returns: Json;
       };
+      get_company_subscription: {
+        Args: { user_id: string };
+        Returns: {
+          company_id: string;
+          company_name: string;
+          company_slug: string;
+          subscription_status: string;
+          plan_name: string;
+          plan_description: string;
+          price_monthly: number;
+          price_yearly: number;
+          max_jobs: number;
+          max_interviews_per_month: number;
+          features: Json;
+          total_jobs_created_this_month: number;
+          active_jobs_this_month: number;
+          total_active_jobs: number;
+          successful_interviews_this_month: number;
+          total_interviews_this_month: number;
+          company_active_jobs_count: number;
+          company_interviews_this_month: number;
+          company_user_count: number;
+        }[];
+      };
       get_job_candidate_details: {
         Args:
           | {
@@ -2809,7 +2912,6 @@ export type Database = {
             }
           | {
               p_job_id: string;
-              p_profile_id?: string;
               p_search?: string;
               p_status?: string;
               p_limit?: number;
@@ -2879,9 +2981,35 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: string;
       };
+      get_stripe_checkout_link: {
+        Args: {
+          subscription_name: string;
+          environment?: string;
+          billing_period?: string;
+        };
+        Returns: string;
+      };
+      get_stripe_price_id: {
+        Args: {
+          subscription_name: string;
+          environment?: string;
+          billing_period?: string;
+        };
+        Returns: string;
+      };
       get_supabase_project_ref: {
         Args: Record<PropertyKey, never>;
         Returns: string;
+      };
+      get_user_current_month_usage: {
+        Args: { user_id: string };
+        Returns: {
+          total_jobs_created: number;
+          active_jobs: number;
+          successful_interviews: number;
+          total_interviews: number;
+          current_month: string;
+        }[];
       };
       get_user_interview_usage: {
         Args: { p_user_id: string };
@@ -3131,6 +3259,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       candidate_status: [

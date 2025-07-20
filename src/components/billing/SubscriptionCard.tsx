@@ -37,7 +37,8 @@ export default function SubscriptionCard({
 
       const result = await dispatch(
         createCheckoutSession({
-          planId: plan.id,
+          planId: plan.name, // Use plan name instead of plan ID
+          billingPeriod, // Pass the billing period
           successUrl: `${window.location.origin}/dashboard/billing?success=true`,
           cancelUrl: `${window.location.origin}/dashboard/billing?canceled=true`,
         }),
