@@ -23,15 +23,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
     }
 
-    // Get user's Stripe customer ID
-    const { data: subscription, error: subscriptionError } = await supabase
-      .from('user_subscriptions')
-      .select('stripe_customer_id')
-      .eq('user_id', user.id)
-      .in('status', ['active', 'trialing'])
+    // Get user's subscription data from user_details view (same as billing store)
+    const { data: userDetails, error: userError } = await supabase
+      .from('user_details')
+      .select('stripe_customer_id, subscription_status, subscription_id')
+      .eq('id', user.id)
       .single();
 
-    if (subscriptionError || !subscription?.stripe_customer_id) {
+    if (userError || !userDetails) {
+      console.error('Error fetching user details:', userError);
+      return NextResponse.json({ error: 'User details not found' }, { status: 404 });
+    }
+
+    // Check if user has an active subscription
+    if (
+      !userDetails.subscription_id ||
+      !userDetails.subscription_status ||
+      !userDetails.stripe_customer_id
+    ) {
       console.error('No active subscription found for user:', user.id);
       return NextResponse.json(
         {
@@ -42,9 +51,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if subscription is active or trialing
+    if (!['active', 'trialing'].includes(userDetails.subscription_status)) {
+      console.error(
+        'Subscription not active for user:',
+        user.id,
+        'Status:',
+        userDetails.subscription_status,
+      );
+      return NextResponse.json(
+        {
+          error: 'Subscription not active',
+          needsConfiguration: true,
+        },
+        { status: 404 },
+      );
+    }
+
     // Create billing portal session
     const session = await stripe.billingPortal.sessions.create({
-      customer: subscription.stripe_customer_id,
+      customer: userDetails.stripe_customer_id,
       return_url: returnUrl || `${request.nextUrl.origin}/dashboard/billing`,
     });
 
