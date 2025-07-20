@@ -79,3 +79,22 @@ export interface UsageMetrics {
   jobsUsagePercentage: number;
   interviewsUsagePercentage: number;
 }
+
+export type PlanInterval = 'month' | 'year';
+
+export interface Plan {
+  [key: string]: {
+    link: string;
+    priceId: string;
+    price: number;
+    interval: PlanInterval;
+  };
+}
+
+export enum SubscriptionNames {
+  BUSINESS = 'business',
+  PRO = 'pro',
+  STARTER = 'starter',
+}
+
+export type SubscriptionPlans = Record<SubscriptionNames, Plan>;
