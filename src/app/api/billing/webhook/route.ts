@@ -10,6 +10,35 @@ const stripe = new Stripe(integrations.stripe.secretKey!, {
 
 const webhookSecret = integrations.stripe.webhookSecret!;
 
+// Helper function to get subscription ID from plan name using the new database structure
+async function getSubscriptionIdFromPlanName(
+  planName: string,
+  supabase: any,
+): Promise<string | null> {
+  try {
+    console.log(`🔍 Looking up subscription ID for plan: ${planName}`);
+
+    // Use the new database structure with proper plan names
+    const { data: subscription, error } = await supabase
+      .from('subscriptions')
+      .select('id, name, description')
+      .ilike('name', planName)
+      .eq('is_active', true)
+      .single();
+
+    if (error) {
+      console.log(`❌ No subscription found for plan name: ${planName}`, error);
+      return null;
+    }
+
+    console.log(`✅ Found subscription: ${subscription.name} (${subscription.description})`);
+    return subscription.id;
+  } catch (error) {
+    console.error('❌ Error finding subscription ID for plan:', planName, error);
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
@@ -58,10 +87,32 @@ export async function POST(request: NextRequest) {
             metadata: session.metadata,
           });
 
-          // Update or create user subscription
+          // Get the plan name from metadata
+          const planName = session.metadata?.planId;
+          console.log('📋 Plan name from metadata:', planName);
+
+          if (!planName) {
+            console.error('❌ No plan name found in metadata');
+            return NextResponse.json({ error: 'No plan name in metadata' }, { status: 400 });
+          }
+
+          // Get subscription ID from database using plan name
+          const subscriptionId = await getSubscriptionIdFromPlanName(planName, supabase);
+
+          if (!subscriptionId) {
+            console.error(`❌ No subscription found in database for plan: ${planName}`);
+            return NextResponse.json(
+              { error: `No subscription found for plan: ${planName}` },
+              { status: 400 },
+            );
+          }
+
+          console.log(`📋 Found subscription ID: ${subscriptionId} for plan: ${planName}`);
+
+          // Update or create user subscription with enhanced data
           const { error } = await supabase.from('user_subscriptions').upsert({
             user_id: session.metadata?.userId,
-            subscription_id: session.metadata?.planId,
+            subscription_id: subscriptionId, // Use the database subscription ID
             status: subscription.status,
             current_period_start: new Date(
               (subscription as any).current_period_start * 1000,
@@ -78,10 +129,13 @@ export async function POST(request: NextRequest) {
             cancel_at_period_end: subscription.cancel_at_period_end,
             stripe_customer_id: subscription.customer as string,
             stripe_subscription_id: subscription.id,
+            started_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           });
 
           if (error) {
             console.error('❌ Error updating subscription:', error);
+            return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
           } else {
             console.log('✅ Subscription updated successfully');
           }
@@ -119,6 +173,7 @@ export async function POST(request: NextRequest) {
               ? new Date((subscription as any).trial_end * 1000).toISOString()
               : null,
             cancel_at_period_end: subscription.cancel_at_period_end,
+            updated_at: new Date().toISOString(),
           })
           .eq('stripe_subscription_id', subscription.id);
 
@@ -144,6 +199,7 @@ export async function POST(request: NextRequest) {
           .from('user_subscriptions')
           .update({
             status: 'canceled',
+            updated_at: new Date().toISOString(),
           })
           .eq('stripe_subscription_id', subscription.id);
 
@@ -167,6 +223,7 @@ export async function POST(request: NextRequest) {
             .from('user_subscriptions')
             .update({
               status: 'past_due',
+              updated_at: new Date().toISOString(),
             })
             .eq('stripe_subscription_id', (invoice as any).subscription as string);
 
@@ -191,6 +248,7 @@ export async function POST(request: NextRequest) {
             .from('user_subscriptions')
             .update({
               status: 'active',
+              updated_at: new Date().toISOString(),
             })
             .eq('stripe_subscription_id', (invoice as any).subscription as string);
 

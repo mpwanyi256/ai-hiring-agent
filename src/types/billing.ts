@@ -56,6 +56,7 @@ export interface CreateCheckoutSessionData {
   planId: string;
   successUrl: string;
   cancelUrl: string;
+  billingPeriod?: 'monthly' | 'yearly';
 }
 
 export interface BillingPortalData {
