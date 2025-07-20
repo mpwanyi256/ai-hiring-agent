@@ -113,17 +113,28 @@ export async function POST(request: NextRequest) {
 
           console.log(`📋 Found subscription ID: ${subscriptionId} for plan: ${planName}`);
 
-          // Update or create user subscription with enhanced data
-          const { error } = await supabase.from('user_subscriptions').upsert({
+          // Check if user already has a subscription
+          const { data: existingSubscription, error: checkError } = await supabase
+            .from('user_subscriptions')
+            .select('id, status')
+            .eq('user_id', session.metadata?.userId)
+            .single();
+
+          if (checkError && checkError.code !== 'PGRST116') {
+            console.error('❌ Error checking existing subscription:', checkError);
+            return NextResponse.json({ error: 'Database check failed' }, { status: 500 });
+          }
+
+          const subscriptionData = {
             user_id: session.metadata?.userId,
-            subscription_id: subscriptionId, // Use the database subscription ID
+            subscription_id: subscriptionId,
             status: subscription.status,
             current_period_start: (subscription as any).current_period_start
               ? new Date((subscription as any).current_period_start * 1000).toISOString()
               : new Date().toISOString(),
             current_period_end: (subscription as any).current_period_end
               ? new Date((subscription as any).current_period_end * 1000).toISOString()
-              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // Default to 30 days from now
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             trial_start: (subscription as any).trial_start
               ? new Date((subscription as any).trial_start * 1000).toISOString()
               : null,
@@ -135,7 +146,29 @@ export async function POST(request: NextRequest) {
             stripe_subscription_id: subscription.id,
             started_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          });
+          };
+
+          console.log('new Subscription', subscriptionData);
+
+          let error;
+          if (existingSubscription) {
+            // Update existing subscription
+            console.log('🔄 Updating existing subscription:', existingSubscription.id);
+            const { error: updateError } = await supabase
+              .from('user_subscriptions')
+              .update(subscriptionData)
+              .eq('id', existingSubscription.id);
+
+            error = updateError;
+          } else {
+            // Create new subscription
+            console.log('➕ Creating new subscription for user:', session.metadata?.userId);
+            const { error: insertError } = await supabase
+              .from('user_subscriptions')
+              .insert(subscriptionData);
+
+            error = insertError;
+          }
 
           if (error) {
             console.error('❌ Error updating subscription:', error);
@@ -159,6 +192,23 @@ export async function POST(request: NextRequest) {
           customer: subscription.customer,
         });
 
+        // Find the user subscription by stripe_subscription_id
+        const { data: userSubscription, error: findError } = await supabase
+          .from('user_subscriptions')
+          .select('id')
+          .eq('stripe_subscription_id', subscription.id)
+          .single();
+
+        if (findError) {
+          console.error('❌ Error finding subscription to update:', findError);
+          break;
+        }
+
+        if (!userSubscription) {
+          console.error('❌ No user subscription found for Stripe subscription:', subscription.id);
+          break;
+        }
+
         // Update user subscription
         const { error } = await supabase
           .from('user_subscriptions')
@@ -179,7 +229,7 @@ export async function POST(request: NextRequest) {
             cancel_at_period_end: subscription.cancel_at_period_end,
             updated_at: new Date().toISOString(),
           })
-          .eq('stripe_subscription_id', subscription.id);
+          .eq('id', userSubscription.id);
 
         if (error) {
           console.error('❌ Error updating subscription:', error);
@@ -198,6 +248,23 @@ export async function POST(request: NextRequest) {
           status: subscription.status,
         });
 
+        // Find the user subscription by stripe_subscription_id
+        const { data: userSubscription, error: findError } = await supabase
+          .from('user_subscriptions')
+          .select('id')
+          .eq('stripe_subscription_id', subscription.id)
+          .single();
+
+        if (findError) {
+          console.error('❌ Error finding subscription to cancel:', findError);
+          break;
+        }
+
+        if (!userSubscription) {
+          console.error('❌ No user subscription found for Stripe subscription:', subscription.id);
+          break;
+        }
+
         // Mark subscription as canceled
         const { error } = await supabase
           .from('user_subscriptions')
@@ -205,7 +272,7 @@ export async function POST(request: NextRequest) {
             status: 'canceled',
             updated_at: new Date().toISOString(),
           })
-          .eq('stripe_subscription_id', subscription.id);
+          .eq('id', userSubscription.id);
 
         if (error) {
           console.error('❌ Error canceling subscription:', error);
@@ -222,6 +289,26 @@ export async function POST(request: NextRequest) {
         if ((invoice as any).subscription) {
           console.log('📦 Payment failed for subscription:', (invoice as any).subscription);
 
+          // Find the user subscription by stripe_subscription_id
+          const { data: userSubscription, error: findError } = await supabase
+            .from('user_subscriptions')
+            .select('id')
+            .eq('stripe_subscription_id', (invoice as any).subscription as string)
+            .single();
+
+          if (findError) {
+            console.error('❌ Error finding subscription for payment failure:', findError);
+            break;
+          }
+
+          if (!userSubscription) {
+            console.error(
+              '❌ No user subscription found for Stripe subscription:',
+              (invoice as any).subscription,
+            );
+            break;
+          }
+
           // Update subscription status to past_due
           const { error } = await supabase
             .from('user_subscriptions')
@@ -229,7 +316,7 @@ export async function POST(request: NextRequest) {
               status: 'past_due',
               updated_at: new Date().toISOString(),
             })
-            .eq('stripe_subscription_id', (invoice as any).subscription as string);
+            .eq('id', userSubscription.id);
 
           if (error) {
             console.error('❌ Error updating subscription status:', error);
@@ -247,6 +334,26 @@ export async function POST(request: NextRequest) {
         if ((invoice as any).subscription) {
           console.log('📦 Payment succeeded for subscription:', (invoice as any).subscription);
 
+          // Find the user subscription by stripe_subscription_id
+          const { data: userSubscription, error: findError } = await supabase
+            .from('user_subscriptions')
+            .select('id')
+            .eq('stripe_subscription_id', (invoice as any).subscription as string)
+            .single();
+
+          if (findError) {
+            console.error('❌ Error finding subscription for payment success:', findError);
+            break;
+          }
+
+          if (!userSubscription) {
+            console.error(
+              '❌ No user subscription found for Stripe subscription:',
+              (invoice as any).subscription,
+            );
+            break;
+          }
+
           // Update subscription status to active
           const { error } = await supabase
             .from('user_subscriptions')
@@ -254,7 +361,7 @@ export async function POST(request: NextRequest) {
               status: 'active',
               updated_at: new Date().toISOString(),
             })
-            .eq('stripe_subscription_id', (invoice as any).subscription as string);
+            .eq('id', userSubscription.id);
 
           if (error) {
             console.error('❌ Error updating subscription status:', error);

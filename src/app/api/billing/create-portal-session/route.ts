@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
     }
 
-    // Get user's subscription data from user_details view (same as billing store)
+    // Get user's subscription data from user_details view
     const { data: userDetails, error: userError } = await supabase
       .from('user_details')
       .select('stripe_customer_id, subscription_status, subscription_id')
@@ -36,19 +36,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has an active subscription
-    if (
-      !userDetails.subscription_id ||
-      !userDetails.subscription_status ||
-      !userDetails.stripe_customer_id
-    ) {
+    if (!userDetails.subscription_id || !userDetails.subscription_status) {
       console.error('No active subscription found for user:', user.id);
-      return NextResponse.json(
-        {
-          error: 'No active subscription found',
-          needsConfiguration: true,
-        },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: 'No active subscription found' }, { status: 404 });
     }
 
     // Check if subscription is active or trialing
@@ -59,11 +49,14 @@ export async function POST(request: NextRequest) {
         'Status:',
         userDetails.subscription_status,
       );
+      return NextResponse.json({ error: 'Subscription not active' }, { status: 404 });
+    }
+
+    // Check if user has a Stripe customer ID
+    if (!userDetails.stripe_customer_id) {
+      console.error('No Stripe customer ID found for user:', user.id);
       return NextResponse.json(
-        {
-          error: 'Subscription not active',
-          needsConfiguration: true,
-        },
+        { error: 'Billing portal not available. Please contact support.' },
         { status: 404 },
       );
     }
