@@ -8,6 +8,7 @@ import {
 } from '@/types/billing';
 import { APIResponse } from '@/types';
 import { RootState } from '..';
+import { isDev } from '@/lib/constants';
 
 // Track ongoing requests to prevent duplicates
 let fetchSubscriptionPromise: Promise<any> | null = null;
@@ -164,7 +165,7 @@ export const createCheckoutSession = createAsyncThunk<{ url: string }, CreateChe
 
       // Determine billing period and get appropriate price ID
       const billingPeriod = checkoutData.billingPeriod || 'monthly';
-      const environment = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+      const environment = isDev ? 'development' : 'production';
 
       // Use the database helper function to get the correct price ID
       const { data: priceIdResult, error: priceIdError } = await supabase.rpc(

@@ -40,7 +40,7 @@ export const ai = {
   temperature: 0.7, // Balanced creativity for question generation
 };
 
-const isDev = process.env.NODE_ENV === 'development';
+export const isDev = process.env.NEXT_PUBLIC_CLIENT_ENV === 'development';
 
 export const integrations = {
   google: {
