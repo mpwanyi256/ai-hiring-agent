@@ -85,6 +85,10 @@ export async function POST(request: NextRequest) {
             status: subscription.status,
             customer: subscription.customer,
             metadata: session.metadata,
+            current_period_start: (subscription as any).current_period_start,
+            current_period_end: (subscription as any).current_period_end,
+            trial_start: (subscription as any).trial_start,
+            trial_end: (subscription as any).trial_end,
           });
 
           // Get the plan name from metadata
@@ -114,12 +118,12 @@ export async function POST(request: NextRequest) {
             user_id: session.metadata?.userId,
             subscription_id: subscriptionId, // Use the database subscription ID
             status: subscription.status,
-            current_period_start: new Date(
-              (subscription as any).current_period_start * 1000,
-            ).toISOString(),
-            current_period_end: new Date(
-              (subscription as any).current_period_end * 1000,
-            ).toISOString(),
+            current_period_start: (subscription as any).current_period_start
+              ? new Date((subscription as any).current_period_start * 1000).toISOString()
+              : new Date().toISOString(),
+            current_period_end: (subscription as any).current_period_end
+              ? new Date((subscription as any).current_period_end * 1000).toISOString()
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // Default to 30 days from now
             trial_start: (subscription as any).trial_start
               ? new Date((subscription as any).trial_start * 1000).toISOString()
               : null,
@@ -160,12 +164,12 @@ export async function POST(request: NextRequest) {
           .from('user_subscriptions')
           .update({
             status: subscription.status,
-            current_period_start: new Date(
-              (subscription as any).current_period_start * 1000,
-            ).toISOString(),
-            current_period_end: new Date(
-              (subscription as any).current_period_end * 1000,
-            ).toISOString(),
+            current_period_start: (subscription as any).current_period_start
+              ? new Date((subscription as any).current_period_start * 1000).toISOString()
+              : new Date().toISOString(),
+            current_period_end: (subscription as any).current_period_end
+              ? new Date((subscription as any).current_period_end * 1000).toISOString()
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             trial_start: (subscription as any).trial_start
               ? new Date((subscription as any).trial_start * 1000).toISOString()
               : null,

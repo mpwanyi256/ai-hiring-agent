@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchSubscriptionPlans } from '@/store/billing/billingThunks';
+import { fetchSubscriptionPlans, fetchSubscription } from '@/store/billing/billingThunks';
 import { selectSubscriptionPlans, selectCurrentPlan } from '@/store/billing/billingSelectors';
 import Navigation from '@/components/landing/Navigation';
 import Footer from '@/components/landing/Footer';
@@ -17,7 +17,9 @@ export default function PricingPage() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   useEffect(() => {
+    // Fetch both plans and current subscription
     dispatch(fetchSubscriptionPlans());
+    dispatch(fetchSubscription());
   }, [dispatch]);
 
   const getPrice = (plan: any) => {

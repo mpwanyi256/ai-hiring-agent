@@ -12,7 +12,7 @@ import { RootState } from '..';
 // Track ongoing requests to prevent duplicates
 let fetchSubscriptionPromise: Promise<any> | null = null;
 
-// Fetch user's current subscription
+// Fetch user's current subscription (using user_details view for consistency)
 export const fetchSubscription = createAsyncThunk<UserSubscription, void>(
   'billing/fetchSubscription',
   async (_, { rejectWithValue }) => {
@@ -35,33 +35,61 @@ export const fetchSubscription = createAsyncThunk<UserSubscription, void>(
 
       // Create the promise and store it
       fetchSubscriptionPromise = (async () => {
+        // Use the user_details view (same as auth API) for consistency
         const { data, error } = await supabase
-          .from('user_subscriptions')
-          .select(
-            `
-            *,
-            subscriptions (
-              id,
-              name,
-              max_jobs,
-              max_interviews_per_month,
-              price_monthly,
-              price_yearly,
-              features
-            )
-          `,
-          )
-          .eq('user_id', user.id)
-          .in('status', ['active', 'trialing'])
+          .from('user_details')
+          .select('*')
+          .eq('id', user.id)
           .single();
 
         if (error) {
-          console.error('Error fetching subscription:', error);
+          console.error('Error fetching user details:', error);
           throw error;
         }
 
-        console.log('Found subscription:', data);
-        return data as UserSubscription;
+        // Check if user has an active subscription
+        if (!data.subscription_id || !data.subscription_status) {
+          console.log('No active subscription found for user');
+          throw new Error('No active subscription found');
+        }
+
+        // Transform the user_details data to match UserSubscription format
+        const subscription: UserSubscription = {
+          id: data.subscription_id,
+          user_id: user.id,
+          subscription_id: data.subscription_id,
+          status: data.subscription_status,
+          started_at: data.subscription_started_at || new Date().toISOString(),
+          expires_at: data.subscription_expires_at,
+          current_period_start: data.subscription_started_at,
+          current_period_end: data.subscription_expires_at,
+          trial_start: undefined, // Not available in user_details
+          trial_end: undefined, // Not available in user_details
+          cancel_at_period_end: false, // Not available in user_details
+          stripe_customer_id: data.stripe_customer_id,
+          stripe_subscription_id: data.stripe_subscription_id,
+          created_at: data.user_created_at,
+          updated_at: data.user_updated_at,
+          subscriptions: {
+            id: data.subscription_id,
+            name: data.subscription_name,
+            description: data.subscription_description,
+            price_monthly: data.price_monthly,
+            price_yearly: data.price_yearly,
+            max_jobs: data.max_jobs,
+            max_interviews_per_month: data.max_interviews_per_month,
+            features: data.subscription_features,
+            trial_days: 30, // Default trial days
+            interval: 'month',
+            is_active: true,
+            stripe_price_id: data.stripe_price_id_dev, // Use dev price ID as default
+            created_at: data.company_created_at,
+            updated_at: data.user_updated_at,
+          },
+        };
+
+        console.log('Found subscription from user_details:', subscription);
+        return subscription;
       })();
 
       const result = await fetchSubscriptionPromise;

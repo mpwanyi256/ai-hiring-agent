@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchSubscription } from '@/store/billing/billingThunks';
@@ -10,6 +10,7 @@ import {
   selectTrialDaysRemaining,
   selectIsTrialing,
   selectHasActiveSubscription,
+  selectBillingLoading,
 } from '@/store/billing/billingSelectors';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import BillingButton from '@/components/billing/BillingButton';
@@ -23,9 +24,15 @@ function BillingPageContent() {
   const trialDaysRemaining = useAppSelector(selectTrialDaysRemaining);
   const isTrialing = useAppSelector(selectIsTrialing);
   const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
+  const isLoading = useAppSelector(selectBillingLoading);
 
   const isSuccess = searchParams.get('success') === 'true';
   const isCanceled = searchParams.get('canceled') === 'true';
+
+  // Fetch subscription data on component mount
+  useEffect(() => {
+    dispatch(fetchSubscription());
+  }, [dispatch]);
 
   return (
     <DashboardLayout title="Billing & Subscription" requireSubscription={false}>
@@ -64,15 +71,12 @@ function BillingPageContent() {
             )}
           </div>
 
-          {/* Configuration Notice */}
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> The billing portal requires configuration in Stripe Dashboard.
-              If you encounter issues, please refer to the setup guide or contact support.
-            </p>
-          </div>
-
-          {hasActiveSubscription ? (
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading subscription details...</p>
+            </div>
+          ) : hasActiveSubscription ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>

@@ -9,82 +9,69 @@ const stripe = new Stripe(integrations.stripe.secretKey!, {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const body = await request.json();
+    const { returnUrl } = body;
 
-    // Get authenticated user
+    console.log('Creating billing portal session...');
+
+    const supabase = await createClient();
     const {
       data: { user },
-      error: authError,
     } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
 
-    const { returnUrl } = await request.json();
-
-    if (!returnUrl) {
-      return NextResponse.json({ success: false, error: 'Missing return URL' }, { status: 400 });
+    if (!user) {
+      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
     }
 
     // Get user's Stripe customer ID
-    const { data: subscription, error: subError } = await supabase
+    const { data: subscription, error: subscriptionError } = await supabase
       .from('user_subscriptions')
       .select('stripe_customer_id')
       .eq('user_id', user.id)
+      .in('status', ['active', 'trialing'])
       .single();
 
-    if (subError || !subscription?.stripe_customer_id) {
+    if (subscriptionError || !subscription?.stripe_customer_id) {
+      console.error('No active subscription found for user:', user.id);
       return NextResponse.json(
-        { success: false, error: 'No active subscription found' },
+        {
+          error: 'No active subscription found',
+          needsConfiguration: true,
+        },
         { status: 404 },
       );
     }
 
-    try {
-      // Create billing portal session
-      const session = await stripe.billingPortal.sessions.create({
-        customer: subscription.stripe_customer_id,
-        return_url: returnUrl,
-      });
+    // Create billing portal session
+    const session = await stripe.billingPortal.sessions.create({
+      customer: subscription.stripe_customer_id,
+      return_url: returnUrl || `${request.nextUrl.origin}/dashboard/billing`,
+    });
 
-      return NextResponse.json({
-        success: true,
-        data: {
-          url: session.url,
-        },
-      });
-    } catch (stripeError: any) {
-      console.error('Stripe billing portal error:', stripeError);
+    console.log('Billing portal session created:', session.id);
 
-      // Check if it's a configuration error
-      if (
-        stripeError.code === 'invalid_request_error' &&
-        stripeError.message?.includes('configuration')
-      ) {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              'Billing portal not configured. Please contact support to manage your subscription.',
-            needsConfiguration: true,
-          },
-          { status: 503 },
-        );
-      }
-
-      // For other Stripe errors, return a generic message
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Unable to access billing portal at this time. Please try again later.',
-        },
-        { status: 500 },
-      );
-    }
+    return NextResponse.json({
+      success: true,
+      data: {
+        url: session.url,
+      },
+    });
   } catch (error: any) {
     console.error('Error creating billing portal session:', error);
+
+    // Check if it's a configuration error
+    if (error.code === 'resource_missing' || error.message?.includes('customer')) {
+      return NextResponse.json(
+        {
+          error: 'Billing portal not configured. Please contact support.',
+          needsConfiguration: true,
+        },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to create billing portal session' },
+      { error: error.message || 'Failed to create billing portal session' },
       { status: 500 },
     );
   }
