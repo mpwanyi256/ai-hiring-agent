@@ -6,7 +6,8 @@ import { RootState } from '@/store';
 import TopNavigation from '@/components/navigation/TopNavigation';
 import Sidebar from './Sidebar';
 import { LoadingOverlay } from '../generics/LoadingOverlay';
-import SubscriptionRequired from '@/components/billing/SubscriptionRequired';
+import SidePanel from '@/components/ui/SidePanel';
+import { SparklesIcon } from '@heroicons/react/24/outline';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -21,12 +22,15 @@ export default function DashboardLayout({
   title,
   loading,
   loadingMessage,
-  requireSubscription = true,
 }: DashboardLayoutProps) {
   // Always call hooks at the top level
   const { user, isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showSubscriptionPanel, setShowSubscriptionPanel] = useState(false);
+
+  const hasActiveSubscription =
+    user?.subscription && ['active', 'trialing'].includes(user.subscription.status);
 
   // Render loading state
   if (isLoading || (!isAuthenticated && !user)) {
@@ -76,6 +80,7 @@ export default function DashboardLayout({
             collapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
             onClose={() => setSidebarOpen(false)}
+            onSubscribeClick={() => setShowSubscriptionPanel(true)}
           />
         </div>
 
@@ -90,6 +95,7 @@ export default function DashboardLayout({
             onToggleCollapse={() => {}}
             onClose={() => setSidebarOpen(false)}
             isMobile={true}
+            onSubscribeClick={() => setShowSubscriptionPanel(true)}
           />
         </div>
 
@@ -109,14 +115,38 @@ export default function DashboardLayout({
             </div>
           </main>
         </div>
+
+        {/* Subscription SidePanel for Unsubscribed Users */}
+        <SidePanel
+          isOpen={!hasActiveSubscription && showSubscriptionPanel}
+          onClose={() => setShowSubscriptionPanel(false)}
+          title="Subscription Required"
+          width="md"
+        >
+          <div className="mb-4">
+            <p className="text-lg font-semibold text-gray-900 mb-2">Unlock Full Access</p>
+            <p className="text-gray-700 mb-4">
+              Subscribe to a plan to create jobs, manage candidates, and access all features of the
+              dashboard.
+            </p>
+            <ul className="mb-6 space-y-2 text-sm text-gray-700">
+              <li>• AI-powered candidate evaluation</li>
+              <li>• 30-day free trial on all plans</li>
+              <li>• Cancel anytime, no long-term commitment</li>
+              <li>• Priority support and analytics</li>
+            </ul>
+            <a href="/pricing" className="inline-block w-full">
+              <button className="w-full px-4 py-2 bg-primary text-white rounded font-semibold hover:bg-primary/90 transition-all text-base flex items-center justify-center gap-2">
+                <SparklesIcon className="w-5 h-5" />
+                View Pricing Plans
+              </button>
+            </a>
+          </div>
+        </SidePanel>
       </div>
     </div>
   );
 
-  // Return with or without subscription requirement
-  return requireSubscription ? (
-    <SubscriptionRequired>{dashboardContent}</SubscriptionRequired>
-  ) : (
-    dashboardContent
-  );
+  // Return dashboard content for all users (no SubscriptionRequired wrapper)
+  return dashboardContent;
 }

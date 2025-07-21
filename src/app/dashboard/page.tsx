@@ -31,6 +31,7 @@ import {
 import { app } from '@/lib/constants';
 import { MetricCardSkeleton } from '@/components/dashboard/MetricCard';
 import { InsightCardSkeleton } from '@/components/dashboard/InsightCard';
+import { SubscriptionModal } from '@/components/modals/SubscriptionModal';
 
 // Move the success message logic into a child component
 function DashboardSuccessMessage() {
@@ -103,6 +104,8 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
+      {/* Subscription/Limit Modal */}
+      <SubscriptionModal />
       {/* Success Message */}
       <Suspense fallback={null}>
         <DashboardSuccessMessage />

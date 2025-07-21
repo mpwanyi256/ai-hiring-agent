@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       .from('user_details')
       .select('stripe_customer_id, subscription_status, subscription_id')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (userError || !userDetails) {
       console.error('Error fetching user details:', userError);
