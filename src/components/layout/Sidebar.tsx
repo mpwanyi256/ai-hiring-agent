@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { RootState, useAppSelector } from '@/store';
 import { useState } from 'react';
 import {
   HomeIcon,
@@ -23,6 +23,7 @@ import {
 } from '@heroicons/react/24/outline';
 import BillingButton from '@/components/billing/BillingButton';
 import { useSubscriptionModal } from '@/components/modals/SubscriptionModal';
+import { selectHasActiveSubscription } from '@/store/auth/authSelectors';
 
 interface ChildRoute {
   name: string;
@@ -58,6 +59,7 @@ export default function Sidebar({
   const { user } = useSelector((state: RootState) => state.auth);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const { open: openSubscriptionModal } = useSubscriptionModal() || {};
+  const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
 
   const toggleExpanded = (itemName: string) => {
     if (collapsed && !isMobile) return; // Don't expand in collapsed desktop mode
@@ -177,9 +179,6 @@ export default function Sidebar({
       }
     });
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const hasActiveSubscription =
-    user?.subscription && ['active', 'trialing'].includes(user.subscription.status);
 
   return (
     <div

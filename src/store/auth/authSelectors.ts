@@ -23,6 +23,11 @@ export const selectUserDetails = createSelector([selectUser], (user) => {
   };
 });
 
+export const selectHasActiveSubscription = createSelector([selectUser], (user) => {
+  if (!user) return false;
+  return user.subscription && ['active', 'trialing'].includes(user.subscription.status);
+});
+
 export const selectCompanyDetails = createSelector([selectUser], (user) => {
   if (!user) return null;
 
