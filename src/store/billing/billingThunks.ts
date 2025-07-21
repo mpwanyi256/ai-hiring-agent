@@ -32,8 +32,6 @@ export const fetchSubscription = createAsyncThunk<UserSubscription, void>(
         throw new Error('User not authenticated');
       }
 
-      console.log('Fetching subscription for user:', user.id);
-
       // Create the promise and store it
       fetchSubscriptionPromise = (async () => {
         // Use the user_details view (same as auth API) for consistency
@@ -88,8 +86,6 @@ export const fetchSubscription = createAsyncThunk<UserSubscription, void>(
             updated_at: data.user_updated_at,
           },
         };
-
-        console.log('Found subscription from user_details:', subscription);
         return subscription;
       })();
 

@@ -3,7 +3,7 @@
 import { useSelector } from 'react-redux';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Button from '@/components/ui/Button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import MetricCard from '@/components/dashboard/MetricCard';
@@ -29,14 +29,14 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { app } from '@/lib/constants';
+import { MetricCardSkeleton } from '@/components/dashboard/MetricCard';
+import { InsightCardSkeleton } from '@/components/dashboard/InsightCard';
 
-export default function DashboardPage() {
-  const router = useRouter();
+// Move the success message logic into a child component
+function DashboardSuccessMessage() {
   const searchParams = useSearchParams();
-  const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
-  // Check for success parameter from checkout
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
       setShowSuccessMessage(true);
@@ -47,6 +47,43 @@ export default function DashboardPage() {
       return () => clearTimeout(timer);
     }
   }, [searchParams]);
+
+  if (!showSuccessMessage) return null;
+
+  return (
+    <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <CheckCircleIcon className="w-5 h-5 text-green-600 mr-3" />
+          <div>
+            <h3 className="text-sm font-medium text-green-800">
+              Subscription Activated Successfully!
+            </h3>
+            <p className="text-sm text-green-700 mt-1">
+              Welcome to your new plan! You now have access to all the features.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => setShowSuccessMessage(false)}
+          className="text-green-400 hover:text-green-600"
+        >
+          <XMarkIcon className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!user) return null;
 
@@ -67,29 +104,9 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       {/* Success Message */}
-      {showSuccessMessage && (
-        <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <CheckCircleIcon className="w-5 h-5 text-green-600 mr-3" />
-              <div>
-                <h3 className="text-sm font-medium text-green-800">
-                  Subscription Activated Successfully!
-                </h3>
-                <p className="text-sm text-green-700 mt-1">
-                  Welcome to your new plan! You now have access to all the features.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowSuccessMessage(false)}
-              className="text-green-400 hover:text-green-600"
-            >
-              <XMarkIcon className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      )}
+      <Suspense fallback={null}>
+        <DashboardSuccessMessage />
+      </Suspense>
 
       {/* Header Section */}
       <div className="mb-6">
@@ -123,68 +140,79 @@ export default function DashboardPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <MetricCard
-          title="Active Jobs"
-          value={user.usageCounts.activeJobs}
-          subtitle={
-            user.subscription?.maxJobs === -1 ? 'Unlimited' : `of ${user.subscription?.maxJobs}`
-          }
-          icon={BriefcaseIcon}
-          progress={{
-            current: user.usageCounts.activeJobs,
-            max: user.subscription?.maxJobs || 1,
-            label: 'Jobs used',
-          }}
-          onClick={() => router.push('/dashboard/jobs')}
-        />
+        {loading ? (
+          <>
+            <MetricCardSkeleton />
+            <MetricCardSkeleton />
+            <MetricCardSkeleton />
+            <MetricCardSkeleton />
+          </>
+        ) : (
+          <>
+            <MetricCard
+              title="Active Jobs"
+              value={user.usageCounts.activeJobs}
+              subtitle={
+                user.subscription?.maxJobs === -1 ? 'Unlimited' : `of ${user.subscription?.maxJobs}`
+              }
+              icon={BriefcaseIcon}
+              progress={{
+                current: user.usageCounts.activeJobs,
+                max: user.subscription?.maxJobs || 1,
+                label: 'Jobs used',
+              }}
+              onClick={() => router.push('/dashboard/jobs')}
+            />
 
-        <MetricCard
-          title="Interviews"
-          value={user.usageCounts.interviewsThisMonth}
-          subtitle="This month"
-          icon={UserGroupIcon}
-          iconColor="text-blue-600"
-          iconBgColor="bg-blue-50"
-          trend={{
-            value: 15,
-            isPositive: true,
-            label: 'vs last month',
-          }}
-          progress={{
-            current: user.usageCounts.interviewsThisMonth,
-            max: user.subscription?.maxInterviewsPerMonth || 1,
-            label: 'Monthly limit',
-          }}
-        />
+            <MetricCard
+              title="Interviews"
+              value={user.usageCounts.interviewsThisMonth}
+              subtitle="This month"
+              icon={UserGroupIcon}
+              iconColor="text-blue-600"
+              iconBgColor="bg-blue-50"
+              trend={{
+                value: 15,
+                isPositive: true,
+                label: 'vs last month',
+              }}
+              progress={{
+                current: user.usageCounts.interviewsThisMonth,
+                max: user.subscription?.maxInterviewsPerMonth || 1,
+                label: 'Monthly limit',
+              }}
+            />
 
-        <MetricCard
-          title="Candidates"
-          value={79}
-          subtitle="All time"
-          icon={UsersIcon}
-          iconColor="text-purple-600"
-          iconBgColor="bg-purple-50"
-          trend={{
-            value: 8,
-            isPositive: true,
-            label: 'this week',
-          }}
-          onClick={() => router.push('/dashboard/candidates')}
-        />
+            <MetricCard
+              title="Candidates"
+              value={79}
+              subtitle="All time"
+              icon={UsersIcon}
+              iconColor="text-purple-600"
+              iconBgColor="bg-purple-50"
+              trend={{
+                value: 8,
+                isPositive: true,
+                label: 'this week',
+              }}
+              onClick={() => router.push('/dashboard/candidates')}
+            />
 
-        <MetricCard
-          title="Avg. Response Time"
-          value="2.3h"
-          subtitle="To complete interview"
-          icon={ClockIcon}
-          iconColor="text-emerald-600"
-          iconBgColor="bg-emerald-50"
-          trend={{
-            value: 12,
-            isPositive: false,
-            label: 'vs last week',
-          }}
-        />
+            <MetricCard
+              title="Avg. Response Time"
+              value="2.3h"
+              subtitle="To complete interview"
+              icon={ClockIcon}
+              iconColor="text-emerald-600"
+              iconBgColor="bg-emerald-50"
+              trend={{
+                value: 12,
+                isPositive: false,
+                label: 'vs last week',
+              }}
+            />
+          </>
+        )}
       </div>
 
       {/* Main Content Grid */}
@@ -241,18 +269,21 @@ export default function DashboardPage() {
           {/* Insights Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CandidatePipelineWidget />
-
-            <InsightCard
-              title="Interview Activity"
-              subtitle="Recent interview volume"
-              data={interviewStats}
-              type="chart"
-              icon={ChartBarIcon}
-              action={{
-                label: 'Detailed Report',
-                onClick: () => router.push('/dashboard/reports'),
-              }}
-            />
+            {loading ? (
+              <InsightCardSkeleton />
+            ) : (
+              <InsightCard
+                title="Interview Activity"
+                subtitle="Recent interview volume"
+                data={interviewStats}
+                type="chart"
+                icon={ChartBarIcon}
+                action={{
+                  label: 'Detailed Report',
+                  onClick: () => router.push('/dashboard/reports'),
+                }}
+              />
+            )}
           </div>
 
           {/* Getting Started Section for New Users */}

@@ -10,6 +10,11 @@ export const selectSubscription = createSelector(
   (billing) => billing.subscription,
 );
 
+export const userHasValidSubscription = createSelector(
+  [selectSubscription],
+  (subscription) => subscription?.status === 'active',
+);
+
 export const selectSubscriptionPlans = createSelector(
   [selectBillingState],
   (billing) => billing.plans,
