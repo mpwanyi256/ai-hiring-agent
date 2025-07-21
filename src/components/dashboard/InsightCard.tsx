@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface DataPoint {
   label: string;
@@ -28,7 +29,7 @@ export default function InsightCard({
   type = 'simple',
   icon: Icon,
   action,
-  children
+  children,
 }: InsightCardProps) {
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
@@ -43,9 +44,7 @@ export default function InsightCard({
           )}
           <div>
             <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-            {subtitle && (
-              <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
           </div>
         </div>
         {action && (
@@ -65,7 +64,7 @@ export default function InsightCard({
           {data.map((item, index) => (
             <div key={index} className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div 
+                <div
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: item.color || '#4F46E5' }}
                 />
@@ -93,9 +92,12 @@ export default function InsightCard({
               <div className="w-full bg-gray-100 rounded-full h-2">
                 <div
                   className="h-2 rounded-full transition-all"
-                  style={{ 
-                    width: total > 0 ? `${(item.value / Math.max(...data.map(d => d.value))) * 100}%` : '0%',
-                    backgroundColor: item.color || '#4F46E5'
+                  style={{
+                    width:
+                      total > 0
+                        ? `${(item.value / Math.max(...data.map((d) => d.value))) * 100}%`
+                        : '0%',
+                    backgroundColor: item.color || '#4F46E5',
                   }}
                 />
               </div>
@@ -103,10 +105,30 @@ export default function InsightCard({
           ))}
         </div>
       ) : (
-        <div className="text-sm text-gray-500">
-          No data available
-        </div>
+        <div className="text-sm text-gray-500">No data available</div>
       )}
     </div>
   );
-} 
+}
+
+export function InsightCardSkeleton() {
+  return (
+    <div className="bg-white rounded-lg border border-gray-100 p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-3">
+          <Skeleton className="w-8 h-8 rounded-lg" />
+          <div>
+            <Skeleton className="h-4 w-24 mb-1" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+        <Skeleton className="h-4 w-16" />
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-5/6" />
+        <Skeleton className="h-4 w-2/3" />
+      </div>
+    </div>
+  );
+}
