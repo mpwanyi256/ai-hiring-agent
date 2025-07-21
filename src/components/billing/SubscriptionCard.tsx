@@ -68,13 +68,15 @@ export default function SubscriptionCard({
     if (price === 0) return 'Free';
 
     const interval = billingPeriod === 'monthly' ? 'month' : 'year';
-    return `$${price}/${interval}`;
+    // Format price with thousands separator
+    const formattedPrice = price.toLocaleString(undefined, { minimumFractionDigits: 0 });
+    return `$${formattedPrice}/${interval}`;
   };
 
   const getButtonText = () => {
     if (isCurrentPlan) return 'Current Plan';
     if (plan.price_monthly === 0) return 'Get Started';
-    return 'Upgrade';
+    return 'Subscribe';
   };
 
   const getButtonVariant = () => {

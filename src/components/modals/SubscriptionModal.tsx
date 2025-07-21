@@ -1,56 +1,117 @@
 'use client';
 
-import { useAppSelector } from '@/store';
-import Modal from '@/components/ui/Modal';
-import { useEffect, useState } from 'react';
+import { useAppSelector, useAppDispatch } from '@/store';
+import SidePanel from '@/components/ui/SidePanel';
+import { useEffect, useState, useContext, createContext, useCallback } from 'react';
+import { fetchSubscriptionPlans } from '@/store/billing/billingThunks';
+import { selectSubscriptionPlans, selectCurrentPlan } from '@/store/billing/billingSelectors';
+import SubscriptionCard from '@/components/billing/SubscriptionCard';
+import { usePathname } from 'next/navigation';
 
-export const SubscriptionModal = () => {
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+// Context for controlling the modal globally
+const SubscriptionModalContext = createContext<{
+  open: () => void;
+  close: () => void;
+} | null>(null);
 
+export function useSubscriptionModal() {
+  return useContext(SubscriptionModalContext);
+}
+
+export const SubscriptionModalProvider = ({ children }: { children: React.ReactNode }) => {
+  const [showSubscriptionPanel, setShowSubscriptionPanel] = useState(false);
   const user = useAppSelector((state) => state.auth.user);
+  const plans = useAppSelector(selectSubscriptionPlans);
+  const currentPlan = useAppSelector(selectCurrentPlan);
+  const dispatch = useAppDispatch();
+  const pathname = usePathname();
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+
+  // Only show on dashboard page
   useEffect(() => {
     if (!user) return;
+    if (pathname !== '/dashboard') {
+      setShowSubscriptionPanel(false);
+      return;
+    }
     if (!user.subscription || !['active', 'trialing'].includes(user.subscription.status)) {
-      setShowSubscriptionModal(true);
+      setShowSubscriptionPanel(true);
     } else if (
       user.subscription.maxJobs !== -1 &&
       user.usageCounts.activeJobs >= user.subscription.maxJobs
     ) {
-      setShowSubscriptionModal(true);
+      setShowSubscriptionPanel(true);
     } else {
-      setShowSubscriptionModal(false);
+      setShowSubscriptionPanel(false);
     }
-  }, [user]);
+  }, [user, pathname]);
+
+  // Fetch plans if not loaded
+  useEffect(() => {
+    if (showSubscriptionPanel && plans.length === 0) {
+      dispatch(fetchSubscriptionPlans());
+    }
+  }, [showSubscriptionPanel, plans.length, dispatch]);
+
+  const open = useCallback(() => setShowSubscriptionPanel(true), []);
+  const close = useCallback(() => setShowSubscriptionPanel(false), []);
 
   return (
-    <Modal
-      isOpen={showSubscriptionModal}
-      onClose={() => setShowSubscriptionModal(false)}
-      title="Subscription Required"
-    >
-      <div className="mb-4">
-        {!user?.subscription || !['active', 'trialing'].includes(user.subscription?.status) ? (
-          <>
-            <p className="text-red-600 mb-2 font-medium">
-              You need an active subscription to use the dashboard.
-            </p>
-            <p className="mb-2">Please subscribe to a plan to unlock all features.</p>
-          </>
-        ) : (
-          <>
-            <p className="text-red-600 mb-2 font-medium">
-              You have reached your job posting limit for your current plan.
-            </p>
-            <p className="mb-2">Upgrade your plan to create more jobs.</p>
-          </>
-        )}
-        <a
-          href="/pricing"
-          className="inline-block mt-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
-        >
-          View Plans
-        </a>
-      </div>
-    </Modal>
+    <SubscriptionModalContext.Provider value={{ open, close }}>
+      {children}
+      <SidePanel
+        isOpen={showSubscriptionPanel}
+        onClose={close}
+        title="Choose a Subscription Plan"
+        width="lg"
+      >
+        <div className="flex flex-col h-full min-h-0">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900">Subscription Plans</h2>
+            <div className="flex items-center gap-2">
+              <button
+                className={`px-4 py-1 rounded-full font-medium text-sm transition-all ${
+                  billingPeriod === 'monthly'
+                    ? 'bg-primary text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-primary/10'
+                }`}
+                onClick={() => setBillingPeriod('monthly')}
+              >
+                Monthly
+              </button>
+              <button
+                className={`px-4 py-1 rounded-full font-medium text-sm transition-all ${
+                  billingPeriod === 'yearly'
+                    ? 'bg-primary text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-primary/10'
+                }`}
+                onClick={() => setBillingPeriod('yearly')}
+              >
+                Yearly
+              </button>
+            </div>
+          </div>
+          {/* Scrollable plans section */}
+          <div className="flex-1 min-h-0 overflow-y-auto pb-4">
+            <div className="flex flex-col gap-6">
+              {plans.map((plan) => (
+                <SubscriptionCard
+                  key={plan.id}
+                  plan={plan}
+                  billingPeriod={billingPeriod}
+                  isRecommended={plan.name.toLowerCase() === 'pro'}
+                  isCurrentPlan={currentPlan?.id === plan.id}
+                />
+              ))}
+            </div>
+          </div>
+          {/* Taxes note always visible at the bottom */}
+          <div className="text-center text-xs text-gray-500 border-t pt-4 bg-white shrink-0">
+            All prices exclude applicable taxes. Taxes are calculated at checkout based on your
+            billing address.
+          </div>
+        </div>
+      </SidePanel>
+    </SubscriptionModalContext.Provider>
   );
 };

@@ -22,22 +22,6 @@ export default function PricingPage() {
     dispatch(fetchSubscription());
   }, [dispatch]);
 
-  const getPrice = (plan: any) => {
-    if (plan.name.toLowerCase() === 'enterprise') {
-      return 'Custom';
-    }
-    const price = billingPeriod === 'monthly' ? plan.price_monthly : plan.price_yearly;
-    return `$${price}`;
-  };
-
-  const getSavings = (plan: any) => {
-    if (plan.name.toLowerCase() === 'enterprise') return null;
-    const monthlyCost = plan.price_monthly * 12;
-    const yearlyCost = plan.price_yearly;
-    const savings = monthlyCost - yearlyCost;
-    return Math.round((savings / monthlyCost) * 100);
-  };
-
   // Don't render until plans are loaded
   if (plans.length === 0) {
     return (
@@ -126,6 +110,10 @@ export default function PricingPage() {
                 isCurrentPlan={currentPlan?.id === plan.id}
               />
             ))}
+          </div>
+          <div className="mt-8 text-center text-xs text-gray-500">
+            All prices exclude applicable taxes. Taxes are calculated at checkout based on your
+            billing address.
           </div>
         </Container>
       </section>

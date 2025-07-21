@@ -24,6 +24,7 @@ import {
   BellIcon,
 } from '@heroicons/react/24/outline';
 import BillingButton from '@/components/billing/BillingButton';
+import { useSubscriptionModal } from '@/components/modals/SubscriptionModal';
 
 interface ChildRoute {
   name: string;
@@ -59,6 +60,7 @@ export default function Sidebar({
   const pathname = usePathname();
   const { user } = useSelector((state: RootState) => state.auth);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const { open: openSubscriptionModal } = useSubscriptionModal() || {};
 
   const toggleExpanded = (itemName: string) => {
     if (collapsed && !isMobile) return; // Don't expand in collapsed desktop mode
@@ -396,7 +398,7 @@ export default function Sidebar({
       {(!collapsed || isMobile) && !hasActiveSubscription && (
         <div className="p-3 border-t border-gray-100">
           <button
-            onClick={onSubscribeClick}
+            onClick={openSubscriptionModal}
             className="w-full px-4 py-2 bg-primary text-white rounded font-semibold hover:bg-primary/90 transition-all text-xs flex items-center justify-center gap-2"
           >
             <SparklesIcon className="w-4 h-4" />
