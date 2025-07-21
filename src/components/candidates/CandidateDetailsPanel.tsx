@@ -79,7 +79,7 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
       {/* Tabs Section */}
       <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
         <Tab.List className="flex space-x-2 border-b mb-6 bg-white">
-          {tabs.map((tab, idx) => (
+          {tabs.map((tab) => (
             <Tab
               key={tab.name}
               className={({ selected }: { selected: boolean }) =>
@@ -96,7 +96,7 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
           ))}
         </Tab.List>
         <Tab.Panels>
-          {tabs.map((tab, idx) => (
+          {tabs.map((tab) => (
             <Tab.Panel key={tab.name}>
               {tab.name === 'General' ? (
                 <tab.Component candidate={candidate} onScheduleEvent={handleScheduleEvent} />
