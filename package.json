@@ -14,6 +14,7 @@
     "db_types": "npx supabase gen types typescript --project-id 'msrspatwjkmyhgqucxuh' --schema public > ./src/lib/supabase.ts"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.1.1",
     "@langchain/community": "^0.3.47",

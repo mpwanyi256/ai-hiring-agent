@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { apiSuccess, apiError } from '@/lib/notification';
+import CandidateDetailsPanel from '../candidates/CandidateDetailsPanel';
 
 interface JobShortlistedProps {
   jobId: string;
@@ -64,6 +65,22 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     interview: null,
   });
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
+  // Add state and handlers for details panel
+  const [detailsPanel, setDetailsPanel] = useState<{
+    isOpen: boolean;
+    candidate: CandidateWithEvaluation | null;
+  }>({
+    isOpen: false,
+    candidate: null,
+  });
+
+  const handleOpenDetails = (candidate: CandidateWithEvaluation) => {
+    setDetailsPanel({ isOpen: true, candidate });
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsPanel({ isOpen: false, candidate: null });
+  };
 
   useEffect(() => {
     dispatch(
@@ -374,6 +391,13 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                           Edit/Reschedule
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenDetails(candidate)}
+                      >
+                        Details
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -403,6 +427,15 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
           isOpen={rescheduleModal.isOpen}
           onClose={handleCloseRescheduleModal}
           onSuccess={handleRescheduleSuccess}
+        />
+      )}
+
+      {/* Render the details panel */}
+      {detailsPanel.candidate && (
+        <CandidateDetailsPanel
+          isOpen={detailsPanel.isOpen}
+          candidate={detailsPanel.candidate}
+          onClose={handleCloseDetails}
         />
       )}
     </div>
