@@ -1,19 +1,12 @@
 'use client';
 
-import { CalendarIcon, ClockIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 import { useAppSelector } from '@/store';
 import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
+import { formatDate } from '@/lib/utils';
 
 export default function JobOverview() {
   const job = useAppSelector(selectCurrentJob);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
 
   if (!job) {
     return null;
@@ -32,14 +25,6 @@ export default function JobOverview() {
             <CalendarIcon className="w-4 h-4 text-muted-text" />
             <span className="text-muted-text">Created:</span>
             <span className="text-text font-medium">{formatDate(job.createdAt)}</span>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <ClockIcon className="w-4 h-4 text-muted-text" />
-            <span className="text-muted-text">Interview Format:</span>
-            <span className="text-text font-medium capitalize">
-              {job.interviewFormat === 'text' ? 'Text-based' : 'Video'} Interview
-            </span>
           </div>
 
           <div className="flex items-center space-x-2">

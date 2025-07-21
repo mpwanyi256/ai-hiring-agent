@@ -196,7 +196,7 @@ export default function Sidebar({
             <div>
               <h2 className="font-semibold text-gray-900 text-sm">{user?.companyName}</h2>
               <p className="text-xs text-gray-400 capitalize">
-                {user?.subscription?.name || 'Free'} Plan
+                {user?.subscription?.name || 'No active '} plan
               </p>
             </div>
           </div>

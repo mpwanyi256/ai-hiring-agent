@@ -2,8 +2,8 @@
 
 import { useSelector } from 'react-redux';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import MetricCard from '@/components/dashboard/MetricCard';
@@ -12,7 +12,7 @@ import QuickActionCard from '@/components/dashboard/QuickActionCard';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import UpcomingInterviewsWidget from '@/components/dashboard/UpcomingInterviewsWidget';
 import CandidatePipelineWidget from '@/components/dashboard/CandidatePipelineWidget';
-import { RootState } from '@/store';
+import { RootState, useAppSelector } from '@/store';
 import { User } from '@/types';
 import {
   PlusIcon,
@@ -24,62 +24,21 @@ import {
   EyeIcon,
   DocumentTextIcon,
   UsersIcon,
-  CalendarDaysIcon,
-  CheckCircleIcon,
-  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { app } from '@/lib/constants';
 import { MetricCardSkeleton } from '@/components/dashboard/MetricCard';
 import { InsightCardSkeleton } from '@/components/dashboard/InsightCard';
 import { SubscriptionModalProvider } from '@/components/modals/SubscriptionModal';
-
-// Move the success message logic into a child component
-function DashboardSuccessMessage() {
-  const searchParams = useSearchParams();
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-
-  useEffect(() => {
-    if (searchParams.get('success') === 'true') {
-      setShowSuccessMessage(true);
-      // Auto-hide after 5 seconds
-      const timer = setTimeout(() => {
-        setShowSuccessMessage(false);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [searchParams]);
-
-  if (!showSuccessMessage) return null;
-
-  return (
-    <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <CheckCircleIcon className="w-5 h-5 text-green-600 mr-3" />
-          <div>
-            <h3 className="text-sm font-medium text-green-800">
-              Subscription Activated Successfully!
-            </h3>
-            <p className="text-sm text-green-700 mt-1">
-              Welcome to your new plan! You now have access to all the features.
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowSuccessMessage(false)}
-          className="text-green-400 hover:text-green-600"
-        >
-          <XMarkIcon className="w-5 h-5" />
-        </button>
-      </div>
-    </div>
-  );
-}
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { DashboardUserPlanCard } from '@/components/dashboard/DashboardUserPlanCard';
+import { DashboardSubscriptionMessage } from '@/components/dashboard/DashboardSubscriptionMessage';
+import { selectHasActiveSubscription } from '@/store/auth/authSelectors';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
   const [loading, setLoading] = useState(true);
+  const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1000);
@@ -87,14 +46,6 @@ export default function DashboardPage() {
   }, []);
 
   if (!user) return null;
-
-  const isFreeTier = user.subscription?.name === 'free';
-  const usagePercentage = user.subscription
-    ? (user.usageCounts.activeJobs / user.subscription.maxJobs) * 100
-    : 0;
-  const interviewUsagePercentage = user.subscription
-    ? (user.usageCounts.interviewsThisMonth / user.subscription.maxInterviewsPerMonth) * 100
-    : 0;
 
   const interviewStats = [
     { label: 'This Week', value: 15, color: '#8B5CF6' },
@@ -106,39 +57,10 @@ export default function DashboardPage() {
     <SubscriptionModalProvider>
       <DashboardLayout>
         {/* Success Message */}
-        <Suspense fallback={null}>
-          <DashboardSuccessMessage />
-        </Suspense>
+        <DashboardSubscriptionMessage />
 
         {/* Header Section */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 mb-1">Hi {user.firstName}</h1>
-              <p className="text-sm text-gray-600">
-                Here&apos;s what&apos;s happening with your hiring today
-              </p>
-            </div>
-            <div className="mt-3 sm:mt-0 flex items-center space-x-3">
-              <div className="flex items-center space-x-2 text-xs text-gray-500">
-                <CalendarDaysIcon className="w-4 h-4" />
-                <span>
-                  {new Date().toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                </span>
-              </div>
-              <Link href="/dashboard/jobs/new">
-                <Button size="sm" className="text-xs">
-                  <PlusIcon className="w-4 h-4 mr-1" />
-                  New Job
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
+        <DashboardHeader />
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -155,9 +77,7 @@ export default function DashboardPage() {
                 title="Active Jobs"
                 value={user.usageCounts.activeJobs}
                 subtitle={
-                  user.subscription?.maxJobs === -1
-                    ? 'Unlimited'
-                    : `of ${user.subscription?.maxJobs}`
+                  hasActiveSubscription ? `of ${user.subscription?.maxJobs}` : 'No active plan'
                 }
                 icon={BriefcaseIcon}
                 progress={{
@@ -181,12 +101,12 @@ export default function DashboardPage() {
                   label: 'vs last month',
                 }}
                 progress={{
-                  current: user.usageCounts.interviewsThisMonth,
-                  max: user.subscription?.maxInterviewsPerMonth || 1,
+                  current: hasActiveSubscription ? user.usageCounts.interviewsThisMonth : 0,
+                  max: hasActiveSubscription ? user.subscription?.maxInterviewsPerMonth || 1 : 0,
                   label: 'Monthly limit',
                 }}
               />
-
+              {/* TODO: Add candidates metric */}
               <MetricCard
                 title="Candidates"
                 value={79}
@@ -202,6 +122,7 @@ export default function DashboardPage() {
                 onClick={() => router.push('/dashboard/candidates')}
               />
 
+              {/* TODO: Add avg. response time metric */}
               <MetricCard
                 title="Avg. Response Time"
                 value="2.3h"
@@ -227,13 +148,7 @@ export default function DashboardPage() {
             <div>
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <QuickActionCard
-                  title="Create New Job"
-                  description="Post a new position and start interviewing candidates"
-                  icon={PlusIcon}
-                  buttonText="Create Job Post"
-                  href="/dashboard/jobs/new"
-                />
+                <DashboardUserPlanCard />
 
                 <QuickActionCard
                   title="Review Candidates"
@@ -354,86 +269,6 @@ export default function DashboardPage() {
             >
               <RecentActivity maxItems={4} />
             </InsightCard>
-
-            {/* Current Plan */}
-            <div className="bg-white rounded-lg border border-gray-100 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
-                    <SparklesIcon className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900">Current Plan</h3>
-                    <p className="text-xs text-gray-500 capitalize">
-                      {user.subscription?.name || 'Free'} Tier
-                    </p>
-                  </div>
-                </div>
-                {isFreeTier && (
-                  <Link href="/dashboard/billing">
-                    <Button variant="outline" size="sm" className="text-xs">
-                      Upgrade
-                    </Button>
-                  </Link>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-600">Jobs</span>
-                  <span className="font-medium text-gray-900">
-                    {user.usageCounts.activeJobs}/
-                    {user.subscription?.maxJobs === -1 ? '∞' : user.subscription?.maxJobs}
-                  </span>
-                </div>
-                {user.subscription && user.subscription.maxJobs !== -1 && (
-                  <div className="w-full bg-gray-100 rounded-full h-1.5">
-                    <div
-                      className="bg-primary h-1.5 rounded-full transition-all"
-                      style={{ width: `${Math.min(usagePercentage, 100)}%` }}
-                    />
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-600">Interviews (Monthly)</span>
-                  <span className="font-medium text-gray-900">
-                    {user.usageCounts.interviewsThisMonth}/
-                    {user.subscription?.maxInterviewsPerMonth === -1
-                      ? '∞'
-                      : user.subscription?.maxInterviewsPerMonth}
-                  </span>
-                </div>
-                {user.subscription && user.subscription.maxInterviewsPerMonth !== -1 && (
-                  <div className="w-full bg-gray-100 rounded-full h-1.5">
-                    <div
-                      className="bg-blue-500 h-1.5 rounded-full transition-all"
-                      style={{ width: `${Math.min(interviewUsagePercentage, 100)}%` }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {isFreeTier && (
-                <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                  <p className="text-xs text-amber-800 mb-2 font-medium">Free Plan Benefits</p>
-                  <ul className="text-xs text-amber-700 space-y-1">
-                    <li>• 1 active job</li>
-                    <li>• 5 interviews per month</li>
-                    <li>• Basic AI evaluations</li>
-                  </ul>
-                  <Link href="/dashboard/billing" className="block mt-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full text-xs border-amber-200 text-amber-700 hover:bg-amber-100"
-                    >
-                      Upgrade for More
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </DashboardLayout>
