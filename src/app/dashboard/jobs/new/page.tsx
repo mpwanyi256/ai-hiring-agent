@@ -30,6 +30,7 @@ import { defaultJobDescriptionMarkdown } from '@/lib/constants';
 import { experienceLevels } from '@/lib/constants';
 import { JobFormData, jobSchema } from '@/types/jobs';
 import { apiError, apiSuccess } from '@/lib/notification';
+import Modal from '@/components/ui/Modal';
 
 const workplaceTypes: { value: WorkplaceType; label: string }[] = [
   { value: 'on_site', label: 'On-site' },
@@ -70,6 +71,7 @@ export default function NewJobPage() {
   const [isOverLimit, setIsOverLimit] = useState(false);
   const [skillDropdownOpen, setSkillDropdownOpen] = useState(false);
   const [traitDropdownOpen, setTraitDropdownOpen] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   // Add state for search inputs
   const [jobTitleSearch, setJobTitleSearch] = useState('');
@@ -175,18 +177,31 @@ export default function NewJobPage() {
     fetchData();
   }, [dispatch, user]);
 
-  // Check usage limits
+  // Check usage limits and subscription validity
   useEffect(() => {
-    if (user?.subscription && user.usageCounts.activeJobs >= user.subscription.maxJobs) {
+    if (!user?.subscription || !['active', 'trialing'].includes(user.subscription.status)) {
       setIsOverLimit(true);
+      setShowSubscriptionModal(true);
+    } else if (
+      user.subscription.maxJobs !== -1 &&
+      user.usageCounts.activeJobs >= user.subscription.maxJobs
+    ) {
+      setIsOverLimit(true);
+      setShowSubscriptionModal(true);
+    } else {
+      setIsOverLimit(false);
+      setShowSubscriptionModal(false);
     }
   }, [user]);
 
   // Handle form submission
   const onSubmit = async (data: JobFormData) => {
     if (isOverLimit) {
+      setShowSubscriptionModal(true);
       apiError(
-        'You have reached your job posting limit. Please upgrade your plan to create more jobs.',
+        !user?.subscription || !['active', 'trialing'].includes(user.subscription?.status)
+          ? 'You need an active subscription to create a job. Please subscribe to a plan.'
+          : 'You have reached your job posting limit. Please upgrade your plan to create more jobs.',
       );
       return;
     }
@@ -313,6 +328,38 @@ export default function NewJobPage() {
   return (
     <DashboardLayout title="Create New Job">
       <div className="max-w-4xl mx-auto">
+        {/* Subscription/Limit Modal */}
+        <Modal
+          isOpen={showSubscriptionModal}
+          onClose={() => setShowSubscriptionModal(false)}
+          title="Subscription Required"
+        >
+          <div className="mb-4">
+            {!user?.subscription || !['active', 'trialing'].includes(user.subscription?.status) ? (
+              <>
+                <p className="text-red-600 mb-2 font-medium">
+                  You need an active subscription to create a job.
+                </p>
+                <p className="mb-2">
+                  Please subscribe to a plan to unlock job creation and other features.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-red-600 mb-2 font-medium">
+                  You have reached your job posting limit for your current plan.
+                </p>
+                <p className="mb-2">Upgrade your plan to create more jobs.</p>
+              </>
+            )}
+            <a
+              href="/pricing"
+              className="inline-block mt-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+            >
+              View Plans
+            </a>
+          </div>
+        </Modal>
         {/* Stepper UI */}
         <div className="flex items-center justify-center mb-8 gap-4 text-[14px]">
           <div

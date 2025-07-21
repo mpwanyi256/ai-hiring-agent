@@ -24,6 +24,7 @@ import {
   BellIcon,
 } from '@heroicons/react/24/outline';
 import BillingButton from '@/components/billing/BillingButton';
+import { useSubscriptionModal } from '@/components/modals/SubscriptionModal';
 
 interface ChildRoute {
   name: string;
@@ -46,6 +47,7 @@ interface SidebarProps {
   onToggleCollapse: () => void;
   onClose: () => void;
   isMobile?: boolean;
+  onSubscribeClick?: () => void;
 }
 
 export default function Sidebar({
@@ -53,10 +55,12 @@ export default function Sidebar({
   onToggleCollapse,
   onClose,
   isMobile = false,
+  onSubscribeClick,
 }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useSelector((state: RootState) => state.auth);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const { open: openSubscriptionModal } = useSubscriptionModal() || {};
 
   const toggleExpanded = (itemName: string) => {
     if (collapsed && !isMobile) return; // Don't expand in collapsed desktop mode
@@ -234,6 +238,9 @@ export default function Sidebar({
     });
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const hasActiveSubscription =
+    user?.subscription && ['active', 'trialing'].includes(user.subscription.status);
+
   return (
     <div
       className={`bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-200 shadow-none ${
@@ -387,8 +394,21 @@ export default function Sidebar({
         </div>
       )}
 
+      {/* Subscribe Button for Unsubscribed Users */}
+      {(!collapsed || isMobile) && !hasActiveSubscription && (
+        <div className="p-3 border-t border-gray-100">
+          <button
+            onClick={openSubscriptionModal}
+            className="w-full px-4 py-2 bg-primary text-white rounded font-semibold hover:bg-primary/90 transition-all text-xs flex items-center justify-center gap-2"
+          >
+            <SparklesIcon className="w-4 h-4" />
+            Subscribe
+          </button>
+        </div>
+      )}
+
       {/* Billing Button */}
-      {(!collapsed || isMobile) && (
+      {(!collapsed || isMobile) && hasActiveSubscription && (
         <div className="p-3 border-t border-gray-100">
           <BillingButton variant="outline" size="sm" className="w-full text-xs">
             Manage Billing

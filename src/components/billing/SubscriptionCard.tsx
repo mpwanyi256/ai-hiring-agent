@@ -30,6 +30,7 @@ export default function SubscriptionCard({
   const isTrialing = useAppSelector(selectIsTrialing);
   const isLoading = useAppSelector(selectBillingLoading);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
   const handleUpgrade = async () => {
     try {
@@ -67,13 +68,15 @@ export default function SubscriptionCard({
     if (price === 0) return 'Free';
 
     const interval = billingPeriod === 'monthly' ? 'month' : 'year';
-    return `$${price}/${interval}`;
+    // Format price with thousands separator
+    const formattedPrice = price.toLocaleString(undefined, { minimumFractionDigits: 0 });
+    return `$${formattedPrice}/${interval}`;
   };
 
   const getButtonText = () => {
     if (isCurrentPlan) return 'Current Plan';
     if (plan.price_monthly === 0) return 'Get Started';
-    return 'Upgrade';
+    return 'Subscribe';
   };
 
   const getButtonVariant = () => {
@@ -112,7 +115,7 @@ export default function SubscriptionCard({
         <h3
           className={`text-xl font-bold mb-2 ${isRecommended ? 'text-primary' : 'text-gray-900'}`}
         >
-          {plan.name}
+          {plan.description}
         </h3>
         <div className="text-3xl font-bold mb-2">{getPriceDisplay()}</div>
         {isTrialing && trialDaysRemaining > 0 && (
@@ -148,26 +151,23 @@ export default function SubscriptionCard({
         </div>
       </div>
 
-      <Button
-        variant={getButtonVariant()}
-        size="lg"
-        className="w-full"
-        onClick={handleUpgrade}
-        disabled={isCurrentPlan || isLoading || isRedirecting}
-      >
-        {isLoading || isRedirecting ? (
-          <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-        ) : (
-          <SparklesIcon className="w-4 h-4" />
-        )}
-        {getButtonText()}
-      </Button>
-
-      {plan.trial_days > 0 && !isCurrentPlan && (
-        <div className="text-xs text-gray-500 text-center mt-3">
-          {plan.trial_days}-day free trial included
-        </div>
-      )}
+      {/* Subscribe/Upgrade Button - Only if authenticated */}
+      {isAuthenticated ? (
+        <Button
+          variant={getButtonVariant()}
+          size="lg"
+          className="w-full"
+          onClick={handleUpgrade}
+          disabled={isCurrentPlan || isLoading || isRedirecting}
+        >
+          {isLoading || isRedirecting ? (
+            <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+          ) : (
+            <SparklesIcon className="w-4 h-4" />
+          )}
+          {getButtonText()}
+        </Button>
+      ) : null}
     </div>
   );
 }

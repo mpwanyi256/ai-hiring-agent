@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jobsService } from '@/lib/services/jobsService';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
@@ -99,6 +100,46 @@ export async function POST(request: NextRequest) {
           error: 'Invalid interview format. Must be "text" or "video"',
         },
         { status: 400 },
+      );
+    }
+
+    // Enforce subscription and job limit checks
+    const supabase = await createClient();
+    // Get user details (subscription and usage)
+    const { data: userDetails, error: userError } = await supabase
+      .from('user_details')
+      .select('subscription_status, max_jobs, active_jobs')
+      .eq('id', profileId)
+      .single();
+
+    if (userError || !userDetails) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Could not verify user subscription. Please try again.',
+        },
+        { status: 403 },
+      );
+    }
+
+    if (!['active', 'trialing'].includes(userDetails.subscription_status)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'You need an active subscription to create a job. Please subscribe to a plan.',
+        },
+        { status: 403 },
+      );
+    }
+
+    if (userDetails.max_jobs !== -1 && userDetails.active_jobs >= userDetails.max_jobs) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'You have reached your job posting limit. Please upgrade your plan to create more jobs.',
+        },
+        { status: 403 },
       );
     }
 
