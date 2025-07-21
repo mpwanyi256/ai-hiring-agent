@@ -16,7 +16,11 @@ const initialState: CompanyState = {
 const companySlice = createSlice({
   name: 'company',
   initialState,
-  reducers: {},
+  reducers: {
+    clearCompanyData: (state) => {
+      return initialState;
+    },
+  },
   extraReducers: (builder) => {
     builder.addCase(fetchTimezones.fulfilled, (state, action) => {
       state.timezones = action.payload;
@@ -48,5 +52,5 @@ const companySlice = createSlice({
   },
 });
 
-// export const { } = companySlice.actions;
+export const { clearCompanyData } = companySlice.actions;
 export default companySlice.reducer;

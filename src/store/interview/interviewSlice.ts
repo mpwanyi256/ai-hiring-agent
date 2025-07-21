@@ -28,6 +28,9 @@ const interviewSlice = createSlice({
     resetInterviewConflicts: (state) => {
       state.conflicts = [];
     },
+    clearInterviewData: (state) => {
+      return initialState;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -85,6 +88,7 @@ const interviewSlice = createSlice({
   },
 });
 
-export const { setInterview, setInterviewStep } = interviewSlice.actions;
+export const { setInterview, setInterviewStep, resetInterviewConflicts, clearInterviewData } =
+  interviewSlice.actions;
 
 export default interviewSlice.reducer;

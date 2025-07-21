@@ -117,7 +117,7 @@ export default function PricingPage() {
       <section className="relative z-10 pb-16">
         <Container>
           <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {plans.map((plan, index) => (
+            {plans.map((plan) => (
               <SubscriptionCard
                 key={plan.id}
                 plan={plan}

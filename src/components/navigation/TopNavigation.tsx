@@ -21,6 +21,17 @@ import {
 import Image from 'next/image';
 import { app } from '@/lib/constants';
 import { fetchCompanyData, fetchTimezones } from '@/store/company/companyThunks';
+import { clearJobsData } from '@/store/jobs/jobsSlice';
+import { clearCandidatesData } from '@/store/candidates/candidatesSlice';
+import { clearEvaluationData } from '@/store/evaluation/evaluationSlice';
+import { clearSkills } from '@/store/skills/skillsSlice';
+import { clearTraits } from '@/store/traits/traitsSlice';
+import { clearTemplates } from '@/store/jobTemplates/jobTemplatesSlice';
+import { clearInterviewData } from '@/store/interview/interviewSlice';
+import { clearInterviews } from '@/store/interviews/interviewsSlice';
+import { clearCompanyData } from '@/store/company/companySlice';
+import { clearDashboardData } from '@/store/dashboard/dashboardSlice';
+import { clearBillingData } from '@/store/billing/billingSlice';
 
 interface TopNavigationProps {
   showAuthButtons?: boolean;
@@ -54,6 +65,18 @@ export default function TopNavigation({
     try {
       setShowDropdown(false);
       await dispatch(signOut()).unwrap();
+      // Reset all slices
+      dispatch(clearJobsData());
+      dispatch(clearCandidatesData());
+      dispatch(clearEvaluationData());
+      dispatch(clearSkills());
+      dispatch(clearTraits());
+      dispatch(clearTemplates());
+      dispatch(clearInterviewData());
+      dispatch(clearInterviews());
+      dispatch(clearCompanyData());
+      dispatch(clearDashboardData());
+      dispatch(clearBillingData());
       router.push('/');
     } catch (error) {
       console.error('Sign out failed:', error);

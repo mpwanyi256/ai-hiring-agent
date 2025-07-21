@@ -89,6 +89,9 @@ const dashboardSlice = createSlice({
     setRecentActivityError(state, action: PayloadAction<string | null>) {
       state.recentActivityError = action.payload;
     },
+    clearDashboardData: (state) => {
+      return initialState;
+    },
   },
 });
 
@@ -103,5 +106,6 @@ export const {
   setRecentActivity,
   setRecentActivityLoading,
   setRecentActivityError,
+  clearDashboardData,
 } = dashboardSlice.actions;
 export default dashboardSlice.reducer;

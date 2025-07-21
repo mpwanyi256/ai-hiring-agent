@@ -122,8 +122,6 @@ export const fetchSubscriptionPlans = createAsyncThunk<SubscriptionPlan[], void>
         console.error('Error fetching subscription plans from database:', error);
         throw error;
       }
-
-      console.log('Found subscription plans from database:', data);
       return data as SubscriptionPlan[];
     } catch (error: any) {
       console.error('Failed to fetch subscription plans:', error);
@@ -161,14 +159,13 @@ export const createCheckoutSession = createAsyncThunk<{ url: string }, CreateChe
 
       // Determine billing period and get appropriate price ID
       const billingPeriod = checkoutData.billingPeriod || 'monthly';
-      const environment = isDev ? 'development' : 'production';
 
       // Use the database helper function to get the correct price ID
       const { data: priceIdResult, error: priceIdError } = await supabase.rpc(
         'get_stripe_price_id',
         {
           subscription_name: plan.name,
-          environment: environment,
+          environment: isDev ? 'development' : 'production',
           billing_period: billingPeriod,
         },
       );
