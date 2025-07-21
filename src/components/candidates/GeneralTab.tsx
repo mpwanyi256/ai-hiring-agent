@@ -1,10 +1,19 @@
 import React from 'react';
 import { CandidateWithEvaluation } from '@/types/candidates';
 import InterviewCard from '../dashboard/InterviewCard';
+import Button from '../ui/Button';
 
-const GeneralTab: React.FC<{ candidate: CandidateWithEvaluation }> = ({ candidate }) => (
+const GeneralTab: React.FC<{
+  candidate: CandidateWithEvaluation;
+  onScheduleEvent?: () => void;
+}> = ({ candidate, onScheduleEvent }) => (
   <div className="space-y-4">
     <div>
+      {onScheduleEvent && (
+        <Button variant="primary" className="mb-2" onClick={onScheduleEvent}>
+          Schedule Event
+        </Button>
+      )}
       <h4 className="font-medium mb-1 text-primary-700">Interview Details</h4>
       {candidate.interviewDetails ? (
         <InterviewCard

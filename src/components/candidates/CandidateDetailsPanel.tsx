@@ -8,6 +8,7 @@ import EvaluationsTab from './EvaluationsTab';
 import ExperienceTab from './ExperienceTab';
 import EventsTab from './EventsTab';
 import MessagesTab from './MessagesTab';
+import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
 
 // --- Main Panel ---
 interface CandidateDetailsPanelProps {
@@ -46,7 +47,11 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
   onClose,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [schedulingModalOpen, setSchedulingModalOpen] = useState(false);
   const statusClass = statusColorMap[candidate.status] || 'bg-gray-100 text-gray-700';
+
+  const handleScheduleEvent = () => setSchedulingModalOpen(true);
+  const handleCloseSchedulingModal = () => setSchedulingModalOpen(false);
 
   return (
     <SidePanel isOpen={isOpen} onClose={onClose} width="xl">
@@ -93,11 +98,23 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
         <Tab.Panels>
           {tabs.map((tab, idx) => (
             <Tab.Panel key={tab.name}>
-              <tab.Component candidate={candidate} />
+              {tab.name === 'General' ? (
+                <tab.Component candidate={candidate} onScheduleEvent={handleScheduleEvent} />
+              ) : (
+                <tab.Component candidate={candidate} />
+              )}
             </Tab.Panel>
           ))}
         </Tab.Panels>
       </Tab.Group>
+      {/* Interview Scheduling Modal */}
+      <InterviewSchedulingModal
+        isOpen={schedulingModalOpen}
+        onClose={handleCloseSchedulingModal}
+        candidate={candidate}
+        jobId={candidate.jobId}
+        jobTitle={candidate.jobTitle}
+      />
     </SidePanel>
   );
 };
