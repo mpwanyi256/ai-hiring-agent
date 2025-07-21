@@ -20,3 +20,26 @@ export interface CalendarEvent {
   attendees: string[];
   meetLink?: string;
 }
+
+export type IntegrationProvider = 'google' | 'slack' | 'discord';
+
+export interface IntegrationMetadata {
+  name?: string;
+  email?: string;
+  google_id?: string;
+  [key: string]: any;
+}
+
+export interface Integration {
+  id: string;
+  company_id: string;
+  user_id: string;
+  provider: IntegrationProvider;
+  access_token: string;
+  refresh_token?: string;
+  expires_at?: string | null;
+  scope?: string;
+  metadata: IntegrationMetadata;
+  created_at: string;
+  updated_at: string;
+}

@@ -14,6 +14,7 @@ import companySlice from './company/companySlice';
 import dashboardReducer from './dashboard/dashboardSlice';
 import landingSlice from './landing/landingSlice';
 import billingSlice from './billing/billingSlice';
+import integrationsReducer from './integrations/integrationsSlice';
 import { combineReducers } from 'redux';
 
 const rootReducer = combineReducers({
@@ -31,6 +32,7 @@ const rootReducer = combineReducers({
   dashboard: dashboardReducer,
   landing: landingSlice,
   billing: billingSlice,
+  integrations: integrationsReducer,
 });
 
 export const store = configureStore({

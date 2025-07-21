@@ -12,7 +12,6 @@ import {
   UserGroupIcon,
   ChartBarIcon,
   ClockIcon,
-  CreditCardIcon,
   CogIcon,
   SparklesIcon,
   XMarkIcon,
@@ -21,7 +20,6 @@ import {
   PlusIcon,
   DocumentTextIcon,
   UserIcon,
-  BellIcon,
 } from '@heroicons/react/24/outline';
 import BillingButton from '@/components/billing/BillingButton';
 import { useSubscriptionModal } from '@/components/modals/SubscriptionModal';
@@ -55,7 +53,6 @@ export default function Sidebar({
   onToggleCollapse,
   onClose,
   isMobile = false,
-  onSubscribeClick,
 }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -153,68 +150,11 @@ export default function Sidebar({
       ],
     },
     {
-      name: 'Billing',
-      href: '/dashboard/billing',
-      icon: CreditCardIcon,
-      description: 'Subscription and usage',
-      children: [
-        {
-          name: 'Current Plan',
-          href: '/dashboard/billing',
-          icon: CreditCardIcon,
-          description: 'Plan details',
-        },
-        {
-          name: 'Usage',
-          href: '/dashboard/billing/usage',
-          icon: ChartBarIcon,
-          description: 'Usage statistics',
-        },
-        {
-          name: 'Invoices',
-          href: '/dashboard/billing/invoices',
-          icon: DocumentTextIcon,
-          description: 'Billing history',
-        },
-        {
-          name: 'Upgrade',
-          href: '/dashboard/billing/upgrade',
-          icon: SparklesIcon,
-          description: 'Upgrade plan',
-        },
-      ],
-    },
-    {
       name: 'Settings',
       href: '/dashboard/settings',
       icon: CogIcon,
       description: 'Account preferences',
-      children: [
-        {
-          name: 'Profile',
-          href: '/dashboard/settings/profile',
-          icon: UserIcon,
-          description: 'Personal information',
-        },
-        {
-          name: 'Company',
-          href: '/dashboard/settings/company',
-          icon: BriefcaseIcon,
-          description: 'Company details',
-        },
-        {
-          name: 'Notifications',
-          href: '/dashboard/settings/notifications',
-          icon: BellIcon,
-          description: 'Email preferences',
-        },
-        {
-          name: 'API Keys',
-          href: '/dashboard/settings/api',
-          icon: CogIcon,
-          description: 'Integration settings',
-        },
-      ],
+      // No children, all handled as tabs in the settings page
     },
   ];
 
