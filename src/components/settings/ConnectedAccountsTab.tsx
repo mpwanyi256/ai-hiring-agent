@@ -67,7 +67,8 @@ export default function ConnectedAccountsTab() {
               </div>
               {states[provider] ? (
                 <Button
-                  variant="secondary"
+                  variant="ghost"
+                  className="text-red-500 hover:bg-red-50"
                   onClick={() => dispatch(disconnectIntegration(provider as IntegrationProvider))}
                   size="sm"
                 >
@@ -75,7 +76,7 @@ export default function ConnectedAccountsTab() {
                 </Button>
               ) : (
                 <Button
-                  variant="primary"
+                  variant="ghost"
                   size="sm"
                   onClick={() => integrationService.connect(provider as IntegrationProvider)}
                 >
