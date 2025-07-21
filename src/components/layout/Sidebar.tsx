@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { RootState, useAppSelector } from '@/store';
 import { useState } from 'react';
 import {
   HomeIcon,
@@ -12,7 +12,6 @@ import {
   UserGroupIcon,
   ChartBarIcon,
   ClockIcon,
-  CreditCardIcon,
   CogIcon,
   SparklesIcon,
   XMarkIcon,
@@ -21,10 +20,10 @@ import {
   PlusIcon,
   DocumentTextIcon,
   UserIcon,
-  BellIcon,
 } from '@heroicons/react/24/outline';
 import BillingButton from '@/components/billing/BillingButton';
 import { useSubscriptionModal } from '@/components/modals/SubscriptionModal';
+import { selectHasActiveSubscription } from '@/store/auth/authSelectors';
 
 interface ChildRoute {
   name: string;
@@ -55,12 +54,12 @@ export default function Sidebar({
   onToggleCollapse,
   onClose,
   isMobile = false,
-  onSubscribeClick,
 }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useSelector((state: RootState) => state.auth);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const { open: openSubscriptionModal } = useSubscriptionModal() || {};
+  const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
 
   const toggleExpanded = (itemName: string) => {
     if (collapsed && !isMobile) return; // Don't expand in collapsed desktop mode
@@ -153,68 +152,11 @@ export default function Sidebar({
       ],
     },
     {
-      name: 'Billing',
-      href: '/dashboard/billing',
-      icon: CreditCardIcon,
-      description: 'Subscription and usage',
-      children: [
-        {
-          name: 'Current Plan',
-          href: '/dashboard/billing',
-          icon: CreditCardIcon,
-          description: 'Plan details',
-        },
-        {
-          name: 'Usage',
-          href: '/dashboard/billing/usage',
-          icon: ChartBarIcon,
-          description: 'Usage statistics',
-        },
-        {
-          name: 'Invoices',
-          href: '/dashboard/billing/invoices',
-          icon: DocumentTextIcon,
-          description: 'Billing history',
-        },
-        {
-          name: 'Upgrade',
-          href: '/dashboard/billing/upgrade',
-          icon: SparklesIcon,
-          description: 'Upgrade plan',
-        },
-      ],
-    },
-    {
       name: 'Settings',
       href: '/dashboard/settings',
       icon: CogIcon,
       description: 'Account preferences',
-      children: [
-        {
-          name: 'Profile',
-          href: '/dashboard/settings/profile',
-          icon: UserIcon,
-          description: 'Personal information',
-        },
-        {
-          name: 'Company',
-          href: '/dashboard/settings/company',
-          icon: BriefcaseIcon,
-          description: 'Company details',
-        },
-        {
-          name: 'Notifications',
-          href: '/dashboard/settings/notifications',
-          icon: BellIcon,
-          description: 'Email preferences',
-        },
-        {
-          name: 'API Keys',
-          href: '/dashboard/settings/api',
-          icon: CogIcon,
-          description: 'Integration settings',
-        },
-      ],
+      // No children, all handled as tabs in the settings page
     },
   ];
 
@@ -238,9 +180,6 @@ export default function Sidebar({
     });
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hasActiveSubscription =
-    user?.subscription && ['active', 'trialing'].includes(user.subscription.status);
-
   return (
     <div
       className={`bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-200 shadow-none ${
@@ -257,7 +196,7 @@ export default function Sidebar({
             <div>
               <h2 className="font-semibold text-gray-900 text-sm">{user?.companyName}</h2>
               <p className="text-xs text-gray-400 capitalize">
-                {user?.subscription?.name || 'Free'} Plan
+                {user?.subscription?.name || 'No active '} plan
               </p>
             </div>
           </div>

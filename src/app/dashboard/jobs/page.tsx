@@ -19,7 +19,7 @@ import { fetchJobsPaginated } from '@/store/jobs/jobsThunks';
 import { CompanyJobs } from '@/types/jobs';
 import { selectCompanyJobs } from '@/store/jobs/jobsSelectors';
 import { apiError } from '@/lib/notification';
-import { selectCompanySlug } from '@/store/auth/authSelectors';
+import { selectCompanySlug, selectHasActiveSubscription } from '@/store/auth/authSelectors';
 
 export default function JobsPage() {
   const { user } = useAppSelector((state) => state.auth);
@@ -27,6 +27,7 @@ export default function JobsPage() {
   const { success, error: showError } = useToast();
   const dispatch = useAppDispatch();
   const { pagination, jobs } = useAppSelector(selectCompanyJobs);
+  const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
 
   // State for jobs and pagination
   const [isLoading, setIsLoading] = useState(true);
@@ -149,7 +150,11 @@ export default function JobsPage() {
             </div>
             <div className="mt-3 sm:mt-0">
               <Link href="/dashboard/jobs/new">
-                <Button size="sm" className="flex items-center text-sm">
+                <Button
+                  size="sm"
+                  className={`flex items-center text-sm ${!hasActiveSubscription ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={!hasActiveSubscription}
+                >
                   <PlusIcon className="w-4 h-4 mr-2" />
                   Create New Job
                 </Button>
@@ -181,13 +186,15 @@ export default function JobsPage() {
           <MetricCard
             title="Active Jobs"
             value={user.usageCounts.activeJobs}
-            subtitle={`of ${user.subscription?.maxJobs === -1 ? '∞' : user.subscription?.maxJobs} allowed`}
+            subtitle={
+              hasActiveSubscription ? `of ${user.subscription?.maxJobs} allowed` : 'No active plan'
+            }
             icon={CheckBadgeIcon}
             iconColor="text-emerald-600"
             iconBgColor="bg-emerald-50"
             progress={{
               current: user.usageCounts.activeJobs,
-              max: user.subscription?.maxJobs || 1,
+              max: hasActiveSubscription ? user.subscription?.maxJobs || 1 : 0,
               label: 'Usage',
             }}
           />
@@ -230,7 +237,10 @@ export default function JobsPage() {
             </p>
             {!searchQuery && !statusFilter && (
               <Link href="/dashboard/jobs/new">
-                <Button>
+                <Button
+                  disabled={!hasActiveSubscription}
+                  className={hasActiveSubscription ? '' : 'opacity-50 cursor-not-allowed'}
+                >
                   <PlusIcon className="w-4 h-4 mr-2" />
                   Create Your First Job
                 </Button>
