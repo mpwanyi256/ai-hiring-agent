@@ -56,7 +56,7 @@ export async function sendInterviewNotification(data: InterviewEmailData): Promi
     }
 
     const event: CalendarEvent = {
-      summary: `Interview with ${data.candidateName} for ${data.jobTitle}`,
+      summary: data.eventSummary,
       description: `Interview for ${data.jobTitle} position at ${data.companyName}${data.notes ? `\n\nNotes: ${data.notes}` : ''}`,
       startTime: startDateTime.toISOString(),
       endTime: endDateTime.toISOString(),
@@ -69,14 +69,14 @@ export async function sendInterviewNotification(data: InterviewEmailData): Promi
 
     const emailContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #386B43;">Interview Invitation</h2>
+        <h2 style="color: #386B43;">Event Invitation</h2>
         
         <p>Hi ${data.candidateName},</p>
         
-        <p>You've been invited to an interview for the <strong>${data.jobTitle}</strong> position at <strong>${data.companyName}</strong>.</p>
+        <p>You've been invited to an event for the <strong>${data.jobTitle}</strong> position at <strong>${data.companyName}</strong>.</p>
         
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #386B43;">Interview Details</h3>
+          <h3 style="margin-top: 0; color: #386B43;">Event Details</h3>
           <p><strong>Date:</strong> ${new Date(data.interviewDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
           <p><strong>Time:</strong> ${data.interviewTime} (${data.timezone})</p>
           <p><strong>Duration:</strong> ${data.duration} minutes</p>
@@ -85,8 +85,6 @@ export async function sendInterviewNotification(data: InterviewEmailData): Promi
         </div>
         
         <p>A calendar invite has been attached to this email. Please add it to your calendar.</p>
-        
-        <p>If you need to reschedule or have any questions, please contact us as soon as possible.</p>
         
         <p>Best regards,<br>The ${data.companyName} Hiring Team</p>
       </div>
@@ -100,7 +98,9 @@ export async function sendInterviewNotification(data: InterviewEmailData): Promi
     const { data: emailResult, error } = await resend.emails.send({
       from: 'Intavia <no-reply@intavia.app>',
       to: [data.candidateEmail],
-      subject: `Interview Invitation - ${data.jobTitle} at ${data.companyName}`,
+      cc: [data.organizerEmail],
+      replyTo: data.organizerEmail,
+      subject: data.eventSummary,
       html: emailContent,
       attachments: [
         {
@@ -142,7 +142,7 @@ export async function sendInterviewUpdateNotification(data: InterviewEmailData):
     }
 
     const event: CalendarEvent = {
-      summary: `Interview with ${data.candidateName} for ${data.jobTitle}`,
+      summary: data.eventSummary,
       description: `Interview for ${data.jobTitle} position at ${data.companyName}${data.notes ? `\n\nNotes: ${data.notes}` : ''}`,
       startTime: startDateTime.toISOString(),
       endTime: endDateTime.toISOString(),

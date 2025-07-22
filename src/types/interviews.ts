@@ -52,6 +52,7 @@ export type InterviewStatus =
 
 export interface CreateInterviewData {
   applicationId: string; // Changed from candidateId
+  eventSummary: string;
   jobId: string;
   date: string;
   time: string;

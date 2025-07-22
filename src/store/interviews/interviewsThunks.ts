@@ -10,6 +10,7 @@ import {
   UpdateInterviewResponse,
   DeleteInterviewResponse,
 } from '@/types/interviews';
+import { RootState } from '..';
 
 // Fetch interviews with filters
 export const fetchInterviews = createAsyncThunk(
@@ -117,15 +118,26 @@ export const deleteInterview = createAsyncThunk(
 // Schedule interview (alias for createInterview with additional logic)
 export const scheduleInterview = createAsyncThunk(
   'interviews/scheduleInterview',
-  async (interviewData: CreateInterviewData, { rejectWithValue }) => {
+  async (interviewData: CreateInterviewData, { rejectWithValue, getState }) => {
     try {
+      const state = getState() as RootState;
+      const user = state.auth.user;
+      if (!user) {
+        return rejectWithValue('User not authenticated');
+      }
       // This could include additional logic like Google Calendar integration
       const response = await fetch('/api/interviews/schedule', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(interviewData),
+        body: JSON.stringify({
+          ...interviewData,
+          userId: user.id,
+          companyId: user.companyId,
+          organizerEmail: user.email,
+          companyName: user.companyName,
+        }),
       });
 
       const data: CreateInterviewResponse = await response.json();

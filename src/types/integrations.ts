@@ -1,4 +1,5 @@
 export interface InterviewEmailData {
+  eventSummary: string;
   candidateName: string;
   candidateEmail: string;
   companyName: string;
@@ -9,6 +10,7 @@ export interface InterviewEmailData {
   meetLink: string | null;
   duration: number;
   notes?: string;
+  organizerEmail: string;
 }
 
 export interface CalendarEvent {
