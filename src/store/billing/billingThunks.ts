@@ -9,97 +9,34 @@ import {
 import { APIResponse } from '@/types';
 import { RootState } from '..';
 import { isDev } from '@/lib/constants';
-
-// Track ongoing requests to prevent duplicates
-let fetchSubscriptionPromise: Promise<any> | null = null;
+import { apiUtils } from '../api';
+import { apiError } from '@/lib/notification';
 
 // Fetch user's current subscription (using user_details view for consistency)
 export const fetchSubscription = createAsyncThunk<UserSubscription, void>(
   'billing/fetchSubscription',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
-      // If there's already a request in progress, wait for it
-      if (fetchSubscriptionPromise) {
-        console.log('Subscription fetch already in progress, waiting...');
-        return await fetchSubscriptionPromise;
-      }
-
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = (getState() as RootState).auth.user;
       if (!user) {
         throw new Error('User not authenticated');
       }
+      const { data, success } = await apiUtils.get<APIResponse<UserSubscription>>(
+        `/api/billing/subscription/${user.id}`,
+      );
 
-      // Create the promise and store it
-      fetchSubscriptionPromise = (async () => {
-        // Use the user_details view (same as auth API) for consistency
-        const { data, error } = await supabase
-          .from('user_details')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+      if (!success) {
+        throw new Error('Failed to fetch subscription');
+      }
 
-        if (error) {
-          console.error('Error fetching user details:', error);
-          throw error;
-        }
-
-        // Check if user has an active subscription
-        if (!data.subscription_id || !data.subscription_status) {
-          console.log('No active subscription found for user');
-          throw new Error('No active subscription found');
-        }
-
-        // Transform the user_details data to match UserSubscription format
-        const subscription: UserSubscription = {
-          id: data.subscription_id,
-          user_id: user.id,
-          subscription_id: data.subscription_id,
-          status: data.subscription_status,
-          started_at: data.subscription_started_at || new Date().toISOString(),
-          expires_at: data.subscription_expires_at,
-          current_period_start: data.subscription_started_at,
-          current_period_end: data.subscription_expires_at,
-          trial_start: undefined, // Not available in user_details
-          trial_end: undefined, // Not available in user_details
-          cancel_at_period_end: false, // Not available in user_details
-          stripe_customer_id: data.stripe_customer_id,
-          stripe_subscription_id: data.stripe_subscription_id,
-          created_at: data.user_created_at,
-          updated_at: data.user_updated_at,
-          subscriptions: {
-            id: data.subscription_id,
-            name: data.subscription_name,
-            description: data.subscription_description,
-            price_monthly: data.price_monthly,
-            price_yearly: data.price_yearly,
-            max_jobs: data.max_jobs,
-            max_interviews_per_month: data.max_interviews_per_month,
-            features: data.subscription_features,
-            trial_days: 30, // Default trial days
-            interval: 'month',
-            is_active: true,
-            stripe_price_id: data.stripe_price_id_dev, // Use dev price ID as default
-            created_at: data.company_created_at,
-            updated_at: data.user_updated_at,
-          },
-        };
-        return subscription;
-      })();
-
-      const result = await fetchSubscriptionPromise;
-
-      // Clear the promise after completion
-      fetchSubscriptionPromise = null;
-
-      return result;
-    } catch (error: any) {
-      // Clear the promise on error
-      fetchSubscriptionPromise = null;
-      console.error('Failed to fetch subscription:', error);
-      return rejectWithValue(error.message || 'Failed to fetch subscription');
+      // Check if user has an active subscription
+      if (!data.subscription_id || !data) {
+        console.log('No active subscription found for user');
+        throw new Error('No active subscription found');
+      }
+      return data;
+    } catch {
+      return rejectWithValue('Failed to fetch subscription');
     }
   },
 );
@@ -213,36 +150,19 @@ export const createBillingPortalSession = createAsyncThunk<{ url: string }, Bill
   'billing/createBillingPortalSession',
   async (portalData, { rejectWithValue }) => {
     try {
-      console.log('Creating billing portal session...');
+      const { data, success } = await apiUtils.post<APIResponse<{ url: string }>>(
+        '/api/billing/create-portal-session',
+        portalData,
+      );
 
-      const response = await fetch('/api/billing/create-portal-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(portalData),
-      });
-
-      const result: APIResponse<{ url: string }> = await response.json();
-
-      if (!result.success) {
-        console.error('Billing portal session creation failed:', result.error);
-
-        // Check if it's a configuration error
-        if (response.status === 503 && (result as any).needsConfiguration) {
-          throw new Error(
-            'Billing portal not configured. Please contact support to manage your subscription.',
-          );
-        }
-
-        throw new Error(result.error || 'Failed to create billing portal session');
+      if (!success) {
+        throw new Error('Failed to create billing portal session');
       }
 
-      console.log('Billing portal session created successfully');
-      return result.data;
-    } catch (error: any) {
-      console.error('Failed to create billing portal session:', error);
-      return rejectWithValue(error.message || 'Failed to create billing portal session');
+      return data;
+    } catch {
+      apiError('Something went wrong. Please try again later.');
+      return rejectWithValue('Something went wrong. Please try again later.');
     }
   },
 );

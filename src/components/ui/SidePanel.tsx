@@ -21,7 +21,7 @@ const widthMap = {
 const SidePanel: React.FC<SidePanelProps> = ({
   isOpen,
   onClose,
-  title,
+  title = '',
   children,
   width = 'md',
 }) => {

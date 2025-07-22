@@ -29,7 +29,15 @@ SELECT
 
   -- Company info
   cm.name as company_name,
-  cm.id as company_id
+  cm.id as company_id,
+  i.title as event_summary,
+
+  -- Get creator info as JSON object
+  json_build_object(
+    'id', p.id,
+    'name', CONCAT(p.first_name, ' ', COALESCE(p.last_name, '')),
+    'email', p.email
+  ) as organizer_info
 
 FROM interviews i
 LEFT JOIN candidates c ON i.application_id = c.id

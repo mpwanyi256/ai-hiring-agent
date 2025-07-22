@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
       logo_url: company.logo_url,
       logo_path: company.logo_path,
       timezoneId: company.timezone_id,
+      createdBy: company.created_by,
       timezone: company.timezones
         ? {
             id: company.timezones.id,

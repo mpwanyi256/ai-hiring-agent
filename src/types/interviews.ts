@@ -52,6 +52,7 @@ export type InterviewStatus =
 
 export interface CreateInterviewData {
   applicationId: string; // Changed from candidateId
+  eventSummary: string;
   jobId: string;
   date: string;
   time: string;
@@ -86,6 +87,7 @@ export interface InterviewsState {
   currentInterview: Interview | null;
   isLoading: boolean;
   error: string | null;
+  applicationEvents: Event[];
   pagination: {
     page: number;
     limit: number;
@@ -212,4 +214,32 @@ export interface CheckConflictsPayload {
   time: string;
   timezone: string;
   excludeInterviewId: string;
+}
+
+export interface Event {
+  id: string;
+  applicationId: string;
+  jobId: string;
+  date: string;
+  time: string;
+  duration: number;
+  status: InterviewStatus;
+  notes: string;
+  meetingLink: string;
+  calendarEventId: string;
+  createdAt: string;
+  updatedAt: string;
+  candidateFirstName: string;
+  candidateLastName: string;
+  candidateEmail: string;
+  jobTitle: string;
+  jobOwnwerId: string;
+  companyName: string;
+  companyId: string;
+  eventSummary: string;
+  organizerInfo: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }

@@ -6,6 +6,7 @@ import {
   deleteInterview,
   scheduleInterview,
   updateInterviewStatus,
+  fetchApplicationEvents,
 } from './interviewsThunks';
 import { InterviewsState, Interview } from '@/types/interviews';
 
@@ -14,6 +15,7 @@ const initialState: InterviewsState = {
   currentInterview: null,
   isLoading: false,
   error: null,
+  applicationEvents: [],
   pagination: {
     page: 1,
     limit: 10,
@@ -62,9 +64,20 @@ const interviewsSlice = createSlice({
       state.currentInterview = null;
       state.pagination = initialState.pagination;
     },
+    clearApplicationEvents: (state) => {
+      state.applicationEvents = [];
+    },
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchApplicationEvents.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.applicationEvents = action.payload;
+      })
+      .addCase(fetchApplicationEvents.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to fetch application events';
+      })
       // Fetch Interviews
       .addCase(fetchInterviews.pending, (state) => {
         state.isLoading = true;
@@ -191,6 +204,7 @@ export const {
   updateInterviewInList,
   removeInterviewFromList,
   clearInterviews,
+  clearApplicationEvents,
 } = interviewsSlice.actions;
 
 export default interviewsSlice.reducer;

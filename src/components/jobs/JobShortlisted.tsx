@@ -4,41 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { CandidateWithEvaluation, CandidateStatus } from '@/types/candidates';
 import { Loading } from '@/components/ui/Loading';
-import {
-  UserIcon,
-  CalendarIcon,
-  StarIcon,
-  CheckCircleIcon,
-  ChevronDownIcon,
-} from '@heroicons/react/24/outline';
+import { UserIcon, CalendarIcon, StarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import Button from '../ui/Button';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
 import RescheduleInterviewModal from '../dashboard/RescheduleInterviewModal';
 import { fetchShortlistedCandidates } from '@/store/candidates/candidatesThunks';
-import { updateCandidateStatus } from '@/store/candidates/candidatesThunks';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
-import { CheckIcon } from '@heroicons/react/24/solid';
-import { apiSuccess, apiError } from '@/lib/notification';
+import CandidateDetailsPanel from '../candidates/CandidateDetailsPanel';
+import { UpdateApplicationStatus } from './UpdateApplicationStatus';
 
 interface JobShortlistedProps {
   jobId: string;
 }
-const candidateStatuses: { value: CandidateStatus; label: string }[] = [
-  { value: 'under_review', label: 'Under Review' },
-  { value: 'shortlisted', label: 'Shortlisted' },
-  { value: 'interview_scheduled', label: 'Interview Scheduled' },
-  { value: 'reference_check', label: 'Reference Check' },
-  { value: 'offer_extended', label: 'Offer Extended' },
-  { value: 'offer_accepted', label: 'Offer Accepted' },
-  { value: 'hired', label: 'Hired' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'withdrawn', label: 'Withdrawn' },
-];
 
 export default function JobShortlisted({ jobId }: JobShortlistedProps) {
   const dispatch = useAppDispatch();
@@ -63,7 +39,22 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     isOpen: false,
     interview: null,
   });
-  const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
+  // Add state and handlers for details panel
+  const [detailsPanel, setDetailsPanel] = useState<{
+    isOpen: boolean;
+    candidate: CandidateWithEvaluation | null;
+  }>({
+    isOpen: false,
+    candidate: null,
+  });
+
+  const handleOpenDetails = (candidate: CandidateWithEvaluation) => {
+    setDetailsPanel({ isOpen: true, candidate });
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsPanel({ isOpen: false, candidate: null });
+  };
 
   useEffect(() => {
     dispatch(
@@ -112,17 +103,6 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
         return 'text-red-700 bg-red-100';
       default:
         return 'text-gray-600 bg-gray-50';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'interview_scheduled':
-        return 'bg-green-100 text-green-700';
-      case 'cancelled':
-        return 'bg-red-100 text-red-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -190,19 +170,6 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     handleCloseRescheduleModal();
   };
 
-  const handleStatusChange = async (candidateId: string, newStatus: CandidateStatus) => {
-    setStatusUpdating(candidateId);
-    try {
-      await dispatch(updateCandidateStatus({ candidateId, status: newStatus })).unwrap();
-      apiSuccess('Candidate status updated successfully');
-    } catch (error) {
-      apiError('Failed to update candidate status');
-      console.error('Failed to update candidate status:', error);
-    } finally {
-      setStatusUpdating(null);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -268,9 +235,9 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Score
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Recommendation
-                </th>
+                </th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
@@ -314,7 +281,7 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                       <span className="text-gray-400 text-sm">No score</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  {/* <td className="px-6 py-4 whitespace-nowrap">
                     {candidate.evaluation?.recommendation ? (
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRecommendationColor(candidate.evaluation.recommendation)}`}
@@ -324,36 +291,12 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                     ) : (
                       <span className="text-gray-400 text-sm">No recommendation</span>
                     )}
-                  </td>
+                  </td> */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium hover:cursor-pointer ${getStatusColor(candidate.status)}`}
-                        >
-                          <StarIcon className="w-3 h-3 mr-1" />
-                          {candidate.status?.replace('_', ' ').toUpperCase()}
-                          <ChevronDownIcon className="w-3 h-3 ml-1" />
-                        </span>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-44">
-                        {candidateStatuses.map((status) => (
-                          <DropdownMenuItem
-                            key={status.value}
-                            onClick={() => handleStatusChange(candidate.id, status.value)}
-                            disabled={
-                              statusUpdating === candidate.id || candidate.status === status.value
-                            }
-                            className="flex items-center justify-between"
-                          >
-                            <span>{status.label}</span>
-                            {candidate.status === status.value && (
-                              <CheckIcon className="w-4 h-4 text-green-500" />
-                            )}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <UpdateApplicationStatus
+                      candidateId={candidate.id}
+                      status={candidate.status as CandidateStatus}
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
@@ -374,6 +317,13 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                           Edit/Reschedule
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenDetails(candidate)}
+                      >
+                        Details
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -403,6 +353,15 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
           isOpen={rescheduleModal.isOpen}
           onClose={handleCloseRescheduleModal}
           onSuccess={handleRescheduleSuccess}
+        />
+      )}
+
+      {/* Render the details panel */}
+      {detailsPanel.candidate && (
+        <CandidateDetailsPanel
+          isOpen={detailsPanel.isOpen}
+          candidate={detailsPanel.candidate}
+          onClose={handleCloseDetails}
         />
       )}
     </div>

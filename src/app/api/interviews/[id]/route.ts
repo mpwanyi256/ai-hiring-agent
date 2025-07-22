@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: AppRequestParams<{ i
     // Get user's company_id from profile
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, company_id')
+      .select('id, company_id, email')
       .eq('id', user.id)
       .single();
     if (!profile) {
@@ -166,6 +166,8 @@ export async function PUT(request: NextRequest, { params }: AppRequestParams<{ i
           timezone: timezone.name,
           meetLink: updatedInterview.meet_link,
           duration: updatedInterview.duration,
+          eventSummary: 'Interview Updated',
+          organizerEmail: profile.email,
         };
 
         if (updatedInterview.notes) {
@@ -221,7 +223,7 @@ export async function PATCH(request: NextRequest, { params }: AppRequestParams<{
     // Get user's company_id
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, company_id')
+      .select('id, company_id, email')
       .eq('id', user.id)
       .single();
     if (!profile) {
@@ -282,6 +284,8 @@ export async function PATCH(request: NextRequest, { params }: AppRequestParams<{
           timezone: timezone.name,
           meetLink: null,
           duration: interview.duration,
+          eventSummary: 'Interview Cancelled',
+          organizerEmail: profile.email,
         };
         if (interview.notes) {
           emailData.notes = interview.notes;

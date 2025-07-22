@@ -50,6 +50,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
   const [formData, setFormData] = useState<CreateInterviewData>({
     applicationId: candidate.id,
     jobId: jobId,
+    eventSummary: `Interview with ${candidate.firstName} ${candidate.lastName} for ${jobTitle}`,
     date: '',
     time: '09:00',
     timezoneId: '',
@@ -66,6 +67,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
         setFormData({
           applicationId: candidate.id,
           jobId: jobId,
+          eventSummary: `Event with ${candidate.firstName} ${candidate.lastName} for ${jobTitle}`,
           date: interview.date,
           time: interview.time,
           timezoneId: interview.timezone_id,
@@ -78,6 +80,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
         setFormData({
           applicationId: candidate.id,
           jobId: jobId,
+          eventSummary: `Event with ${candidate.firstName} ${candidate.lastName} for ${jobTitle}`,
           date: '',
           time: '09:00',
           timezoneId: defaultTimezoneId,
@@ -87,7 +90,18 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
       }
       setErrors({});
     }
-  }, [isOpen, candidate.id, jobId, company?.timezoneId, timezones, isEdit, interview]);
+  }, [
+    isOpen,
+    candidate.id,
+    jobId,
+    company?.timezoneId,
+    timezones,
+    isEdit,
+    interview,
+    jobTitle,
+    candidate.firstName,
+    candidate.lastName,
+  ]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -201,9 +215,9 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              {isEdit ? 'Update Interview' : 'Schedule Interview'}
+              {isEdit ? 'Update Event' : 'Schedule Event'}
             </h2>
-            <p className="text-gray-600 mt-1">Set up an interview with the candidate</p>
+            <p className="text-gray-600 mt-1">Set up an event with the candidate</p>
           </div>
         </div>
 
@@ -238,10 +252,28 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Event Summary */}
+          <div className="flex flex-col w-full">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Event Summary
+              <span className="text-xs text-gray-500">
+                <br />
+                <b>Note:</b> This will be used as the subject of the email notification sent to the
+                candidate.
+              </span>
+            </label>
+            <input
+              value={formData.eventSummary}
+              onChange={(e) => handleInputChange('eventSummary', e.target.value)}
+              placeholder="Enter event summary"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors resize-none"
+            />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Date */}
             <DatePicker
-              label="Interview Date"
+              label="Event Date"
               value={formData.date}
               onChange={(date) => handleInputChange('date', date)}
               minDate={getMinDate()}
@@ -250,7 +282,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
 
             {/* Time */}
             <TimePicker
-              label="Interview Time"
+              label="Event Time"
               value={formData.time}
               onChange={(time) => handleInputChange('time', time)}
               error={errors.time}
@@ -345,7 +377,7 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
           {/* Actions */}
           <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
             <Button type="submit" size="sm" isLoading={isScheduling} disabled={isScheduling}>
-              {isEdit ? 'Update Interview' : 'Schedule Interview'}
+              {isEdit ? 'Update Event' : 'Schedule Event'}
             </Button>
           </div>
         </form>

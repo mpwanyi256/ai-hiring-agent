@@ -79,6 +79,7 @@ const billingSlice = createSlice({
       .addCase(createBillingPortalSession.fulfilled, (state, action) => {
         state.isLoading = false;
         state.customerPortalUrl = action.payload.url;
+        window.open(action.payload.url, '_blank');
       })
       .addCase(createBillingPortalSession.rejected, (state, action) => {
         state.isLoading = false;

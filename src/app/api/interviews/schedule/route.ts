@@ -9,7 +9,12 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const body: CreateInterviewData = await request.json();
+    const body: CreateInterviewData & {
+      userId: string;
+      companyId: string;
+      organizerEmail: string;
+      companyName: string;
+    } = await request.json();
 
     // Validate required fields
     if (
@@ -18,7 +23,10 @@ export async function POST(request: NextRequest) {
       !body.date ||
       !body.time ||
       !body.timezoneId ||
-      !body.duration
+      !body.duration ||
+      !body.userId ||
+      !body.companyId ||
+      !body.organizerEmail
     ) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
@@ -79,48 +87,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid timezone' }, { status: 400 });
     }
 
-    // Check if interview already exists for this candidate and job
-    const { data: existingInterview } = await supabase
-      .from('interviews')
-      .select('id, status')
-      .eq('application_id', body.applicationId)
-      .eq('job_id', body.jobId)
-      .in('status', ['interview_scheduled'])
-      .single();
-
-    if (existingInterview) {
-      return NextResponse.json(
-        { success: false, error: 'Interview already scheduled for this candidate' },
-        { status: 409 },
-      );
-    }
-
-    // Get current user from Supabase session
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
-    }
-
-    // Get user's company_id from profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, company_id')
-      .eq('id', user.id)
-      .single();
-    if (!profile) {
-      return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
-    }
-
     // Google Calendar Integration
     let calendarEventId = null;
     let meetLink = null;
-    const employerEmail = body.employerEmail || null;
+    const employerEmail = body.organizerEmail || null;
     const accessToken = await getValidGoogleAccessToken({
-      userId: user.id,
-      companyId: profile.company_id,
+      userId: body.userId,
+      companyId: body.companyId,
     });
     if (accessToken) {
       try {
@@ -154,6 +127,7 @@ export async function POST(request: NextRequest) {
       .insert({
         application_id: body.applicationId,
         job_id: body.jobId,
+        title: body.eventSummary,
         date: body.date,
         time: body.time,
         timezone_id: body.timezoneId,
@@ -176,25 +150,20 @@ export async function POST(request: NextRequest) {
 
     // Send email notification to candidate
     try {
-      // Get company name for the email
-      const { data: company } = await supabase
-        .from('companies')
-        .select('name')
-        .eq('id', profile.company_id)
-        .single();
-
-      const companyName = company?.name || 'Our Company';
-
       const emailData: any = {
+        eventSummary:
+          body.eventSummary ||
+          `Interview with ${candidate.first_name} ${candidate.last_name} for ${candidate.job_title}`,
         candidateName: `${candidate.first_name} ${candidate.last_name}`,
         candidateEmail: candidate.email,
-        companyName: companyName,
+        companyName: body.companyName,
         jobTitle: candidate.job_title,
         interviewDate: body.date,
         interviewTime: body.time,
         timezone: timezone.name,
         meetLink: meetLink,
         duration: body.duration,
+        organizerEmail: body.organizerEmail,
       };
 
       if (body.notes) {

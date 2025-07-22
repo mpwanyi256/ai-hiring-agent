@@ -32,7 +32,7 @@ export async function PATCH(request: NextRequest, { params }: AppRequestParams<{
     // Get user's company_id
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, company_id')
+      .select('id, company_id, email')
       .eq('id', user.id)
       .single();
     if (!profile) {
@@ -93,6 +93,8 @@ export async function PATCH(request: NextRequest, { params }: AppRequestParams<{
           timezone: timezone.name,
           meetLink: null,
           duration: interview.duration,
+          eventSummary: 'Interview Cancelled',
+          organizerEmail: profile.email,
         };
         if (interview.notes) {
           emailData.notes = interview.notes;
