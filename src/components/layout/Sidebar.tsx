@@ -105,6 +105,13 @@ export default function Sidebar({
         },
       ],
     },
+    // Add Teams navigation item here
+    {
+      name: 'Team',
+      href: '/dashboard/teams',
+      icon: UserGroupIcon,
+      description: 'Manage your hiring team',
+    },
     {
       name: 'Reports',
       href: '/dashboard/reports',
