@@ -11,6 +11,7 @@ export interface UpcomingInterview {
   candidate_email: string;
   job_title: string;
   meet_link?: string;
+  event_summary?: string;
   job_id: string;
 }
 

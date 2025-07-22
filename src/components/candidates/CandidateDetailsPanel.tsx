@@ -24,9 +24,9 @@ function classNames(...classes: string[]) {
 
 const tabs = [
   { name: 'General', Component: GeneralTab },
+  { name: 'Events', Component: EventsTab },
   { name: 'Evaluations', Component: EvaluationsTab },
   { name: 'Experience', Component: ExperienceTab },
-  { name: 'Events', Component: EventsTab },
   { name: 'Messages', Component: MessagesTab },
 ];
 
@@ -46,7 +46,7 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
     <SidePanel isOpen={isOpen} onClose={onClose} width="xl">
       <div className="flex flex-col h-full min-h-0">
         {/* Top Section */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b pb-6 mb-6 w-full border border-gray-200 rounded-md p-1">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b pb-6 mb-6 w-full">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-3xl font-bold text-primary-700">
               <UserIcon className="w-10 h-10 text-primary-500" />

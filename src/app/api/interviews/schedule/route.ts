@@ -87,41 +87,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid timezone' }, { status: 400 });
     }
 
-    // Check if interview already exists for this candidate and job
-    // const { data: existingInterview } = await supabase
-    //   .from('interviews')
-    //   .select('id, status')
-    //   .eq('application_id', body.applicationId)
-    //   .eq('job_id', body.jobId)
-    //   .in('status', ['interview_scheduled'])
-    //   .single();
-
-    // if (existingInterview) {
-    //   return NextResponse.json(
-    //     { success: false, error: 'Interview already scheduled for this candidate' },
-    //     { status: 409 },
-    //   );
-    // }
-
-    // Get current user from Supabase session
-    // const {
-    //   data: { user },
-    //   error: userError,
-    // } = await supabase.auth.getUser();
-    // if (userError || !user) {
-    //   return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
-    // }
-
-    // Get user's company_id from profile
-    // const { data: profile } = await supabase
-    //   .from('profiles')
-    //   .select('id, company_id')
-    //   .eq('id', user.id)
-    //   .single();
-    // if (!profile) {
-    //   return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
-    // }
-
     // Google Calendar Integration
     let calendarEventId = null;
     let meetLink = null;

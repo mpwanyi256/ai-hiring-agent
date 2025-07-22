@@ -31,6 +31,9 @@ export default function InterviewCard({ interview }: InterviewCardProps) {
           </span>
           <span className="text-xs text-gray-500">{interview.candidate_email}</span>
         </div>
+        <div className="text-xs text-gray-600 max-w-[200px] truncate">
+          {interview.event_summary}
+        </div>
         <div className="text-sm text-gray-600">{interview.job_title}</div>
         <div className="text-xs text-gray-500 mt-1">
           {interview.interview_date} at {interview.interview_time.slice(0, 5)}

@@ -9,8 +9,11 @@ import {
   CreateInterviewResponse,
   UpdateInterviewResponse,
   DeleteInterviewResponse,
+  Event,
 } from '@/types/interviews';
 import { RootState } from '..';
+import { apiUtils } from '../api';
+import { APIResponse } from '@/types';
 
 // Fetch interviews with filters
 export const fetchInterviews = createAsyncThunk(
@@ -240,6 +243,23 @@ export const cancelInterview = createAsyncThunk(
       return data.interview;
     } catch {
       return rejectWithValue('Failed to cancel interview');
+    }
+  },
+);
+
+export const fetchApplicationEvents = createAsyncThunk(
+  'interviews/fetchApplicationEvents',
+  async (applicationId: string, { rejectWithValue }) => {
+    try {
+      const { data, success, error } = await apiUtils.get<APIResponse<Event[]>>(
+        `/api/applications/${applicationId}/events`,
+      );
+      if (!success) {
+        return rejectWithValue(error || 'Failed to fetch application events');
+      }
+      return data;
+    } catch {
+      return rejectWithValue('Failed to fetch application events');
     }
   },
 );

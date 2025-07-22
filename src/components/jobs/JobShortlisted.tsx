@@ -235,9 +235,9 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Score
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Recommendation
-                </th>
+                </th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
@@ -281,7 +281,7 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                       <span className="text-gray-400 text-sm">No score</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  {/* <td className="px-6 py-4 whitespace-nowrap">
                     {candidate.evaluation?.recommendation ? (
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRecommendationColor(candidate.evaluation.recommendation)}`}
@@ -291,7 +291,7 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                     ) : (
                       <span className="text-gray-400 text-sm">No recommendation</span>
                     )}
-                  </td>
+                  </td> */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <UpdateApplicationStatus
                       candidateId={candidate.id}
