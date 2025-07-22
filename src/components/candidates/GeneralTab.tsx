@@ -9,11 +9,6 @@ const GeneralTab: React.FC<{
 }> = ({ candidate, onScheduleEvent }) => (
   <div className="space-y-4">
     <div>
-      {onScheduleEvent && (
-        <Button variant="primary" className="mb-2" onClick={onScheduleEvent}>
-          Schedule Event
-        </Button>
-      )}
       <h4 className="font-medium mb-1 text-primary-700">Interview Details</h4>
       {candidate.interviewDetails ? (
         <InterviewCard
@@ -35,6 +30,11 @@ const GeneralTab: React.FC<{
         <div className="text-gray-400 text-sm">No interview scheduled.</div>
       )}
     </div>
+    {onScheduleEvent && (
+      <Button variant="primary" size="sm" className="mb-2" onClick={onScheduleEvent}>
+        Schedule new Event
+      </Button>
+    )}
   </div>
 );
 

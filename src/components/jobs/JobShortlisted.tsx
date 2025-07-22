@@ -4,42 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { CandidateWithEvaluation, CandidateStatus } from '@/types/candidates';
 import { Loading } from '@/components/ui/Loading';
-import {
-  UserIcon,
-  CalendarIcon,
-  StarIcon,
-  CheckCircleIcon,
-  ChevronDownIcon,
-} from '@heroicons/react/24/outline';
+import { UserIcon, CalendarIcon, StarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import Button from '../ui/Button';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
 import RescheduleInterviewModal from '../dashboard/RescheduleInterviewModal';
 import { fetchShortlistedCandidates } from '@/store/candidates/candidatesThunks';
-import { updateCandidateStatus } from '@/store/candidates/candidatesThunks';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
-import { CheckIcon } from '@heroicons/react/24/solid';
-import { apiSuccess, apiError } from '@/lib/notification';
 import CandidateDetailsPanel from '../candidates/CandidateDetailsPanel';
+import { UpdateApplicationStatus } from './UpdateApplicationStatus';
 
 interface JobShortlistedProps {
   jobId: string;
 }
-const candidateStatuses: { value: CandidateStatus; label: string }[] = [
-  { value: 'under_review', label: 'Under Review' },
-  { value: 'shortlisted', label: 'Shortlisted' },
-  { value: 'interview_scheduled', label: 'Interview Scheduled' },
-  { value: 'reference_check', label: 'Reference Check' },
-  { value: 'offer_extended', label: 'Offer Extended' },
-  { value: 'offer_accepted', label: 'Offer Accepted' },
-  { value: 'hired', label: 'Hired' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'withdrawn', label: 'Withdrawn' },
-];
 
 export default function JobShortlisted({ jobId }: JobShortlistedProps) {
   const dispatch = useAppDispatch();
@@ -64,7 +39,6 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     isOpen: false,
     interview: null,
   });
-  const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
   // Add state and handlers for details panel
   const [detailsPanel, setDetailsPanel] = useState<{
     isOpen: boolean;
@@ -132,17 +106,6 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'interview_scheduled':
-        return 'bg-green-100 text-green-700';
-      case 'cancelled':
-        return 'bg-red-100 text-red-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
   const handleScheduleInterview = (candidate: CandidateWithEvaluation) => {
     setSchedulingModal({
       isOpen: true,
@@ -205,19 +168,6 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
       }),
     );
     handleCloseRescheduleModal();
-  };
-
-  const handleStatusChange = async (candidateId: string, newStatus: CandidateStatus) => {
-    setStatusUpdating(candidateId);
-    try {
-      await dispatch(updateCandidateStatus({ candidateId, status: newStatus })).unwrap();
-      apiSuccess('Candidate status updated successfully');
-    } catch (error) {
-      apiError('Failed to update candidate status');
-      console.error('Failed to update candidate status:', error);
-    } finally {
-      setStatusUpdating(null);
-    }
   };
 
   if (loading) {
@@ -343,34 +293,10 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium hover:cursor-pointer ${getStatusColor(candidate.status)}`}
-                        >
-                          <StarIcon className="w-3 h-3 mr-1" />
-                          {candidate.status?.replace('_', ' ').toUpperCase()}
-                          <ChevronDownIcon className="w-3 h-3 ml-1" />
-                        </span>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-44">
-                        {candidateStatuses.map((status) => (
-                          <DropdownMenuItem
-                            key={status.value}
-                            onClick={() => handleStatusChange(candidate.id, status.value)}
-                            disabled={
-                              statusUpdating === candidate.id || candidate.status === status.value
-                            }
-                            className="flex items-center justify-between"
-                          >
-                            <span>{status.label}</span>
-                            {candidate.status === status.value && (
-                              <CheckIcon className="w-4 h-4 text-green-500" />
-                            )}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <UpdateApplicationStatus
+                      candidateId={candidate.id}
+                      status={candidate.status as CandidateStatus}
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
