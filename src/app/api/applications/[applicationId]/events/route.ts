@@ -26,7 +26,8 @@ export async function GET(
     const { data: events, error: eventsError } = await supabase
       .from('interview_details')
       .select('*')
-      .eq('application_id', applicationId);
+      .eq('application_id', applicationId)
+      .order('interview_date', { ascending: false });
 
     if (eventsError) {
       return NextResponse.json(
