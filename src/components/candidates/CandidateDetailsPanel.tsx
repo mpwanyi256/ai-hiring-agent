@@ -30,18 +30,6 @@ const tabs = [
   { name: 'Messages', Component: MessagesTab },
 ];
 
-const statusColorMap: Record<string, string> = {
-  under_review: 'bg-gray-100 text-gray-700',
-  shortlisted: 'bg-blue-100 text-blue-700',
-  interview_scheduled: 'bg-primary-100 text-primary-700',
-  reference_check: 'bg-yellow-100 text-yellow-700',
-  offer_extended: 'bg-teal-100 text-teal-700',
-  offer_accepted: 'bg-green-100 text-green-700',
-  hired: 'bg-green-200 text-green-800',
-  rejected: 'bg-red-100 text-red-700',
-  withdrawn: 'bg-gray-200 text-gray-500',
-};
-
 const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
   isOpen,
   candidate,
@@ -49,7 +37,6 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [schedulingModalOpen, setSchedulingModalOpen] = useState(false);
-  const statusClass = statusColorMap[candidate.status] || 'bg-gray-100 text-gray-700';
   const [candidateData, setCandidateData] = useState<CandidateWithEvaluation>(candidate);
 
   const handleScheduleEvent = () => setSchedulingModalOpen(true);
