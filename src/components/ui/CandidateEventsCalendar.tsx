@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { InterviewStatus } from '@/types';
 
 export interface CandidateEvent {
   date: string; // ISO date string
-  type: 'interview' | 'review' | 'task' | 'other';
-  label: string;
+  type: string;
+  label: InterviewStatus;
 }
 
 const eventTypeStyle: Record<string, string> = {

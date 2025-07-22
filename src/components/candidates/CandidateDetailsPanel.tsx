@@ -24,9 +24,9 @@ function classNames(...classes: string[]) {
 
 const tabs = [
   { name: 'General', Component: GeneralTab },
-  { name: 'Events', Component: EventsTab },
+  // { name: 'Events', Component: EventsTab },
   { name: 'Evaluations', Component: EvaluationsTab },
-  { name: 'Experience', Component: ExperienceTab },
+  // { name: 'Experience', Component: ExperienceTab },
   { name: 'Messages', Component: MessagesTab },
 ];
 

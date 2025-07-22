@@ -7,6 +7,7 @@ import { clearApplicationEvents } from '@/store/interviews/interviewsSlice';
 import { useAppSelector } from '@/store';
 import { useAppDispatch } from '@/store';
 import { Loader2 } from 'lucide-react';
+import { selectApplicationEvents } from '@/store/interviews/interviewsSelectors';
 
 const GeneralTab: React.FC<{
   candidate: CandidateWithEvaluation;
@@ -14,7 +15,7 @@ const GeneralTab: React.FC<{
 }> = ({ candidate, onScheduleEvent }) => {
   const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(false);
-  const applicationEvents = useAppSelector((state) => state.interviews.applicationEvents);
+  const applicationEvents = useAppSelector(selectApplicationEvents);
 
   useEffect(() => {
     setIsLoading(true);
