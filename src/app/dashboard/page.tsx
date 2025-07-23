@@ -38,12 +38,23 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
   const [loading, setLoading] = useState(true);
+  const [showInviteWelcome, setShowInviteWelcome] = useState(false);
   const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Check for invite welcome parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('welcome') === 'invite') {
+      setShowInviteWelcome(true);
+      // Clean up the URL
+      router.replace('/dashboard');
+    }
+  }, [router]);
 
   if (!user) return null;
 
@@ -58,6 +69,45 @@ export default function DashboardPage() {
       <DashboardLayout>
         {/* Success Message */}
         <DashboardSubscriptionMessage />
+
+        {/* Invite Welcome Message */}
+        {showInviteWelcome && (
+          <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 rounded-lg border border-green-200 p-6 mb-6">
+            <div className="flex items-start space-x-4">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <UserGroupIcon className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  🎉 Welcome to the team!
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Your account has been successfully created and you&apos;re now part of{' '}
+                  {user.companyName}. You can now collaborate on hiring and access all team
+                  features.
+                </p>
+                <button
+                  onClick={() => setShowInviteWelcome(false)}
+                  className="text-sm text-green-600 hover:text-green-700 font-medium"
+                >
+                  Got it, thanks!
+                </button>
+              </div>
+              <button
+                onClick={() => setShowInviteWelcome(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Header Section */}
         <DashboardHeader />

@@ -24,6 +24,7 @@ function VerifyEmailContent() {
   const [lastCodeSentAt, setLastCodeSentAt] = useState<Date | null>(null);
 
   const email = searchParams.get('email') || '';
+  const inviteId = searchParams.get('invite') || '';
 
   useEffect(() => {
     // Cooldown timer
@@ -139,7 +140,15 @@ function VerifyEmailContent() {
       if (data.success && data.user) {
         // User is now verified and signed in
         await dispatch(checkAuth());
-        router.push('/dashboard');
+
+        // Check if this was from an invite
+        if (inviteId) {
+          // Redirect to a welcome page for invited users or directly to dashboard
+          router.push('/dashboard?welcome=invite');
+        } else {
+          // Regular signup flow
+          router.push('/dashboard');
+        }
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
