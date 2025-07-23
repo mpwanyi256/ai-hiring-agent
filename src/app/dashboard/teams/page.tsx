@@ -9,6 +9,7 @@ import TeamTabs from '@/components/teams/TeamTabs';
 import TeamFilterSearch from '@/components/teams/TeamFilterSearch';
 import TeamMembersTable from '@/components/teams/TeamMembersTable';
 import TeamInvitesTable from '@/components/teams/TeamInvitesTable';
+import InviteMemberModal from '@/components/teams/InviteMemberModal';
 
 const TeamsPage = () => {
   const dispatch = useAppDispatch();
@@ -16,6 +17,7 @@ const TeamsPage = () => {
   const [activeTab, setActiveTab] = useState('member');
   const [roleFilter, setRoleFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   useEffect(() => {
     dispatch(fetchTeam());
@@ -37,7 +39,11 @@ const TeamsPage = () => {
         {/* Top bar actions */}
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           <div className="text-xl font-semibold">Team</div>
-          <Button size="sm" className="bg-primary text-white flex items-center gap-2">
+          <Button
+            size="sm"
+            className="bg-primary text-white flex items-center gap-2"
+            onClick={() => setInviteOpen(true)}
+          >
             <PlusIcon className="w-4 h-4" /> Invite Member
           </Button>
         </div>
@@ -53,6 +59,7 @@ const TeamsPage = () => {
         ) : (
           <TeamInvitesTable invites={invites} />
         )}
+        <InviteMemberModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
         {/* TODO: Add pagination or Load More */}
       </div>
     </DashboardLayout>

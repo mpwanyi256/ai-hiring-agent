@@ -1,5 +1,6 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { TeamState, TeamMember, TeamInvite } from '../../types/teams';
+import { createSlice } from '@reduxjs/toolkit';
+import { TeamState } from '../../types/teams';
+import { fetchTeam, inviteUser, removeUser, resendInvite } from './teamsThunks';
 
 const initialState: TeamState = {
   members: [],
@@ -11,77 +12,53 @@ const initialState: TeamState = {
 const teamsSlice = createSlice({
   name: 'teams',
   initialState,
-  reducers: {
-    fetchTeamStart(state) {
+  reducers: {},
+  extraReducers: (builder) => {
+    builder.addCase(fetchTeam.pending, (state) => {
       state.loading = true;
-      state.error = null;
-    },
-    fetchTeamSuccess(
-      state,
-      action: PayloadAction<{ members: TeamMember[]; invites: TeamInvite[] }>,
-    ) {
-      state.loading = false;
+    });
+    builder.addCase(fetchTeam.fulfilled, (state, action) => {
       state.members = action.payload.members;
       state.invites = action.payload.invites;
-    },
-    fetchTeamFailure(state, action: PayloadAction<string>) {
       state.loading = false;
-      state.error = action.payload;
-    },
-    inviteUserStart(state) {
+    });
+    builder.addCase(fetchTeam.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.error.message || 'Failed to fetch team';
+    });
+    builder.addCase(inviteUser.pending, (state) => {
       state.loading = true;
-      state.error = null;
-    },
-    inviteUserSuccess(state, action: PayloadAction<TeamInvite>) {
-      state.loading = false;
+    });
+    builder.addCase(inviteUser.fulfilled, (state, action) => {
       state.invites.push(action.payload);
-    },
-    inviteUserFailure(state, action: PayloadAction<string>) {
       state.loading = false;
-      state.error = action.payload;
-    },
-    removeUserStart(state) {
+    });
+    builder.addCase(inviteUser.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.error.message || 'Failed to invite user';
+    });
+    builder.addCase(removeUser.pending, (state) => {
       state.loading = true;
-      state.error = null;
-    },
-    removeUserSuccess(state, action: PayloadAction<string>) {
+    });
+    builder.addCase(removeUser.fulfilled, (state, action) => {
+      state.members = state.members.filter((member) => member.id !== action.payload.id);
       state.loading = false;
-      state.members = state.members.filter((member) => member.id !== action.payload);
-    },
-    removeUserFailure(state, action: PayloadAction<string>) {
+    });
+    builder.addCase(removeUser.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.payload;
-    },
-    resendInviteStart(state) {
+      state.error = action.error.message || 'Failed to remove user';
+    });
+    builder.addCase(resendInvite.pending, (state) => {
       state.loading = true;
-      state.error = null;
-    },
-    resendInviteSuccess(state, action: PayloadAction<TeamInvite>) {
+    });
+    builder.addCase(resendInvite.fulfilled, (state) => {
       state.loading = false;
-      // Update the invite in the invites array
-      const idx = state.invites.findIndex((invite) => invite.id === action.payload.id);
-      if (idx !== -1) state.invites[idx] = action.payload;
-    },
-    resendInviteFailure(state, action: PayloadAction<string>) {
+    });
+    builder.addCase(resendInvite.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.payload;
-    },
+      state.error = action.error.message || 'Failed to resend invite';
+    });
   },
 });
-
-export const {
-  fetchTeamStart,
-  fetchTeamSuccess,
-  fetchTeamFailure,
-  inviteUserStart,
-  inviteUserSuccess,
-  inviteUserFailure,
-  removeUserStart,
-  removeUserSuccess,
-  removeUserFailure,
-  resendInviteStart,
-  resendInviteSuccess,
-  resendInviteFailure,
-} = teamsSlice.actions;
 
 export default teamsSlice.reducer;

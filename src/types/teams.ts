@@ -41,3 +41,18 @@ export interface TeamState {
   loading: boolean;
   error: string | null;
 }
+
+export interface InviteUserPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: TeamRole;
+  companyId: string;
+}
+
+export const ROLES: { label: string; value: TeamRole }[] = [
+  { label: 'Admin', value: 'admin' },
+  { label: 'Employee', value: 'employee' },
+  { label: 'Recruiter', value: 'recruiter' },
+  { label: 'Developer', value: 'developer' },
+];
