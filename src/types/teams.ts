@@ -29,13 +29,18 @@ export interface TeamMemberResponse {
 export interface TeamInvite {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  companyId: string;
+  first_name: string;
+  last_name: string;
   role: TeamRole;
+  created_at: string;
+  expires_at: string;
+  company_id: string;
   status: InvitationStatus;
-  expiresAt: string;
-  createdAt: string;
+  invited_by: {
+    id: string;
+    first_name: string;
+    last_name: string;
+  };
 }
 
 // State for the teams slice
@@ -60,3 +65,10 @@ export const ROLES: { label: string; value: TeamRole }[] = [
   { label: 'Recruiter', value: 'recruiter' },
   { label: 'Developer', value: 'developer' },
 ];
+
+export interface TeamInviteResponse {
+  invites: TeamInvite[];
+  hasMore: boolean;
+  totalCount: number;
+  page: number;
+}

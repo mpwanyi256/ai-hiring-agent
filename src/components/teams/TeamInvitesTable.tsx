@@ -1,31 +1,10 @@
 import React from 'react';
-import { TeamInvite } from '@/types/teams';
+import { useAppSelector } from '@/store';
+import { selectInvites } from '@/store/teams/teamSelectors';
 
-export default function TeamInvitesTable({ invites }: { invites: TeamInvite[] }) {
-  if (invites.length === 0) {
-    return (
-      <div className="overflow-x-auto bg-white rounded shadow border">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="px-4 py-2 text-left font-semibold">NAME</th>
-              <th className="px-4 py-2 text-left font-semibold">EMAIL</th>
-              <th className="px-4 py-2 text-left font-semibold">ROLE</th>
-              <th className="px-4 py-2 text-left font-semibold">STATUS</th>
-              <th className="px-4 py-2 text-left font-semibold">EXPIRES</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colSpan={5} className="text-center text-gray-400 py-6">
-                No pending invites.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    );
-  }
+export const TeamInvitesTable = () => {
+  const invites = useAppSelector(selectInvites);
+
   return (
     <div className="overflow-x-auto bg-white rounded shadow border">
       <table className="min-w-full text-sm">
@@ -42,7 +21,7 @@ export default function TeamInvitesTable({ invites }: { invites: TeamInvite[] })
           {invites.map((invite) => (
             <tr key={invite.id} className="border-t">
               <td className="px-4 py-2">
-                {invite.firstName} {invite.lastName}
+                {invite.first_name} {invite.last_name}
               </td>
               <td className="px-4 py-2">{invite.email}</td>
               <td className="px-4 py-2 capitalize">{invite.role}</td>
@@ -52,7 +31,7 @@ export default function TeamInvitesTable({ invites }: { invites: TeamInvite[] })
                 </span>
               </td>
               <td className="px-4 py-2">
-                {invite.expiresAt ? new Date(invite.expiresAt).toLocaleDateString() : '-'}
+                {invite.expires_at ? new Date(invite.expires_at).toLocaleDateString() : '-'}
               </td>
             </tr>
           ))}
@@ -60,4 +39,4 @@ export default function TeamInvitesTable({ invites }: { invites: TeamInvite[] })
       </table>
     </div>
   );
-}
+};

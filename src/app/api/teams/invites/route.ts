@@ -19,10 +19,23 @@ export async function GET(req: NextRequest) {
       count,
     } = await supabase
       .from('invites')
-      .select('id, email, first_name, last_name, role, status, expires_at, created_at', {
-        count: 'exact',
-      })
+      .select(
+        `
+        id,
+        email,
+        first_name,
+        last_name,
+        role,
+        status,
+        expires_at,
+        created_at,
+        invited_by:profiles(id, first_name, last_name)`,
+        {
+          count: 'exact',
+        },
+      )
       .eq('company_id', companyId)
+      .in('status', ['pending', 'rejected'])
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
     if (error) {
@@ -30,7 +43,7 @@ export async function GET(req: NextRequest) {
     }
     const totalCount = count || 0;
     const hasMore = offset + invites.length < totalCount;
-    return NextResponse.json({ invites, hasMore, totalCount });
+    return NextResponse.json({ data: { invites, hasMore, totalCount, page } });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }

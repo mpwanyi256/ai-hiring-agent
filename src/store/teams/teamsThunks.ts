@@ -1,5 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { InviteUserPayload, TeamInvite, TeamMember, TeamMemberResponse } from '../../types/teams';
+import {
+  InviteUserPayload,
+  TeamInvite,
+  TeamInviteResponse,
+  TeamMember,
+  TeamMemberResponse,
+} from '../../types/teams';
 import { apiUtils } from '../api';
 import { APIResponse } from '@/types';
 import { RootState } from '..';
@@ -58,20 +64,12 @@ export const fetchTeamMembers = createAsyncThunk(
 );
 
 // New: Paginated fetch for team invites
-export const fetchTeamInvites = createAsyncThunk(
-  'teams/fetchTeamInvites',
-  async ({
-    companyId,
-    page = 1,
-    limit = 20,
-  }: {
-    companyId: string;
-    page?: number;
-    limit?: number;
-  }) => {
-    const res = await apiUtils.get(
-      `/api/teams/invites?companyId=${companyId}&page=${page}&limit=${limit}`,
-    );
-    return res;
-  },
-);
+export const fetchTeamInvites = createAsyncThunk<
+  TeamInviteResponse,
+  { companyId: string; page?: number; limit?: number }
+>('teams/fetchTeamInvites', async ({ companyId, page = 1, limit = 20 }) => {
+  const res = await apiUtils.get<APIResponse<TeamInviteResponse>>(
+    `/api/teams/invites?companyId=${companyId}&page=${page}&limit=${limit}`,
+  );
+  return res.data;
+});

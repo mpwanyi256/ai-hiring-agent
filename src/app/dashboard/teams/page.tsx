@@ -7,14 +7,25 @@ import Button from '@/components/ui/Button';
 import TeamTabs from '@/components/teams/TeamTabs';
 import TeamFilterSearch from '@/components/teams/TeamFilterSearch';
 import { TeamMembersTable } from '@/components/teams/TeamMembersTable';
-import TeamInvitesTable from '@/components/teams/TeamInvitesTable';
+import { TeamInvitesTable } from '@/components/teams/TeamInvitesTable';
 import InviteMemberModal from '@/components/teams/InviteMemberModal';
-import { fetchTeamMembers } from '@/store/teams/teamsThunks';
+import { fetchTeamInvites, fetchTeamMembers } from '@/store/teams/teamsThunks';
+import {
+  selectMembersHasMore,
+  selectMembersLoading,
+  selectMembersPage,
+  selectMembersTotalCount,
+} from '@/store/teams/teamSelectors';
+import { selectInvites } from '@/store/teams/teamSelectors';
+import { resetInvites, resetMembers } from '@/store/teams/teamsSlice';
 
 const TeamsPage = () => {
   const dispatch = useAppDispatch();
-  const { members, membersPage, membersHasMore, membersLoading, membersSearch, invites } =
-    useAppSelector((state: RootState) => state.teams);
+  const membersPage = useAppSelector(selectMembersPage);
+  const membersHasMore = useAppSelector(selectMembersHasMore);
+  const membersLoading = useAppSelector(selectMembersLoading);
+  const membersTotalCount = useAppSelector(selectMembersTotalCount);
+  const invites = useAppSelector(selectInvites);
   const [activeTab, setActiveTab] = React.useState('member');
   const [roleFilter, setRoleFilter] = React.useState('');
   const [search, setSearch] = React.useState('');
@@ -27,8 +38,12 @@ const TeamsPage = () => {
   useEffect(() => {
     if (!companyId) return;
     dispatch(fetchTeamMembers({ companyId, page: 1, search }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyId, search]);
+    dispatch(fetchTeamInvites({ companyId, page: 1 }));
+
+    return () => {
+      Promise.all([dispatch(resetMembers()), dispatch(resetInvites())]);
+    };
+  }, [companyId, search, dispatch]);
 
   // Infinite scroll observer
   const loadMore = useCallback(() => {
@@ -58,9 +73,6 @@ const TeamsPage = () => {
     }
   };
 
-  // Filtered members (client-side role filter)
-  const filteredMembers = roleFilter ? members.filter((m) => m.role === roleFilter) : members;
-
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-6">
@@ -75,7 +87,12 @@ const TeamsPage = () => {
             <PlusIcon className="w-4 h-4" /> Invite Member
           </Button>
         </div>
-        <TeamTabs activeTab={activeTab} setActiveTab={setActiveTab} invitesCount={invites.length} />
+        <TeamTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          invitesCount={invites.length}
+          membersCount={membersTotalCount}
+        />
         <TeamFilterSearch
           roleFilter={roleFilter}
           setRoleFilter={setRoleFilter}
@@ -93,7 +110,7 @@ const TeamsPage = () => {
             )}
           </>
         ) : (
-          <TeamInvitesTable invites={invites} />
+          <TeamInvitesTable />
         )}
         <InviteMemberModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
       </div>
