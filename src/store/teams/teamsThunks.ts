@@ -18,7 +18,7 @@ export const fetchTeam = createAsyncThunk('teams/fetchTeam', async () => {
 
 export const inviteUser = createAsyncThunk(
   'teams/inviteUser',
-  async (inviteData: Omit<InviteUserPayload, 'companyId'>, { getState }) => {
+  async (inviteData: Omit<InviteUserPayload, 'companyId'>, { getState, dispatch }) => {
     const { auth } = getState() as RootState;
     const { user } = auth;
     if (!user?.companyId) throw new Error('No company ID found');
@@ -27,6 +27,8 @@ export const inviteUser = createAsyncThunk(
       companyId: user.companyId,
       companyName: user.companyName,
     });
+
+    dispatch(fetchTeamInvites({ companyId: user.companyId, page: 1 }));
     return res.data;
   },
 );

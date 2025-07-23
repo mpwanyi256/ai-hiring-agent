@@ -85,8 +85,7 @@ const teamsSlice = createSlice({
     builder.addCase(inviteUser.pending, (state) => {
       state.loading = true;
     });
-    builder.addCase(inviteUser.fulfilled, (state, action) => {
-      state.invites.push(action.payload);
+    builder.addCase(inviteUser.fulfilled, (state) => {
       state.loading = false;
     });
     builder.addCase(inviteUser.rejected, (state, action) => {

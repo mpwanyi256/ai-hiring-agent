@@ -3,6 +3,7 @@ import React from 'react';
 const TABS = [
   { label: 'Members', key: 'member' },
   { label: 'Invitations', key: 'invitation' },
+  { label: 'Activity Log', key: 'activity' },
 ];
 
 export default function TeamTabs({

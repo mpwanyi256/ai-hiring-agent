@@ -9,6 +9,7 @@ import TeamFilterSearch from '@/components/teams/TeamFilterSearch';
 import { TeamMembersTable } from '@/components/teams/TeamMembersTable';
 import { TeamInvitesTable } from '@/components/teams/TeamInvitesTable';
 import InviteMemberModal from '@/components/teams/InviteMemberModal';
+import TeamAuditLog from '@/components/teams/TeamAuditLog';
 import { fetchTeamInvites, fetchTeamMembers } from '@/store/teams/teamsThunks';
 import {
   selectMembersHasMore,
@@ -33,6 +34,7 @@ const TeamsPage = () => {
   const observer = useRef<IntersectionObserver | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const companyId = useAppSelector((state: RootState) => state.auth.user?.companyId);
+  const user = useAppSelector((state: RootState) => state.auth.user);
 
   // Initial load and search
   useEffect(() => {
@@ -93,12 +95,14 @@ const TeamsPage = () => {
           invitesCount={invites.length}
           membersCount={membersTotalCount}
         />
-        <TeamFilterSearch
-          roleFilter={roleFilter}
-          setRoleFilter={setRoleFilter}
-          search={search}
-          setSearch={handleSearch}
-        />
+        {(activeTab === 'member' || activeTab === 'invitation') && (
+          <TeamFilterSearch
+            roleFilter={roleFilter}
+            setRoleFilter={setRoleFilter}
+            search={search}
+            setSearch={handleSearch}
+          />
+        )}
         {activeTab === 'member' ? (
           <>
             <TeamMembersTable />
@@ -109,9 +113,11 @@ const TeamsPage = () => {
               </div>
             )}
           </>
-        ) : (
+        ) : activeTab === 'invitation' ? (
           <TeamInvitesTable />
-        )}
+        ) : activeTab === 'activity' ? (
+          <TeamAuditLog companyId={user?.companyId || ''} />
+        ) : null}
         <InviteMemberModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
       </div>
     </DashboardLayout>
