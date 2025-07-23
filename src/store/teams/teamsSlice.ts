@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { TeamMember, TeamMemberResponse, TeamState } from '../../types/teams';
+import { TeamState } from '../../types/teams';
 import {
   fetchTeamMembers,
   fetchTeamInvites,
@@ -59,20 +59,11 @@ const teamsSlice = createSlice({
       state.membersLoading = true;
     });
     builder.addCase(fetchTeamMembers.fulfilled, (state, action) => {
-      const payload = action.payload;
-      if (state.membersPage === 1) {
-        // New search or initial load
-        state.members = payload.members;
-        state.membersPage = 2;
-        state.membersHasMore = payload.hasMore;
-        state.membersTotalCount = payload.totalCount;
-      } else {
-        // Append
-        state.members = [...state.members, ...payload.members];
-        state.membersPage += 1;
-        state.membersHasMore = payload.hasMore;
-        state.membersTotalCount = payload.totalCount;
-      }
+      const { members, hasMore, totalCount, page } = action.payload;
+      state.members = page === 1 ? members : [...state.members, ...members];
+      state.membersPage = page + 1;
+      state.membersHasMore = hasMore;
+      state.membersTotalCount = totalCount;
       state.membersLoading = false;
     });
     builder.addCase(fetchTeamMembers.rejected, (state, action) => {

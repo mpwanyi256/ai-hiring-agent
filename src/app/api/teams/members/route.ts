@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     const totalCount = count || 0;
     const hasMore = offset + members.length < totalCount;
     return NextResponse.json({
-      data: { members, hasMore, totalCount },
+      data: { members, hasMore, totalCount, page },
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });

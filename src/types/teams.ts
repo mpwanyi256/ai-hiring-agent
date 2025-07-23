@@ -23,6 +23,7 @@ export interface TeamMemberResponse {
   members: TeamMember[];
   hasMore: boolean;
   totalCount: number;
+  page: number;
 }
 
 // Team invite

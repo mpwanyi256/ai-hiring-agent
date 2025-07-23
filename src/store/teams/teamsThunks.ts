@@ -42,7 +42,10 @@ export const resendInvite = createAsyncThunk('teams/resendInvite', async (invite
 });
 
 // New: Paginated fetch for team members (with search)
-export const fetchTeamMembers = createAsyncThunk(
+export const fetchTeamMembers = createAsyncThunk<
+  TeamMemberResponse,
+  { companyId: string; page?: number; limit?: number; search?: string }
+>(
   'teams/fetchTeamMembers',
   async ({
     companyId,
