@@ -18,7 +18,7 @@ const TeamsPage = () => {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    dispatch(fetchTeam() as any);
+    dispatch(fetchTeam());
   }, [dispatch]);
 
   // Filtered members
