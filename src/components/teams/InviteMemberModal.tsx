@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TeamRole, ROLES } from '@/types/teams';
 import Button from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
 import { inviteUser } from '@/store/teams/teamsThunks';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { apiError } from '@/lib/notification';
@@ -11,6 +12,9 @@ interface InviteMemberModalProps {
   onClose: () => void;
 }
 
+const NAME_MAX = 100;
+const EMAIL_MAX = 100;
+
 export default function InviteMemberModal({ open, onClose }: InviteMemberModalProps) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -20,61 +24,98 @@ export default function InviteMemberModal({ open, onClose }: InviteMemberModalPr
   const dispatch = useAppDispatch();
   const loading = useAppSelector(selectIsLoading);
 
-  const isValid = firstName && lastName && email && role;
+  const nameLength = firstName.length + lastName.length;
+  const isValid =
+    firstName && lastName && email && role && nameLength <= NAME_MAX && email.length <= EMAIL_MAX;
 
   const handleSubmit = async (e: React.FormEvent) => {
     try {
       e.preventDefault();
       setTouched(true);
       if (!isValid) return;
-
       await dispatch(inviteUser({ firstName, lastName, email, role }));
+      onClose();
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setRole('employee');
+      setTouched(false);
     } catch (err) {
       apiError(err instanceof Error ? err.message : 'Failed to invite member');
-    } finally {
-      setTouched(false);
     }
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-        <button
-          className="absolute top-2 right-2 text-gray-400 hover:text-gray-700"
-          onClick={onClose}
-        >
-          &times;
-        </button>
-        <h2 className="text-lg font-semibold mb-4">Invite New Member</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              className="border rounded px-3 py-2 w-1/2"
-              placeholder="First Name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-            />
-            <input
-              type="text"
-              className="border rounded px-3 py-2 w-1/2"
-              placeholder="Last Name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required
-            />
-          </div>
+    <Modal
+      isOpen={open}
+      onClose={onClose}
+      title="Invite team member"
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            className="bg-primary text-white ml-2"
+            isLoading={loading}
+            disabled={!isValid || loading}
+            form="invite-member-form"
+          >
+            Invite
+          </Button>
+        </>
+      }
+      size="md"
+    >
+      <div className="text-gray-500 text-sm mb-6">
+        Invite members to your team and start working together on getting done!
+      </div>
+      <form id="invite-member-form" onSubmit={handleSubmit} className="flex flex-col gap-2">
+        <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            className="border rounded px-3 py-2 w-full"
+            placeholder="First Name"
+            value={firstName}
+            maxLength={NAME_MAX}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+          <input
+            type="text"
+            className="border rounded px-3 py-2 w-full"
+            placeholder="Last Name"
+            value={lastName}
+            maxLength={NAME_MAX}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+          />
+        </div>
+        <div className="text-xs text-gray-400 text-right mt-1">
+          {nameLength}/{NAME_MAX}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
           <input
             type="email"
             className="border rounded px-3 py-2 w-full"
-            placeholder="Email"
+            placeholder="Enter Teammate's Email"
             value={email}
+            maxLength={EMAIL_MAX}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
+          <div className="text-xs text-gray-400 text-right mt-1">
+            {email.length}/{EMAIL_MAX}
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Permissions</label>
           <select
             className="border rounded px-3 py-2 w-full"
             value={role}
@@ -87,24 +128,13 @@ export default function InviteMemberModal({ open, onClose }: InviteMemberModalPr
               </option>
             ))}
           </select>
-          {touched && !isValid && (
-            <div className="text-red-500 text-sm">All fields are required.</div>
-          )}
-          <div className="flex justify-end gap-2 mt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="bg-primary text-white"
-              isLoading={loading}
-              disabled={!isValid || loading}
-            >
-              Invite
-            </Button>
+        </div>
+        {touched && !isValid && (
+          <div className="text-red-500 text-sm">
+            All fields are required and must be under the character limit.
           </div>
-        </form>
-      </div>
-    </div>
+        )}
+      </form>
+    </Modal>
   );
 }

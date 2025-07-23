@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     firstName: 'Mock',
     lastName: 'User',
     companyId: 'mock-company',
-    role: 'member',
+    role: 'employee',
     status: InvitationStatus.Pending,
     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     createdAt: new Date().toISOString(),
