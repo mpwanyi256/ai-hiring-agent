@@ -13,12 +13,16 @@ export type InvitationStatusType = keyof typeof InvitationStatus;
 export interface TeamMember {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   role: TeamRole;
-  status: 'active' | 'inactive';
-  invitedAt?: string;
-  joinedAt?: string;
+  created_at: string;
+}
+
+export interface TeamMemberResponse {
+  members: TeamMember[];
+  hasMore: boolean;
+  totalCount: number;
 }
 
 // Team invite

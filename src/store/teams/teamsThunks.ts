@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { InviteUserPayload, TeamInvite, TeamMember } from '../../types/teams';
+import { InviteUserPayload, TeamInvite, TeamMember, TeamMemberResponse } from '../../types/teams';
 import { apiUtils } from '../api';
 import { APIResponse } from '@/types';
 import { RootState } from '..';
@@ -34,3 +34,44 @@ export const resendInvite = createAsyncThunk('teams/resendInvite', async (invite
   const res = await apiUtils.post<APIResponse<TeamInvite>>('/api/teams/resend', { inviteId });
   return res.data;
 });
+
+// New: Paginated fetch for team members (with search)
+export const fetchTeamMembers = createAsyncThunk(
+  'teams/fetchTeamMembers',
+  async ({
+    companyId,
+    page = 1,
+    limit = 20,
+    search = '',
+  }: {
+    companyId: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+  }) => {
+    const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+    const res = await apiUtils.get<APIResponse<TeamMemberResponse>>(
+      `/api/teams/members?companyId=${companyId}&page=${page}&limit=${limit}${searchParam}`,
+    );
+    return res.data;
+  },
+);
+
+// New: Paginated fetch for team invites
+export const fetchTeamInvites = createAsyncThunk(
+  'teams/fetchTeamInvites',
+  async ({
+    companyId,
+    page = 1,
+    limit = 20,
+  }: {
+    companyId: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const res = await apiUtils.get(
+      `/api/teams/invites?companyId=${companyId}&page=${page}&limit=${limit}`,
+    );
+    return res;
+  },
+);

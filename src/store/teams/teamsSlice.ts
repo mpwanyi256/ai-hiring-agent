@@ -1,30 +1,71 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { TeamState } from '../../types/teams';
-import { fetchTeam, inviteUser, removeUser, resendInvite } from './teamsThunks';
+import { TeamMember, TeamState } from '../../types/teams';
+import {
+  fetchTeamMembers,
+  fetchTeamInvites,
+  inviteUser,
+  removeUser,
+  resendInvite,
+} from './teamsThunks';
 
-const initialState: TeamState = {
+const initialState: TeamState & {
+  membersPage: number;
+  membersHasMore: boolean;
+  membersLoading: boolean;
+  membersSearch: string;
+} = {
   members: [],
   invites: [],
   loading: false,
   error: null,
+  membersPage: 1,
+  membersHasMore: true,
+  membersLoading: false,
+  membersSearch: '',
 };
 
 const teamsSlice = createSlice({
   name: 'teams',
   initialState,
-  reducers: {},
+  reducers: {
+    setMembersSearch(state, action) {
+      state.membersSearch = action.payload;
+      state.members = [];
+      state.membersPage = 1;
+      state.membersHasMore = true;
+    },
+    resetMembers(state) {
+      state.members = [];
+      state.membersPage = 1;
+      state.membersHasMore = true;
+    },
+  },
   extraReducers: (builder) => {
-    builder.addCase(fetchTeam.pending, (state) => {
-      state.loading = true;
+    builder.addCase(fetchTeamMembers.pending, (state) => {
+      state.membersLoading = true;
     });
-    builder.addCase(fetchTeam.fulfilled, (state, action) => {
-      state.members = action.payload.members;
-      state.invites = action.payload.invites;
-      state.loading = false;
+    builder.addCase(fetchTeamMembers.fulfilled, (state, action) => {
+      const payload = action.payload as { members: TeamMember[]; hasMore: boolean };
+      if (state.membersPage === 1) {
+        // New search or initial load
+        state.members = payload.members;
+        state.membersPage = 2;
+        state.membersHasMore = payload.hasMore;
+      } else {
+        // Append
+        state.members = [...state.members, ...payload.members];
+        state.membersPage += 1;
+        state.membersHasMore = payload.hasMore;
+      }
+      state.membersLoading = false;
     });
-    builder.addCase(fetchTeam.rejected, (state, action) => {
+    builder.addCase(fetchTeamMembers.rejected, (state, action) => {
+      state.membersLoading = false;
+      state.error = action.error.message || 'Failed to fetch team members';
+    });
+    builder.addCase(fetchTeamInvites.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.error.message || 'Failed to fetch team';
+      state.error = action.error.message || 'Failed to fetch team invites';
     });
     builder.addCase(inviteUser.pending, (state) => {
       state.loading = true;
@@ -61,4 +102,5 @@ const teamsSlice = createSlice({
   },
 });
 
+export const { setMembersSearch, resetMembers } = teamsSlice.actions;
 export default teamsSlice.reducer;

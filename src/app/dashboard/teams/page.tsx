@@ -1,37 +1,65 @@
 'use client';
-import React, { useEffect, useState } from 'react';
-import { fetchTeam } from '@/store/teams/teamsThunks';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { RootState, useAppDispatch, useAppSelector } from '@/store';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import TeamTabs from '@/components/teams/TeamTabs';
 import TeamFilterSearch from '@/components/teams/TeamFilterSearch';
-import TeamMembersTable from '@/components/teams/TeamMembersTable';
+import { TeamMembersTable } from '@/components/teams/TeamMembersTable';
 import TeamInvitesTable from '@/components/teams/TeamInvitesTable';
 import InviteMemberModal from '@/components/teams/InviteMemberModal';
+import { fetchTeamMembers } from '@/store/teams/teamsThunks';
 
 const TeamsPage = () => {
   const dispatch = useAppDispatch();
-  const { members, invites } = useAppSelector((state: RootState) => state.teams);
-  const [activeTab, setActiveTab] = useState('member');
-  const [roleFilter, setRoleFilter] = useState('');
-  const [search, setSearch] = useState('');
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const { members, membersPage, membersHasMore, membersLoading, membersSearch, invites } =
+    useAppSelector((state: RootState) => state.teams);
+  const [activeTab, setActiveTab] = React.useState('member');
+  const [roleFilter, setRoleFilter] = React.useState('');
+  const [search, setSearch] = React.useState('');
+  const [inviteOpen, setInviteOpen] = React.useState(false);
+  const observer = useRef<IntersectionObserver | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const companyId = useAppSelector((state: RootState) => state.auth.user?.companyId);
+
+  // Initial load and search
+  useEffect(() => {
+    if (!companyId) return;
+    dispatch(fetchTeamMembers({ companyId, page: 1, search }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId, search]);
+
+  // Infinite scroll observer
+  const loadMore = useCallback(() => {
+    if (!companyId || membersLoading || !membersHasMore) return;
+    dispatch(fetchTeamMembers({ companyId, page: membersPage, search }));
+  }, [companyId, membersLoading, membersHasMore, membersPage, search, dispatch]);
 
   useEffect(() => {
-    dispatch(fetchTeam());
-  }, [dispatch]);
+    if (!sentinelRef.current || !membersHasMore) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new window.IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        loadMore();
+      }
+    });
+    observer.current.observe(sentinelRef.current);
+    return () => {
+      if (observer.current) observer.current.disconnect();
+    };
+  }, [loadMore, membersHasMore]);
 
-  // Filtered members
-  const filteredMembers = members.filter(
-    (m) =>
-      (!roleFilter || m.role === roleFilter) &&
-      (!search ||
-        m.firstName.toLowerCase().includes(search.toLowerCase()) ||
-        m.lastName.toLowerCase().includes(search.toLowerCase()) ||
-        m.email.toLowerCase().includes(search.toLowerCase())),
-  );
+  // Search handler
+  const handleSearch = (val: string) => {
+    setSearch(val);
+    if (companyId) {
+      dispatch(fetchTeamMembers({ companyId, page: 1, search: val || '' }));
+    }
+  };
+
+  // Filtered members (client-side role filter)
+  const filteredMembers = roleFilter ? members.filter((m) => m.role === roleFilter) : members;
 
   return (
     <DashboardLayout>
@@ -52,15 +80,22 @@ const TeamsPage = () => {
           roleFilter={roleFilter}
           setRoleFilter={setRoleFilter}
           search={search}
-          setSearch={setSearch}
+          setSearch={handleSearch}
         />
         {activeTab === 'member' ? (
-          <TeamMembersTable members={filteredMembers} />
+          <>
+            <TeamMembersTable />
+            <div ref={sentinelRef} />
+            {membersLoading && (
+              <div className="flex justify-center py-4">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </>
         ) : (
           <TeamInvitesTable invites={invites} />
         )}
         <InviteMemberModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
-        {/* TODO: Add pagination or Load More */}
       </div>
     </DashboardLayout>
   );
