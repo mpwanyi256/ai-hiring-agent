@@ -21,3 +21,10 @@ CREATE INDEX IF NOT EXISTS idx_invites_status ON public.invites(status);
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_invite_pending_per_company_email
 ON public.invites(company_id, email)
 WHERE status = 'pending'; 
+
+
+-- Add auth policies
+CREATE POLICY "Enable read access for all users" ON public.invites FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for authenticated users" ON public.invites FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "Enable update access for authenticated users" ON public.invites FOR UPDATE USING (auth.uid() = invited_by);
+CREATE POLICY "Enable delete access for authenticated users" ON public.invites FOR DELETE USING (auth.uid() = invited_by);

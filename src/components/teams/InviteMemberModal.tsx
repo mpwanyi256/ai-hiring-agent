@@ -4,7 +4,7 @@ import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { inviteUser } from '@/store/teams/teamsThunks';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { apiError } from '@/lib/notification';
+import { apiError, apiSuccess } from '@/lib/notification';
 import { selectIsLoading } from '@/store/teams/teamSelectors';
 
 interface InviteMemberModalProps {
@@ -34,6 +34,8 @@ export default function InviteMemberModal({ open, onClose }: InviteMemberModalPr
       setTouched(true);
       if (!isValid) return;
       await dispatch(inviteUser({ firstName, lastName, email, role }));
+
+      apiSuccess('Invite sent successfully');
       onClose();
       setFirstName('');
       setLastName('');

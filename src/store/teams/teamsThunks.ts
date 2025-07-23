@@ -19,6 +19,7 @@ export const inviteUser = createAsyncThunk(
     const res = await apiUtils.post<APIResponse<TeamInvite>>('/api/teams/invite', {
       ...inviteData,
       companyId: user.companyId,
+      companyName: user.companyName,
     });
     return res.data;
   },
