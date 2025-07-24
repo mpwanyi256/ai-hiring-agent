@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Paperclip, Smile, X, Bold, Italic, Link, Reply } from 'lucide-react';
-import { Message } from '@/hooks/useMessages';
+import { Message } from '@/types/messages';
 import FileUpload from './FileUpload';
 import EmojiPicker from './EmojiPicker';
 

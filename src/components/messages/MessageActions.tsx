@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MoreVertical, Edit3, Trash2, Copy, Reply } from 'lucide-react';
-import { Message } from '@/hooks/useMessages';
+import { Message } from '@/types/messages';
 
 interface MessageActionsProps {
   message: Message;

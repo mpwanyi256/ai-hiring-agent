@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { ChevronUp, AlertCircle, Loader2 } from 'lucide-react';
-import { Message, TypingUser } from '@/hooks/useMessages';
+import { Message, TypingUser } from '@/types/messages';
 import MessageBubble from './MessageBubble';
 import EmptyState from './EmptyState';
 

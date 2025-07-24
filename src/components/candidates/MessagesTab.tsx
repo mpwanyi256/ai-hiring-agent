@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { useAppSelector } from '@/store';
 import { selectUser } from '@/store/auth/authSelectors';
 import { selectSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSelectors';
-import { useMessages, Message } from '@/hooks/useMessages';
+import { useMessagesRedux } from '@/hooks/useMessagesRedux';
+import { Message } from '@/types/messages';
 import ChatHeader from '../messages/ChatHeader';
 import MessagesList from '../messages/MessagesList';
 import MessageInput from '../messages/MessageInput';
@@ -14,7 +15,7 @@ const MessagesTab: React.FC = () => {
   const user = useAppSelector(selectUser);
   const candidate = useAppSelector(selectSelectedCandidate);
 
-  // Initialize messaging hook with enhanced real-time features
+  // Initialize enhanced messaging hook with Redux integration
   const {
     messages,
     loading,
@@ -31,11 +32,10 @@ const MessagesTab: React.FC = () => {
     deleteMessage,
     startTyping,
     stopTyping,
-  } = useMessages({
+  } = useMessagesRedux({
     candidateId: candidate?.id || '',
     jobId: candidate?.jobId || '',
     enabled: !!(candidate?.id && candidate?.jobId),
-    refreshInterval: 0, // Disabled since we're using real-time
   });
 
   const handleSendMessage = async (text: string, replyToId?: string, attachment?: File) => {
@@ -145,7 +145,7 @@ const MessagesTab: React.FC = () => {
         onRefresh={refreshMessages}
       />
 
-      {/* Messages List - Mobile optimized with real-time updates */}
+      {/* Messages List - Enhanced with Redux state and improved real-time */}
       <MessagesList
         messages={messages}
         loading={loading}
@@ -162,7 +162,7 @@ const MessagesTab: React.FC = () => {
         onStartConversation={handleStartConversation}
       />
 
-      {/* Message Input - Enhanced for mobile */}
+      {/* Message Input - Enhanced with 3-second typing delay */}
       <MessageInput
         onSendMessage={handleSendMessage}
         sendingMessage={sendingMessage}

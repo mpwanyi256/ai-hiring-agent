@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { permission_id: string } },
+  { params }: { params: Promise<{ permission_id: string }> },
 ) {
   try {
     const { permission_id } = await params;
@@ -99,7 +99,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { permission_id: string } },
+  { params }: { params: Promise<{ permission_id: string }> },
 ) {
   try {
     const { permission_id } = await params;

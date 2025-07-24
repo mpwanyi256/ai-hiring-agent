@@ -126,14 +126,14 @@ const GeneralTab: React.FC<{
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-[calc(100vh-350px)]">
+      <div className="flex justify-center items-center">
         <Loader2 className="w-4 h-4 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-h-[calc(100vh-350px)] overflow-y-auto">
+    <div className="space-y-6 min-h-[calc(100vh-350px)] overflow-y-auto">
       {/* Candidate Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
@@ -185,6 +185,47 @@ const GeneralTab: React.FC<{
               {candidate.isCompleted ? 'Completed' : 'In Progress'}
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Application Events */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Application Events</h3>
+          {onScheduleEvent && (
+            <Button variant="primary" size="sm" onClick={onScheduleEvent}>
+              Schedule Event
+            </Button>
+          )}
+        </div>
+
+        <div className="space-y-3 max-h-60 overflow-y-auto">
+          {applicationEvents.length > 0 ? (
+            applicationEvents.map((event) => (
+              <InterviewCard
+                key={event.id}
+                interview={{
+                  interview_id: event.id,
+                  candidate_id: candidate.id,
+                  interview_date: event.date,
+                  interview_time: event.time,
+                  interview_status: event.status,
+                  candidate_first_name: candidate.firstName,
+                  candidate_last_name: candidate.lastName,
+                  candidate_email: candidate.email,
+                  job_title: event.jobTitle,
+                  event_summary: event.eventSummary,
+                  meet_link: event.meetingLink || undefined,
+                  job_id: event.jobId,
+                }}
+              />
+            ))
+          ) : (
+            <div className="text-center py-6 text-gray-500">
+              <Clock className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+              <p className="text-sm">No events scheduled</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -414,47 +455,6 @@ const GeneralTab: React.FC<{
             </p>
           </div>
         )}
-      </div>
-
-      {/* Application Events */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Application Events</h3>
-          {onScheduleEvent && (
-            <Button variant="primary" size="sm" onClick={onScheduleEvent}>
-              Schedule Event
-            </Button>
-          )}
-        </div>
-
-        <div className="space-y-3 max-h-60 overflow-y-auto">
-          {applicationEvents.length > 0 ? (
-            applicationEvents.map((event) => (
-              <InterviewCard
-                key={event.id}
-                interview={{
-                  interview_id: event.id,
-                  candidate_id: candidate.id,
-                  interview_date: event.date,
-                  interview_time: event.time,
-                  interview_status: event.status,
-                  candidate_first_name: candidate.firstName,
-                  candidate_last_name: candidate.lastName,
-                  candidate_email: candidate.email,
-                  job_title: event.jobTitle,
-                  event_summary: event.eventSummary,
-                  meet_link: event.meetingLink || undefined,
-                  job_id: event.jobId,
-                }}
-              />
-            ))
-          ) : (
-            <div className="text-center py-6 text-gray-500">
-              <Clock className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-              <p className="text-sm">No events scheduled</p>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

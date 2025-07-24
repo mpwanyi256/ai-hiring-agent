@@ -21,85 +21,133 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get the message with full details using the RPC function
-    const { data: messageData, error: messageError } = await supabase
-      .rpc('get_candidate_messages', {
-        p_candidate_id: '', // We'll get this from the message
-        p_job_id: '', // We'll get this from the message
-        p_limit: 1,
-        p_offset: 0,
-      })
+    // Get the message with full details and relationships
+    const { data: message, error: messageError } = await supabase
+      .from('messages')
+      .select(
+        `
+        id,
+        text,
+        candidate_id,
+        job_id,
+        user_id,
+        reply_to_id,
+        attachment_url,
+        attachment_name,
+        attachment_size,
+        attachment_type,
+        created_at,
+        updated_at,
+        edited_at,
+        status,
+        profiles:user_id (
+          first_name,
+          last_name,
+          email,
+          role
+        ),
+        reply_message:reply_to_id (
+          id,
+          text,
+          profiles:user_id (
+            first_name,
+            last_name
+          )
+        )
+      `,
+      )
       .eq('id', message_id)
       .single();
 
     if (messageError) {
-      // Fallback to direct query if RPC fails
-      const { data: message, error: directError } = await supabase
-        .from('messages')
-        .select(
-          `
-          id,
-          text,
-          candidate_id,
-          job_id,
-          user_id,
-          reply_to_id,
-          attachment_url,
-          attachment_name,
-          attachment_size,
-          attachment_type,
-          created_at,
-          updated_at,
-          edited_at,
-          profiles:user_id (
-            first_name,
-            last_name,
-            email,
-            role
-          )
-        `,
+      console.error('Message fetch error:', messageError);
+      return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+    }
+
+    // Get reactions for this message
+    const { data: reactions, error: reactionsError } = await supabase
+      .from('message_reactions')
+      .select(
+        `
+        emoji,
+        user_id,
+        profiles:user_id (
+          first_name,
+          last_name
         )
-        .eq('id', message_id)
-        .single();
+      `,
+      )
+      .eq('message_id', message_id);
 
-      if (directError) {
-        return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+    if (reactionsError) {
+      console.error('Reactions fetch error:', reactionsError);
+    }
+
+    // Group reactions by emoji
+    const reactionGroups = (reactions || []).reduce((acc: any, reaction: any) => {
+      const emoji = reaction.emoji;
+      if (!acc[emoji]) {
+        acc[emoji] = {
+          id: emoji, // Use emoji as ID for consistency
+          emoji,
+          count: 0,
+          users: [],
+          hasReacted: false,
+        };
       }
+      acc[emoji].count++;
+      const profile = Array.isArray(reaction.profiles) ? reaction.profiles[0] : reaction.profiles;
+      if (profile) {
+        const userName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+        acc[emoji].users.push(userName);
+      }
+      // Check if current user has reacted
+      if (reaction.user_id === user.id) {
+        acc[emoji].hasReacted = true;
+      }
+      return acc;
+    }, {});
 
-      // Transform to expected format
-      const transformedMessage = {
-        id: message.id,
-        text: message.text,
-        sender: {
-          id: message.user_id,
-          name: `${(message.profiles as any)?.first_name || ''} ${(message.profiles as any)?.last_name || ''}`.trim(),
-          email: (message.profiles as any)?.email || '',
-          role: (message.profiles as any)?.role || '',
-          isCurrentUser: message.user_id === user.id,
-        },
-        timestamp: message.created_at,
-        reactions: [], // We'll need to fetch these separately
-        attachment: message.attachment_url
+    const messageReactions = Object.values(reactionGroups);
+
+    // Transform to expected format
+    const transformedMessage = {
+      id: message.id,
+      text: message.text,
+      sender: {
+        id: message.user_id,
+        name: `${(message.profiles as any)?.first_name || ''} ${(message.profiles as any)?.last_name || ''}`.trim(),
+        email: (message.profiles as any)?.email || '',
+        role: (message.profiles as any)?.role || 'viewer',
+        isCurrentUser: message.user_id === user.id,
+      },
+      timestamp: message.created_at,
+      reactions: messageReactions,
+      replyTo:
+        message.reply_to_id && message.reply_message
           ? {
-              url: message.attachment_url,
-              name: message.attachment_name || '',
-              size: message.attachment_size || 0,
-              type: message.attachment_type || '',
+              id: message.reply_to_id,
+              text: (message.reply_message as any)?.text || '',
+              sender: {
+                name: `${(message.reply_message as any)?.profiles?.first_name || ''} ${(message.reply_message as any)?.profiles?.last_name || ''}`.trim(),
+              },
             }
           : undefined,
-        isEdited: !!message.edited_at,
-        editedAt: message.edited_at,
-      };
-
-      return NextResponse.json({
-        success: true,
-        message: transformedMessage,
-      });
-    }
+      attachment: message.attachment_url
+        ? {
+            url: message.attachment_url,
+            name: message.attachment_name || '',
+            size: message.attachment_size || 0,
+            type: message.attachment_type || '',
+          }
+        : undefined,
+      isEdited: !!message.edited_at,
+      editedAt: message.edited_at,
+    };
 
     return NextResponse.json({
       success: true,
-      message: messageData,
+      message: transformedMessage,
     });
   } catch (error) {
     console.error('Error fetching message:', error);
@@ -107,9 +155,12 @@ export async function GET(
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { message_id: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ message_id: string }> },
+) {
   try {
-    const { message_id } = params;
+    const { message_id } = await params;
     const { text } = await request.json();
 
     if (!text || !text.trim()) {
@@ -176,9 +227,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { messag
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { message_id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ message_id: string }> },
+) {
   try {
-    const { message_id } = params;
+    const { message_id } = await params;
 
     const supabase = await createClient();
 
