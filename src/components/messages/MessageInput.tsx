@@ -230,18 +230,16 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
       {/* Main Input Area */}
       <form onSubmit={handleSubmit} ref={formRef} className="relative">
-        <div
-          className={`flex items-end gap-3 px-3 py-3 ${isFocused ? 'bg-blue-50' : ''} transition-colors`}
-        >
-          {/* Formatting Toolbar (Desktop) */}
-          <div className="hidden md:flex items-center gap-1 pb-1">
+        {/* Formatting Toolbar (Above Input) */}
+        <div className="hidden lg:flex items-center justify-between px-3 py-2 border-b border-gray-100">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => insertFormatting('**')}
               className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
               title="Bold"
             >
-              <Bold className="h-4 w-4" />
+              <Bold className="h-3 w-3" />
             </button>
             <button
               type="button"
@@ -249,7 +247,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
               className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
               title="Italic"
             >
-              <Italic className="h-4 w-4" />
+              <Italic className="h-3 w-3" />
             </button>
             <button
               type="button"
@@ -257,10 +255,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
               className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
               title="Link"
             >
-              <Link className="h-4 w-4" />
+              <Link className="h-3 w-3" />
             </button>
           </div>
+          <span className="text-xs text-gray-400">Use Shift+Enter for new line</span>
+        </div>
 
+        <div className="flex items-center gap-2 md:gap-3 px-3 py-3">
           {/* Text Input */}
           <div className="flex-1 relative">
             <textarea
@@ -272,13 +273,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
               onBlur={() => setIsFocused(false)}
               placeholder={placeholder}
               rows={1}
-              className="w-full resize-none border border-gray-300 rounded-lg px-4 py-3 pr-20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm placeholder-gray-400"
-              style={{ minHeight: '44px', maxHeight: '120px' }}
+              className="w-full resize-none border border-gray-300 rounded-lg px-3 py-2.5 pr-16 md:pr-20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm placeholder-gray-400"
+              style={{ minHeight: '40px', maxHeight: '80px' }}
               disabled={sendingMessage}
             />
 
             {/* Input Action Buttons */}
-            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-0.5">
               {/* Emoji Picker */}
               <div className="relative">
                 <button
@@ -287,7 +288,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                   className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                   title="Add emoji"
                 >
-                  <Smile className="h-4 w-4" />
+                  <Smile className="h-3.5 w-3.5" />
                 </button>
 
                 <EmojiPicker
@@ -306,7 +307,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                   className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                   title="Attach file"
                 >
-                  <Paperclip className="h-4 w-4" />
+                  <Paperclip className="h-3.5 w-3.5" />
                 </button>
 
                 {showFileUpload && (
@@ -329,15 +330,15 @@ const MessageInput: React.FC<MessageInputProps> = ({
               type="submit"
               disabled={!canSend}
               className={`
-                w-11 h-11 rounded-lg transition-all duration-200 flex items-center justify-center
+                w-10 h-10 rounded-lg transition-all duration-200 flex items-center justify-center
                 ${
                   canSend
-                    ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md transform hover:scale-105'
+                    ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }
                 ${sendingMessage ? 'animate-pulse' : ''}
               `}
-              title={canSend ? 'Send message (Enter)' : 'Type a message or attach a file'}
+              title={canSend ? 'Send message' : 'Type a message or attach a file'}
             >
               <Send className="h-4 w-4" />
             </button>
@@ -345,12 +346,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
         </div>
 
         {/* Helper Text (Mobile) */}
-        <div className="md:hidden px-4 pb-2">
-          <p className="text-xs text-gray-500">
-            {isFocused
-              ? 'Press Enter to send • Shift+Enter for new line'
-              : 'Tap to start typing...'}
-          </p>
+        <div className="lg:hidden px-4 pb-2">
+          <p className="text-xs text-gray-500">Press Enter to send • Shift+Enter for new line</p>
         </div>
       </form>
     </div>

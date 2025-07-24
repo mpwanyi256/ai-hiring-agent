@@ -34,6 +34,7 @@ import {
   selectIsLoading,
   selectIsSendingMessage,
   selectError,
+  createConversationId,
 } from '@/store/messages/messagesSelectors';
 
 interface UseMessagesReduxProps {
@@ -75,7 +76,7 @@ export function useMessagesRedux({
   const fetchingNewMessageRef = useRef<boolean>(false);
   const [optimisticMessages, setOptimisticMessages] = useState<Map<string, Message>>(new Map());
 
-  // Use job ID as conversation ID for job-based messaging
+  // Use consistent conversation ID creation - just use jobId for job-based conversations
   const conversationId = jobId;
 
   // Get current user from Redux auth state
@@ -99,7 +100,7 @@ export function useMessagesRedux({
   // Set current conversation on mount and cleanup on unmount
   useEffect(() => {
     if (enabled && jobId) {
-      // For job-based messaging, we use jobId as both candidateId and jobId for compatibility
+      // For job-based messaging, use jobId as the conversation ID
       dispatch(setCurrentConversation({ candidateId: jobId, jobId }));
 
       return () => {

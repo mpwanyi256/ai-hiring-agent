@@ -179,11 +179,13 @@ export const selectConversationSummaries = createSelector(
 );
 
 // Helper to create conversation ID
-export const createConversationId = (candidateId: string, jobId: string) =>
-  `${candidateId}-${jobId}`;
+export const createConversationId = (candidateId: string, jobId: string) => {
+  // For job-based conversations, always use just the jobId
+  return jobId;
+};
 
 // Helper to parse conversation ID
 export const parseConversationId = (conversationId: string) => {
-  const [candidateId, jobId] = conversationId.split('-');
-  return { candidateId, jobId };
+  // For job-based conversations, conversationId is just the jobId
+  return { candidateId: conversationId, jobId: conversationId };
 };

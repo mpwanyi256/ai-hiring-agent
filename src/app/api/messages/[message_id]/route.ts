@@ -28,7 +28,6 @@ export async function GET(
         `
         id,
         text,
-        candidate_id,
         job_id,
         user_id,
         reply_to_id,

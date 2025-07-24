@@ -113,12 +113,13 @@ const JobDiscussionPanel: React.FC<JobDiscussionPanelProps> = ({ className = '' 
   // Show loading state if job data is not available
   if (!job?.id) {
     return (
-      <div className={`flex flex-col bg-gray-50 rounded-lg border border-gray-200 ${className}`}>
+      <div
+        className={`flex flex-col bg-gray-50 rounded-lg border border-gray-200 h-[calc(100vh-290px)] ${className}`}
+      >
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="text-center text-gray-500">
-            <AlertCircle className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+            <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
             <p className="text-sm">No job selected</p>
-            <p className="text-xs text-gray-400 mt-1">Please select a job to view discussions</p>
           </div>
         </div>
       </div>
@@ -127,19 +128,19 @@ const JobDiscussionPanel: React.FC<JobDiscussionPanelProps> = ({ className = '' 
 
   return (
     <div
-      className={`h-full flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm ${className}`}
+      className={`h-[calc(100vh-290px)] flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm ${className}`}
     >
       {/* Header */}
       <div className="border-b border-gray-200 px-4 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-50 rounded-lg">
-              <MessageSquare className="h-5 w-5 text-blue-600" />
+              <MessageSquare className="h-4 w-4 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Team Discussion</h3>
-              <p className="text-sm text-gray-500 flex items-center space-x-1">
-                <Users className="h-4 w-4" />
+              <h3 className="text-base font-semibold text-gray-900">Team Discussion</h3>
+              <p className="text-xs text-gray-500 flex items-center space-x-1">
+                <Users className="h-3 w-3" />
                 <span>{getSubtitle()}</span>
               </p>
             </div>
@@ -162,7 +163,7 @@ const JobDiscussionPanel: React.FC<JobDiscussionPanelProps> = ({ className = '' 
         </div>
       </div>
 
-      {/* Messages List */}
+      {/* Messages List - Fixed height with proper overflow */}
       <div className="flex-1 min-h-0 overflow-hidden">
         <MessagesList
           messages={messages}
@@ -181,7 +182,7 @@ const JobDiscussionPanel: React.FC<JobDiscussionPanelProps> = ({ className = '' 
         />
       </div>
 
-      {/* Message Input */}
+      {/* Message Input - Fixed at bottom */}
       <div className="border-t border-gray-200 flex-shrink-0">
         <MessageInput
           onSendMessage={handleSendMessage}

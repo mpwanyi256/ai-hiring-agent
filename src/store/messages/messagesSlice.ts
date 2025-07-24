@@ -3,7 +3,7 @@ import { Message, TypingUser } from '@/types/messages';
 
 export interface MessagesState {
   // Messages data
-  messagesByConversation: Record<string, Message[]>; // Key: `${candidateId}-${jobId}`
+  messagesByConversation: Record<string, Message[]>; // Key: jobId for job-based conversations
 
   // Loading states
   loading: boolean;
@@ -19,7 +19,7 @@ export interface MessagesState {
   typingTimeouts: Record<string, Record<string, number>>; // conversationId -> userId -> timestamp
 
   // Current conversation
-  currentConversation: string | null; // `${candidateId}-${jobId}`
+  currentConversation: string | null; // jobId for job-based conversations
 }
 
 const initialState: MessagesState = {
@@ -43,8 +43,8 @@ const messagesSlice = createSlice({
       state,
       action: PayloadAction<{ candidateId: string; jobId: string }>,
     ) => {
-      const { candidateId, jobId } = action.payload;
-      state.currentConversation = `${candidateId}-${jobId}`;
+      const { jobId } = action.payload;
+      state.currentConversation = jobId;
     },
 
     clearCurrentConversation: (state) => {
