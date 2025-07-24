@@ -5,15 +5,14 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const candidateId = formData.get('candidate_id') as string;
     const jobId = formData.get('job_id') as string;
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    if (!candidateId || !jobId) {
-      return NextResponse.json({ error: 'Candidate ID and Job ID are required' }, { status: 400 });
+    if (!jobId) {
+      return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
     }
 
     // Check file size (max 10MB)
@@ -57,20 +56,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check permissions (same as messages API)
-    const { data: permission, error: permissionError } = await supabase
+    const { data: permission } = await supabase
       .from('job_permissions')
       .select('permission_level')
       .eq('job_id', jobId)
       .eq('user_id', user.id)
       .maybeSingle();
 
-    const { data: job, error: jobError } = await supabase
-      .from('jobs')
-      .select('profile_id')
-      .eq('id', jobId)
-      .single();
+    const { data: job } = await supabase.from('jobs').select('profile_id').eq('id', jobId).single();
 
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
@@ -83,11 +78,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    // Generate unique filename
+    // Generate unique filename using job ID and timestamp
     const timestamp = Date.now();
-    const fileExtension = file.name.split('.').pop();
     const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const fileName = `${candidateId}/${timestamp}_${cleanFileName}`;
+    const fileName = `${jobId}/${timestamp}_${cleanFileName}`;
 
     // Convert File to Buffer for upload
     const fileBuffer = Buffer.from(await file.arrayBuffer());

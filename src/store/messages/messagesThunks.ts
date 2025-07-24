@@ -11,18 +11,16 @@ import {
   removeMessage,
 } from './messagesSlice';
 
-// Fetch messages for a conversation
+// Fetch messages for a job conversation
 export const fetchMessages = createAsyncThunk(
   'messages/fetchMessages',
   async (
     {
-      candidateId,
       jobId,
       offset = 0,
       limit = 50,
       isLoadMore = false,
     }: {
-      candidateId: string;
       jobId: string;
       offset?: number;
       limit?: number;
@@ -31,16 +29,14 @@ export const fetchMessages = createAsyncThunk(
     { dispatch, rejectWithValue },
   ) => {
     try {
-      const response = await fetch(
-        `/api/candidates/${candidateId}/messages?job_id=${jobId}&limit=${limit}&offset=${offset}`,
-      );
+      const response = await fetch(`/api/jobs/${jobId}/messages?limit=${limit}&offset=${offset}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch messages');
       }
 
       const data = await response.json();
-      const conversationId = `${candidateId}-${jobId}`;
+      const conversationId = jobId; // Use jobId as conversationId
 
       if (isLoadMore) {
         dispatch(
@@ -86,18 +82,16 @@ export const fetchMessages = createAsyncThunk(
   },
 );
 
-// Send a new message
+// Send a new message to a job
 export const sendMessage = createAsyncThunk(
   'messages/sendMessage',
   async (
     {
-      candidateId,
       jobId,
       text,
       replyToId,
       attachment,
     }: {
-      candidateId: string;
       jobId: string;
       text: string;
       replyToId?: string;
@@ -112,7 +106,6 @@ export const sendMessage = createAsyncThunk(
         // Upload file first
         const formData = new FormData();
         formData.append('file', attachment);
-        formData.append('candidate_id', candidateId);
         formData.append('job_id', jobId);
 
         const uploadResponse = await fetch('/api/messages/upload', {
@@ -133,7 +126,7 @@ export const sendMessage = createAsyncThunk(
         };
       }
 
-      const response = await fetch(`/api/candidates/${candidateId}/messages`, {
+      const response = await fetch(`/api/jobs/${jobId}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,7 +134,6 @@ export const sendMessage = createAsyncThunk(
         body: JSON.stringify({
           text,
           reply_to_id: replyToId,
-          job_id: jobId,
           ...attachmentData,
         }),
       });
@@ -300,15 +292,13 @@ export const removeReaction = createAsyncThunk(
   },
 );
 
-// Mark messages as read
+// Mark messages as read for a job
 export const markMessagesAsRead = createAsyncThunk(
   'messages/markAsRead',
   async (
     {
-      candidateId,
       jobId,
     }: {
-      candidateId: string;
       jobId: string;
     },
     { dispatch, rejectWithValue },
@@ -320,7 +310,6 @@ export const markMessagesAsRead = createAsyncThunk(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          candidate_id: candidateId,
           job_id: jobId,
         }),
       });
@@ -330,7 +319,7 @@ export const markMessagesAsRead = createAsyncThunk(
       }
 
       const data = await response.json();
-      const conversationId = `${candidateId}-${jobId}`;
+      const conversationId = jobId; // Use jobId as conversationId
 
       dispatch(
         setUnreadCount({
@@ -349,7 +338,7 @@ export const markMessagesAsRead = createAsyncThunk(
   },
 );
 
-// Fetch individual message (for real-time updates)
+// Fetch individual message (for real-time updates) - Updated to properly transform the API response
 export const fetchMessageById = createAsyncThunk(
   'messages/fetchMessageById',
   async (
@@ -371,39 +360,8 @@ export const fetchMessageById = createAsyncThunk(
 
       const data = await response.json();
 
-      // Transform the message to match our interface
-      const transformedMessage: Message = {
-        id: data.message.id,
-        text: data.message.text,
-        sender: {
-          id: data.message.user_id,
-          name: `${data.message.user_first_name || ''} ${data.message.user_last_name || ''}`.trim(),
-          email: data.message.user_email || '',
-          role: data.message.user_role || 'viewer',
-          isCurrentUser: data.message.isCurrentUser || false,
-        },
-        timestamp: data.message.created_at,
-        reactions: data.message.reactions || [],
-        replyTo: data.message.reply_to_id
-          ? {
-              id: data.message.reply_to_id,
-              text: data.message.reply_to_text || '',
-              sender: {
-                name: `${data.message.reply_to_user_first_name || ''} ${data.message.reply_to_user_last_name || ''}`.trim(),
-              },
-            }
-          : undefined,
-        attachment: data.message.attachment_url
-          ? {
-              url: data.message.attachment_url,
-              name: data.message.attachment_name || '',
-              size: data.message.attachment_size || 0,
-              type: data.message.attachment_type || '',
-            }
-          : undefined,
-        isEdited: !!data.message.edited_at,
-        editedAt: data.message.edited_at,
-      };
+      // The API now returns the properly transformed message
+      const transformedMessage: Message = data.message;
 
       return { conversationId, message: transformedMessage };
     } catch (error) {

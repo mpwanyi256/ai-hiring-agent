@@ -4,10 +4,10 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { candidate_id, job_id } = body;
+    const { job_id } = body;
 
-    if (!candidate_id || !job_id) {
-      return NextResponse.json({ error: 'Candidate ID and Job ID are required' }, { status: 400 });
+    if (!job_id) {
+      return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check permissions
-    const { data: permission, error: permissionError } = await supabase
+    const { data: permission } = await supabase
       .from('job_permissions')
       .select('permission_level')
       .eq('job_id', job_id)
@@ -31,13 +31,13 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     // Check if user is job owner or admin
-    const { data: job, error: jobError } = await supabase
+    const { data: job } = await supabase
       .from('jobs')
       .select('profile_id')
       .eq('id', job_id)
       .single();
 
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
@@ -50,11 +50,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    // Get all unread messages for this candidate/job combination
+    // Get all unread messages for this job (excluding own messages)
     const { data: unreadMessages, error: messagesError } = await supabase
       .from('messages')
       .select('id')
-      .eq('candidate_id', candidate_id)
       .eq('job_id', job_id)
       .not('user_id', 'eq', user.id); // Don't include own messages
 
@@ -89,7 +88,6 @@ export async function POST(request: NextRequest) {
     const { data: unreadData, error: unreadError } = await supabase.rpc(
       'get_unread_message_count',
       {
-        p_candidate_id: candidate_id,
         p_job_id: job_id,
         p_user_id: user.id,
       },
@@ -112,11 +110,10 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const candidate_id = searchParams.get('candidate_id');
     const job_id = searchParams.get('job_id');
 
-    if (!candidate_id || !job_id) {
-      return NextResponse.json({ error: 'Candidate ID and Job ID are required' }, { status: 400 });
+    if (!job_id) {
+      return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -135,7 +132,6 @@ export async function GET(request: NextRequest) {
     const { data: unreadData, error: unreadError } = await supabase.rpc(
       'get_unread_message_count',
       {
-        p_candidate_id: candidate_id,
         p_job_id: job_id,
         p_user_id: user.id,
       },

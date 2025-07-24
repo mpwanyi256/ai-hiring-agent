@@ -4,7 +4,6 @@ import { CandidateWithEvaluation } from '@/types/candidates';
 import { Tab } from '@headlessui/react';
 import GeneralTab from './GeneralTab';
 import EvaluationsTab from './EvaluationsTab';
-import MessagesTab from './MessagesTab';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
 
 // --- Main Panel ---
@@ -23,7 +22,6 @@ const tabs = [
   // { name: 'Events', Component: EventsTab },
   { name: 'Evaluations', Component: EvaluationsTab },
   // { name: 'Experience', Component: ExperienceTab },
-  { name: 'Messages', Component: MessagesTab },
 ];
 
 const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
@@ -41,9 +39,17 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       width="xl"
-      title={`Team Discussion (${candidate.firstName} ${candidate.lastName})`}
+      title={`${candidate.firstName} ${candidate.lastName} - Details`}
     >
       <div className="flex flex-col h-full min-h-0">
+        {/* Note about team discussion */}
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            💬 <strong>Team discussions</strong> are now available in the main job view sidebar for
+            better collaboration across all candidates.
+          </p>
+        </div>
+
         {/* Tabs Section */}
         <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
           <Tab.List className="flex space-x-2 border-b mb-6 bg-white">

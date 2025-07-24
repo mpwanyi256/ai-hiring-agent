@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { useAppDispatch, useAppSelector } from '@/store';
@@ -34,11 +34,9 @@ import {
   selectIsLoading,
   selectIsSendingMessage,
   selectError,
-  createConversationId,
 } from '@/store/messages/messagesSelectors';
 
 interface UseMessagesReduxProps {
-  candidateId: string;
   jobId: string;
   enabled?: boolean;
 }
@@ -66,7 +64,6 @@ interface UseMessagesReduxReturn {
 }
 
 export function useMessagesRedux({
-  candidateId,
   jobId,
   enabled = true,
 }: UseMessagesReduxProps): UseMessagesReduxReturn {
@@ -76,7 +73,10 @@ export function useMessagesRedux({
   const channelRef = useRef<RealtimeChannel | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fetchingNewMessageRef = useRef<boolean>(false);
-  const conversationId = createConversationId(candidateId, jobId);
+  const [optimisticMessages, setOptimisticMessages] = useState<Map<string, Message>>(new Map());
+
+  // Use job ID as conversation ID for job-based messaging
+  const conversationId = jobId;
 
   // Get current user from Redux auth state
   const currentUser = useAppSelector(selectUser);
@@ -90,34 +90,49 @@ export function useMessagesRedux({
   const sendingMessage = useAppSelector(selectIsSendingMessage);
   const typingUsers = useAppSelector(selectCurrentConversationTypingUsers);
 
+  // Combine real messages with optimistic messages
+  const allMessages = [
+    ...Array.from(optimisticMessages.values()),
+    ...messages.filter((m) => !optimisticMessages.has(m.id)),
+  ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
   // Set current conversation on mount and cleanup on unmount
   useEffect(() => {
-    if (enabled && candidateId && jobId) {
-      dispatch(setCurrentConversation({ candidateId, jobId }));
+    if (enabled && jobId) {
+      // For job-based messaging, we use jobId as both candidateId and jobId for compatibility
+      dispatch(setCurrentConversation({ candidateId: jobId, jobId }));
 
       return () => {
         dispatch(clearCurrentConversation());
       };
     }
-  }, [dispatch, candidateId, jobId, enabled]);
+  }, [dispatch, jobId, enabled]);
 
-  // Setup real-time subscriptions with improved message handling
+  // Setup real-time subscriptions with job-based filtering
   useEffect(() => {
-    if (!enabled || !candidateId || !jobId || !currentUser) return;
+    if (!enabled || !jobId || !currentUser) return;
 
     const channel = supabase
-      .channel(`messages:${candidateId}`)
+      .channel(`job-messages:${jobId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `candidate_id=eq.${candidateId}`,
+          filter: `job_id=eq.${jobId}`,
         },
         (payload) => {
           console.log('New message received:', payload);
           fetchingNewMessageRef.current = true;
+
+          // Remove optimistic message if it exists
+          const messageId = payload.new.id;
+          setOptimisticMessages((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(messageId);
+            return newMap;
+          });
 
           // Immediately fetch the complete message with user details
           dispatch(
@@ -148,7 +163,7 @@ export function useMessagesRedux({
           event: 'UPDATE',
           schema: 'public',
           table: 'messages',
-          filter: `candidate_id=eq.${candidateId}`,
+          filter: `job_id=eq.${jobId}`,
         },
         (payload) => {
           console.log('Message updated:', payload);
@@ -183,11 +198,17 @@ export function useMessagesRedux({
           event: 'DELETE',
           schema: 'public',
           table: 'messages',
-          filter: `candidate_id=eq.${candidateId}`,
+          filter: `job_id=eq.${jobId}`,
         },
         (payload) => {
           console.log('Message deleted:', payload);
           dispatch(removeMessage({ conversationId, messageId: payload.old.id }));
+          // Also remove from optimistic messages
+          setOptimisticMessages((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(payload.old.id);
+            return newMap;
+          });
         },
       )
       .on(
@@ -256,7 +277,7 @@ export function useMessagesRedux({
         channelRef.current = null;
       }
     };
-  }, [candidateId, jobId, enabled, supabase, dispatch, conversationId, currentUser]);
+  }, [jobId, enabled, supabase, dispatch, conversationId, currentUser]);
 
   // Enhanced typing cleanup with minimum display time respect
   useEffect(() => {
@@ -271,159 +292,6 @@ export function useMessagesRedux({
 
     return () => clearInterval(cleanupInterval);
   }, [dispatch, conversationId]);
-
-  // API functions
-  const sendMessage = useCallback(
-    async (text: string, replyToId?: string, attachment?: File) => {
-      if (!enabled || !candidateId || !jobId) return;
-
-      dispatch(setSendingMessage(true));
-
-      try {
-        await dispatch(
-          sendMessageThunk({
-            candidateId,
-            jobId,
-            text,
-            replyToId,
-            attachment,
-          }),
-        ).unwrap();
-
-        // Stop typing when message is sent
-        stopTyping();
-      } catch (error) {
-        console.error('Failed to send message:', error);
-      } finally {
-        dispatch(setSendingMessage(false));
-      }
-    },
-    [dispatch, candidateId, jobId, enabled],
-  );
-
-  const addReaction = useCallback(
-    async (messageId: string, emoji: string) => {
-      try {
-        await dispatch(addReactionThunk({ messageId, emoji })).unwrap();
-      } catch (error) {
-        console.error('Failed to add reaction:', error);
-      }
-    },
-    [dispatch],
-  );
-
-  const removeReaction = useCallback(
-    async (messageId: string, emoji: string) => {
-      try {
-        await dispatch(removeReactionThunk({ messageId, emoji })).unwrap();
-      } catch (error) {
-        console.error('Failed to remove reaction:', error);
-      }
-    },
-    [dispatch],
-  );
-
-  const markAsRead = useCallback(async () => {
-    if (!enabled || !candidateId || !jobId) return;
-
-    try {
-      await dispatch(markMessagesAsReadThunk({ candidateId, jobId })).unwrap();
-    } catch (error) {
-      console.error('Failed to mark messages as read:', error);
-    }
-  }, [dispatch, candidateId, jobId, enabled]);
-
-  const refreshMessages = useCallback(async () => {
-    if (!enabled || !candidateId || !jobId) return;
-
-    dispatch(setLoading(true));
-    try {
-      await dispatch(
-        fetchMessagesThunk({
-          candidateId,
-          jobId,
-          offset: 0,
-          isLoadMore: false,
-        }),
-      ).unwrap();
-    } catch (error) {
-      console.error('Failed to refresh messages:', error);
-    } finally {
-      dispatch(setLoading(false));
-    }
-  }, [dispatch, candidateId, jobId, enabled]);
-
-  const loadMoreMessages = useCallback(async () => {
-    if (!hasMore || loading || !enabled || !candidateId || !jobId) return;
-
-    try {
-      await dispatch(
-        fetchMessagesThunk({
-          candidateId,
-          jobId,
-          offset: messages.length,
-          isLoadMore: true,
-        }),
-      ).unwrap();
-    } catch (error) {
-      console.error('Failed to load more messages:', error);
-    }
-  }, [dispatch, candidateId, jobId, messages.length, hasMore, loading, enabled]);
-
-  const editMessage = useCallback(
-    async (messageId: string, newText: string) => {
-      try {
-        await dispatch(
-          editMessageThunk({
-            messageId,
-            newText,
-            conversationId,
-          }),
-        ).unwrap();
-      } catch (error) {
-        console.error('Failed to edit message:', error);
-      }
-    },
-    [dispatch, conversationId],
-  );
-
-  const deleteMessage = useCallback(
-    async (messageId: string) => {
-      try {
-        await dispatch(
-          deleteMessageThunk({
-            messageId,
-            conversationId,
-          }),
-        ).unwrap();
-      } catch (error) {
-        console.error('Failed to delete message:', error);
-      }
-    },
-    [dispatch, conversationId],
-  );
-
-  const uploadFile = useCallback(
-    async (file: File): Promise<string> => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('candidate_id', candidateId);
-      formData.append('job_id', jobId);
-
-      const response = await fetch('/api/messages/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload file');
-      }
-
-      const data = await response.json();
-      return data.url;
-    },
-    [candidateId, jobId],
-  );
 
   const startTyping = useCallback(() => {
     if (channelRef.current && currentUser) {
@@ -463,27 +331,237 @@ export function useMessagesRedux({
     }
   }, [currentUser]);
 
+  // API functions with optimistic updates
+  const sendMessage = useCallback(
+    async (text: string, replyToId?: string, attachment?: File) => {
+      if (!enabled || !jobId || !currentUser) return;
+
+      dispatch(setSendingMessage(true));
+
+      // Create optimistic message
+      const tempId = `temp-${Date.now()}`;
+      const optimisticMessage: Message = {
+        id: tempId,
+        text,
+        sender: {
+          id: currentUser.id,
+          name:
+            currentUser.firstName && currentUser.lastName
+              ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
+              : currentUser.email || 'Anonymous',
+          email: currentUser.email || '',
+          role: currentUser.role || 'viewer',
+          isCurrentUser: true,
+        },
+        timestamp: new Date().toISOString(),
+        reactions: [],
+        replyTo: replyToId ? messages.find((m) => m.id === replyToId)?.replyTo : undefined,
+        attachment: undefined, // Will be set if upload succeeds
+        isEdited: false,
+        status: 'sending',
+      };
+
+      // Add optimistic message to local state
+      setOptimisticMessages((prev) => new Map(prev).set(tempId, optimisticMessage));
+
+      try {
+        await dispatch(
+          sendMessageThunk({
+            jobId, // Send to job endpoint
+            text,
+            replyToId,
+            attachment,
+          }),
+        ).unwrap();
+
+        // Remove optimistic message since real one will come via real-time
+        setOptimisticMessages((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(tempId);
+          return newMap;
+        });
+
+        // Stop typing when message is sent
+        stopTyping();
+      } catch (error) {
+        console.error('Failed to send message:', error);
+
+        // Update optimistic message to show error state
+        setOptimisticMessages((prev) => {
+          const newMap = new Map(prev);
+          const msg = newMap.get(tempId);
+          if (msg) {
+            newMap.set(tempId, { ...msg, status: 'failed' });
+          }
+          return newMap;
+        });
+      } finally {
+        dispatch(setSendingMessage(false));
+      }
+    },
+    [dispatch, jobId, enabled, currentUser, messages, stopTyping],
+  );
+
+  // Retry failed message
+  const retryMessage = useCallback(
+    async (tempId: string) => {
+      const optimisticMsg = optimisticMessages.get(tempId);
+      if (!optimisticMsg) return;
+
+      // Update status to sending
+      setOptimisticMessages((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(tempId, { ...optimisticMsg, status: 'sending' });
+        return newMap;
+      });
+
+      // Try sending again
+      await sendMessage(optimisticMsg.text, optimisticMsg.replyTo?.id);
+    },
+    [optimisticMessages, sendMessage],
+  );
+
+  const addReaction = useCallback(
+    async (messageId: string, emoji: string) => {
+      try {
+        await dispatch(addReactionThunk({ messageId, emoji })).unwrap();
+      } catch (error) {
+        console.error('Failed to add reaction:', error);
+      }
+    },
+    [dispatch],
+  );
+
+  const removeReaction = useCallback(
+    async (messageId: string, emoji: string) => {
+      try {
+        await dispatch(removeReactionThunk({ messageId, emoji })).unwrap();
+      } catch (error) {
+        console.error('Failed to remove reaction:', error);
+      }
+    },
+    [dispatch],
+  );
+
+  const markAsRead = useCallback(async () => {
+    if (!enabled || !jobId) return;
+
+    try {
+      await dispatch(markMessagesAsReadThunk({ jobId })).unwrap();
+    } catch (error) {
+      console.error('Failed to mark messages as read:', error);
+    }
+  }, [dispatch, jobId, enabled]);
+
+  const refreshMessages = useCallback(async () => {
+    if (!enabled || !jobId) return;
+
+    dispatch(setLoading(true));
+    try {
+      await dispatch(
+        fetchMessagesThunk({
+          jobId, // Use job-based endpoint
+          offset: 0,
+          isLoadMore: false,
+        }),
+      ).unwrap();
+    } catch (error) {
+      console.error('Failed to refresh messages:', error);
+    } finally {
+      dispatch(setLoading(false));
+    }
+  }, [dispatch, jobId, enabled]);
+
+  const loadMoreMessages = useCallback(async () => {
+    if (!hasMore || loading || !enabled || !jobId) return;
+
+    try {
+      await dispatch(
+        fetchMessagesThunk({
+          jobId, // Use job-based endpoint
+          offset: allMessages.length,
+          isLoadMore: true,
+        }),
+      ).unwrap();
+    } catch (error) {
+      console.error('Failed to load more messages:', error);
+    }
+  }, [dispatch, jobId, allMessages.length, hasMore, loading, enabled]);
+
+  const editMessage = useCallback(
+    async (messageId: string, newText: string) => {
+      try {
+        await dispatch(
+          editMessageThunk({
+            messageId,
+            newText,
+            conversationId,
+          }),
+        ).unwrap();
+      } catch (error) {
+        console.error('Failed to edit message:', error);
+      }
+    },
+    [dispatch, conversationId],
+  );
+
+  const deleteMessage = useCallback(
+    async (messageId: string) => {
+      try {
+        await dispatch(
+          deleteMessageThunk({
+            messageId,
+            conversationId,
+          }),
+        ).unwrap();
+      } catch (error) {
+        console.error('Failed to delete message:', error);
+      }
+    },
+    [dispatch, conversationId],
+  );
+
+  const uploadFile = useCallback(
+    async (file: File): Promise<string> => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('job_id', jobId); // Use job_id instead of candidate_id
+
+      const response = await fetch('/api/messages/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload file');
+      }
+
+      const data = await response.json();
+      return data.url;
+    },
+    [jobId],
+  );
+
   // Initial fetch
   useEffect(() => {
-    if (enabled && candidateId && jobId) {
+    if (enabled && jobId) {
       dispatch(
         fetchMessagesThunk({
-          candidateId,
-          jobId,
+          jobId, // Use job-based endpoint
           offset: 0,
           isLoadMore: false,
         }),
       );
     }
-  }, [dispatch, candidateId, jobId, enabled]);
+  }, [dispatch, jobId, enabled]);
 
   // Auto-mark as read when messages are loaded
   useEffect(() => {
-    if (messages.length > 0 && unreadCount > 0) {
+    if (allMessages.length > 0 && unreadCount > 0) {
       const timer = setTimeout(markAsRead, 1000);
       return () => clearTimeout(timer);
     }
-  }, [messages.length, unreadCount, markAsRead]);
+  }, [allMessages.length, unreadCount, markAsRead]);
 
   // Cleanup typing timeout on unmount
   useEffect(() => {
@@ -498,7 +576,7 @@ export function useMessagesRedux({
   }, [stopTyping, currentUser]);
 
   return {
-    messages,
+    messages: allMessages, // Return combined messages with optimistic updates
     loading,
     error,
     unreadCount,
