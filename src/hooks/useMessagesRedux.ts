@@ -95,7 +95,7 @@ export function useMessagesRedux({
   const allMessages = [
     ...Array.from(optimisticMessages.values()),
     ...messages.filter((m) => !optimisticMessages.has(m.id)),
-  ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()); // Oldest first (newest at bottom)
 
   // Set current conversation on mount and cleanup on unmount
   useEffect(() => {
@@ -480,14 +480,14 @@ export function useMessagesRedux({
       await dispatch(
         fetchMessagesThunk({
           jobId, // Use job-based endpoint
-          offset: allMessages.length,
+          offset: messages.length, // Use Redux messages length for offset since they're already sorted correctly
           isLoadMore: true,
         }),
       ).unwrap();
     } catch (error) {
       console.error('Failed to load more messages:', error);
     }
-  }, [dispatch, jobId, allMessages.length, hasMore, loading, enabled]);
+  }, [dispatch, jobId, messages.length, hasMore, loading, enabled]);
 
   const editMessage = useCallback(
     async (messageId: string, newText: string) => {

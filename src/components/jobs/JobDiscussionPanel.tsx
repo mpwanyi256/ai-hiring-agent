@@ -128,7 +128,7 @@ const JobDiscussionPanel: React.FC<JobDiscussionPanelProps> = ({ className = '' 
 
   return (
     <div
-      className={`h-[calc(100vh-290px)] flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm ${className}`}
+      className={`h-[calc(100vh-290px)] max-h-[calc(100vh-290px)] flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden ${className}`}
     >
       {/* Header */}
       <div className="border-b border-gray-200 px-4 py-3 flex-shrink-0">

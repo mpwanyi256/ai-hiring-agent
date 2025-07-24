@@ -38,9 +38,24 @@ const MessagesList: React.FC<MessagesListProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll when messages change or typing status changes
+  // Auto-scroll when messages change or typing status changes (contained to messages area only)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer && messagesEndRef.current) {
+      // For new messages, always scroll to bottom; for typing users, only if near bottom
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+
+      // Auto-scroll to new messages or when typing indicators appear/disappear
+      if (isNearBottom || messages.length > 0) {
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'end',
+          });
+        }, 50); // Small delay to ensure DOM has updated
+      }
+    }
   }, [messages, typingUsers]);
 
   // Get typing indicator text
@@ -64,8 +79,12 @@ const MessagesList: React.FC<MessagesListProps> = ({
   };
 
   return (
-    <div ref={scrollContainerRef} className="h-full flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
+    <div className="h-full max-h-[calc(100vh-420px)] flex flex-col overflow-hidden">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto scroll-smooth"
+        style={{ scrollBehavior: 'smooth' }}
+      >
         {/* Load More Button */}
         {hasMore && (
           <div className="text-center p-4">
