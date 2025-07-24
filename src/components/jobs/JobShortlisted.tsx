@@ -89,23 +89,6 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     return 'text-red-600 bg-red-50';
   };
 
-  const getRecommendationColor = (recommendation: string) => {
-    switch (recommendation) {
-      case 'strong_yes':
-        return 'text-green-700 bg-green-100';
-      case 'yes':
-        return 'text-green-600 bg-green-50';
-      case 'maybe':
-        return 'text-yellow-600 bg-yellow-50';
-      case 'no':
-        return 'text-red-600 bg-red-50';
-      case 'strong_no':
-        return 'text-red-700 bg-red-100';
-      default:
-        return 'text-gray-600 bg-gray-50';
-    }
-  };
-
   const handleScheduleInterview = (candidate: CandidateWithEvaluation) => {
     setSchedulingModal({
       isOpen: true,

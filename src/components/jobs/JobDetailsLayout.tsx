@@ -33,6 +33,7 @@ import { fetchSkills } from '@/store/skills/skillsThunks';
 import { fetchTraits } from '@/store/traits/traitsThunks';
 import { selectCompanySlug } from '@/store/auth/authSelectors';
 import JobInviteModal from './JobInviteModal';
+import { JobTeamDisplay } from './JobTeamDisplay';
 
 interface JobDetailsLayoutProps {
   job: Job;
@@ -304,33 +305,39 @@ export default function JobDetailsLayout({
           </div>
 
           {/* Actions */}
-          <div className="mt-4 lg:mt-0 flex flex-wrap gap-2 md:gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setInviteModalOpen(true)}
-              className="flex items-center text-sm md:text-xs"
-            >
-              <UserPlusIcon className="w-4 h-4 mr-1" />
-              Invite Team
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onShareJob}
-              className="flex items-center text-sm md:text-xs"
-            >
-              <ShareIcon className="w-4 h-4 mr-1" />
-              Share
-            </Button>
-
-            <Link href={`${app.baseUrl}/jobs/${companySlug}/${job.interviewToken}`} target="_blank">
-              <Button size="sm" className="flex items-center text-sm">
-                <EyeIcon className="w-4 h-4 mr-1" />
-                Preview
+          <div className="mt-4 lg:mt-0 flex flex-col gap-2 md:gap-1">
+            <div className="flex flex-row gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setInviteModalOpen(true)}
+                className="flex items-center text-sm md:text-xs"
+              >
+                <UserPlusIcon className="w-4 h-4 mr-1" />
+                Invite Team
               </Button>
-            </Link>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onShareJob}
+                className="flex items-center text-sm md:text-xs"
+              >
+                <ShareIcon className="w-4 h-4 mr-1" />
+                Share
+              </Button>
+
+              <Link
+                href={`${app.baseUrl}/jobs/${companySlug}/${job.interviewToken}`}
+                target="_blank"
+              >
+                <Button size="sm" className="flex items-center text-sm">
+                  <EyeIcon className="w-4 h-4 mr-1" />
+                  Preview
+                </Button>
+              </Link>
+            </div>
+            <JobTeamDisplay />
           </div>
         </div>
 

@@ -16,6 +16,7 @@ import {
   PaperClipIcon,
   BriefcaseIcon,
   EyeIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { CandidateDetailsHeader } from '../evaluations/CandidateDetailsHeader';
 import { CandidateStatus } from '@/types';
@@ -28,13 +29,12 @@ import {
 import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
 import { selectJobCandidatesStats } from '@/store/candidates/candidatesSelectors';
 import { CandidateSkillsAnalysis } from './CandidateSkillsAnalysis';
-import { JobPermissions } from './JobPermissions';
 
 const candidateTabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'responses', label: 'Interview Responses' },
   { id: 'analytics', label: 'Analytics' },
-  { id: 'permissions', label: 'Team Access' },
+  { id: 'team-responses', label: 'Team Responses' },
 ];
 
 const getResumeScoreStyle = (score: number) => {
@@ -50,6 +50,24 @@ const getResumeScoreTextColor = (score: number) => {
   if (score >= 50) return 'text-orange-600';
   return 'text-red-600';
 };
+
+// Placeholder component for team responses/voting
+function TeamResponses() {
+  return (
+    <div className="space-y-6">
+      <div className="text-center py-8">
+        <UserGroupIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Team Responses</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Team members can submit their evaluations and vote on this candidate
+        </p>
+        <p className="text-xs text-gray-400">
+          This feature will allow team collaboration on candidate evaluation
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function JobCandidates() {
   const job = useAppSelector(selectCurrentJob);
@@ -298,7 +316,7 @@ export default function JobCandidates() {
                 )}
                 {activeTab === 'responses' && <CandidateResponses />}
                 {activeTab === 'analytics' && <CandidateAnalytics />}
-                {activeTab === 'permissions' && <JobPermissions />}
+                {activeTab === 'team-responses' && <TeamResponses />}
               </div>
             </div>
           ) : (

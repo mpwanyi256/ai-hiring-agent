@@ -168,28 +168,35 @@ export function JobPermissions() {
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                     <span className="text-sm font-medium text-primary">
-                      {permission.user_first_name?.[0] || permission.user_email[0].toUpperCase()}
+                      {permission.user_first_name?.[0] ||
+                        (permission.user_email && permission.user_email.length > 0
+                          ? permission.user_email[0].toUpperCase()
+                          : '?')}
                     </span>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">
                       {permission.user_first_name && permission.user_last_name
                         ? `${permission.user_first_name} ${permission.user_last_name}`
-                        : permission.user_email}
+                        : permission.user_email || 'Unknown User'}
                     </p>
-                    <p className="text-xs text-gray-500">{permission.user_email}</p>
+                    <p className="text-xs text-gray-500">{permission.user_email || 'No email'}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <span
                     className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      permissionLevelColors[permission.permission_level as JobPermissionLevel]
+                      permissionLevelColors[permission.permission_level as JobPermissionLevel] ||
+                      'bg-gray-100 text-gray-800'
                     }`}
                   >
-                    {permissionLevelLabels[permission.permission_level as JobPermissionLevel]}
+                    {permissionLevelLabels[permission.permission_level as JobPermissionLevel] ||
+                      permission.permission_level}
                   </span>
                   <p className="text-xs text-gray-500">
-                    {new Date(permission.granted_at).toLocaleDateString()}
+                    {permission.granted_at
+                      ? new Date(permission.granted_at).toLocaleDateString()
+                      : 'Unknown date'}
                   </p>
                 </div>
               </div>

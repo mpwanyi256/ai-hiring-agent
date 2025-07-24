@@ -49,18 +49,64 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    // Fetch job permissions with detailed information
+    // Fetch job permissions with detailed information using JOIN
     const { data: permissions, error: permissionsError } = await supabase
-      .from('job_permissions_detailed')
-      .select('*')
+      .from('job_permissions')
+      .select(
+        `
+        id,
+        job_id,
+        user_id,
+        permission_level,
+        granted_by,
+        granted_at,
+        created_at,
+        updated_at,
+        profiles!job_permissions_user_id_fkey(
+          first_name,
+          last_name,
+          email,
+          role
+        ),
+        jobs!job_permissions_job_id_fkey(
+          title,
+          profile_id
+        ),
+        granted_by_profile:profiles!job_permissions_granted_by_fkey(
+          first_name,
+          last_name
+        )
+      `,
+      )
       .eq('job_id', jobId)
       .order('granted_at', { ascending: false });
 
     if (permissionsError) {
+      console.error('Permissions error:', permissionsError);
       return NextResponse.json({ error: 'Failed to fetch permissions' }, { status: 500 });
     }
 
-    return NextResponse.json({ permissions });
+    // Transform the data to match the expected format
+    const transformedPermissions = (permissions || []).map((perm: any) => ({
+      id: perm.id,
+      job_id: perm.job_id,
+      user_id: perm.user_id,
+      permission_level: perm.permission_level,
+      granted_by: perm.granted_by,
+      granted_at: perm.granted_at,
+      created_at: perm.created_at,
+      updated_at: perm.updated_at,
+      user_first_name: perm.profiles?.first_name || null,
+      user_last_name: perm.profiles?.last_name || null,
+      user_email: perm.profiles?.email || null,
+      user_role: perm.profiles?.role || null,
+      job_title: perm.jobs?.title || null,
+      job_owner_id: perm.jobs?.profile_id || null,
+      granted_by_first_name: perm.granted_by_profile?.first_name || null,
+      granted_by_last_name: perm.granted_by_profile?.last_name || null,
+    }));
+
+    return NextResponse.json({ permissions: transformedPermissions });
   } catch (error) {
     console.error('Error fetching job permissions:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
