@@ -1,11 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest, { params }: { params: { job_id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { job_id } = await params;
+    const { id: jobId } = await params;
 
-    if (!job_id) {
+    if (!jobId) {
       return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
     }
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, { params }: { params: { job_id: 
     const { data: job, error: jobError } = await supabase
       .from('jobs')
       .select('profile_id')
-      .eq('id', job_id)
+      .eq('id', jobId)
       .single();
 
     if (jobError || !job) {
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest, { params }: { params: { job_id: 
     const { data: permissions, error: permissionsError } = await supabase
       .from('job_permissions_detailed')
       .select('*')
-      .eq('job_id', job_id)
+      .eq('job_id', jobId)
       .order('granted_at', { ascending: false });
 
     if (permissionsError) {
@@ -67,12 +67,13 @@ export async function GET(request: NextRequest, { params }: { params: { job_id: 
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { job_id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { job_id } = await params;
-    const { user_id, permission_level } = await request.json();
+    const { id: jobId } = await params;
+    const body = await request.json();
+    const { user_id, user_email, permission_level } = body;
 
-    if (!job_id || !user_id || !permission_level) {
+    if (!jobId || !permission_level || (!user_id && !user_email)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest, { params }: { params: { job_id:
     const { data: job, error: jobError } = await supabase
       .from('jobs')
       .select('profile_id')
-      .eq('id', job_id)
+      .eq('id', jobId)
       .single();
 
     if (jobError || !job) {
@@ -121,22 +122,49 @@ export async function POST(request: NextRequest, { params }: { params: { job_id:
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    // Verify the user being granted permissions is in the same company
-    const { data: targetUser, error: targetUserError } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', user_id)
-      .single();
+    let targetUserId = user_id;
 
-    if (targetUserError || !targetUser) {
-      return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
-    }
+    // If user_email is provided, find the user by email
+    if (user_email && !user_id) {
+      const { data: targetUser, error: targetUserError } = await supabase
+        .from('profiles')
+        .select('id, company_id')
+        .eq('email', user_email)
+        .single();
 
-    if (targetUser.company_id !== profile.company_id) {
-      return NextResponse.json(
-        { error: 'Can only grant permissions to users in the same company' },
-        { status: 403 },
-      );
+      if (targetUserError || !targetUser) {
+        return NextResponse.json(
+          { error: 'User not found with the provided email' },
+          { status: 404 },
+        );
+      }
+
+      if (targetUser.company_id !== profile.company_id) {
+        return NextResponse.json(
+          { error: 'Can only grant permissions to users in the same company' },
+          { status: 403 },
+        );
+      }
+
+      targetUserId = targetUser.id;
+    } else if (user_id) {
+      // Verify the user being granted permissions is in the same company
+      const { data: targetUser, error: targetUserError } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user_id)
+        .single();
+
+      if (targetUserError || !targetUser) {
+        return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
+      }
+
+      if (targetUser.company_id !== profile.company_id) {
+        return NextResponse.json(
+          { error: 'Can only grant permissions to users in the same company' },
+          { status: 403 },
+        );
+      }
     }
 
     // Insert or update job permission
@@ -144,8 +172,8 @@ export async function POST(request: NextRequest, { params }: { params: { job_id:
       .from('job_permissions')
       .upsert(
         {
-          job_id,
-          user_id,
+          job_id: jobId,
+          user_id: targetUserId,
           permission_level,
           granted_by: user.id,
         },

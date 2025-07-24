@@ -1,0 +1,13 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/process-notifications",
+      "schedule": "*/5 * * * *"
+    }
+  ],
+  "functions": {
+    "src/app/api/cron/process-notifications/route.ts": {
+      "maxDuration": 300
+    }
+  }
+}

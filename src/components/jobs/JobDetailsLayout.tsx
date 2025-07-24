@@ -18,10 +18,12 @@ import {
   ChartBarIcon,
   ChevronDownIcon,
   XMarkIcon,
+  UserPlusIcon,
 } from '@heroicons/react/24/outline';
 import DashboardLayout from '../layout/DashboardLayout';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { updateJobStatus, updateJob } from '@/store/jobs/jobsThunks';
+import { fetchJobPermissions } from '@/store/jobPermissions/jobPermissionsThunks';
 import { apiError, apiSuccess } from '@/lib/notification';
 import RichTextEditor from '../ui/RichTextEditor';
 import { app, inputTypes } from '@/lib/constants';
@@ -30,6 +32,7 @@ import { selectTraitsData, selectTraitsLoading } from '@/store/traits/traitsSele
 import { fetchSkills } from '@/store/skills/skillsThunks';
 import { fetchTraits } from '@/store/traits/traitsThunks';
 import { selectCompanySlug } from '@/store/auth/authSelectors';
+import JobInviteModal from './JobInviteModal';
 
 interface JobDetailsLayoutProps {
   job: Job;
@@ -58,6 +61,7 @@ export default function JobDetailsLayout({
   const companySlug = useAppSelector(selectCompanySlug);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [jobDescriptionDraft, setJobDescriptionDraft] = useState(job.fields?.jobDescription || '');
   const [isSavingDescription, setIsSavingDescription] = useState(false);
@@ -165,6 +169,13 @@ export default function JobDetailsLayout({
 
     fetchData();
   }, [dispatch]);
+
+  // Fetch job permissions when component mounts
+  useEffect(() => {
+    if (job?.id) {
+      dispatch(fetchJobPermissions(job.id));
+    }
+  }, [job?.id, dispatch]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -294,6 +305,16 @@ export default function JobDetailsLayout({
 
           {/* Actions */}
           <div className="mt-4 lg:mt-0 flex flex-wrap gap-2 md:gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setInviteModalOpen(true)}
+              className="flex items-center text-sm md:text-xs"
+            >
+              <UserPlusIcon className="w-4 h-4 mr-1" />
+              Invite Team
+            </Button>
+
             <Button
               variant="outline"
               size="sm"
@@ -994,6 +1015,14 @@ export default function JobDetailsLayout({
           )}
         </div>
       </div>
+
+      {/* Job Invite Modal */}
+      <JobInviteModal
+        open={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        jobId={job.id}
+        jobTitle={job.title}
+      />
     </DashboardLayout>
   );
 }

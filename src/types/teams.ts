@@ -1,13 +1,8 @@
 // Team roles
-export type TeamRole = 'admin' | 'employee' | 'recruiter' | 'developer';
+export type TeamRole = 'admin' | 'employee' | 'recruiter' | 'developer' | 'member';
 
 // Invitation status
-export enum InvitationStatus {
-  Pending = 'pending',
-  Accepted = 'accepted',
-  Rejected = 'rejected',
-}
-export type InvitationStatusType = keyof typeof InvitationStatus;
+export type InvitationStatus = 'pending' | 'accepted' | 'rejected';
 
 // Team member (user)
 export interface TeamMember {
@@ -65,6 +60,7 @@ export const ROLES: { label: string; value: TeamRole }[] = [
   { label: 'Employee', value: 'employee' },
   { label: 'Recruiter', value: 'recruiter' },
   { label: 'Developer', value: 'developer' },
+  { label: 'Member', value: 'member' },
 ];
 
 export interface TeamInviteResponse {

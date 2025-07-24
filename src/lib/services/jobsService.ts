@@ -420,6 +420,28 @@ class JobsService {
     status,
   }: GetCompanyJobsPayload): Promise<GetCompanyJobsResponse> {
     const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      throw new Error('Unauthorized');
+    }
+
+    // Get user profile to check role
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      throw new Error('User profile not found');
+    }
+
     const offset = (page - 1) * limit;
 
     let query = supabase
@@ -428,6 +450,38 @@ class JobsService {
       .eq('company_id', company_id)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
+
+    // If user is not an admin, filter by permissions
+    if (profile.role !== 'admin') {
+      // Get job IDs the user has access to (either created by them or has permissions)
+      const { data: accessibleJobIds, error: accessError } = await supabase.rpc(
+        'get_user_accessible_jobs',
+        {
+          p_user_id: user.id,
+          p_company_id: company_id,
+        },
+      );
+
+      if (accessError) {
+        console.error('Error fetching accessible jobs:', accessError);
+        // Fallback to only jobs created by user
+        query = query.eq('profile_id', user.id);
+      } else if (accessibleJobIds && accessibleJobIds.length > 0) {
+        query = query.in('id', accessibleJobIds);
+      } else {
+        // User has no accessible jobs
+        return {
+          jobs: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasMore: false,
+          },
+        };
+      }
+    }
 
     if (search) {
       query = query.ilike('title', `%${search}%`);
@@ -443,10 +497,50 @@ class JobsService {
       throw new Error(error?.message || 'Error fetching company jobs');
     }
 
-    const { count, error: countError } = await supabase
+    // Get total count with same filters
+    let countQuery = supabase
       .from('jobs_comprehensive')
       .select('*', { count: 'exact', head: true })
       .eq('company_id', company_id);
+
+    // Apply same permission filtering for count
+    if (profile.role !== 'admin') {
+      const { data: accessibleJobIds, error: accessError } = await supabase.rpc(
+        'get_user_accessible_jobs',
+        {
+          p_user_id: user.id,
+          p_company_id: company_id,
+        },
+      );
+
+      if (!accessError && accessibleJobIds && accessibleJobIds.length > 0) {
+        countQuery = countQuery.in('id', accessibleJobIds);
+      } else if (accessError) {
+        countQuery = countQuery.eq('profile_id', user.id);
+      } else {
+        // No accessible jobs
+        return {
+          jobs: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasMore: false,
+          },
+        };
+      }
+    }
+
+    if (search) {
+      countQuery = countQuery.ilike('title', `%${search}%`);
+    }
+
+    if (status) {
+      countQuery = countQuery.eq('status', status);
+    }
+
+    const { count, error: countError } = await countQuery;
 
     if (countError) {
       throw new Error(countError?.message || 'Error fetching company jobs');
@@ -458,7 +552,7 @@ class JobsService {
         page,
         limit,
         total: count || 0,
-        totalPages: Math.ceil(count || 0 / limit),
+        totalPages: Math.ceil((count || 0) / limit),
         hasMore: offset + limit < (count || 0),
       },
     };

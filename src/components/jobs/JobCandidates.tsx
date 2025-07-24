@@ -28,11 +28,13 @@ import {
 import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
 import { selectJobCandidatesStats } from '@/store/candidates/candidatesSelectors';
 import { CandidateSkillsAnalysis } from './CandidateSkillsAnalysis';
+import { JobPermissions } from './JobPermissions';
 
 const candidateTabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'responses', label: 'Interview Responses' },
   { id: 'analytics', label: 'Analytics' },
+  { id: 'permissions', label: 'Team Access' },
 ];
 
 const getResumeScoreStyle = (score: number) => {
@@ -296,6 +298,7 @@ export default function JobCandidates() {
                 )}
                 {activeTab === 'responses' && <CandidateResponses />}
                 {activeTab === 'analytics' && <CandidateAnalytics />}
+                {activeTab === 'permissions' && <JobPermissions />}
               </div>
             </div>
           ) : (

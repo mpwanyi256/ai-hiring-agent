@@ -20,6 +20,7 @@ import {
   PlusIcon,
   DocumentTextIcon,
   UserIcon,
+  BellIcon,
 } from '@heroicons/react/24/outline';
 import BillingButton from '@/components/billing/BillingButton';
 import { useSubscriptionModal } from '@/components/modals/SubscriptionModal';
@@ -163,7 +164,26 @@ export default function Sidebar({
       href: '/dashboard/settings',
       icon: CogIcon,
       description: 'Account preferences',
-      // No children, all handled as tabs in the settings page
+      children: [
+        {
+          name: 'General',
+          href: '/dashboard/settings?tab=general',
+          icon: CogIcon,
+          description: 'Basic settings',
+        },
+        {
+          name: 'Account',
+          href: '/dashboard/settings?tab=account',
+          icon: UserIcon,
+          description: 'User account',
+        },
+        {
+          name: 'Notifications',
+          href: '/dashboard/settings?tab=notifications',
+          icon: BellIcon,
+          description: 'Email notifications',
+        },
+      ],
     },
   ];
 

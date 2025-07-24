@@ -17,9 +17,9 @@ export interface JobPermission {
 }
 
 export interface JobPermissionDetailed extends JobPermission {
-  first_name: string;
-  last_name: string;
-  email: string;
+  user_first_name: string;
+  user_last_name: string;
+  user_email: string;
   user_role: string;
   job_title: string;
   job_owner_id: string;
@@ -30,6 +30,12 @@ export interface JobPermissionDetailed extends JobPermission {
 export interface GrantJobPermissionPayload {
   job_id: string;
   user_id: string;
+  permission_level: JobPermissionLevel;
+}
+
+export interface GrantJobPermissionByEmailPayload {
+  job_id: string;
+  user_email: string;
   permission_level: JobPermissionLevel;
 }
 

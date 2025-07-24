@@ -6434,10 +6434,10 @@ reselect@^5.1.0:
   resolved "https://registry.npmjs.org/reselect/-/reselect-5.1.1.tgz"
   integrity sha512-K/BG6eIky/SBpzfHZv/dd+9JBFiS4SWV7FIujVyJRux6e45+73RaUHXLmIR1f7WOMaQ0U1km6qwklRQxpJJY0w==
 
-resend@^4.6.0:
-  version "4.6.0"
-  resolved "https://registry.yarnpkg.com/resend/-/resend-4.6.0.tgz#e0e66fd225b0a0b6729807ec0cf83f2a5f6be3f2"
-  integrity sha512-D5T2I82FvEUYFlrHzaDvVtr5ADHdhuoLaXgLFGABKyNtQgPWIuz0Vp2L2Evx779qjK37aF4kcw1yXJDHhA2JnQ==
+resend@^4.7.0:
+  version "4.7.0"
+  resolved "https://registry.yarnpkg.com/resend/-/resend-4.7.0.tgz#0668038ce9ffcfa496175ea8c782727d879ffe73"
+  integrity sha512-30IbXGBUbmDweQH2IlO53XOXX7ndjYV9xFZ8IEBiWqefqQ/qmTsgrX0Ab6MUnmobJXbpdReVv+iXGRQPubQL5Q==
   dependencies:
     "@react-email/render" "1.1.2"
 

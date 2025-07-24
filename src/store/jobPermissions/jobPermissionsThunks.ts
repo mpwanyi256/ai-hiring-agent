@@ -2,6 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import {
   JobPermissionDetailed,
   GrantJobPermissionPayload,
+  GrantJobPermissionByEmailPayload,
   UpdateJobPermissionPayload,
 } from '@/types/jobPermissions';
 
@@ -21,19 +22,21 @@ export const fetchJobPermissions = createAsyncThunk(
   },
 );
 
-// Grant job permission to a user
+// Grant job permission to a user by user_id
 export const grantJobPermission = createAsyncThunk(
   'jobPermissions/grantJobPermission',
-  async (payload: GrantJobPermissionPayload) => {
+  async (payload: GrantJobPermissionPayload | GrantJobPermissionByEmailPayload) => {
+    const requestBody =
+      'user_id' in payload
+        ? { user_id: payload.user_id, permission_level: payload.permission_level }
+        : { user_email: payload.user_email, permission_level: payload.permission_level };
+
     const response = await fetch(`/api/jobs/${payload.job_id}/permissions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        user_id: payload.user_id,
-        permission_level: payload.permission_level,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
