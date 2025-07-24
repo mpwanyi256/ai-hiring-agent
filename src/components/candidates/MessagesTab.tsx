@@ -11,6 +11,7 @@ import MessageInput from '../messages/MessageInput';
 const MessagesTab: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
 
   const user = useAppSelector(selectUser);
   const candidate = useAppSelector(selectSelectedCandidate);
@@ -27,6 +28,8 @@ const MessagesTab: React.FC = () => {
     addReaction,
     refreshMessages,
     loadMoreMessages,
+    editMessage,
+    deleteMessage,
   } = useMessages({
     candidateId: candidate?.id || '',
     jobId: candidate?.jobId || '',
@@ -34,8 +37,8 @@ const MessagesTab: React.FC = () => {
     refreshInterval: 30000, // 30 seconds
   });
 
-  const handleSendMessage = async (text: string, replyToId?: string) => {
-    await sendMessage(text, replyToId);
+  const handleSendMessage = async (text: string, replyToId?: string, attachment?: File) => {
+    await sendMessage(text, replyToId, attachment);
   };
 
   const handleReaction = async (messageId: string, emoji: string) => {
@@ -54,13 +57,47 @@ const MessagesTab: React.FC = () => {
     setReplyingTo(null);
   };
 
+  const handleEdit = async (messageId: string, newText: string) => {
+    try {
+      await editMessage(messageId, newText);
+    } catch (error) {
+      console.error('Failed to edit message:', error);
+    }
+  };
+
+  const handleDelete = async (messageId: string) => {
+    try {
+      await deleteMessage(messageId);
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+    }
+  };
+
   const handleStartConversation = () => {
     // Focus the input field when starting conversation
     const inputElement = document.querySelector(
-      'input[placeholder="Type your message..."]',
+      'input[placeholder*="Type your message"], input[placeholder*="Add a caption"]',
     ) as HTMLInputElement;
     if (inputElement) {
       inputElement.focus();
+    }
+  };
+
+  const handleTypingStart = () => {
+    if (user?.id && !typingUsers.has(user.id)) {
+      setTypingUsers((prev) => new Set([...prev, user.id]));
+      // In a real implementation, you'd send this to other users via WebSocket
+    }
+  };
+
+  const handleTypingStop = () => {
+    if (user?.id) {
+      setTypingUsers((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(user.id);
+        return newSet;
+      });
+      // In a real implementation, you'd send this to other users via WebSocket
     }
   };
 
@@ -74,23 +111,32 @@ const MessagesTab: React.FC = () => {
 
   const getSubtitle = () => {
     const participantCount = getUniqueParticipants();
+    if (typingUsers.size > 0) {
+      return `Someone is typing...`;
+    }
     return `${participantCount} team member${participantCount !== 1 ? 's' : ''} participating`;
   };
 
   const getCandidateName = () => {
-    // This should be fetched from candidate data
-    // For now, return a generic name
-    return candidate?.name || 'this candidate';
+    // Try to get real candidate name from the selected candidate
+    // You might need to fetch this from the API or store
+    if (candidate?.name) return candidate.name;
+    if (candidate?.firstName && candidate?.lastName) {
+      return `${candidate.firstName} ${candidate.lastName}`;
+    }
+    if (candidate?.firstName) return candidate.firstName;
+    if (candidate?.email) return candidate.email;
+    return 'this candidate';
   };
 
-  // Simulate typing indicator when there's activity
+  // Enhanced typing indicator logic
   useEffect(() => {
-    if (messages.length > 0) {
+    if (typingUsers.size > 0) {
       setIsTyping(true);
-      const timer = setTimeout(() => setIsTyping(false), 1500);
-      return () => clearTimeout(timer);
+    } else {
+      setIsTyping(false);
     }
-  }, [messages.length]);
+  }, [typingUsers]);
 
   // Show loading state if candidate data is not available
   if (!candidate?.id || !candidate?.jobId) {
@@ -126,9 +172,12 @@ const MessagesTab: React.FC = () => {
         hasMore={hasMore}
         isTyping={isTyping}
         candidateName={getCandidateName()}
+        currentUserId={user?.id}
         onLoadMore={loadMoreMessages}
         onReaction={handleReaction}
         onReply={handleReply}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
         onStartConversation={handleStartConversation}
       />
 
@@ -138,6 +187,8 @@ const MessagesTab: React.FC = () => {
         sendingMessage={sendingMessage}
         replyingTo={replyingTo}
         onCancelReply={handleCancelReply}
+        onTypingStart={handleTypingStart}
+        onTypingStop={handleTypingStop}
         placeholder="Type your message..."
       />
     </div>

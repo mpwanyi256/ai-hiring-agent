@@ -12,9 +12,12 @@ interface MessagesListProps {
   hasMore: boolean;
   isTyping: boolean;
   candidateName?: string;
+  currentUserId?: string;
   onLoadMore: () => void;
   onReaction: (messageId: string, emoji: string) => void;
   onReply: (message: Message) => void;
+  onEdit: (messageId: string, newText: string) => void;
+  onDelete: (messageId: string) => void;
   onStartConversation?: () => void;
 }
 
@@ -25,9 +28,12 @@ const MessagesList: React.FC<MessagesListProps> = ({
   hasMore,
   isTyping,
   candidateName,
+  currentUserId,
   onLoadMore,
   onReaction,
   onReply,
+  onEdit,
+  onDelete,
   onStartConversation,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -91,6 +97,9 @@ const MessagesList: React.FC<MessagesListProps> = ({
                 isLastInGroup={isLastInGroup}
                 onReaction={onReaction}
                 onReply={onReply}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                currentUserId={currentUserId}
               />
             );
           })}

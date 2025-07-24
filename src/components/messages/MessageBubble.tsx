@@ -1,6 +1,17 @@
 import React from 'react';
-import { User, Shield, Crown, Check, CheckCheck } from 'lucide-react';
+import {
+  User,
+  Shield,
+  Crown,
+  Check,
+  CheckCheck,
+  Download,
+  Image,
+  FileText,
+  File,
+} from 'lucide-react';
 import { Message } from '@/hooks/useMessages';
+import MessageActions from './MessageActions';
 
 interface MessageBubbleProps {
   message: Message;
@@ -8,6 +19,9 @@ interface MessageBubbleProps {
   isLastInGroup: boolean;
   onReaction: (messageId: string, emoji: string) => void;
   onReply: (message: Message) => void;
+  onEdit: (messageId: string, newText: string) => void;
+  onDelete: (messageId: string) => void;
+  currentUserId?: string;
 }
 
 const getRoleIcon = (role: string) => {
@@ -77,14 +91,37 @@ const getStatusIcon = (status: string) => {
   }
 };
 
+const getFileIcon = (fileType: string) => {
+  if (fileType.startsWith('image/')) {
+    return <Image className="h-5 w-5 text-blue-500" />;
+  } else if (fileType === 'application/pdf') {
+    return <FileText className="h-5 w-5 text-red-500" />;
+  } else {
+    return <File className="h-5 w-5 text-gray-500" />;
+  }
+};
+
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
 const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   showAvatar,
   isLastInGroup,
   onReaction,
   onReply,
+  onEdit,
+  onDelete,
+  currentUserId,
 }) => {
   const isCurrentUser = message.sender.isCurrentUser;
+  const canEdit = isCurrentUser && !message.attachment;
+  const canDelete = isCurrentUser;
 
   return (
     <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}>
@@ -102,7 +139,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         )}
 
-        <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'} space-y-1`}>
+        <div
+          className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'} space-y-1 relative`}
+        >
           {/* Sender Info */}
           {!isCurrentUser && showAvatar && (
             <div className="flex items-center space-x-2 px-3">
@@ -126,24 +165,87 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             </div>
           )}
 
-          {/* Message Bubble */}
-          <div
-            className={`relative px-4 py-2 rounded-2xl ${
-              isCurrentUser
-                ? 'bg-blue-500 text-white'
-                : 'bg-white text-gray-900 shadow-sm border border-gray-200'
-            } ${!showAvatar && !isCurrentUser ? 'ml-10' : ''}`}
-          >
-            <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
-
-            {/* Message Status & Time */}
+          {/* File Attachment */}
+          {message.attachment && (
             <div
-              className={`flex items-center justify-end space-x-1 mt-1 ${isCurrentUser ? 'text-blue-100' : 'text-gray-400'}`}
+              className={`mx-3 mb-2 p-3 bg-gray-50 border border-gray-200 rounded-lg ${!showAvatar && !isCurrentUser ? 'ml-10' : ''}`}
             >
-              <span className="text-xs">{formatTime(message.timestamp)}</span>
-              {isCurrentUser && getStatusIcon(message.status)}
+              <div className="flex items-center space-x-3">
+                {getFileIcon(message.attachment.type)}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {message.attachment.name}
+                  </p>
+                  <p className="text-xs text-gray-500">{formatFileSize(message.attachment.size)}</p>
+                </div>
+                <a
+                  href={message.attachment.url}
+                  download={message.attachment.name}
+                  className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                  title="Download file"
+                >
+                  <Download className="h-4 w-4 text-gray-500" />
+                </a>
+              </div>
+
+              {/* Image Preview */}
+              {message.attachment.type.startsWith('image/') && (
+                <div className="mt-2">
+                  <img
+                    src={message.attachment.url}
+                    alt={message.attachment.name}
+                    className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90"
+                    style={{ maxHeight: '200px' }}
+                    onClick={() => window.open(message.attachment!.url, '_blank')}
+                  />
+                </div>
+              )}
             </div>
-          </div>
+          )}
+
+          {/* Message Bubble */}
+          {message.text.trim() && (
+            <div
+              className={`relative px-4 py-2 rounded-2xl ${
+                isCurrentUser
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-white text-gray-900 shadow-sm border border-gray-200'
+              } ${!showAvatar && !isCurrentUser ? 'ml-10' : ''}`}
+            >
+              <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
+
+              {/* Edited indicator */}
+              {message.editedAt && (
+                <span
+                  className={`text-xs italic ${isCurrentUser ? 'text-blue-100' : 'text-gray-400'}`}
+                >
+                  {' (edited)'}
+                </span>
+              )}
+
+              {/* Message Status & Time */}
+              <div
+                className={`flex items-center justify-end space-x-1 mt-1 ${isCurrentUser ? 'text-blue-100' : 'text-gray-400'}`}
+              >
+                <span className="text-xs">{formatTime(message.timestamp)}</span>
+                {isCurrentUser && getStatusIcon(message.status)}
+              </div>
+            </div>
+          )}
+
+          {/* Message Actions */}
+          {(canEdit || canDelete) && (
+            <div className={`${isCurrentUser ? 'self-end' : 'self-start'} px-3`}>
+              <MessageActions
+                message={message}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onReply={onReply}
+                canEdit={canEdit}
+                canDelete={canDelete}
+              />
+            </div>
+          )}
 
           {/* Reactions */}
           {message.reactions && message.reactions.length > 0 && (

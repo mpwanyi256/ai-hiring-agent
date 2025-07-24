@@ -20,6 +20,13 @@ export interface MessageReplyTo {
   sender: string;
 }
 
+export interface MessageAttachment {
+  url: string;
+  name: string;
+  size: number;
+  type: string;
+}
+
 export interface Message {
   id: string;
   sender: MessageSender;
@@ -29,12 +36,7 @@ export interface Message {
   reactions?: MessageReaction[];
   replyTo?: MessageReplyTo;
   editedAt?: string;
-  attachment?: {
-    url: string;
-    name: string;
-    size: number;
-    type: string;
-  };
+  attachment?: MessageAttachment;
 }
 
 interface UseMessagesProps {
@@ -50,13 +52,16 @@ interface UseMessagesReturn {
   error: string | null;
   unreadCount: number;
   hasMore: boolean;
-  sendMessage: (text: string, replyToId?: string) => Promise<void>;
+  sendMessage: (text: string, replyToId?: string, attachment?: File) => Promise<void>;
   sendingMessage: boolean;
   addReaction: (messageId: string, emoji: string) => Promise<void>;
   removeReaction: (messageId: string, emoji: string) => Promise<void>;
   markAsRead: (messageIds: string[]) => Promise<void>;
   refreshMessages: () => Promise<void>;
   loadMoreMessages: () => Promise<void>;
+  editMessage: (messageId: string, newText: string) => Promise<void>;
+  deleteMessage: (messageId: string) => Promise<void>;
+  uploadFile: (file: File) => Promise<string>;
 }
 
 export function useMessages({
@@ -75,6 +80,62 @@ export function useMessages({
 
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastMessageIdRef = useRef<string | null>(null);
+
+  // Upload file to storage
+  const uploadFile = useCallback(
+    async (file: File): Promise<string> => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('candidate_id', candidateId);
+      formData.append('job_id', jobId);
+
+      const response = await fetch('/api/messages/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload file');
+      }
+
+      const data = await response.json();
+      return data.url;
+    },
+    [candidateId, jobId],
+  );
+
+  // Mark messages as read
+  const markAsRead = useCallback(
+    async (messageIds: string[]) => {
+      if (!messageIds.length) return;
+
+      try {
+        const response = await fetch('/api/messages/mark-read', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message_ids: messageIds,
+            candidate_id: candidateId,
+            job_id: jobId,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to mark messages as read');
+        }
+
+        const data = await response.json();
+        setUnreadCount(data.unreadCount || 0);
+      } catch (err) {
+        console.error('Error marking messages as read:', err);
+      }
+    },
+    [candidateId, jobId],
+  );
 
   // Fetch messages from API
   const fetchMessages = useCallback(
@@ -138,18 +199,31 @@ export function useMessages({
         setLoading(false);
       }
     },
-    [candidateId, jobId, enabled, offset],
+    [candidateId, jobId, enabled, offset, markAsRead],
   );
 
   // Send a new message
   const sendMessage = useCallback(
-    async (text: string, replyToId?: string) => {
-      if (!candidateId || !jobId || !text.trim()) return;
+    async (text: string, replyToId?: string, attachment?: File) => {
+      if (!candidateId || !jobId || (!text.trim() && !attachment)) return;
 
       setSendingMessage(true);
       setError(null);
 
       try {
+        let attachmentData = null;
+
+        // Upload file if present
+        if (attachment) {
+          const fileUrl = await uploadFile(attachment);
+          attachmentData = {
+            url: fileUrl,
+            name: attachment.name,
+            size: attachment.size,
+            type: attachment.type,
+          };
+        }
+
         const response = await fetch(`/api/candidates/${candidateId}/messages`, {
           method: 'POST',
           headers: {
@@ -157,8 +231,9 @@ export function useMessages({
           },
           body: JSON.stringify({
             job_id: jobId,
-            text: text.trim(),
+            text: text.trim() || (attachment ? `Shared: ${attachment.name}` : ''),
             reply_to_id: replyToId || null,
+            attachment: attachmentData,
           }),
         });
 
@@ -183,8 +258,62 @@ export function useMessages({
         setSendingMessage(false);
       }
     },
-    [candidateId, jobId, fetchMessages],
+    [candidateId, jobId, fetchMessages, uploadFile],
   );
+
+  // Edit a message
+  const editMessage = useCallback(async (messageId: string, newText: string) => {
+    if (!messageId || !newText.trim()) return;
+
+    try {
+      const response = await fetch(`/api/messages/${messageId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: newText.trim() }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to edit message');
+      }
+
+      // Update the message in the local state
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId
+            ? { ...msg, text: newText.trim(), editedAt: new Date().toISOString() }
+            : msg,
+        ),
+      );
+    } catch (err) {
+      console.error('Error editing message:', err);
+      setError(err instanceof Error ? err.message : 'Failed to edit message');
+    }
+  }, []);
+
+  // Delete a message
+  const deleteMessage = useCallback(async (messageId: string) => {
+    if (!messageId) return;
+
+    try {
+      const response = await fetch(`/api/messages/${messageId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete message');
+      }
+
+      // Remove the message from local state
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+    } catch (err) {
+      console.error('Error deleting message:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete message');
+    }
+  }, []);
 
   // Add or toggle reaction
   const addReaction = useCallback(async (messageId: string, emoji: string) => {
@@ -242,38 +371,6 @@ export function useMessages({
     [fetchMessages],
   );
 
-  // Mark messages as read
-  const markAsRead = useCallback(
-    async (messageIds: string[]) => {
-      if (!messageIds.length) return;
-
-      try {
-        const response = await fetch('/api/messages/mark-read', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message_ids: messageIds,
-            candidate_id: candidateId,
-            job_id: jobId,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to mark messages as read');
-        }
-
-        const data = await response.json();
-        setUnreadCount(data.unreadCount || 0);
-      } catch (err) {
-        console.error('Error marking messages as read:', err);
-      }
-    },
-    [candidateId, jobId],
-  );
-
   // Load more messages (pagination)
   const loadMoreMessages = useCallback(async () => {
     if (!hasMore || loading) return;
@@ -329,5 +426,8 @@ export function useMessages({
     markAsRead,
     refreshMessages,
     loadMoreMessages,
+    editMessage,
+    deleteMessage,
+    uploadFile,
   };
 }
