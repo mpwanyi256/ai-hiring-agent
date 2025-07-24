@@ -11,6 +11,7 @@ import RescheduleInterviewModal from '../dashboard/RescheduleInterviewModal';
 import { fetchShortlistedCandidates } from '@/store/candidates/candidatesThunks';
 import CandidateDetailsPanel from '../candidates/CandidateDetailsPanel';
 import { UpdateApplicationStatus } from './UpdateApplicationStatus';
+import { setSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSlice';
 
 interface JobShortlistedProps {
   jobId: string;
@@ -49,6 +50,8 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
   });
 
   const handleOpenDetails = (candidate: CandidateWithEvaluation) => {
+    // TODO:: Remove all props to child components for candidate and rely on the store
+    dispatch(setSelectedCandidate(candidate));
     setDetailsPanel({ isOpen: true, candidate });
   };
 
@@ -73,6 +76,11 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
         limit: 50,
       }),
     );
+
+    return () => {
+      dispatch(setSelectedCandidate(null));
+      setDetailsPanel({ isOpen: false, candidate: null });
+    };
   }, [dispatch, jobId]);
 
   const formatDate = (dateString: string) => {
