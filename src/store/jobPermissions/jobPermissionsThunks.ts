@@ -5,15 +5,8 @@ import { RootState } from '..';
 // Fetch job permissions for a specific job
 export const fetchJobPermissions = createAsyncThunk(
   'jobPermissions/fetchJobPermissions',
-  async (jobId: string, { getState }) => {
-    const state = getState() as RootState;
-    const user = state.auth.user;
-
-    if (!user) {
-      throw new Error('You need to be logged in to view this page');
-    }
-
-    const response = await fetch(`/api/jobs/${jobId}/permissions?user_id=${user.id}`);
+  async (jobId: string) => {
+    const response = await fetch(`/api/jobs/${jobId}/permissions`);
 
     if (!response.ok) {
       const error = await response.json();

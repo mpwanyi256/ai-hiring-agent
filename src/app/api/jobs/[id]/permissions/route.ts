@@ -4,14 +4,34 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: jobId } = await params;
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
 
-    if (!jobId || !userId) {
+    if (!jobId) {
       return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
     }
 
     const supabase = await createClient();
+
+    // Get current user with retry logic for better reliability
+    let user;
+    let userError;
+
+    for (let i = 0; i < 3; i++) {
+      const userResult = await supabase.auth.getUser();
+      user = userResult.data.user;
+      userError = userResult.error;
+
+      if (user && !userError) break;
+
+      // Wait a bit before retrying
+      if (i < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+
+    if (userError || !user) {
+      console.error('Auth error after retries:', userError);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // Check if user has permission to view job permissions
     const { data: job, error: jobError } = await supabase
@@ -29,7 +49,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id, role')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single();
 
     if (profileError || !profile) {
@@ -37,7 +57,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    const canViewPermissions = job.profile_id === userId || profile.role === 'admin';
+    const canViewPermissions = job.profile_id === user.id || profile.role === 'admin';
 
     if (!canViewPermissions) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });

@@ -13,10 +13,17 @@ import {
   selectJobPermissions,
   selectJobPermissionsLoading,
 } from '@/store/jobPermissions/jobPermissionsSelectors';
-import { UserGroupIcon, TrashIcon, PlusIcon, CheckIcon } from '@heroicons/react/24/outline';
+import {
+  UserGroupIcon,
+  TrashIcon,
+  PlusIcon,
+  CheckIcon,
+  StarIcon,
+} from '@heroicons/react/24/outline';
 import Button from '@/components/ui/Button';
 import { JobPermissionLevel } from '@/types/jobPermissions';
 import { useToast } from '@/components/providers/ToastProvider';
+import { selectUser } from '@/store/auth/authSelectors';
 
 const permissionLevelLabels = {
   [JobPermissionLevel.VIEWER]: 'Viewer',
@@ -47,6 +54,7 @@ export function JobPermissions() {
   const job = useAppSelector(selectCurrentJob);
   const permissions = useAppSelector(selectJobPermissions);
   const isLoading = useAppSelector(selectJobPermissionsLoading);
+  const currentUser = useAppSelector(selectUser);
   const [companyMembers, setCompanyMembers] = useState<CompanyMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
@@ -77,6 +85,12 @@ export function JobPermissions() {
 
   const handleRemovePermission = async (userId: string) => {
     if (!job?.id) return;
+
+    // Prevent job creator from removing themselves
+    if (job.profileId === userId && currentUser?.id === userId) {
+      showError('You cannot remove yourself as the job creator');
+      return;
+    }
 
     try {
       await dispatch(
@@ -154,6 +168,9 @@ export function JobPermissions() {
     return fullName.includes(searchTerm) || member.email.toLowerCase().includes(searchTerm);
   });
 
+  const isJobCreator = (userId: string) => job.profileId === userId;
+  const isCurrentUser = (userId: string) => currentUser?.id === userId;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -191,20 +208,39 @@ export function JobPermissions() {
             {permissions.map((permission) => (
               <div key={permission.id} className="p-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-primary">
-                      {permission.user_first_name?.[0] ||
-                        (permission.user_email && permission.user_email.length > 0
-                          ? permission.user_email[0].toUpperCase()
-                          : '?')}
-                    </span>
+                  <div className="relative">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-primary">
+                        {permission.user_first_name?.[0] ||
+                          (permission.user_email && permission.user_email.length > 0
+                            ? permission.user_email[0].toUpperCase()
+                            : '?')}
+                      </span>
+                    </div>
+                    {isJobCreator(permission.user_id) && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
+                        <StarIcon className="w-2.5 h-2.5 text-white" />
+                      </div>
+                    )}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {permission.user_first_name && permission.user_last_name
-                        ? `${permission.user_first_name} ${permission.user_last_name}`
-                        : permission.user_email || 'Unknown User'}
-                    </p>
+                    <div className="flex items-center space-x-2">
+                      <p className="text-sm font-medium text-gray-900">
+                        {permission.user_first_name && permission.user_last_name
+                          ? `${permission.user_first_name} ${permission.user_last_name}`
+                          : permission.user_email || 'Unknown User'}
+                      </p>
+                      {isCurrentUser(permission.user_id) && (
+                        <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">
+                          You
+                        </span>
+                      )}
+                      {isJobCreator(permission.user_id) && (
+                        <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full">
+                          Creator
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500">{permission.user_email || 'No email'}</p>
                   </div>
                 </div>
@@ -217,7 +253,8 @@ export function JobPermissions() {
                         e.target.value as JobPermissionLevel,
                       )
                     }
-                    className="text-xs border border-gray-300 rounded px-2 py-1"
+                    disabled={isJobCreator(permission.user_id)}
+                    className="text-xs border border-gray-300 rounded px-2 py-1 disabled:bg-gray-100"
                   >
                     {Object.entries(permissionLevelLabels).map(([level, label]) => (
                       <option key={level} value={level}>
@@ -232,8 +269,13 @@ export function JobPermissions() {
                   </p>
                   <button
                     onClick={() => handleRemovePermission(permission.user_id)}
-                    className="text-red-500 hover:text-red-700 p-1"
-                    title="Remove member"
+                    disabled={isJobCreator(permission.user_id) && isCurrentUser(permission.user_id)}
+                    className="text-red-500 hover:text-red-700 p-1 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    title={
+                      isJobCreator(permission.user_id) && isCurrentUser(permission.user_id)
+                        ? 'Cannot remove yourself as job creator'
+                        : 'Remove member'
+                    }
                   >
                     <TrashIcon className="w-4 h-4" />
                   </button>
