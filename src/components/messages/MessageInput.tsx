@@ -1,16 +1,17 @@
-import React, { useState, useRef } from 'react';
-import { Send, Smile, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Paperclip, Smile, X, Bold, Italic, Link, Reply } from 'lucide-react';
 import { Message } from '@/hooks/useMessages';
 import FileUpload from './FileUpload';
+import EmojiPicker from './EmojiPicker';
 
 interface MessageInputProps {
   onSendMessage: (text: string, replyToId?: string, attachment?: File) => Promise<void>;
   sendingMessage: boolean;
-  replyingTo: Message | null;
-  onCancelReply: () => void;
-  placeholder?: string;
+  replyingTo?: Message | null;
+  onCancelReply?: () => void;
   onTypingStart?: () => void;
   onTypingStop?: () => void;
+  placeholder?: string;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
@@ -18,34 +19,35 @@ const MessageInput: React.FC<MessageInputProps> = ({
   sendingMessage,
   replyingTo,
   onCancelReply,
-  placeholder = 'Type your message...',
   onTypingStart,
   onTypingStop,
+  placeholder = 'Type your message...',
 }) => {
-  const [input, setInput] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isTyping, setIsTyping] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [message, setMessage] = useState('');
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showFileUpload, setShowFileUpload] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSend = async () => {
-    if ((!input.trim() && !selectedFile) || sendingMessage) return;
-
-    try {
-      await onSendMessage(input, replyingTo?.id, selectedFile || undefined);
-      setInput('');
-      setSelectedFile(null);
-      onCancelReply();
-      handleTypingStop();
-    } catch (error) {
-      console.error('Failed to send message:', error);
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
-  };
+  }, [message]);
 
-  const handleTypingStart = () => {
-    if (!isTyping) {
-      setIsTyping(true);
-      onTypingStart?.();
+  // Handle typing indicators
+  const handleInputChange = (value: string) => {
+    setMessage(value);
+
+    // Trigger typing start
+    if (value && onTypingStart) {
+      onTypingStart();
     }
 
     // Clear existing timeout
@@ -53,157 +55,304 @@ const MessageInput: React.FC<MessageInputProps> = ({
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Set new timeout to stop typing after 2 seconds of inactivity
+    // Set timeout to stop typing (increased from 2 to 5 seconds)
     typingTimeoutRef.current = setTimeout(() => {
-      handleTypingStop();
-    }, 2000);
+      if (onTypingStop) {
+        onTypingStop();
+      }
+    }, 5000);
   };
 
-  const handleTypingStop = () => {
-    setIsTyping(false);
-    onTypingStop?.();
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = null;
+  // Stop typing when component unmounts
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (onTypingStop) {
+        onTypingStop();
+      }
+    };
+  }, [onTypingStop]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if ((!message.trim() && !attachment) || sendingMessage) {
+      return;
     }
-  };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
+    const messageText = message.trim();
+    const currentAttachment = attachment;
+    const replyToId = replyingTo?.id;
 
-    if (e.target.value.length > 0) {
-      handleTypingStart();
-    } else {
-      handleTypingStop();
+    // Clear form
+    setMessage('');
+    setAttachment(null);
+    setShowFileUpload(false);
+
+    // Stop typing indicator
+    if (onTypingStop) {
+      onTypingStop();
+    }
+
+    try {
+      await onSendMessage(messageText, replyToId, currentAttachment || undefined);
+    } catch (error) {
+      console.error('Failed to send message:', error);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSubmit(e);
     } else if (e.key === 'Escape') {
-      if (replyingTo) {
+      if (replyingTo && onCancelReply) {
         onCancelReply();
-      } else if (selectedFile) {
-        setSelectedFile(null);
+      } else if (showEmojiPicker) {
+        setShowEmojiPicker(false);
+      } else if (showFileUpload) {
+        setShowFileUpload(false);
       }
     }
   };
 
+  const handleEmojiSelect = (emoji: string) => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newText = message.slice(0, start) + emoji + message.slice(end);
+      setMessage(newText);
+
+      // Restore cursor position after emoji
+      setTimeout(() => {
+        textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+        textarea.focus();
+      }, 0);
+    } else {
+      setMessage((prev) => prev + emoji);
+    }
+  };
+
+  const insertFormatting = (before: string, after?: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = message.slice(start, end);
+    const afterText = after || before;
+
+    let newText: string;
+    let newCursorPos: number;
+
+    if (selectedText) {
+      // Wrap selected text
+      newText = message.slice(0, start) + before + selectedText + afterText + message.slice(end);
+      newCursorPos = start + before.length + selectedText.length + afterText.length;
+    } else {
+      // Insert formatting markers
+      newText = message.slice(0, start) + before + afterText + message.slice(end);
+      newCursorPos = start + before.length;
+    }
+
+    setMessage(newText);
+
+    // Restore cursor position
+    setTimeout(() => {
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+      textarea.focus();
+    }, 0);
+  };
+
   const handleFileSelect = (file: File) => {
-    setSelectedFile(file);
+    setAttachment(file);
+    setShowFileUpload(false);
   };
 
-  const handleFileRemove = () => {
-    setSelectedFile(null);
+  const removeAttachment = () => {
+    setAttachment(null);
   };
 
-  // Cleanup timeout on unmount
-  React.useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
-  }, []);
+  const canSend = (message.trim() || attachment) && !sendingMessage;
 
   return (
-    <div className="bg-white border-t border-gray-200">
-      {/* Reply Context Bar */}
+    <div className="border-t border-gray-200 bg-white">
+      {/* Reply Preview */}
       {replyingTo && (
-        <div className="bg-blue-50 border-t border-blue-200 p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-blue-600">↳ Replying to</span>
-              <span className="text-sm font-medium text-blue-800">{replyingTo.sender.name}</span>
+        <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-2 min-w-0">
+              <Reply className="h-4 w-4 text-gray-400 mt-1 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-gray-600">
+                  Replying to {replyingTo.sender.name}
+                </p>
+                <p className="text-sm text-gray-500 truncate">
+                  {replyingTo.text || (replyingTo.attachment ? 'Sent an attachment' : 'Message')}
+                </p>
+              </div>
             </div>
             <button
               onClick={onCancelReply}
-              className="text-blue-600 hover:text-blue-800 transition-colors"
-              title="Cancel reply (Esc)"
+              className="p-1 hover:bg-gray-200 rounded transition-colors"
+              type="button"
             >
-              ✕
+              <X className="h-4 w-4 text-gray-400" />
             </button>
           </div>
-          <p className="text-sm text-blue-700 truncate mt-1">{replyingTo.text}</p>
         </div>
       )}
 
-      {/* Input Area */}
-      <div className="p-4">
-        {/* File Preview */}
-        {selectedFile && (
-          <FileUpload
-            onFileSelect={handleFileSelect}
-            onFileRemove={handleFileRemove}
-            selectedFile={selectedFile}
-            disabled={sendingMessage}
-          />
-        )}
-
-        <div className="flex items-end space-x-2">
-          {/* File Upload Button */}
-          <FileUpload
-            onFileSelect={handleFileSelect}
-            onFileRemove={handleFileRemove}
-            selectedFile={null}
-            disabled={sendingMessage}
-          />
-
-          {/* Input Field */}
-          <div className="flex-1 relative">
-            <input
-              ref={inputRef}
-              type="text"
-              className="w-full border border-gray-300 rounded-2xl px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50"
-              placeholder={selectedFile ? 'Add a caption...' : placeholder}
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              onBlur={handleTypingStop}
-              disabled={sendingMessage}
-              maxLength={2000}
-            />
-
-            {/* Emoji Button */}
+      {/* Attachment Preview */}
+      {attachment && (
+        <div className="px-4 py-2 bg-blue-50 border-b border-blue-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Paperclip className="h-4 w-4 text-blue-500" />
+              <span className="text-sm text-blue-700 truncate">{attachment.name}</span>
+              <span className="text-xs text-blue-500">
+                ({(attachment.size / 1024 / 1024).toFixed(1)} MB)
+              </span>
+            </div>
             <button
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 transition-colors"
-              disabled
-              title="Emoji picker (coming soon)"
+              onClick={removeAttachment}
+              className="p-1 hover:bg-blue-200 rounded transition-colors"
+              type="button"
             >
-              <Smile className="h-4 w-4" />
+              <X className="h-4 w-4 text-blue-500" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Input Area */}
+      <form onSubmit={handleSubmit} ref={formRef} className="relative">
+        <div
+          className={`flex items-end gap-3 px-3 py-3 ${isFocused ? 'bg-blue-50' : ''} transition-colors`}
+        >
+          {/* Formatting Toolbar (Desktop) */}
+          <div className="hidden md:flex items-center gap-1 pb-1">
+            <button
+              type="button"
+              onClick={() => insertFormatting('**')}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              title="Bold"
+            >
+              <Bold className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => insertFormatting('*')}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              title="Italic"
+            >
+              <Italic className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => insertFormatting('[Link text](', ')')}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              title="Link"
+            >
+              <Link className="h-4 w-4" />
             </button>
           </div>
 
+          {/* Text Input */}
+          <div className="flex-1 relative">
+            <textarea
+              ref={textareaRef}
+              value={message}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder={placeholder}
+              rows={1}
+              className="w-full resize-none border border-gray-300 rounded-lg px-4 py-3 pr-20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm placeholder-gray-400"
+              style={{ minHeight: '44px', maxHeight: '120px' }}
+              disabled={sendingMessage}
+            />
+
+            {/* Input Action Buttons */}
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+              {/* Emoji Picker */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                  title="Add emoji"
+                >
+                  <Smile className="h-4 w-4" />
+                </button>
+
+                <EmojiPicker
+                  isOpen={showEmojiPicker}
+                  onEmojiSelect={handleEmojiSelect}
+                  onClose={() => setShowEmojiPicker(false)}
+                  position="top"
+                />
+              </div>
+
+              {/* File Upload */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowFileUpload(!showFileUpload)}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                  title="Attach file"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </button>
+
+                {showFileUpload && (
+                  <div className="absolute bottom-full right-0 mb-2 z-10">
+                    <FileUpload
+                      onFileSelect={handleFileSelect}
+                      onClose={() => setShowFileUpload(false)}
+                      accept="image/*,.pdf,.doc,.docx,.txt,.csv"
+                      maxSize={10 * 1024 * 1024} // 10MB
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Send Button */}
-          <button
-            onClick={handleSend}
-            disabled={(!input.trim() && !selectedFile) || sendingMessage}
-            className={`p-2 rounded-lg transition-all ${
-              (input.trim() || selectedFile) && !sendingMessage
-                ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-md'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            }`}
-            title={`Send message${selectedFile ? ' with attachment' : ''} (Enter)`}
-          >
-            {sendingMessage ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Send className="h-5 w-5" />
-            )}
-          </button>
+          <div className="flex-shrink-0">
+            <button
+              type="submit"
+              disabled={!canSend}
+              className={`
+                w-11 h-11 rounded-lg transition-all duration-200 flex items-center justify-center
+                ${
+                  canSend
+                    ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md transform hover:scale-105'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }
+                ${sendingMessage ? 'animate-pulse' : ''}
+              `}
+              title={canSend ? 'Send message (Enter)' : 'Type a message or attach a file'}
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Message Hints */}
-        <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-          <div className="flex items-center space-x-4">
-            <span>Press Enter to send, Esc to cancel</span>
-            {selectedFile && <span className="text-blue-600">📎 File attached</span>}
-          </div>
-          <span>{input.length}/2000</span>
+        {/* Helper Text (Mobile) */}
+        <div className="md:hidden px-4 pb-2">
+          <p className="text-xs text-gray-500">
+            {isFocused
+              ? 'Press Enter to send • Shift+Enter for new line'
+              : 'Tap to start typing...'}
+          </p>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

@@ -1,8 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { ChevronUp, AlertCircle, Loader2 } from 'lucide-react';
-import { Message } from '@/hooks/useMessages';
+import { Message, TypingUser } from '@/hooks/useMessages';
 import MessageBubble from './MessageBubble';
-import TypingIndicator from './TypingIndicator';
 import EmptyState from './EmptyState';
 
 interface MessagesListProps {
@@ -10,7 +9,7 @@ interface MessagesListProps {
   loading: boolean;
   error: string | null;
   hasMore: boolean;
-  isTyping: boolean;
+  typingUsers: TypingUser[];
   candidateName?: string;
   currentUserId?: string;
   onLoadMore: () => void;
@@ -26,7 +25,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
   loading,
   error,
   hasMore,
-  isTyping,
+  typingUsers,
   candidateName,
   currentUserId,
   onLoadMore,
@@ -37,20 +36,42 @@ const MessagesList: React.FC<MessagesListProps> = ({
   onStartConversation,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll when messages change or typing status changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, typingUsers]);
+
+  // Get typing indicator text
+  const getTypingText = () => {
+    if (typingUsers.length === 0) return null;
+
+    // Filter out placeholder names and get first names
+    const names = typingUsers
+      .map((u) => u.name.split(' ')[0])
+      .filter((name) => name && name !== 'Current' && name !== 'Anonymous' && name.length > 0);
+
+    if (names.length === 0) return 'Someone is typing...';
+
+    if (names.length === 1) {
+      return `${names[0]} is typing...`;
+    } else if (names.length === 2) {
+      return `${names.join(' and ')} are typing...`;
+    } else {
+      return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]} are typing...`;
+    }
+  };
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
       {/* Load More Button */}
       {hasMore && (
         <div className="text-center p-4">
           <button
             onClick={onLoadMore}
             disabled={loading}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50"
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50 transition-colors"
           >
             <ChevronUp className="h-4 w-4 inline mr-1" />
             Load older messages
@@ -83,7 +104,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
       {/* Messages */}
       {messages.length > 0 && (
-        <div className="p-4 space-y-4">
+        <div className="px-3 py-2 space-y-3">
           {messages.map((message, index) => {
             const showAvatar = index === 0 || messages[index - 1].sender.id !== message.sender.id;
             const isLastInGroup =
@@ -104,11 +125,31 @@ const MessagesList: React.FC<MessagesListProps> = ({
             );
           })}
 
-          {/* Typing Indicator */}
-          {isTyping && <TypingIndicator />}
+          {/* Enhanced Typing Indicator */}
+          {typingUsers.length > 0 && (
+            <div className="flex items-center space-x-3 pl-2">
+              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                <div className="flex space-x-1">
+                  <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"></div>
+                  <div
+                    className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"
+                    style={{ animationDelay: '0.1s' }}
+                  ></div>
+                  <div
+                    className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"
+                    style={{ animationDelay: '0.2s' }}
+                  ></div>
+                </div>
+              </div>
+              <div className="bg-gray-100 rounded-2xl px-4 py-2">
+                <p className="text-sm text-gray-600 italic">{getTypingText()}</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
+      {/* Scroll anchor */}
       <div ref={messagesEndRef} />
     </div>
   );

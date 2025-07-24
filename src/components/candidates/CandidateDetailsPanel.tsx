@@ -43,10 +43,15 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
   const handleCloseSchedulingModal = () => setSchedulingModalOpen(false);
 
   return (
-    <SidePanel isOpen={isOpen} onClose={onClose} width="xl">
+    <SidePanel
+      isOpen={isOpen}
+      onClose={onClose}
+      width="xl"
+      title={`Team Discussion (${candidate.firstName} ${candidate.lastName})`}
+    >
       <div className="flex flex-col h-full min-h-0">
         {/* Top Section */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b pb-6 mb-6 w-full">
+        {/* <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b pb-6 mb-6 w-full">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-3xl font-bold text-primary-700">
               <UserIcon className="w-10 h-10 text-primary-500" />
@@ -73,7 +78,7 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
         {/* Tabs Section */}
         <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
           <Tab.List className="flex space-x-2 border-b mb-6 bg-white">

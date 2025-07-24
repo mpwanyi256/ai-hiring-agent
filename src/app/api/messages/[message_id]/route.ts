@@ -1,5 +1,111 @@
 import { createClient } from '@/lib/supabase/server';
+import { AppRequestParams } from '@/types/api';
 import { NextRequest, NextResponse } from 'next/server';
+
+export async function GET(
+  request: NextRequest,
+  { params }: AppRequestParams<{ message_id: string }>,
+) {
+  try {
+    const { message_id } = await params;
+
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get the message with full details using the RPC function
+    const { data: messageData, error: messageError } = await supabase
+      .rpc('get_candidate_messages', {
+        p_candidate_id: '', // We'll get this from the message
+        p_job_id: '', // We'll get this from the message
+        p_limit: 1,
+        p_offset: 0,
+      })
+      .eq('id', message_id)
+      .single();
+
+    if (messageError) {
+      // Fallback to direct query if RPC fails
+      const { data: message, error: directError } = await supabase
+        .from('messages')
+        .select(
+          `
+          id,
+          text,
+          candidate_id,
+          job_id,
+          user_id,
+          reply_to_id,
+          attachment_url,
+          attachment_name,
+          attachment_size,
+          attachment_type,
+          created_at,
+          updated_at,
+          edited_at,
+          profiles:user_id (
+            first_name,
+            last_name,
+            email,
+            role
+          )
+        `,
+        )
+        .eq('id', message_id)
+        .single();
+
+      if (directError) {
+        return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+      }
+
+      // Transform to expected format
+      const transformedMessage = {
+        id: message.id,
+        text: message.text,
+        sender: {
+          id: message.user_id,
+          name: `${(message.profiles as any)?.first_name || ''} ${(message.profiles as any)?.last_name || ''}`.trim(),
+          email: (message.profiles as any)?.email || '',
+          role: (message.profiles as any)?.role || '',
+          isCurrentUser: message.user_id === user.id,
+        },
+        timestamp: message.created_at,
+        reactions: [], // We'll need to fetch these separately
+        attachment: message.attachment_url
+          ? {
+              url: message.attachment_url,
+              name: message.attachment_name || '',
+              size: message.attachment_size || 0,
+              type: message.attachment_type || '',
+            }
+          : undefined,
+        isEdited: !!message.edited_at,
+        editedAt: message.edited_at,
+      };
+
+      return NextResponse.json({
+        success: true,
+        message: transformedMessage,
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: messageData,
+    });
+  } catch (error) {
+    console.error('Error fetching message:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
 
 export async function PATCH(request: NextRequest, { params }: { params: { message_id: string } }) {
   try {

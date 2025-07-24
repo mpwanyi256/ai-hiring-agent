@@ -4,10 +4,10 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message_ids, candidate_id, job_id } = body;
+    const { candidate_id, job_id } = body;
 
-    if (!message_ids || !Array.isArray(message_ids) || message_ids.length === 0) {
-      return NextResponse.json({ error: 'Message IDs array is required' }, { status: 400 });
+    if (!candidate_id || !job_id) {
+      return NextResponse.json({ error: 'Candidate ID and Job ID are required' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -22,60 +22,61 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // If candidate_id and job_id are provided, verify permissions
-    if (candidate_id && job_id) {
-      // Check if user has permission to view this job's messages
-      const { data: permission, error: permissionError } = await supabase
-        .from('job_permissions')
-        .select('permission_level')
-        .eq('job_id', job_id)
-        .eq('user_id', user.id)
-        .maybeSingle();
+    // Check permissions
+    const { data: permission, error: permissionError } = await supabase
+      .from('job_permissions')
+      .select('permission_level')
+      .eq('job_id', job_id)
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-      if (permissionError) {
-        console.error('Permission check error:', permissionError);
-        return NextResponse.json({ error: 'Failed to check permissions' }, { status: 500 });
-      }
+    // Check if user is job owner or admin
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('profile_id')
+      .eq('id', job_id)
+      .single();
 
-      // Check if user is job owner or admin
-      const { data: job, error: jobError } = await supabase
-        .from('jobs')
-        .select('profile_id')
-        .eq('id', job_id)
-        .single();
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+    const isJobOwner = job && job.profile_id === user.id;
+    const isAdmin = profile && profile.role === 'admin';
 
-      const isJobOwner = job && job.profile_id === user.id;
-      const isAdmin = profile && profile.role === 'admin';
-
-      if (!permission && !isJobOwner && !isAdmin) {
-        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-      }
+    if (!permission && !isJobOwner && !isAdmin) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    // Verify that all message IDs belong to messages the user can access
-    const { data: messages, error: messagesError } = await supabase
+    // Get all unread messages for this candidate/job combination
+    const { data: unreadMessages, error: messagesError } = await supabase
       .from('messages')
-      .select('id, candidate_id, job_id')
-      .in('id', message_ids);
+      .select('id')
+      .eq('candidate_id', candidate_id)
+      .eq('job_id', job_id)
+      .not('user_id', 'eq', user.id); // Don't include own messages
 
     if (messagesError) {
       console.error('Messages fetch error:', messagesError);
-      return NextResponse.json({ error: 'Failed to verify messages' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
     }
 
-    if (!messages || messages.length !== message_ids.length) {
-      return NextResponse.json({ error: 'Some message IDs are invalid' }, { status: 400 });
+    if (!unreadMessages || unreadMessages.length === 0) {
+      // No messages to mark as read
+      return NextResponse.json({
+        success: true,
+        markedCount: 0,
+        unreadCount: 0,
+      });
     }
+
+    const messageIds = unreadMessages.map((msg) => msg.id);
 
     // Use the database function to mark messages as read
     const { data: markedCount, error: markError } = await supabase.rpc('mark_messages_as_read', {
-      p_message_ids: message_ids,
+      p_message_ids: messageIds,
       p_user_id: user.id,
     });
 
@@ -84,22 +85,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to mark messages as read' }, { status: 500 });
     }
 
-    // If candidate_id and job_id provided, get updated unread count
-    let unreadCount = 0;
-    if (candidate_id && job_id) {
-      const { data: unreadData, error: unreadError } = await supabase.rpc(
-        'get_unread_message_count',
-        {
-          p_candidate_id: candidate_id,
-          p_job_id: job_id,
-          p_user_id: user.id,
-        },
-      );
+    // Get updated unread count
+    const { data: unreadData, error: unreadError } = await supabase.rpc(
+      'get_unread_message_count',
+      {
+        p_candidate_id: candidate_id,
+        p_job_id: job_id,
+        p_user_id: user.id,
+      },
+    );
 
-      if (!unreadError && unreadData !== null) {
-        unreadCount = unreadData;
-      }
-    }
+    const unreadCount = !unreadError && unreadData !== null ? unreadData : 0;
 
     return NextResponse.json({
       success: true,
@@ -112,19 +108,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET endpoint to check read status of specific messages
+// GET endpoint to retrieve read status and unread counts
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const messageIds = searchParams.get('message_ids')?.split(',') || [];
-    const candidateId = searchParams.get('candidate_id');
-    const jobId = searchParams.get('job_id');
+    const candidate_id = searchParams.get('candidate_id');
+    const job_id = searchParams.get('job_id');
 
-    if (messageIds.length === 0 && !candidateId && !jobId) {
-      return NextResponse.json(
-        { error: 'Message IDs or candidate_id/job_id are required' },
-        { status: 400 },
-      );
+    if (!candidate_id || !job_id) {
+      return NextResponse.json({ error: 'Candidate ID and Job ID are required' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -139,48 +131,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let readStatus: any[] = [];
-    let unreadCount = 0;
+    // Get unread count
+    const { data: unreadData, error: unreadError } = await supabase.rpc(
+      'get_unread_message_count',
+      {
+        p_candidate_id: candidate_id,
+        p_job_id: job_id,
+        p_user_id: user.id,
+      },
+    );
 
-    // Get read status for specific messages
-    if (messageIds.length > 0) {
-      const { data: statusData, error: statusError } = await supabase
-        .from('message_read_status')
-        .select('message_id, read_at')
-        .in('message_id', messageIds)
-        .eq('user_id', user.id);
-
-      if (statusError) {
-        console.error('Read status fetch error:', statusError);
-        return NextResponse.json({ error: 'Failed to fetch read status' }, { status: 500 });
-      }
-
-      readStatus = statusData || [];
+    if (unreadError) {
+      console.error('Unread count error:', unreadError);
+      return NextResponse.json({ error: 'Failed to get unread count' }, { status: 500 });
     }
 
-    // Get unread count for candidate/job combination
-    if (candidateId && jobId) {
-      const { data: unreadData, error: unreadError } = await supabase.rpc(
-        'get_unread_message_count',
-        {
-          p_candidate_id: candidateId,
-          p_job_id: jobId,
-          p_user_id: user.id,
-        },
-      );
-
-      if (!unreadError && unreadData !== null) {
-        unreadCount = unreadData;
-      }
-    }
+    const unreadCount = unreadData || 0;
 
     return NextResponse.json({
       success: true,
-      readStatus,
       unreadCount,
     });
   } catch (error) {
-    console.error('Error fetching read status:', error);
+    console.error('Error getting read status:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

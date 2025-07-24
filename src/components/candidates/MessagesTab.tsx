@@ -9,14 +9,12 @@ import MessagesList from '../messages/MessagesList';
 import MessageInput from '../messages/MessageInput';
 
 const MessagesTab: React.FC = () => {
-  const [isTyping, setIsTyping] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
 
   const user = useAppSelector(selectUser);
   const candidate = useAppSelector(selectSelectedCandidate);
 
-  // Initialize messaging hook
+  // Initialize messaging hook with enhanced real-time features
   const {
     messages,
     loading,
@@ -25,20 +23,24 @@ const MessagesTab: React.FC = () => {
     hasMore,
     sendMessage,
     sendingMessage,
+    typingUsers,
     addReaction,
     refreshMessages,
     loadMoreMessages,
     editMessage,
     deleteMessage,
+    startTyping,
+    stopTyping,
   } = useMessages({
     candidateId: candidate?.id || '',
     jobId: candidate?.jobId || '',
     enabled: !!(candidate?.id && candidate?.jobId),
-    refreshInterval: 30000, // 30 seconds
+    refreshInterval: 0, // Disabled since we're using real-time
   });
 
   const handleSendMessage = async (text: string, replyToId?: string, attachment?: File) => {
     await sendMessage(text, replyToId, attachment);
+    setReplyingTo(null); // Clear reply after sending
   };
 
   const handleReaction = async (messageId: string, emoji: string) => {
@@ -76,29 +78,19 @@ const MessagesTab: React.FC = () => {
   const handleStartConversation = () => {
     // Focus the input field when starting conversation
     const inputElement = document.querySelector(
-      'input[placeholder*="Type your message"], input[placeholder*="Add a caption"]',
-    ) as HTMLInputElement;
+      'input[placeholder*="Type your message"], textarea[placeholder*="Type your message"]',
+    ) as HTMLInputElement | HTMLTextAreaElement;
     if (inputElement) {
       inputElement.focus();
     }
   };
 
   const handleTypingStart = () => {
-    if (user?.id && !typingUsers.has(user.id)) {
-      setTypingUsers((prev) => new Set([...prev, user.id]));
-      // In a real implementation, you'd send this to other users via WebSocket
-    }
+    startTyping();
   };
 
   const handleTypingStop = () => {
-    if (user?.id) {
-      setTypingUsers((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(user.id);
-        return newSet;
-      });
-      // In a real implementation, you'd send this to other users via WebSocket
-    }
+    stopTyping();
   };
 
   const getUniqueParticipants = () => {
@@ -111,15 +103,13 @@ const MessagesTab: React.FC = () => {
 
   const getSubtitle = () => {
     const participantCount = getUniqueParticipants();
-    if (typingUsers.size > 0) {
-      return `Someone is typing...`;
-    }
+
+    // Remove typing indicators from header - they'll be shown in message area instead
     return `${participantCount} team member${participantCount !== 1 ? 's' : ''} participating`;
   };
 
   const getCandidateName = () => {
     // Try to get real candidate name from the selected candidate
-    // You might need to fetch this from the API or store
     if (candidate?.name) return candidate.name;
     if (candidate?.firstName && candidate?.lastName) {
       return `${candidate.firstName} ${candidate.lastName}`;
@@ -128,15 +118,6 @@ const MessagesTab: React.FC = () => {
     if (candidate?.email) return candidate.email;
     return 'this candidate';
   };
-
-  // Enhanced typing indicator logic
-  useEffect(() => {
-    if (typingUsers.size > 0) {
-      setIsTyping(true);
-    } else {
-      setIsTyping(false);
-    }
-  }, [typingUsers]);
 
   // Show loading state if candidate data is not available
   if (!candidate?.id || !candidate?.jobId) {
@@ -154,8 +135,8 @@ const MessagesTab: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-300px)] bg-gray-50 rounded-lg border border-gray-200">
-      {/* Header */}
+    <div className="flex flex-col h-[calc(100vh-240px)] md:h-[calc(100vh-180px)] bg-white rounded-lg border border-gray-200 shadow-sm">
+      {/* Header - Mobile optimized */}
       <ChatHeader
         title="Team Discussion"
         subtitle={getSubtitle()}
@@ -164,13 +145,13 @@ const MessagesTab: React.FC = () => {
         onRefresh={refreshMessages}
       />
 
-      {/* Messages List */}
+      {/* Messages List - Mobile optimized with real-time updates */}
       <MessagesList
         messages={messages}
         loading={loading}
         error={error}
         hasMore={hasMore}
-        isTyping={isTyping}
+        typingUsers={typingUsers}
         candidateName={getCandidateName()}
         currentUserId={user?.id}
         onLoadMore={loadMoreMessages}
@@ -181,7 +162,7 @@ const MessagesTab: React.FC = () => {
         onStartConversation={handleStartConversation}
       />
 
-      {/* Message Input */}
+      {/* Message Input - Enhanced for mobile */}
       <MessageInput
         onSendMessage={handleSendMessage}
         sendingMessage={sendingMessage}
@@ -189,7 +170,7 @@ const MessagesTab: React.FC = () => {
         onCancelReply={handleCancelReply}
         onTypingStart={handleTypingStart}
         onTypingStop={handleTypingStop}
-        placeholder="Type your message..."
+        placeholder={`Message about ${getCandidateName()}...`}
       />
     </div>
   );
