@@ -54,6 +54,16 @@ const MessagesTab: React.FC = () => {
     setReplyingTo(null);
   };
 
+  const handleStartConversation = () => {
+    // Focus the input field when starting conversation
+    const inputElement = document.querySelector(
+      'input[placeholder="Type your message..."]',
+    ) as HTMLInputElement;
+    if (inputElement) {
+      inputElement.focus();
+    }
+  };
+
   const getUniqueParticipants = () => {
     const participants = messages
       .filter((m) => !m.sender.isCurrentUser)
@@ -65,6 +75,12 @@ const MessagesTab: React.FC = () => {
   const getSubtitle = () => {
     const participantCount = getUniqueParticipants();
     return `${participantCount} team member${participantCount !== 1 ? 's' : ''} participating`;
+  };
+
+  const getCandidateName = () => {
+    // This should be fetched from candidate data
+    // For now, return a generic name
+    return candidate?.name || 'this candidate';
   };
 
   // Simulate typing indicator when there's activity
@@ -109,9 +125,11 @@ const MessagesTab: React.FC = () => {
         error={error}
         hasMore={hasMore}
         isTyping={isTyping}
+        candidateName={getCandidateName()}
         onLoadMore={loadMoreMessages}
         onReaction={handleReaction}
         onReply={handleReply}
+        onStartConversation={handleStartConversation}
       />
 
       {/* Message Input */}

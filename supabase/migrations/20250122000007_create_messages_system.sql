@@ -199,16 +199,16 @@ SELECT
     m.created_at,
     m.updated_at,
     
-    -- User details
-    p.first_name as user_first_name,
-    p.last_name as user_last_name,
-    p.email as user_email,
-    p.role as user_role,
+    -- User details (cast VARCHAR to TEXT)
+    p.first_name::TEXT as user_first_name,
+    p.last_name::TEXT as user_last_name,
+    p.email::TEXT as user_email,
+    p.role::TEXT as user_role,
     
-    -- Reply to message details
+    -- Reply to message details (cast VARCHAR to TEXT)
     rm.text as reply_to_text,
-    rp.first_name as reply_to_user_first_name,
-    rp.last_name as reply_to_user_last_name,
+    rp.first_name::TEXT as reply_to_user_first_name,
+    rp.last_name::TEXT as reply_to_user_last_name,
     
     -- Read status
     CASE WHEN mrs.read_at IS NOT NULL THEN true ELSE false END as is_read_by_current_user
@@ -274,7 +274,7 @@ BEGIN
                     SELECT 
                         mr.emoji,
                         COUNT(*) as reaction_count,
-                        array_agg(COALESCE(pr.first_name || ' ' || pr.last_name, pr.email)) as user_names
+                        array_agg(COALESCE(pr.first_name::TEXT || ' ' || pr.last_name::TEXT, pr.email::TEXT)) as user_names
                     FROM message_reactions mr
                     LEFT JOIN profiles pr ON mr.user_id = pr.id
                     WHERE mr.message_id = md.id
