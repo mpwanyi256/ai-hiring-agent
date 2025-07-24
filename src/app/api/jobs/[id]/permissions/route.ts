@@ -4,22 +4,14 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: jobId } = await params;
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('user_id');
 
-    if (!jobId) {
+    if (!jobId || !userId) {
       return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
     }
 
     const supabase = await createClient();
-
-    // Get current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Check if user has permission to view job permissions
     const { data: job, error: jobError } = await supabase
@@ -29,6 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .single();
 
     if (jobError || !job) {
+      console.error('Job not found:', jobError);
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
@@ -36,14 +29,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id, role')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single();
 
     if (profileError || !profile) {
+      console.error('Profile not found:', profileError);
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    const canViewPermissions = job.profile_id === user.id || profile.role === 'admin';
+    const canViewPermissions = job.profile_id === userId || profile.role === 'admin';
 
     if (!canViewPermissions) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
@@ -234,20 +228,133 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Failed to grant permission' }, { status: 500 });
     }
 
-    // Fetch the detailed permission info
-    const { data: detailedPermission, error: detailedError } = await supabase
-      .from('job_permissions_detailed')
-      .select('*')
+    // Fetch the updated permission with JOIN to get user details
+    const { data: updatedPermission, error: fetchError } = await supabase
+      .from('job_permissions')
+      .select(
+        `
+        id,
+        job_id,
+        user_id,
+        permission_level,
+        granted_by,
+        granted_at,
+        created_at,
+        updated_at,
+        profiles!job_permissions_user_id_fkey(
+          first_name,
+          last_name,
+          email,
+          role
+        )
+      `,
+      )
       .eq('id', permission.id)
       .single();
 
-    if (detailedError) {
+    if (fetchError) {
       return NextResponse.json({ error: 'Failed to fetch updated permission' }, { status: 500 });
     }
 
-    return NextResponse.json({ permission: detailedPermission });
+    // Transform the data to match expected format
+    const profile_data = updatedPermission.profiles as any;
+    const transformedPermission = {
+      id: updatedPermission.id,
+      job_id: updatedPermission.job_id,
+      user_id: updatedPermission.user_id,
+      permission_level: updatedPermission.permission_level,
+      granted_by: updatedPermission.granted_by,
+      granted_at: updatedPermission.granted_at,
+      created_at: updatedPermission.created_at,
+      updated_at: updatedPermission.updated_at,
+      user_first_name: profile_data?.first_name || null,
+      user_last_name: profile_data?.last_name || null,
+      user_email: profile_data?.email || null,
+      user_role: profile_data?.role || null,
+    };
+
+    return NextResponse.json({ permission: transformedPermission });
   } catch (error) {
     console.error('Error granting job permission:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id: jobId } = await params;
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('user_id');
+
+    if (!jobId || !userId) {
+      return NextResponse.json({ error: 'Job ID and User ID are required' }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user has permission to remove permissions
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('profile_id')
+      .eq('id', jobId)
+      .single();
+
+    if (jobError || !job) {
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+    }
+
+    // Check if user is job owner or has admin role
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
+
+    const canRemovePermissions = job.profile_id === user.id || profile.role === 'admin';
+
+    if (!canRemovePermissions) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Don't allow removing permissions for the job owner
+    if (userId === job.profile_id) {
+      return NextResponse.json(
+        { error: 'Cannot remove permissions for job owner' },
+        { status: 400 },
+      );
+    }
+
+    // Remove the permission
+    const { error: deleteError } = await supabase
+      .from('job_permissions')
+      .delete()
+      .eq('job_id', jobId)
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      return NextResponse.json({ error: 'Failed to remove permission' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Permission removed successfully' });
+  } catch (error) {
+    console.error('Error removing job permission:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

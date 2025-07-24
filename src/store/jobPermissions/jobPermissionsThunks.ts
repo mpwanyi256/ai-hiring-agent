@@ -1,16 +1,19 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import {
-  JobPermissionDetailed,
-  GrantJobPermissionPayload,
-  GrantJobPermissionByEmailPayload,
-  UpdateJobPermissionPayload,
-} from '@/types/jobPermissions';
+import { JobPermissionLevel } from '@/types/jobPermissions';
+import { RootState } from '..';
 
 // Fetch job permissions for a specific job
 export const fetchJobPermissions = createAsyncThunk(
   'jobPermissions/fetchJobPermissions',
-  async (jobId: string) => {
-    const response = await fetch(`/api/jobs/${jobId}/permissions`);
+  async (jobId: string, { getState }) => {
+    const state = getState() as RootState;
+    const user = state.auth.user;
+
+    if (!user) {
+      throw new Error('You need to be logged in to view this page');
+    }
+
+    const response = await fetch(`/api/jobs/${jobId}/permissions?user_id=${user.id}`);
 
     if (!response.ok) {
       const error = await response.json();
@@ -23,20 +26,18 @@ export const fetchJobPermissions = createAsyncThunk(
 );
 
 // Grant job permission to a user by user_id
-export const grantJobPermission = createAsyncThunk(
-  'jobPermissions/grantJobPermission',
-  async (payload: GrantJobPermissionPayload | GrantJobPermissionByEmailPayload) => {
-    const requestBody =
-      'user_id' in payload
-        ? { user_id: payload.user_id, permission_level: payload.permission_level }
-        : { user_email: payload.user_email, permission_level: payload.permission_level };
-
-    const response = await fetch(`/api/jobs/${payload.job_id}/permissions`, {
+export const grantJobPermissionById = createAsyncThunk(
+  'jobPermissions/grantJobPermissionById',
+  async (params: { job_id: string; user_id: string; permission_level: JobPermissionLevel }) => {
+    const response = await fetch(`/api/jobs/${params.job_id}/permissions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({
+        user_id: params.user_id,
+        permission_level: params.permission_level,
+      }),
     });
 
     if (!response.ok) {
@@ -49,17 +50,63 @@ export const grantJobPermission = createAsyncThunk(
   },
 );
 
-// Update job permission level
-export const updateJobPermission = createAsyncThunk(
-  'jobPermissions/updateJobPermission',
-  async (payload: UpdateJobPermissionPayload) => {
-    const response = await fetch(`/api/jobs/permissions/${payload.permission_id}`, {
-      method: 'PATCH',
+// Grant job permission to a user by email
+export const grantJobPermission = createAsyncThunk(
+  'jobPermissions/grantJobPermission',
+  async (params: { job_id: string; user_email: string; permission_level: JobPermissionLevel }) => {
+    const response = await fetch(`/api/jobs/${params.job_id}/permissions`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        permission_level: payload.permission_level,
+        user_email: params.user_email,
+        permission_level: params.permission_level,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to grant job permission');
+    }
+
+    const data = await response.json();
+    return data.permission;
+  },
+);
+
+// Remove job permission from a user
+export const removeJobPermission = createAsyncThunk(
+  'jobPermissions/removeJobPermission',
+  async (params: { job_id: string; user_id: string }) => {
+    const response = await fetch(
+      `/api/jobs/${params.job_id}/permissions?user_id=${params.user_id}`,
+      {
+        method: 'DELETE',
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to remove job permission');
+    }
+
+    return { job_id: params.job_id, user_id: params.user_id };
+  },
+);
+
+// Update job permission level
+export const updateJobPermission = createAsyncThunk(
+  'jobPermissions/updateJobPermission',
+  async (params: { job_id: string; user_id: string; permission_level: JobPermissionLevel }) => {
+    const response = await fetch(`/api/jobs/${params.job_id}/permissions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: params.user_id,
+        permission_level: params.permission_level,
       }),
     });
 
@@ -70,22 +117,5 @@ export const updateJobPermission = createAsyncThunk(
 
     const data = await response.json();
     return data.permission;
-  },
-);
-
-// Revoke job permission
-export const revokeJobPermission = createAsyncThunk(
-  'jobPermissions/revokeJobPermission',
-  async (permissionId: string) => {
-    const response = await fetch(`/api/jobs/permissions/${permissionId}`, {
-      method: 'DELETE',
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to revoke job permission');
-    }
-
-    return { permissionId };
   },
 );

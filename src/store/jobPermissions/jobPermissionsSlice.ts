@@ -1,11 +1,17 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { JobPermissionsState } from '@/types/jobPermissions';
+import { JobPermission } from '@/types/jobPermissions';
 import {
   fetchJobPermissions,
   grantJobPermission,
+  removeJobPermission,
   updateJobPermission,
-  revokeJobPermission,
 } from './jobPermissionsThunks';
+
+interface JobPermissionsState {
+  permissions: JobPermission[];
+  loading: boolean;
+  error: string | null;
+}
 
 const initialState: JobPermissionsState = {
   permissions: [],
@@ -17,11 +23,11 @@ const jobPermissionsSlice = createSlice({
   name: 'jobPermissions',
   initialState,
   reducers: {
-    clearError: (state) => {
+    clearPermissions: (state) => {
+      state.permissions = [];
       state.error = null;
     },
-    resetPermissions: (state) => {
-      state.permissions = [];
+    clearError: (state) => {
       state.error = null;
     },
   },
@@ -51,7 +57,6 @@ const jobPermissionsSlice = createSlice({
       const existingIndex = state.permissions.findIndex(
         (p) => p.user_id === action.payload.user_id && p.job_id === action.payload.job_id,
       );
-
       if (existingIndex >= 0) {
         state.permissions[existingIndex] = action.payload;
       } else {
@@ -63,6 +68,22 @@ const jobPermissionsSlice = createSlice({
       state.error = action.error.message || 'Failed to grant job permission';
     });
 
+    // Remove job permission
+    builder.addCase(removeJobPermission.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(removeJobPermission.fulfilled, (state, action) => {
+      state.loading = false;
+      state.permissions = state.permissions.filter(
+        (p) => !(p.user_id === action.payload.user_id && p.job_id === action.payload.job_id),
+      );
+    });
+    builder.addCase(removeJobPermission.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.error.message || 'Failed to remove job permission';
+    });
+
     // Update job permission
     builder.addCase(updateJobPermission.pending, (state) => {
       state.loading = true;
@@ -70,31 +91,19 @@ const jobPermissionsSlice = createSlice({
     });
     builder.addCase(updateJobPermission.fulfilled, (state, action) => {
       state.loading = false;
-      const index = state.permissions.findIndex((p) => p.id === action.payload.id);
-      if (index >= 0) {
-        state.permissions[index] = action.payload;
+      const existingIndex = state.permissions.findIndex(
+        (p) => p.user_id === action.payload.user_id && p.job_id === action.payload.job_id,
+      );
+      if (existingIndex >= 0) {
+        state.permissions[existingIndex] = action.payload;
       }
     });
     builder.addCase(updateJobPermission.rejected, (state, action) => {
       state.loading = false;
       state.error = action.error.message || 'Failed to update job permission';
     });
-
-    // Revoke job permission
-    builder.addCase(revokeJobPermission.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-    builder.addCase(revokeJobPermission.fulfilled, (state, action) => {
-      state.loading = false;
-      state.permissions = state.permissions.filter((p) => p.id !== action.payload.permissionId);
-    });
-    builder.addCase(revokeJobPermission.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.error.message || 'Failed to revoke job permission';
-    });
   },
 });
 
-export const { clearError, resetPermissions } = jobPermissionsSlice.actions;
+export const { clearPermissions, clearError } = jobPermissionsSlice.actions;
 export default jobPermissionsSlice.reducer;

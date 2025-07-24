@@ -6,14 +6,30 @@ export enum JobPermissionLevel {
 }
 
 export interface JobPermission {
+  // id: string;
+  // job_id: string;
+  // user_id: string;
+  // permission_level: JobPermissionLevel;
+  // granted_by: string;
+  // granted_at: string;
+  // created_at: string;
+  // updated_at: string;
+  created_at: string;
+  granted_at: string;
+  granted_by: string;
+  granted_by_first_name: string;
+  granted_by_last_name: string;
   id: string;
   job_id: string;
-  user_id: string;
+  job_owner_id: string;
+  job_title: string;
   permission_level: JobPermissionLevel;
-  granted_by: string;
-  granted_at: string;
-  created_at: string;
   updated_at: string;
+  user_email: string;
+  user_first_name: string;
+  user_id: string;
+  user_last_name: string;
+  user_role: string;
 }
 
 export interface JobPermissionDetailed extends JobPermission {

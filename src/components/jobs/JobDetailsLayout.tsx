@@ -305,18 +305,8 @@ export default function JobDetailsLayout({
           </div>
 
           {/* Actions */}
-          <div className="mt-4 lg:mt-0 flex flex-col gap-2 md:gap-1">
-            <div className="flex flex-row gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setInviteModalOpen(true)}
-                className="flex items-center text-sm md:text-xs"
-              >
-                <UserPlusIcon className="w-4 h-4 mr-1" />
-                Invite Team
-              </Button>
-
+          <div className="mt-4 lg:mt-0 flex flex-col gap-2 md:gap-1 justify-end">
+            <div className="flex flex-row gap-2 justify-end">
               <Button
                 variant="outline"
                 size="sm"
