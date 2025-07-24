@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
 import SidePanel from '../ui/SidePanel';
-import { CandidateStatus, CandidateWithEvaluation } from '@/types/candidates';
+import { CandidateWithEvaluation } from '@/types/candidates';
 import { Tab } from '@headlessui/react';
-import { UserIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 import GeneralTab from './GeneralTab';
 import EvaluationsTab from './EvaluationsTab';
-// import ExperienceTab from './ExperienceTab';
-// import EventsTab from './EventsTab';
 import MessagesTab from './MessagesTab';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
-import { UpdateApplicationStatus } from '../jobs/UpdateApplicationStatus';
 
 // --- Main Panel ---
 interface CandidateDetailsPanelProps {
@@ -37,8 +33,6 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [schedulingModalOpen, setSchedulingModalOpen] = useState(false);
-  const [candidateData, setCandidateData] = useState<CandidateWithEvaluation>(candidate);
-
   const handleScheduleEvent = () => setSchedulingModalOpen(true);
   const handleCloseSchedulingModal = () => setSchedulingModalOpen(false);
 
@@ -50,35 +44,6 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
       title={`Team Discussion (${candidate.firstName} ${candidate.lastName})`}
     >
       <div className="flex flex-col h-full min-h-0">
-        {/* Top Section */}
-        {/* <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b pb-6 mb-6 w-full">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-3xl font-bold text-primary-700">
-              <UserIcon className="w-10 h-10 text-primary-500" />
-            </div>
-            <div className="flex flex-1 justify-between">
-              <span>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl font-semibold text-gray-900">
-                    {candidate.firstName} {candidate.lastName}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-500 text-sm">
-                  <EnvelopeIcon className="w-4 h-4" /> {candidate.email}
-                </div>
-              </span>
-              <div className="flex gap-2 items-end">
-                <UpdateApplicationStatus
-                  candidateId={candidateData.id}
-                  status={candidateData.status as CandidateStatus}
-                  onUpdated={(status) => {
-                    setCandidateData({ ...candidate, status });
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div> */}
         {/* Tabs Section */}
         <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
           <Tab.List className="flex space-x-2 border-b mb-6 bg-white">
