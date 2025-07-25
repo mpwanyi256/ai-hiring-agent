@@ -1,5 +1,3 @@
-import { SubscriptionPlans } from '@/types/billing';
-
 export const experienceLevels = [
   { value: 'entry', label: 'Entry Level (0-2 years)' },
   { value: 'mid', label: 'Mid Level (2-5 years)' },

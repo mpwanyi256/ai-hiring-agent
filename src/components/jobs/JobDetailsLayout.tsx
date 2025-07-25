@@ -22,6 +22,7 @@ import {
 import DashboardLayout from '../layout/DashboardLayout';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { updateJobStatus, updateJob } from '@/store/jobs/jobsThunks';
+import { fetchJobPermissions } from '@/store/jobPermissions/jobPermissionsThunks';
 import { apiError, apiSuccess } from '@/lib/notification';
 import RichTextEditor from '../ui/RichTextEditor';
 import { app, inputTypes } from '@/lib/constants';
@@ -30,6 +31,9 @@ import { selectTraitsData, selectTraitsLoading } from '@/store/traits/traitsSele
 import { fetchSkills } from '@/store/skills/skillsThunks';
 import { fetchTraits } from '@/store/traits/traitsThunks';
 import { selectCompanySlug } from '@/store/auth/authSelectors';
+import JobInviteModal from './JobInviteModal';
+import { JobTeamDisplay } from './JobTeamDisplay';
+import JobDiscussionPanel from './JobDiscussionPanel';
 
 interface JobDetailsLayoutProps {
   job: Job;
@@ -58,6 +62,7 @@ export default function JobDetailsLayout({
   const companySlug = useAppSelector(selectCompanySlug);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [jobDescriptionDraft, setJobDescriptionDraft] = useState(job.fields?.jobDescription || '');
   const [isSavingDescription, setIsSavingDescription] = useState(false);
@@ -166,6 +171,13 @@ export default function JobDetailsLayout({
     fetchData();
   }, [dispatch]);
 
+  // Fetch job permissions when component mounts
+  useEffect(() => {
+    if (job?.id) {
+      dispatch(fetchJobPermissions(job.id));
+    }
+  }, [job?.id, dispatch]);
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -196,7 +208,7 @@ export default function JobDetailsLayout({
   }, [job.fields?.skills, job.fields?.traits, job.fields?.experienceLevel]);
 
   return (
-    <DashboardLayout>
+    <DashboardLayout className="overflow-hidden">
       {/* Breadcrumb */}
       <div className="flex items-center space-x-2 text-sm text-gray-500 mb-4">
         <button
@@ -293,23 +305,29 @@ export default function JobDetailsLayout({
           </div>
 
           {/* Actions */}
-          <div className="mt-4 lg:mt-0 flex flex-wrap gap-2 md:gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onShareJob}
-              className="flex items-center text-sm md:text-xs"
-            >
-              <ShareIcon className="w-4 h-4 mr-1" />
-              Share
-            </Button>
-
-            <Link href={`${app.baseUrl}/jobs/${companySlug}/${job.interviewToken}`} target="_blank">
-              <Button size="sm" className="flex items-center text-sm">
-                <EyeIcon className="w-4 h-4 mr-1" />
-                Preview
+          <div className="mt-4 lg:mt-0 flex flex-col gap-2 md:gap-1 justify-end">
+            <div className="flex flex-row gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onShareJob}
+                className="flex items-center text-sm md:text-xs"
+              >
+                <ShareIcon className="w-4 h-4 mr-1" />
+                Share
               </Button>
-            </Link>
+
+              <Link
+                href={`${app.baseUrl}/jobs/${companySlug}/${job.interviewToken}`}
+                target="_blank"
+              >
+                <Button size="sm" className="flex items-center text-sm">
+                  <EyeIcon className="w-4 h-4 mr-1" />
+                  Preview
+                </Button>
+              </Link>
+            </div>
+            <JobTeamDisplay />
           </div>
         </div>
 
@@ -344,300 +362,50 @@ export default function JobDetailsLayout({
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-4 h-[calc(100vh-300px)]">
         {/* Main Content Area */}
-        <div className="lg:col-span-3 space-y-6 md:space-y-4">
-          {activeTab === 'overview' ? (
-            <>
-              {/* Requirements Section (Experience Level, Skills, Traits) */}
-              <div className="bg-white rounded-lg border border-gray-100 p-6 md:p-4">
-                <div className="flex items-center justify-between mb-4 md:mb-2">
-                  <h2 className="text-lg md:text-base font-semibold text-text">Requirements</h2>
-                  {job.status === 'draft' && editingField === null && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditingField('requirements')}
-                      disabled={skillsLoading || traitsLoading}
-                    >
-                      <PencilIcon className="w-4 h-4 mr-1" />
-                      {skillsLoading || traitsLoading ? 'Loading...' : 'Edit'}
-                    </Button>
-                  )}
-                </div>
-                {editingField === 'requirements' ? (
-                  <div className="space-y-4">
-                    {(skillsLoading || traitsLoading) && (
-                      <div className="flex items-center space-x-2 text-sm text-muted-text mb-4">
-                        <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                        <span>Loading skills and traits data...</span>
+        <div className="lg:col-span-2 h-[calc(100vh-300px)]">
+          <div className="h-full overflow-y-auto space-y-6 md:space-y-4 pr-2">
+            {activeTab === 'overview' ? (
+              <>
+                {/* Job Info Summary - Moved from sidebar */}
+                <div className="bg-white rounded-lg border border-gray-100 p-4 md:p-3">
+                  <h3 className="text-sm md:text-xs font-semibold text-gray-900 mb-3 md:mb-2">
+                    Job Information
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <span className="text-xs font-medium text-gray-500">Status</span>
+                      <p className="text-xs text-gray-900 mt-1">{getStatusLabel(job.status)}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs font-medium text-gray-500">Interview Format</span>
+                      <p className="text-xs text-gray-900 mt-1 capitalize">
+                        {job.interviewFormat === 'text' ? 'Text-based' : 'Video'} Interview
+                      </p>
+                    </div>
+                    {job.fields?.experienceLevel && (
+                      <div>
+                        <span className="text-xs font-medium text-gray-500">Experience Level</span>
+                        <p className="text-xs text-gray-900 mt-1 capitalize">
+                          {job.fields.experienceLevel.replace(/([A-Z])/g, ' $1').trim()}
+                        </p>
                       </div>
                     )}
-                    {/* Experience Level */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Experience Level
-                      </label>
-                      <select
-                        value={experienceLevelDraft}
-                        onChange={(e) => setExperienceLevelDraft(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      >
-                        <option value="">Select experience level (optional)</option>
-                        <option value="entry">Entry</option>
-                        <option value="mid">Mid</option>
-                        <option value="senior">Senior</option>
-                      </select>
-                    </div>
-                    {/* Skills */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Required Skills
-                      </label>
-                      <div className="relative" data-dropdown="skills">
-                        <button
-                          type="button"
-                          onClick={() => setSkillDropdownOpen(!skillDropdownOpen)}
-                          disabled={skillsLoading}
-                          className="w-full px-4 py-3 border border-gray-light rounded-lg text-left text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent flex items-center justify-between disabled:opacity-50"
-                        >
-                          <span className="text-muted-text">
-                            {skillsLoading ? 'Loading skills...' : 'Search and select skills...'}
-                          </span>
-                          {skillsLoading ? (
-                            <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                          ) : (
-                            <ChevronDownIcon
-                              className={`w-5 h-5 text-muted-text transition-transform ${skillDropdownOpen ? 'rotate-180' : ''}`}
-                            />
-                          )}
-                        </button>
-                        {skillDropdownOpen && !skillsLoading && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-64 overflow-hidden">
-                            <div className="p-3 border-b border-gray-light bg-gray-50">
-                              <input
-                                type="text"
-                                value={skillSearch}
-                                onChange={(e) => setSkillSearch(e.target.value)}
-                                placeholder="Search skills..."
-                                className="w-full px-3 py-2 border border-gray-light rounded text-text placeholder-muted-text focus:outline-none focus:ring-1 focus:ring-primary"
-                              />
-                            </div>
-                            <div className="max-h-48 overflow-y-auto">
-                              {availableSkills.length > 0 ? (
-                                availableSkills.map((skill) => (
-                                  <button
-                                    key={skill.id}
-                                    type="button"
-                                    onClick={() => {
-                                      setSkillsDraft([...skillsDraft, skill.name]);
-                                      setSkillSearch('');
-                                      setSkillDropdownOpen(false);
-                                    }}
-                                    className="w-full px-4 py-3 text-left text-text hover:bg-primary/5 transition-colors border-b border-gray-100 last:border-b-0"
-                                  >
-                                    <div>
-                                      <p className="font-medium">{skill.name}</p>
-                                      {skill.description && (
-                                        <p className="text-xs text-muted-text truncate mt-1">
-                                          {skill.description}
-                                        </p>
-                                      )}
-                                      <p className="text-xs text-primary capitalize mt-1">
-                                        {skill.category}
-                                      </p>
-                                    </div>
-                                  </button>
-                                ))
-                              ) : (
-                                <div className="px-4 py-6 text-muted-text text-sm text-center">
-                                  {skillSearch
-                                    ? 'No skills found matching your search'
-                                    : 'All skills have been selected'}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      {/* Selected Skills */}
-                      {skillsDraft.length > 0 && (
-                        <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 mt-2 bg-gray-50 rounded-lg border border-gray-light">
-                          {skillsDraft.map((skill: string) => (
-                            <span
-                              key={skill}
-                              className="inline-flex items-center px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
-                            >
-                              {skill}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSkillsDraft(skillsDraft.filter((s: string) => s !== skill))
-                                }
-                                className="ml-2 text-primary hover:text-accent-red transition-colors"
-                              >
-                                <XMarkIcon className="w-3 h-3" />
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    {/* Traits */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Desired Traits
-                      </label>
-                      <div className="relative" data-dropdown="traits">
-                        <button
-                          type="button"
-                          onClick={() => setTraitDropdownOpen(!traitDropdownOpen)}
-                          disabled={traitsLoading}
-                          className="w-full px-4 py-3 border border-gray-light rounded-lg text-left text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent flex items-center justify-between disabled:opacity-50"
-                        >
-                          <span className="text-muted-text">
-                            {traitsLoading ? 'Loading traits...' : 'Search and select traits...'}
-                          </span>
-                          {traitsLoading ? (
-                            <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                          ) : (
-                            <ChevronDownIcon
-                              className={`w-5 h-5 text-muted-text transition-transform ${traitDropdownOpen ? 'rotate-180' : ''}`}
-                            />
-                          )}
-                        </button>
-                        {traitDropdownOpen && !traitsLoading && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-64 overflow-hidden">
-                            <div className="p-3 border-b border-gray-light bg-gray-50">
-                              <input
-                                type="text"
-                                value={traitSearch}
-                                onChange={(e) => setTraitSearch(e.target.value)}
-                                placeholder="Search traits..."
-                                className="w-full px-3 py-2 border border-gray-light rounded text-text placeholder-muted-text focus:outline-none focus:ring-1 focus:ring-primary"
-                              />
-                            </div>
-                            <div className="max-h-48 overflow-y-auto">
-                              {availableTraits.length > 0 ? (
-                                availableTraits.map((trait) => (
-                                  <button
-                                    key={trait.id}
-                                    type="button"
-                                    onClick={() => {
-                                      setTraitsDraft([...traitsDraft, trait.name]);
-                                      setTraitSearch('');
-                                      setTraitDropdownOpen(false);
-                                    }}
-                                    className="w-full px-4 py-3 text-left text-text hover:bg-accent-blue/5 transition-colors border-b border-gray-100 last:border-b-0"
-                                  >
-                                    <div>
-                                      <p className="font-medium">{trait.name}</p>
-                                      {trait.description && (
-                                        <p className="text-xs text-muted-text truncate mt-1">
-                                          {trait.description}
-                                        </p>
-                                      )}
-                                      <p className="text-xs text-accent-blue capitalize mt-1">
-                                        {trait.category}
-                                      </p>
-                                    </div>
-                                  </button>
-                                ))
-                              ) : (
-                                <div className="px-4 py-6 text-muted-text text-sm text-center">
-                                  {traitSearch
-                                    ? 'No traits found matching your search'
-                                    : 'All traits have been selected'}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      {/* Selected Traits */}
-                      {traitsDraft.length > 0 && (
-                        <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 mt-2 bg-gray-50 rounded-lg border border-gray-light">
-                          {traitsDraft.map((trait) => (
-                            <span
-                              key={trait}
-                              className="inline-flex items-center px-3 py-1.5 bg-accent-blue/10 text-accent-blue rounded-full text-sm font-medium"
-                            >
-                              {trait}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setTraitsDraft(traitsDraft.filter((t) => t !== trait))
-                                }
-                                className="ml-2 text-accent-blue hover:text-accent-red transition-colors"
-                              >
-                                <XMarkIcon className="w-3 h-3" />
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                        size="sm"
-                        isLoading={isSavingRequirements}
-                        onClick={async () => {
-                          setIsSavingRequirements(true);
-                          try {
-                            await dispatch(
-                              updateJob({
-                                id: job.id,
-                                fields: {
-                                  ...job.fields,
-                                  experienceLevel: experienceLevelDraft,
-                                  skills: skillsDraft,
-                                  traits: traitsDraft,
-                                },
-                              }),
-                            ).unwrap();
-                            apiSuccess('Requirements updated successfully');
-                            setEditingField(null);
-                          } catch {
-                            apiError('Failed to update requirements');
-                          } finally {
-                            setIsSavingRequirements(false);
-                          }
-                        }}
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSkillsDraft(job.fields?.skills || []);
-                          setTraitsDraft(job.fields?.traits || []);
-                          setExperienceLevelDraft(job.fields?.experienceLevel || '');
-                          setEditingField(null);
-                        }}
-                      >
-                        Cancel
-                      </Button>
+                      <span className="text-xs font-medium text-gray-500">Created</span>
+                      <p className="text-xs text-gray-900 mt-1">{formatDate(job.createdAt)}</p>
                     </div>
                   </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div>
-                      <span className="block text-xs font-medium text-muted-text mb-1">
-                        Experience Level
-                      </span>
-                      <span className="inline-block px-2 py-1 rounded bg-gray-100 text-xs text-gray-700 capitalize">
-                        {job.fields?.experienceLevel || 'Not specified'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-xs font-medium text-muted-text mb-1">
-                        Required Skills
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {(job.fields?.skills || []).map((skill: string, idx: number) => (
+
+                  {/* Skills Summary */}
+                  {job.fields?.skills && job.fields.skills.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <h4 className="text-xs font-medium text-gray-500 mb-2">Required Skills</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {job.fields.skills.map((skill: string, index: number) => (
                           <span
-                            key={idx}
+                            key={index}
                             className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
                           >
                             {skill}
@@ -645,355 +413,622 @@ export default function JobDetailsLayout({
                         ))}
                       </div>
                     </div>
-                    <div>
-                      <span className="block text-xs font-medium text-muted-text mb-1">
-                        Desired Traits
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {(job.fields?.traits || []).map((trait: string, idx: number) => (
-                          <span
-                            key={idx}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
-                          >
-                            {trait}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Additional Info Section (Custom Fields) */}
-              <div className="bg-white rounded-lg border border-gray-100 p-6 md:p-4">
-                <div className="flex items-center justify-between mb-4 md:mb-2">
-                  <h2 className="text-lg md:text-base font-semibold text-text">
-                    Additional Information
-                  </h2>
-                  {job.status === 'draft' && editingField === null && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setCustomFieldsDraft(
-                          job.fields?.customFields
-                            ? Object.entries(job.fields.customFields).map(
-                                ([key, field]: [string, unknown]) => {
-                                  const safeField = field as {
-                                    value?: string | number;
-                                    inputType?: string;
-                                  };
-                                  return {
-                                    key,
-                                    value:
-                                      safeField.value !== undefined ? String(safeField.value) : '',
-                                    inputType: safeField.inputType || 'text',
-                                  };
-                                },
-                              )
-                            : [],
-                        );
-                        setEditingField('customFields');
-                      }}
-                    >
-                      <PencilIcon className="w-4 h-4 mr-1" /> Edit
-                    </Button>
                   )}
                 </div>
-                {editingField === 'customFields' ? (
-                  <div>
-                    {customFieldsDraft.length === 0 && (
-                      <div className="text-muted-text text-sm mb-4">
-                        No additional information. Add a field below.
-                      </div>
+
+                {/* Requirements Section (Experience Level, Skills, Traits) */}
+                <div className="bg-white rounded-lg border border-gray-100 p-6 md:p-4">
+                  <div className="flex items-center justify-between mb-4 md:mb-2">
+                    <h2 className="text-lg md:text-base font-semibold text-text">Requirements</h2>
+                    {job.status === 'draft' && editingField === null && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingField('requirements')}
+                        disabled={skillsLoading || traitsLoading}
+                      >
+                        <PencilIcon className="w-4 h-4 mr-1" />
+                        {skillsLoading || traitsLoading ? 'Loading...' : 'Edit'}
+                      </Button>
                     )}
+                  </div>
+                  {editingField === 'requirements' ? (
                     <div className="space-y-4">
-                      {customFieldsDraft.map((field, idx) => (
-                        <div
-                          key={idx}
-                          className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border border-gray-light rounded-lg"
-                        >
-                          <div>
-                            <label className="block text-xs font-medium text-muted-text mb-1">
-                              Field Name
-                            </label>
-                            <input
-                              type="text"
-                              value={field.key}
-                              onChange={(e) => {
-                                const updated = [...customFieldsDraft];
-                                updated[idx].key = e.target.value;
-                                setCustomFieldsDraft(updated);
-                              }}
-                              placeholder="e.g., Languages spoken"
-                              className="w-full px-3 py-2 border border-gray-light rounded text-text placeholder-muted-text focus:outline-none focus:ring-1 focus:ring-primary text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-muted-text mb-1">
-                              Input Type
-                            </label>
-                            <select
-                              value={field.inputType}
-                              onChange={(e) => {
-                                const updated = [...customFieldsDraft];
-                                updated[idx].inputType = e.target.value;
-                                setCustomFieldsDraft(updated);
-                              }}
-                              className="w-full px-3 py-2 border border-gray-light rounded text-text focus:outline-none focus:ring-1 focus:ring-primary text-sm"
-                            >
-                              {inputTypes.map((type) => (
-                                <option key={type.value} value={type.value}>
-                                  {type.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-muted-text mb-1">
-                              Description/Placeholder
-                            </label>
-                            <input
-                              type="text"
-                              value={field.value}
-                              onChange={(e) => {
-                                const updated = [...customFieldsDraft];
-                                updated[idx].value = e.target.value;
-                                setCustomFieldsDraft(updated);
-                              }}
-                              placeholder="Describe what you're looking for"
-                              className="w-full px-3 py-2 border border-gray-light rounded text-text placeholder-muted-text focus:outline-none focus:ring-1 focus:ring-primary text-sm"
-                            />
-                          </div>
-                          <div className="flex items-end">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                setCustomFieldsDraft(customFieldsDraft.filter((_, i) => i !== idx))
-                              }
-                              className="text-accent-red border-accent-red hover:bg-accent-red hover:text-white w-full"
-                            >
-                              Remove
-                            </Button>
-                          </div>
+                      {(skillsLoading || traitsLoading) && (
+                        <div className="flex items-center space-x-2 text-sm text-muted-text mb-4">
+                          <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                          <span>Loading skills and traits data...</span>
                         </div>
-                      ))}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-4"
-                      onClick={() =>
-                        setCustomFieldsDraft([
-                          ...customFieldsDraft,
-                          { key: '', value: '', inputType: 'text' },
-                        ])
-                      }
-                    >
-                      Add Field
-                    </Button>
-                    <div className="flex gap-2 mt-6">
-                      <Button
-                        size="sm"
-                        isLoading={isSavingCustomFields}
-                        onClick={async () => {
-                          setIsSavingCustomFields(true);
-                          try {
-                            // Convert array to object
-                            const customFieldsObj = customFieldsDraft.reduce(
-                              (acc, field) => {
-                                if (field.key.trim()) {
-                                  acc[field.key] = {
-                                    value: field.value,
-                                    inputType: field.inputType,
-                                  };
-                                }
-                                return acc;
-                              },
-                              {} as Record<string, { value: string; inputType: string }>,
-                            );
-                            await dispatch(
-                              updateJob({
-                                id: job.id,
-                                fields: {
-                                  ...job.fields,
-                                  customFields: customFieldsObj,
-                                },
-                              }),
-                            ).unwrap();
-                            apiSuccess('Additional information updated');
-                            setEditingField(null);
-                          } catch {
-                            apiError('Failed to update additional information');
-                          } finally {
-                            setIsSavingCustomFields(false);
-                          }
-                        }}
-                      >
-                        Save
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    {job.fields?.customFields && Object.keys(job.fields.customFields).length > 0 ? (
-                      Object.entries(job.fields.customFields).map(
-                        ([key, field]: [string, unknown]) => (
-                          <div key={key} className="mb-2">
-                            <span className="font-medium text-sm text-gray-700">{key}</span>
-                            <div className="text-xs text-gray-600">
-                              {(field as { value?: string | number })?.value || 'No value'}
+                      )}
+                      {/* Experience Level */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Experience Level
+                        </label>
+                        <select
+                          value={experienceLevelDraft}
+                          onChange={(e) => setExperienceLevelDraft(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                          <option value="">Select experience level (optional)</option>
+                          <option value="entry">Entry</option>
+                          <option value="mid">Mid</option>
+                          <option value="senior">Senior</option>
+                        </select>
+                      </div>
+                      {/* Skills */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Required Skills
+                        </label>
+                        <div className="relative" data-dropdown="skills">
+                          <button
+                            type="button"
+                            onClick={() => setSkillDropdownOpen(!skillDropdownOpen)}
+                            disabled={skillsLoading}
+                            className="w-full px-4 py-3 border border-gray-light rounded-lg text-left text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent flex items-center justify-between disabled:opacity-50"
+                          >
+                            <span className="text-muted-text">
+                              {skillsLoading ? 'Loading skills...' : 'Search and select skills...'}
+                            </span>
+                            {skillsLoading ? (
+                              <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                            ) : (
+                              <ChevronDownIcon
+                                className={`w-5 h-5 text-muted-text transition-transform ${skillDropdownOpen ? 'rotate-180' : ''}`}
+                              />
+                            )}
+                          </button>
+                          {skillDropdownOpen && !skillsLoading && (
+                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-64 overflow-hidden">
+                              <div className="p-3 border-b border-gray-light bg-gray-50">
+                                <input
+                                  type="text"
+                                  value={skillSearch}
+                                  onChange={(e) => setSkillSearch(e.target.value)}
+                                  placeholder="Search skills..."
+                                  className="w-full px-3 py-2 border border-gray-light rounded text-text placeholder-muted-text focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                              </div>
+                              <div className="max-h-48 overflow-y-auto">
+                                {availableSkills.length > 0 ? (
+                                  availableSkills.map((skill) => (
+                                    <button
+                                      key={skill.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setSkillsDraft([...skillsDraft, skill.name]);
+                                        setSkillSearch('');
+                                        setSkillDropdownOpen(false);
+                                      }}
+                                      className="w-full px-4 py-3 text-left text-text hover:bg-primary/5 transition-colors border-b border-gray-100 last:border-b-0"
+                                    >
+                                      <div>
+                                        <p className="font-medium">{skill.name}</p>
+                                        {skill.description && (
+                                          <p className="text-xs text-muted-text truncate mt-1">
+                                            {skill.description}
+                                          </p>
+                                        )}
+                                        <p className="text-xs text-primary capitalize mt-1">
+                                          {skill.category}
+                                        </p>
+                                      </div>
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="px-4 py-6 text-muted-text text-sm text-center">
+                                    {skillSearch
+                                      ? 'No skills found matching your search'
+                                      : 'All skills have been selected'}
+                                  </div>
+                                )}
+                              </div>
                             </div>
+                          )}
+                        </div>
+                        {/* Selected Skills */}
+                        {skillsDraft.length > 0 && (
+                          <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 mt-2 bg-gray-50 rounded-lg border border-gray-light">
+                            {skillsDraft.map((skill: string) => (
+                              <span
+                                key={skill}
+                                className="inline-flex items-center px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
+                              >
+                                {skill}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSkillsDraft(skillsDraft.filter((s: string) => s !== skill))
+                                  }
+                                  className="ml-2 text-primary hover:text-accent-red transition-colors"
+                                >
+                                  <XMarkIcon className="w-3 h-3" />
+                                </button>
+                              </span>
+                            ))}
                           </div>
-                        ),
-                      )
-                    ) : (
-                      <span className="text-muted-text text-sm">
-                        No additional information provided.
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Job Description Section (already inline editable) */}
-              <div className="bg-white rounded-lg border border-gray-100 p-6 md:p-4">
-                <div className="flex items-center justify-between mb-3 md:mb-1">
-                  <h3 className="text-lg md:text-base font-semibold text-gray-900">
-                    Job Description
-                  </h3>
-                  {job.status === 'draft' && editingField !== 'jobDescription' && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditingField('jobDescription')}
-                    >
-                      <PencilIcon className="w-4 h-4 mr-1" /> Edit
-                    </Button>
+                        )}
+                      </div>
+                      {/* Traits */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Desired Traits
+                        </label>
+                        <div className="relative" data-dropdown="traits">
+                          <button
+                            type="button"
+                            onClick={() => setTraitDropdownOpen(!traitDropdownOpen)}
+                            disabled={traitsLoading}
+                            className="w-full px-4 py-3 border border-gray-light rounded-lg text-left text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent flex items-center justify-between disabled:opacity-50"
+                          >
+                            <span className="text-muted-text">
+                              {traitsLoading ? 'Loading traits...' : 'Search and select traits...'}
+                            </span>
+                            {traitsLoading ? (
+                              <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                            ) : (
+                              <ChevronDownIcon
+                                className={`w-5 h-5 text-muted-text transition-transform ${traitDropdownOpen ? 'rotate-180' : ''}`}
+                              />
+                            )}
+                          </button>
+                          {traitDropdownOpen && !traitsLoading && (
+                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-64 overflow-hidden">
+                              <div className="p-3 border-b border-gray-light bg-gray-50">
+                                <input
+                                  type="text"
+                                  value={traitSearch}
+                                  onChange={(e) => setTraitSearch(e.target.value)}
+                                  placeholder="Search traits..."
+                                  className="w-full px-3 py-2 border border-gray-light rounded text-text placeholder-muted-text focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                              </div>
+                              <div className="max-h-48 overflow-y-auto">
+                                {availableTraits.length > 0 ? (
+                                  availableTraits.map((trait) => (
+                                    <button
+                                      key={trait.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setTraitsDraft([...traitsDraft, trait.name]);
+                                        setTraitSearch('');
+                                        setTraitDropdownOpen(false);
+                                      }}
+                                      className="w-full px-4 py-3 text-left text-text hover:bg-accent-blue/5 transition-colors border-b border-gray-100 last:border-b-0"
+                                    >
+                                      <div>
+                                        <p className="font-medium">{trait.name}</p>
+                                        {trait.description && (
+                                          <p className="text-xs text-muted-text truncate mt-1">
+                                            {trait.description}
+                                          </p>
+                                        )}
+                                        <p className="text-xs text-accent-blue capitalize mt-1">
+                                          {trait.category}
+                                        </p>
+                                      </div>
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="px-4 py-6 text-muted-text text-sm text-center">
+                                    {traitSearch
+                                      ? 'No traits found matching your search'
+                                      : 'All traits have been selected'}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {/* Selected Traits */}
+                        {traitsDraft.length > 0 && (
+                          <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 mt-2 bg-gray-50 rounded-lg border border-gray-light">
+                            {traitsDraft.map((trait) => (
+                              <span
+                                key={trait}
+                                className="inline-flex items-center px-3 py-1.5 bg-accent-blue/10 text-accent-blue rounded-full text-sm font-medium"
+                              >
+                                {trait}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setTraitsDraft(traitsDraft.filter((t) => t !== trait))
+                                  }
+                                  className="ml-2 text-accent-blue hover:text-accent-red transition-colors"
+                                >
+                                  <XMarkIcon className="w-3 h-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          size="sm"
+                          isLoading={isSavingRequirements}
+                          onClick={async () => {
+                            setIsSavingRequirements(true);
+                            try {
+                              await dispatch(
+                                updateJob({
+                                  id: job.id,
+                                  fields: {
+                                    ...job.fields,
+                                    experienceLevel: experienceLevelDraft,
+                                    skills: skillsDraft,
+                                    traits: traitsDraft,
+                                  },
+                                }),
+                              ).unwrap();
+                              apiSuccess('Requirements updated successfully');
+                              setEditingField(null);
+                            } catch {
+                              apiError('Failed to update requirements');
+                            } finally {
+                              setIsSavingRequirements(false);
+                            }
+                          }}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSkillsDraft(job.fields?.skills || []);
+                            setTraitsDraft(job.fields?.traits || []);
+                            setExperienceLevelDraft(job.fields?.experienceLevel || '');
+                            setEditingField(null);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div>
+                        <span className="block text-xs font-medium text-muted-text mb-1">
+                          Experience Level
+                        </span>
+                        <span className="inline-block px-2 py-1 rounded bg-gray-100 text-xs text-gray-700 capitalize">
+                          {job.fields?.experienceLevel || 'Not specified'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-xs font-medium text-muted-text mb-1">
+                          Required Skills
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {(job.fields?.skills || []).map((skill: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="block text-xs font-medium text-muted-text mb-1">
+                          Desired Traits
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {(job.fields?.traits || []).map((trait: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+                            >
+                              {trait}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
-                {editingField === 'jobDescription' ? (
-                  <div>
-                    <RichTextEditor
-                      content={jobDescriptionDraft}
-                      onChange={setJobDescriptionDraft}
-                      placeholder="Describe the role, responsibilities, requirements, and what you offer..."
-                      className="w-full"
-                    />
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                        size="sm"
-                        isLoading={isSavingDescription}
-                        onClick={async () => {
-                          setIsSavingDescription(true);
-                          try {
-                            await dispatch(
-                              updateJob({
-                                id: job.id,
-                                fields: {
-                                  ...job.fields,
-                                  jobDescription: jobDescriptionDraft,
-                                },
-                              }),
-                            ).unwrap();
-                            apiSuccess('Job description updated');
-                            setEditingField(null);
-                          } catch {
-                            apiError('Failed to update job description');
-                          } finally {
-                            setIsSavingDescription(false);
-                          }
-                        }}
-                      >
-                        Save
-                      </Button>
+
+                {/* Additional Info Section (Custom Fields) */}
+                <div className="bg-white rounded-lg border border-gray-100 p-6 md:p-4">
+                  <div className="flex items-center justify-between mb-4 md:mb-2">
+                    <h2 className="text-lg md:text-base font-semibold text-text">
+                      Additional Information
+                    </h2>
+                    {job.status === 'draft' && editingField === null && (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          setJobDescriptionDraft(job.fields?.jobDescription || '');
-                          setEditingField(null);
+                          setCustomFieldsDraft(
+                            job.fields?.customFields
+                              ? Object.entries(job.fields.customFields).map(
+                                  ([key, field]: [string, unknown]) => {
+                                    const safeField = field as {
+                                      value?: string | number;
+                                      inputType?: string;
+                                    };
+                                    return {
+                                      key,
+                                      value:
+                                        safeField.value !== undefined
+                                          ? String(safeField.value)
+                                          : '',
+                                      inputType: safeField.inputType || 'text',
+                                    };
+                                  },
+                                )
+                              : [],
+                          );
+                          setEditingField('customFields');
                         }}
                       >
-                        Cancel
+                        <PencilIcon className="w-4 h-4 mr-1" /> Edit
                       </Button>
-                    </div>
+                    )}
                   </div>
-                ) : (
-                  <div
-                    className="prose max-w-none"
-                    dangerouslySetInnerHTML={{
-                      __html:
-                        job.fields?.jobDescription ||
-                        '<span class=\"text-muted-text\">No description provided.</span>',
-                    }}
-                  />
-                )}
-              </div>
-            </>
-          ) : (
-            children
-          )}
+                  {editingField === 'customFields' ? (
+                    <div>
+                      {customFieldsDraft.length === 0 && (
+                        <div className="text-muted-text text-sm mb-4">
+                          No additional information. Add a field below.
+                        </div>
+                      )}
+                      <div className="space-y-4">
+                        {customFieldsDraft.map((field, idx) => (
+                          <div
+                            key={idx}
+                            className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border border-gray-light rounded-lg"
+                          >
+                            <div>
+                              <label className="block text-xs font-medium text-muted-text mb-1">
+                                Field Name
+                              </label>
+                              <input
+                                type="text"
+                                value={field.key}
+                                onChange={(e) => {
+                                  const updated = [...customFieldsDraft];
+                                  updated[idx].key = e.target.value;
+                                  setCustomFieldsDraft(updated);
+                                }}
+                                placeholder="e.g., Languages spoken"
+                                className="w-full px-3 py-2 border border-gray-light rounded text-text placeholder-muted-text focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-muted-text mb-1">
+                                Input Type
+                              </label>
+                              <select
+                                value={field.inputType}
+                                onChange={(e) => {
+                                  const updated = [...customFieldsDraft];
+                                  updated[idx].inputType = e.target.value;
+                                  setCustomFieldsDraft(updated);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-light rounded text-text focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                              >
+                                {inputTypes.map((type) => (
+                                  <option key={type.value} value={type.value}>
+                                    {type.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-muted-text mb-1">
+                                Description/Placeholder
+                              </label>
+                              <input
+                                type="text"
+                                value={field.value}
+                                onChange={(e) => {
+                                  const updated = [...customFieldsDraft];
+                                  updated[idx].value = e.target.value;
+                                  setCustomFieldsDraft(updated);
+                                }}
+                                placeholder="Describe what you're looking for"
+                                className="w-full px-3 py-2 border border-gray-light rounded text-text placeholder-muted-text focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                              />
+                            </div>
+                            <div className="flex items-end">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setCustomFieldsDraft(
+                                    customFieldsDraft.filter((_, i) => i !== idx),
+                                  )
+                                }
+                                className="text-accent-red border-accent-red hover:bg-accent-red hover:text-white w-full"
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-4"
+                        onClick={() =>
+                          setCustomFieldsDraft([
+                            ...customFieldsDraft,
+                            { key: '', value: '', inputType: 'text' },
+                          ])
+                        }
+                      >
+                        Add Field
+                      </Button>
+                      <div className="flex gap-2 mt-6">
+                        <Button
+                          size="sm"
+                          isLoading={isSavingCustomFields}
+                          onClick={async () => {
+                            setIsSavingCustomFields(true);
+                            try {
+                              // Convert array to object
+                              const customFieldsObj = customFieldsDraft.reduce(
+                                (acc, field) => {
+                                  if (field.key.trim()) {
+                                    acc[field.key] = {
+                                      value: field.value,
+                                      inputType: field.inputType,
+                                    };
+                                  }
+                                  return acc;
+                                },
+                                {} as Record<string, { value: string; inputType: string }>,
+                              );
+                              await dispatch(
+                                updateJob({
+                                  id: job.id,
+                                  fields: {
+                                    ...job.fields,
+                                    customFields: customFieldsObj,
+                                  },
+                                }),
+                              ).unwrap();
+                              apiSuccess('Additional information updated');
+                              setEditingField(null);
+                            } catch {
+                              apiError('Failed to update additional information');
+                            } finally {
+                              setIsSavingCustomFields(false);
+                            }
+                          }}
+                        >
+                          Save
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingField(null)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      {job.fields?.customFields &&
+                      Object.keys(job.fields.customFields).length > 0 ? (
+                        Object.entries(job.fields.customFields).map(
+                          ([key, field]: [string, unknown]) => (
+                            <div key={key} className="mb-2">
+                              <span className="font-medium text-sm text-gray-700">{key}</span>
+                              <div className="text-xs text-gray-600">
+                                {(field as { value?: string | number })?.value || 'No value'}
+                              </div>
+                            </div>
+                          ),
+                        )
+                      ) : (
+                        <span className="text-muted-text text-sm">
+                          No additional information provided.
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Job Description Section (already inline editable) */}
+                <div className="bg-white rounded-lg border border-gray-100 p-6 md:p-4">
+                  <div className="flex items-center justify-between mb-3 md:mb-1">
+                    <h3 className="text-lg md:text-base font-semibold text-gray-900">
+                      Job Description
+                    </h3>
+                    {job.status === 'draft' && editingField !== 'jobDescription' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingField('jobDescription')}
+                      >
+                        <PencilIcon className="w-4 h-4 mr-1" /> Edit
+                      </Button>
+                    )}
+                  </div>
+                  {editingField === 'jobDescription' ? (
+                    <div>
+                      <RichTextEditor
+                        content={jobDescriptionDraft}
+                        onChange={setJobDescriptionDraft}
+                        placeholder="Describe the role, responsibilities, requirements, and what you offer..."
+                        className="w-full"
+                      />
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          size="sm"
+                          isLoading={isSavingDescription}
+                          onClick={async () => {
+                            setIsSavingDescription(true);
+                            try {
+                              await dispatch(
+                                updateJob({
+                                  id: job.id,
+                                  fields: {
+                                    ...job.fields,
+                                    jobDescription: jobDescriptionDraft,
+                                  },
+                                }),
+                              ).unwrap();
+                              apiSuccess('Job description updated');
+                              setEditingField(null);
+                            } catch {
+                              apiError('Failed to update job description');
+                            } finally {
+                              setIsSavingDescription(false);
+                            }
+                          }}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setJobDescriptionDraft(job.fields?.jobDescription || '');
+                            setEditingField(null);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="prose max-w-none"
+                      dangerouslySetInnerHTML={{
+                        __html:
+                          job.fields?.jobDescription ||
+                          '<span class=\"text-muted-text\">No description provided.</span>',
+                      }}
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              children
+            )}
+          </div>
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-4 md:space-y-2">
-          {/* Job Info (read-only summary) */}
-          <div className="bg-white rounded-lg border border-gray-100 p-4 md:p-3">
-            <h3 className="text-sm md:text-xs font-semibold text-gray-900 mb-3 md:mb-2">
-              Job Information
-            </h3>
-            <div className="space-y-3">
-              <div>
-                <span className="text-xs font-medium text-gray-500">Status</span>
-                <p className="text-xs text-gray-900 mt-1">{getStatusLabel(job.status)}</p>
-              </div>
-              <div>
-                <span className="text-xs font-medium text-gray-500">Interview Format</span>
-                <p className="text-xs text-gray-900 mt-1 capitalize">
-                  {job.interviewFormat === 'text' ? 'Text-based' : 'Video'} Interview
-                </p>
-              </div>
-              {job.fields?.experienceLevel && (
-                <div>
-                  <span className="text-xs font-medium text-gray-500">Experience Level</span>
-                  <p className="text-xs text-gray-900 mt-1 capitalize">
-                    {job.fields.experienceLevel.replace(/([A-Z])/g, ' $1').trim()}
-                  </p>
-                </div>
-              )}
-              <div>
-                <span className="text-xs font-medium text-gray-500">Created</span>
-                <p className="text-xs text-gray-900 mt-1">{formatDate(job.createdAt)}</p>
-              </div>
-            </div>
-          </div>
-          {/* Skills (read-only summary) */}
-          {job.fields?.skills && job.fields.skills.length > 0 && (
-            <div className="bg-white rounded-lg border border-gray-100 p-4 md:p-3">
-              <h3 className="text-sm md:text-xs font-semibold text-gray-900 mb-3 md:mb-2">
-                Required Skills
-              </h3>
-              <div className="flex flex-wrap gap-1">
-                {job.fields.skills.map((skill: string, index: number) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+        <div className="h-full flex flex-col">
+          {/* Job Discussion Panel */}
+          <JobDiscussionPanel className="h-full flex-1" />
         </div>
       </div>
+
+      {/* Job Invite Modal */}
+      <JobInviteModal
+        open={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        jobId={job.id}
+        jobTitle={job.title}
+      />
     </DashboardLayout>
   );
 }

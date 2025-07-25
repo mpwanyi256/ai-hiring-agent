@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { useToast } from '../providers/ToastProvider';
 import { app } from '@/lib/constants';
 import { selectCompanySlug } from '@/store/auth/authSelectors';
+import { JobTeamDisplay } from '@/components/jobs/JobTeamDisplay';
 
 interface CurrentJobHeaderProps {
   onSetActiveTab: (tab: string) => void;
@@ -83,7 +84,8 @@ export const CurrentJobHeader: React.FC<CurrentJobHeaderProps> = ({ onSetActiveT
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      {/* Action Buttons Row */}
+      <div className="flex flex-wrap gap-2 mb-4">
         <Button
           variant="outline"
           size="sm"
@@ -150,6 +152,9 @@ export const CurrentJobHeader: React.FC<CurrentJobHeaderProps> = ({ onSetActiveT
           </Link>
         )}
       </div>
+
+      {/* Team Display Row */}
+      <JobTeamDisplay />
     </div>
   );
 };

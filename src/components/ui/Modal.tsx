@@ -8,9 +8,10 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  footer?: React.ReactNode;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md' }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md', footer }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
@@ -41,6 +42,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
           </div>
         )}
         <div className="p-6">{children}</div>
+        {footer && (
+          <div className="px-6 pb-4 pt-2 border-t border-gray-100 flex justify-end">{footer}</div>
+        )}
       </div>
     </div>
   );

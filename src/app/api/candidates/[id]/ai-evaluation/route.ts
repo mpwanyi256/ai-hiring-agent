@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { TeamAssessment } from '@/types/evaluations';
 
-type AssessmentWithProfile = TeamAssessment & {
+interface TeamResponseWithProfile {
+  id: string;
+  candidate_id: string;
+  job_id: string;
+  user_id: string;
+  vote: string;
+  comment: string | null;
+  confidence_level: number;
+  technical_skills: number | null;
+  communication_skills: number | null;
+  cultural_fit: number | null;
+  created_at: string;
+  updated_at: string;
   profiles?: {
     first_name: string;
     last_name: string;
+    role: string;
   };
-};
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -93,27 +105,28 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       );
     }
 
-    // Get team assessments
-    const { data: teamAssessments, error: teamAssessmentsError } = await supabase
-      .from('team_assessments')
+    // Get team responses (replacing team_assessments)
+    const { data: teamResponses, error: teamResponsesError } = await supabase
+      .from('team_responses')
       .select(
         `
         *,
-        profiles!assessor_profile_id(
+        profiles!user_id(
           first_name,
-          last_name
+          last_name,
+          role
         )
       `,
       )
       .eq('candidate_id', candidateId)
       .order('created_at', { ascending: false });
 
-    if (teamAssessmentsError) {
-      console.error('Team assessments error:', teamAssessmentsError);
+    if (teamResponsesError) {
+      console.error('Team responses error:', teamResponsesError);
       return NextResponse.json(
         {
           success: false,
-          error: 'Failed to fetch team assessments',
+          error: 'Failed to fetch team responses',
         },
         { status: 500 },
       );
@@ -145,31 +158,42 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
       : null;
 
-    const formattedTeamAssessments = (teamAssessments || []).map(
-      (assessment: AssessmentWithProfile) => ({
-        id: assessment.id,
-        candidateId: assessment.candidateId,
-        jobId: assessment.jobId,
-        aiEvaluationId: assessment.aiEvaluationId,
-        assessorProfileId: assessment.assessorProfileId,
-        assessorName: assessment.assessorName,
-        assessorRole: assessment.assessorRole,
-        overallRating: assessment.overallRating,
-        overallRatingStatus: assessment.overallRatingStatus,
-        categoryRatings: assessment.categoryRatings,
-        assessmentComments: assessment.assessmentComments,
-        privateNotes: assessment.privateNotes,
-        assessmentType: assessment.assessmentType,
-        interviewDurationMinutes: assessment.interviewDurationMinutes,
-        createdAt: assessment.createdAt,
-        updatedAt: assessment.updatedAt,
-        assessorProfile: assessment.profiles
-          ? {
-              firstName: assessment.profiles.first_name,
-              lastName: assessment.profiles.last_name,
-            }
-          : null,
-      }),
+    // Format team responses to match the expected structure
+    const formattedTeamAssessments = (teamResponses || []).map(
+      (response: TeamResponseWithProfile) => {
+        const profile = Array.isArray(response.profiles) ? response.profiles[0] : response.profiles;
+
+        // Convert team response to assessment-like structure
+        const overallRating = response.confidence_level / 2; // Convert 1-10 scale to 1-5 scale
+
+        return {
+          id: response.id,
+          candidateId: response.candidate_id,
+          jobId: response.job_id,
+          assessorProfileId: response.user_id,
+          assessorName: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown',
+          assessorRole: profile?.role || 'viewer',
+          overallRating: overallRating,
+          overallRatingStatus: response.vote as 'positive' | 'negative' | 'neutral',
+          categoryRatings: {
+            technical_skills: response.technical_skills || 0,
+            communication_skills: response.communication_skills || 0,
+            cultural_fit: response.cultural_fit || 0,
+          },
+          assessmentComments: response.comment || '',
+          privateNotes: '',
+          assessmentType: 'team_response' as const,
+          interviewDurationMinutes: null,
+          createdAt: response.created_at,
+          updatedAt: response.updated_at,
+          assessorProfile: profile
+            ? {
+                firstName: profile.first_name,
+                lastName: profile.last_name,
+              }
+            : null,
+        };
+      },
     );
 
     // Calculate computed values if AI evaluation exists

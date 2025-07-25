@@ -15,6 +15,7 @@ interface DashboardLayoutProps {
   loading?: boolean;
   loadingMessage?: string;
   requireSubscription?: boolean;
+  className?: string;
 }
 
 export default function DashboardLayout({
@@ -22,6 +23,7 @@ export default function DashboardLayout({
   title,
   loading,
   loadingMessage,
+  className,
 }: DashboardLayoutProps) {
   // Always call hooks at the top level
   const { user, isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
@@ -51,7 +53,7 @@ export default function DashboardLayout({
 
   // Create dashboard content
   const dashboardContent = (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className={`h-screen bg-background flex flex-col overflow-hidden ${className}`}>
       {/* Centralized Top Navigation */}
       <TopNavigation
         showAuthButtons={true}

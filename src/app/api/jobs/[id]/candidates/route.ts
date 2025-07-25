@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { CandidateStatus } from '@/types/candidates';
+import { checkJobPermission } from '@/lib/utils/jobPermissions';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -9,15 +9,56 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { id: jobId } = await params;
     const searchParams = request.nextUrl.searchParams;
 
+    // Get current user and check authentication
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user has permission to view this job's candidates
+    const hasPermission = await checkJobPermission(supabase, user.id, jobId);
+
+    if (!hasPermission) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'You do not have permission to access candidates for this job',
+        },
+        { status: 403 },
+      );
+    }
+
     // Get query parameters
     const search = searchParams.get('search') || null;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = (page - 1) * limit;
     const status = searchParams.get('status') || null;
+    const sortBy = searchParams.get('sortBy') || 'created_at';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const minScore = searchParams.get('minScore') ? parseInt(searchParams.get('minScore')!) : null;
+    const maxScore = searchParams.get('maxScore') ? parseInt(searchParams.get('maxScore')!) : null;
+    const startDate = searchParams.get('startDate') || null;
+    const endDate = searchParams.get('endDate') || null;
+    const candidateStatus = searchParams.get('candidateStatus') || null;
+
+    // Get job details
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('id, title')
+      .eq('id', jobId)
+      .single();
+
+    if (jobError || !job) {
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+    }
 
     // Get candidate details using the database function (now only returns completed candidates)
-    const { data: candidates, error: candidatesError } = await supabase.rpc(
+    const { data: rawCandidates, error: candidatesError } = await supabase.rpc(
       'get_job_candidate_details',
       {
         p_job_id: jobId,
@@ -32,6 +73,66 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       console.error('Candidates error:', candidatesError);
       throw new Error(candidatesError.message);
     }
+
+    // Transform flattened data into nested structure
+    const candidates = (rawCandidates || []).map((candidate: any) => ({
+      id: candidate.id,
+      jobId: candidate.job_id,
+      jobTitle: candidate.job_title,
+      jobStatus: candidate.job_status,
+      interviewToken: candidate.interview_token,
+      candidateInfoId: candidate.candidate_info_id,
+      email: candidate.email,
+      firstName: candidate.first_name,
+      lastName: candidate.last_name,
+      name: candidate.full_name || `${candidate.first_name} ${candidate.last_name}`.trim(),
+      currentStep: candidate.current_step,
+      totalSteps: candidate.total_steps,
+      isCompleted: candidate.is_completed,
+      progress: candidate.progress_percentage,
+      responses: candidate.response_count || 0,
+      status: candidate.status,
+      submittedAt: candidate.submitted_at,
+      createdAt: candidate.created_at,
+      updatedAt: candidate.updated_at,
+      candidateStatus: candidate.candidate_status,
+      evaluation: candidate.evaluation_id
+        ? {
+            id: candidate.evaluation_id,
+            score: candidate.score || 0,
+            recommendation: candidate.recommendation || '',
+            summary: candidate.summary || '',
+            strengths: candidate.strengths || [],
+            redFlags: candidate.red_flags || [],
+            skillsAssessment: candidate.skills_assessment || {},
+            traitsAssessment: candidate.traits_assessment || {
+              skills: 0,
+              culture: 0,
+              team_work: 0,
+              communication: 0,
+              growth_mindset: 0,
+            },
+            createdAt: candidate.evaluation_created_at,
+            resumeScore: candidate.resume_score || 0,
+            resumeSummary: candidate.resume_summary || '',
+            evaluationType: candidate.evaluation_type || 'manual',
+          }
+        : null,
+      resume: candidate.resume_id
+        ? {
+            id: candidate.resume_id,
+            filename: candidate.resume_filename,
+            filePath: candidate.resume_file_path,
+            publicUrl: candidate.resume_public_url,
+            fileSize: candidate.resume_file_size || 0,
+            fileType: candidate.resume_file_type,
+            wordCount: candidate.resume_word_count || 0,
+            parsingStatus: candidate.resume_parsing_status || 'pending',
+            parsingError: candidate.resume_parsing_error,
+            uploadedAt: candidate.resume_uploaded_at,
+          }
+        : null,
+    }));
 
     // Get candidate statistics (note: this function still uses profile_id, but we'll pass null)
     const { data: stats, error: statsError } = await supabase.rpc('get_job_candidate_stats', {
@@ -52,87 +153,53 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       average_score: 0,
     };
 
-    // Format the response data with resume information
-    const formattedCandidates = (candidates || []).map((candidate: Record<string, unknown>) => ({
-      id: candidate.id as string,
-      jobId: candidate.job_id as string,
-      jobTitle: candidate.job_title as string,
-      jobStatus: candidate.job_status as string,
-      interviewToken: candidate.interview_token as string,
-      email: candidate.email as string,
-      firstName: candidate.first_name as string,
-      lastName: candidate.last_name as string,
-      name: candidate.full_name as string,
-      currentStep: candidate.current_step as number,
-      totalSteps: candidate.total_steps as number,
-      isCompleted: candidate.is_completed as boolean,
-      progress: Math.round((candidate.progress_percentage as number) || 0),
-      responses: (candidate.response_count as number) || 0,
-      status: candidate.status as string,
-      submittedAt: candidate.submitted_at as string,
-      createdAt: candidate.created_at as string,
-      updatedAt: candidate.updated_at as string,
-      candidateStatus: candidate.candidate_status as CandidateStatus,
-      evaluation: candidate.evaluation_id
-        ? {
-            id: candidate.evaluation_id as string,
-            score: (candidate.score as number) || 0,
-            recommendation: candidate.recommendation as string,
-            summary: candidate.summary as string,
-            strengths: (candidate.strengths as string[]) || [],
-            redFlags: (candidate.red_flags as string[]) || [],
-            skillsAssessment: candidate.skills_assessment as Record<string, any>,
-            traitsAssessment: candidate.traits_assessment as Record<string, any>,
-            createdAt: candidate.evaluation_created_at as string,
-            resumeScore: candidate.resume_score as number,
-            resumeSummary: candidate.resume_summary as string,
-            evaluationType: candidate.evaluation_type as string,
-          }
-        : null,
-      resume: candidate.resume_id
-        ? {
-            id: candidate.resume_id as string,
-            filename: candidate.resume_filename as string,
-            filePath: candidate.resume_file_path as string,
-            publicUrl: candidate.resume_public_url as string,
-            fileSize: candidate.resume_file_size as number,
-            fileType: candidate.resume_file_type as string,
-            wordCount: candidate.resume_word_count as number,
-            parsingStatus: candidate.resume_parsing_status as string,
-            parsingError: candidate.resume_parsing_error as string,
-            uploadedAt: candidate.resume_uploaded_at as string,
-          }
-        : null,
-      interviewDetails: candidate.interview_details as Record<string, any> | null,
-    }));
+    const totalPages = Math.ceil(statsData.total_candidates / limit);
 
-    const totalCandidates = parseInt(statsData.total_candidates?.toString() || '0');
-    const totalPages = Math.ceil(totalCandidates / limit);
-
+    // Return response in CandidateListResponse format
     return NextResponse.json({
       success: true,
-      candidates: formattedCandidates,
+      candidates,
+      job: {
+        id: job.id,
+        title: job.title,
+      },
       stats: {
-        total: totalCandidates,
-        completed: parseInt(statsData.completed_candidates?.toString() || '0'),
-        inProgress: parseInt(statsData.in_progress_candidates?.toString() || '0'),
-        pending: parseInt(statsData.pending_candidates?.toString() || '0'),
-        averageScore: Math.round(parseFloat(statsData.average_score?.toString() || '0')),
+        total: statsData.total_candidates,
+        completed: statsData.completed_candidates,
+        inProgress: statsData.in_progress_candidates,
+        pending: statsData.pending_candidates,
+        averageScore: statsData.average_score,
       },
       pagination: {
         page,
         limit,
-        total: totalCandidates,
+        total: statsData.total_candidates,
         totalPages,
-        hasMore: page < totalPages,
+        hasMore: (candidates || []).length === limit,
       },
     });
   } catch (error) {
-    console.error('Error fetching job candidates:', error);
+    console.error('Error fetching candidates:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch job candidates',
+        error: error instanceof Error ? error.message : 'Failed to fetch candidates',
+        candidates: [],
+        job: { id: '', title: '' },
+        stats: {
+          total: 0,
+          completed: 0,
+          inProgress: 0,
+          pending: 0,
+          averageScore: 0,
+        },
+        pagination: {
+          page: 1,
+          limit: 50,
+          total: 0,
+          totalPages: 0,
+          hasMore: false,
+        },
       },
       { status: 500 },
     );

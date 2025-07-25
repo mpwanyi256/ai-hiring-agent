@@ -10,6 +10,9 @@ export * from './candidates';
 // Export all billing types
 export * from './billing';
 
+// Export all supabase types
+export * from './core';
+
 // Interview types
 export type {
   Interview,

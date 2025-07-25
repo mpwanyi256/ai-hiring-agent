@@ -1,98 +1,176 @@
-import React, { useState, useRef, useEffect } from 'react';
-
-interface Message {
-  id: string;
-  sender: string;
-  text: string;
-  timestamp: string;
-}
-
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    sender: 'Jane (HR)',
-    text: 'I think this candidate is a great fit for the team!',
-    timestamp: '2025-07-01T13:00:00Z',
-  },
-  {
-    id: '2',
-    sender: 'Alex (Engineering)',
-    text: 'Agreed, strong technical skills.',
-    timestamp: '2025-07-01T13:05:00Z',
-  },
-  {
-    id: '3',
-    sender: 'Sam (Recruiter)',
-    text: 'Should we move to the next round?',
-    timestamp: '2025-07-01T13:10:00Z',
-  },
-];
+import React, { useState } from 'react';
+import { AlertCircle } from 'lucide-react';
+import { useAppSelector } from '@/store';
+import { selectUser } from '@/store/auth/authSelectors';
+import { selectSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSelectors';
+import { useMessagesRedux } from '@/hooks/useMessagesRedux';
+import { Message } from '@/types/messages';
+import ChatHeader from '../messages/ChatHeader';
+import MessagesList from '../messages/MessagesList';
+import MessageInput from '../messages/MessageInput';
 
 const MessagesTab: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
-  const [input, setInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    setMessages([
-      ...messages,
-      {
-        id: (messages.length + 1).toString(),
-        sender: 'You',
-        text: input,
-        timestamp: new Date().toISOString(),
-      },
-    ]);
-    setInput('');
+  const user = useAppSelector(selectUser);
+  const candidate = useAppSelector(selectSelectedCandidate);
+
+  // Initialize enhanced messaging hook with Redux integration
+  const {
+    messages,
+    loading,
+    error,
+    unreadCount,
+    hasMore,
+    sendMessage,
+    sendingMessage,
+    typingUsers,
+    addReaction,
+    refreshMessages,
+    loadMoreMessages,
+    editMessage,
+    deleteMessage,
+    startTyping,
+    stopTyping,
+  } = useMessagesRedux({
+    jobId: candidate?.jobId || '',
+    enabled: !!(candidate?.id && candidate?.jobId),
+  });
+
+  const handleSendMessage = async (text: string, replyToId?: string, attachment?: File) => {
+    await sendMessage(text, replyToId, attachment);
+    setReplyingTo(null); // Clear reply after sending
   };
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const handleReaction = async (messageId: string, emoji: string) => {
+    try {
+      await addReaction(messageId, emoji);
+    } catch (error) {
+      console.error('Failed to add reaction:', error);
+    }
+  };
 
-  return (
-    <div className="flex flex-col h-[calc(100vh-300px)] min-h-0">
-      <div className="flex-1 min-h-0 overflow-y-auto px-0 pb-2">
-        <div className="flex flex-col gap-3">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className="flex flex-col bg-gray-50 rounded-lg p-3 border border-gray-100"
-            >
-              <span className="text-xs font-semibold text-primary-700 mb-0.5">{msg.sender}</span>
-              <span className="text-gray-800 text-sm mb-0.5">{msg.text}</span>
-              <span className="text-xs text-gray-400">
-                {new Date(msg.timestamp).toLocaleString('en-GB', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                })}
-              </span>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
+  const handleReply = (message: Message) => {
+    setReplyingTo(message);
+  };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
+  };
+
+  const handleEdit = async (messageId: string, newText: string) => {
+    try {
+      await editMessage(messageId, newText);
+    } catch (error) {
+      console.error('Failed to edit message:', error);
+    }
+  };
+
+  const handleDelete = async (messageId: string) => {
+    try {
+      await deleteMessage(messageId);
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+    }
+  };
+
+  const handleStartConversation = () => {
+    // Focus the input field when starting conversation
+    const inputElement = document.querySelector(
+      'input[placeholder*="Type your message"], textarea[placeholder*="Type your message"]',
+    ) as HTMLInputElement | HTMLTextAreaElement;
+    if (inputElement) {
+      inputElement.focus();
+    }
+  };
+
+  const handleTypingStart = () => {
+    startTyping();
+  };
+
+  const handleTypingStop = () => {
+    stopTyping();
+  };
+
+  const getUniqueParticipants = () => {
+    const participants = messages
+      .filter((m) => !m.sender.isCurrentUser)
+      .map((m) => m.sender.name)
+      .filter((name, index, arr) => arr.indexOf(name) === index);
+    return participants.length;
+  };
+
+  const getSubtitle = () => {
+    const participantCount = getUniqueParticipants();
+
+    // Remove typing indicators from header - they'll be shown in message area instead
+    return `${participantCount} team member${participantCount !== 1 ? 's' : ''} participating`;
+  };
+
+  const getCandidateName = () => {
+    // Try to get real candidate name from the selected candidate
+    if (candidate?.name) return candidate.name;
+    if (candidate?.firstName && candidate?.lastName) {
+      return `${candidate.firstName} ${candidate.lastName}`;
+    }
+    if (candidate?.firstName) return candidate.firstName;
+    if (candidate?.email) return candidate.email;
+    return 'this candidate';
+  };
+
+  // Show loading state if candidate data is not available
+  if (loading) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-300px)] bg-gray-50 rounded-lg border border-gray-200">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <AlertCircle className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+            <p className="text-sm">No candidate selected</p>
+            <p className="text-xs text-gray-400 mt-1">Please select a candidate to view messages</p>
+          </div>
         </div>
       </div>
-      <div className="flex items-center gap-2 pt-2">
-        <input
-          type="text"
-          className="flex-1 border border-gray-200 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-200"
-          placeholder="Type a message..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-        />
-        <button
-          className="bg-primary text-white px-3 py-1.5 rounded-md text-sm font-semibold shadow"
-          onClick={handleSend}
-        >
-          Send
-        </button>
-      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-240px)] md:h-[calc(100vh-180px)] bg-white rounded-lg border border-gray-200 shadow-sm">
+      {/* Header - Mobile optimized */}
+      <ChatHeader
+        title="Team Discussion"
+        subtitle={getSubtitle()}
+        unreadCount={unreadCount}
+        loading={loading}
+        onRefresh={refreshMessages}
+      />
+
+      {/* Messages List - Enhanced with Redux state and improved real-time */}
+      <MessagesList
+        messages={messages}
+        loading={loading}
+        error={error}
+        hasMore={hasMore}
+        typingUsers={typingUsers}
+        candidateName={getCandidateName()}
+        currentUserId={user?.id}
+        onLoadMore={loadMoreMessages}
+        onReaction={handleReaction}
+        onReply={handleReply}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onStartConversation={handleStartConversation}
+      />
+
+      {/* Message Input - Enhanced with 3-second typing delay */}
+      <MessageInput
+        onSendMessage={handleSendMessage}
+        sendingMessage={sendingMessage}
+        replyingTo={replyingTo}
+        onCancelReply={handleCancelReply}
+        onTypingStart={handleTypingStart}
+        onTypingStop={handleTypingStop}
+        placeholder={`Message about ${getCandidateName()}...`}
+      />
     </div>
   );
 };

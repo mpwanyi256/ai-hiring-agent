@@ -16,6 +16,9 @@ import landingSlice from './landing/landingSlice';
 import billingSlice from './billing/billingSlice';
 import integrationsReducer from './integrations/integrationsSlice';
 import { combineReducers } from 'redux';
+import teamsSlice from './teams/teamsSlice';
+import jobPermissionsSlice from './jobPermissions/jobPermissionsSlice';
+import messagesSlice from './messages/messagesSlice';
 
 const rootReducer = combineReducers({
   auth: authSlice,
@@ -33,6 +36,9 @@ const rootReducer = combineReducers({
   landing: landingSlice,
   billing: billingSlice,
   integrations: integrationsReducer,
+  teams: teamsSlice,
+  jobPermissions: jobPermissionsSlice,
+  messages: messagesSlice,
 });
 
 export const store = configureStore({
