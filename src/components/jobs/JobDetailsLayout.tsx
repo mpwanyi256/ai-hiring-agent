@@ -362,9 +362,9 @@ export default function JobDetailsLayout({
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-4 h-[calc(100vh-290px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-4 h-[calc(100vh-300px)]">
         {/* Main Content Area */}
-        <div className="lg:col-span-2 h-[calc(100vh-290px)]">
+        <div className="lg:col-span-2 h-[calc(100vh-300px)]">
           <div className="h-full overflow-y-auto space-y-6 md:space-y-4 pr-2">
             {activeTab === 'overview' ? (
               <>
