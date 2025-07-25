@@ -1,9 +1,13 @@
 import { createClient } from '@/lib/supabase/server';
+import { AppRequestParams } from '@/types/api';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest, { params }: { params: { invite_id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: AppRequestParams<{ invite_id: string }>,
+) {
   try {
-    const { invite_id } = params;
+    const { invite_id } = await params;
 
     if (!invite_id) {
       return NextResponse.json({ error: 'Invite ID is required' }, { status: 400 });

@@ -34,7 +34,6 @@ import {
   selectIsLoading,
   selectIsSendingMessage,
   selectError,
-  createConversationId,
 } from '@/store/messages/messagesSelectors';
 
 interface UseMessagesReduxProps {
@@ -219,10 +218,9 @@ export function useMessagesRedux({
           schema: 'public',
           table: 'message_reactions',
         },
-        (payload) => {
-          console.log('Reaction updated:', payload);
+        (payload: any) => {
           // Refresh the specific message to get updated reactions
-          const messageId = (payload.new as any)?.message_id || (payload.old as any)?.message_id;
+          const messageId = payload.new.message_id || payload.old.message_id;
           if (messageId) {
             dispatch(
               fetchMessageById({
