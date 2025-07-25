@@ -29,7 +29,7 @@ export async function POST(
     // Get the message to check permissions
     const { data: message, error: messageError } = await supabase
       .from('messages')
-      .select('candidate_id, job_id')
+      .select('job_id')
       .eq('id', messageId)
       .single();
 
@@ -51,13 +51,13 @@ export async function POST(
     }
 
     // Check if user is job owner or admin
-    const { data: job, error: jobError } = await supabase
+    const { data: job } = await supabase
       .from('jobs')
       .select('profile_id')
       .eq('id', message.job_id)
       .single();
 
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
@@ -189,7 +189,7 @@ export async function DELETE(
     // Get the message to check permissions
     const { data: message, error: messageError } = await supabase
       .from('messages')
-      .select('candidate_id, job_id')
+      .select('job_id')
       .eq('id', messageId)
       .single();
 
