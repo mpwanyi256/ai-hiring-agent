@@ -20,6 +20,8 @@ import {
   BriefcaseIcon,
   EnvelopeIcon,
   FunnelIcon,
+  CalendarIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 
 interface TeamAuditLogProps {
@@ -34,6 +36,10 @@ const eventTypeIcons = {
   [UserActivityEventType.JOB_PERMISSION_GRANTED]: ShieldCheckIcon,
   [UserActivityEventType.JOB_PERMISSION_UPDATED]: ShieldCheckIcon,
   [UserActivityEventType.JOB_PERMISSION_REVOKED]: ShieldCheckIcon,
+  [UserActivityEventType.CANDIDATE_APPLIED]: UserGroupIcon,
+  [UserActivityEventType.INTERVIEW_SCHEDULED]: CalendarIcon,
+  [UserActivityEventType.JOB_CREATED]: BriefcaseIcon,
+  [UserActivityEventType.EVALUATION_COMPLETED]: DocumentTextIcon,
 };
 
 const eventTypeColors = {
@@ -44,6 +50,10 @@ const eventTypeColors = {
   [UserActivityEventType.JOB_PERMISSION_GRANTED]: 'text-purple-600 bg-purple-100',
   [UserActivityEventType.JOB_PERMISSION_UPDATED]: 'text-yellow-600 bg-yellow-100',
   [UserActivityEventType.JOB_PERMISSION_REVOKED]: 'text-orange-600 bg-orange-100',
+  [UserActivityEventType.CANDIDATE_APPLIED]: 'text-indigo-600 bg-indigo-100',
+  [UserActivityEventType.INTERVIEW_SCHEDULED]: 'text-cyan-600 bg-cyan-100',
+  [UserActivityEventType.JOB_CREATED]: 'text-emerald-600 bg-emerald-100',
+  [UserActivityEventType.EVALUATION_COMPLETED]: 'text-violet-600 bg-violet-100',
 };
 
 export default function TeamAuditLog({ companyId }: TeamAuditLogProps) {

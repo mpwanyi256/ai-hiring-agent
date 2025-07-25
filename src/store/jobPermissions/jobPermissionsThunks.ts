@@ -1,6 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { JobPermissionLevel } from '@/types/jobPermissions';
-import { RootState } from '..';
 
 // Fetch job permissions for a specific job
 export const fetchJobPermissions = createAsyncThunk(

@@ -10,9 +10,21 @@ import {
   generateInviteRejectedEmail,
   generatePermissionRevokedEmail,
 } from './templates';
+import { integrations, domainEmails } from '../constants';
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy-load Resend client to avoid build-time errors
+let resendClient: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resendClient) {
+    const apiKey = integrations.resend.apiKey;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY environment variable is required');
+    }
+    resendClient = new Resend(apiKey);
+  }
+  return resendClient;
+}
 
 export interface EmailSendResult {
   success: boolean;
@@ -21,8 +33,8 @@ export interface EmailSendResult {
 }
 
 export class EmailService {
-  private static readonly FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@yourdomain.com';
-  private static readonly DEFAULT_REPLY_TO = process.env.EMAIL_REPLY_TO;
+  private static readonly FROM_EMAIL = domainEmails.noReply;
+  private static readonly DEFAULT_REPLY_TO = domainEmails.noReply;
 
   /**
    * Send a generic email using a template
@@ -38,7 +50,7 @@ export class EmailService {
         return { success: true, messageId: 'dev-mode' };
       }
 
-      const result = await resend.emails.send({
+      const result = await getResendClient().emails.send({
         from: this.FROM_EMAIL,
         to,
         subject: template.subject,

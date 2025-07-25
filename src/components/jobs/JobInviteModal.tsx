@@ -138,7 +138,7 @@ export default function JobInviteModal({ open, onClose, jobId, jobTitle }: JobIn
           dispatch(
             grantJobPermission({
               job_id: jobId,
-              user_id: member.id,
+              user_email: member.email,
               permission_level: member.permissionLevel,
             }),
           ).unwrap(),

@@ -5,22 +5,15 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { RootState } from '@/store';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
-import { JobPermissionLevel, JobPermissionDetailed } from '@/types/jobPermissions';
-import { TeamMember } from '@/types/teams';
+import { JobPermissionLevel } from '@/types/jobPermissions';
 import {
   fetchJobPermissions,
   grantJobPermission,
   updateJobPermission,
-  revokeJobPermission,
+  removeJobPermission,
 } from '@/store/jobPermissions/jobPermissionsThunks';
 import { fetchTeamMembers } from '@/store/teams/teamsThunks';
-import {
-  UserGroupIcon,
-  PlusIcon,
-  TrashIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-} from '@heroicons/react/24/outline';
+import { UserGroupIcon, PlusIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 interface JobPermissionsModalProps {
   open: boolean;
@@ -87,12 +80,16 @@ export default function JobPermissionsModal({
   const handleGrantPermission = async () => {
     if (!selectedUserId || !selectedPermissionLevel) return;
 
+    // Find the selected user email
+    const selectedUser = members.find((member) => member.id === selectedUserId);
+    if (!selectedUser) return;
+
     setIsGranting(true);
     try {
       await dispatch(
         grantJobPermission({
           job_id: jobId,
-          user_id: selectedUserId,
+          user_email: selectedUser.email,
           permission_level: selectedPermissionLevel,
         }),
       ).unwrap();
@@ -106,11 +103,12 @@ export default function JobPermissionsModal({
     }
   };
 
-  const handleUpdatePermission = async (permissionId: string, newLevel: JobPermissionLevel) => {
+  const handleUpdatePermission = async (permission: any, newLevel: JobPermissionLevel) => {
     try {
       await dispatch(
         updateJobPermission({
-          permission_id: permissionId,
+          job_id: jobId,
+          user_id: permission.user_id,
           permission_level: newLevel,
         }),
       ).unwrap();
@@ -119,11 +117,16 @@ export default function JobPermissionsModal({
     }
   };
 
-  const handleRevokePermission = async (permissionId: string) => {
+  const handleRevokePermission = async (permission: any) => {
     if (!confirm('Are you sure you want to revoke this permission?')) return;
 
     try {
-      await dispatch(revokeJobPermission(permissionId)).unwrap();
+      await dispatch(
+        removeJobPermission({
+          job_id: jobId,
+          user_id: permission.user_id,
+        }),
+      ).unwrap();
     } catch (error) {
       console.error('Failed to revoke permission:', error);
     }
@@ -138,21 +141,14 @@ export default function JobPermissionsModal({
   );
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={
-        <div className="flex items-center space-x-2">
-          <UserGroupIcon className="w-5 h-5 text-primary" />
-          <span>Manage Team Access</span>
-        </div>
-      }
-      footer={footer}
-    >
+    <Modal isOpen={open} onClose={onClose} title="Manage Team Access" footer={footer}>
       <div className="space-y-6">
         {/* Job Info */}
         <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="font-medium text-gray-900 mb-1">{jobTitle}</h3>
+          <div className="flex items-center space-x-2 mb-2">
+            <UserGroupIcon className="w-5 h-5 text-primary" />
+            <h3 className="font-medium text-gray-900">{jobTitle}</h3>
+          </div>
           <p className="text-sm text-gray-600">
             Control which team members can access this job and their permission levels.
           </p>
@@ -248,15 +244,15 @@ export default function JobPermissionsModal({
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                       <span className="text-sm font-medium text-primary">
-                        {permission.first_name[0]}
-                        {permission.last_name[0]}
+                        {permission.user_first_name?.[0] || '?'}
+                        {permission.user_last_name?.[0] || '?'}
                       </span>
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">
-                        {permission.first_name} {permission.last_name}
+                        {permission.user_first_name} {permission.user_last_name}
                       </p>
-                      <p className="text-sm text-gray-500">{permission.email}</p>
+                      <p className="text-sm text-gray-500">{permission.user_email}</p>
                     </div>
                   </div>
 
@@ -264,7 +260,7 @@ export default function JobPermissionsModal({
                     <select
                       value={permission.permission_level}
                       onChange={(e) =>
-                        handleUpdatePermission(permission.id, e.target.value as JobPermissionLevel)
+                        handleUpdatePermission(permission, e.target.value as JobPermissionLevel)
                       }
                       className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     >
@@ -283,7 +279,7 @@ export default function JobPermissionsModal({
 
                     {permission.permission_level !== JobPermissionLevel.ADMIN && (
                       <button
-                        onClick={() => handleRevokePermission(permission.id)}
+                        onClick={() => handleRevokePermission(permission)}
                         className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
                         title="Revoke access"
                       >

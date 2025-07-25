@@ -69,3 +69,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     );
   }
 }
+
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id: jobId } = await params;
+
+    // update job status
+    const { status } = await request.json();
+
+    const job = await jobsService.updateJobStatus(jobId, status);
+
+    return NextResponse.json({ success: true, job });
+  } catch (error) {
+    console.error('Error updating job:', error);
+  }
+}

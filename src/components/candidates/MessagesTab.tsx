@@ -33,7 +33,6 @@ const MessagesTab: React.FC = () => {
     startTyping,
     stopTyping,
   } = useMessagesRedux({
-    candidateId: candidate?.id || '',
     jobId: candidate?.jobId || '',
     enabled: !!(candidate?.id && candidate?.jobId),
   });
@@ -120,7 +119,7 @@ const MessagesTab: React.FC = () => {
   };
 
   // Show loading state if candidate data is not available
-  if (!candidate?.id || !candidate?.jobId) {
+  if (loading) {
     return (
       <div className="flex flex-col h-[calc(100vh-300px)] bg-gray-50 rounded-lg border border-gray-200">
         <div className="flex-1 flex items-center justify-center">

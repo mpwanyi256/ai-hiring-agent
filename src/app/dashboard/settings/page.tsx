@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useSelector } from 'react-redux';
 import { useSearchParams } from 'next/navigation';
 import { RootState } from '@/store';
@@ -23,7 +23,7 @@ const tabs = [
   { id: 'notifications', label: 'Notifications' },
 ];
 
-export default function SettingsPage() {
+function SettingsContent() {
   const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = React.useState(() => {
@@ -56,5 +56,13 @@ export default function SettingsPage() {
         {activeTab === 'notifications' && <NotificationSettings />}
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SettingsContent />
+    </Suspense>
   );
 }

@@ -241,7 +241,7 @@ const messagesSlice = createSlice({
     },
 
     // Reset all state
-    resetMessages: (state) => {
+    resetMessages: () => {
       return initialState;
     },
   },

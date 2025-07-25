@@ -6,8 +6,6 @@ import {
   setHasMore,
   setUnreadCount,
   setError,
-  addMessage,
-  updateMessage,
   removeMessage,
 } from './messagesSlice';
 
@@ -349,7 +347,7 @@ export const fetchMessageById = createAsyncThunk(
       messageId: string;
       conversationId: string;
     },
-    { dispatch, rejectWithValue },
+    { rejectWithValue },
   ) => {
     try {
       const response = await fetch(`/api/messages/${messageId}`);

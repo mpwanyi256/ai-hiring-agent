@@ -123,7 +123,6 @@ export function useMessagesRedux({
           filter: `job_id=eq.${jobId}`,
         },
         (payload) => {
-          console.log('New message received:', payload);
           fetchingNewMessageRef.current = true;
 
           // Remove optimistic message if it exists
@@ -166,7 +165,6 @@ export function useMessagesRedux({
           filter: `job_id=eq.${jobId}`,
         },
         (payload) => {
-          console.log('Message updated:', payload);
           fetchingNewMessageRef.current = true;
 
           // Fetch updated message details
@@ -201,7 +199,6 @@ export function useMessagesRedux({
           filter: `job_id=eq.${jobId}`,
         },
         (payload) => {
-          console.log('Message deleted:', payload);
           dispatch(removeMessage({ conversationId, messageId: payload.old.id }));
           // Also remove from optimistic messages
           setOptimisticMessages((prev) => {
