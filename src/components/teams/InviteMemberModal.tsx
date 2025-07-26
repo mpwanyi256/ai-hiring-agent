@@ -124,7 +124,7 @@ export default function InviteMemberModal({ open, onClose }: InviteMemberModalPr
             onChange={(e) => setRole(e.target.value as TeamRole)}
             required
           >
-            {ROLES.map((r) => (
+            {ROLES.filter((r) => r.value !== 'admin').map((r) => (
               <option key={r.value} value={r.value}>
                 {r.label}
               </option>
