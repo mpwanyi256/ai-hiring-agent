@@ -21,6 +21,8 @@ import {
   DocumentTextIcon,
   UserIcon,
   BellIcon,
+  ShieldCheckIcon,
+  CreditCardIcon,
 } from '@heroicons/react/24/outline';
 import BillingButton from '@/components/billing/BillingButton';
 import { useSubscriptionModal } from '@/components/modals/SubscriptionModal';
@@ -187,6 +189,36 @@ export default function Sidebar({
     },
   ];
 
+  // Admin navigation items (only visible to admin users)
+  const adminNavigation: NavigationItem[] =
+    user?.role === 'admin'
+      ? [
+          {
+            name: 'Admin',
+            href: '/admin',
+            icon: ShieldCheckIcon,
+            description: 'Platform administration',
+            children: [
+              {
+                name: 'Dashboard',
+                href: '/admin',
+                icon: ChartBarIcon,
+                description: 'Platform overview',
+              },
+              {
+                name: 'Subscriptions',
+                href: '/admin/subscriptions',
+                icon: CreditCardIcon,
+                description: 'Manage subscription plans',
+              },
+            ],
+          },
+        ]
+      : [];
+
+  // Combine navigation arrays
+  const allNavigation = [...navigation, ...adminNavigation];
+
   const isActive = (href: string) => {
     if (href === '/dashboard') {
       return pathname === '/dashboard';
@@ -200,7 +232,7 @@ export default function Sidebar({
 
   // Auto-expand items with active children
   React.useEffect(() => {
-    navigation.forEach((item) => {
+    allNavigation.forEach((item) => {
       if (hasActiveChild(item) && !isExpanded(item.name)) {
         setExpandedItems((prev) => [...prev, item.name]);
       }
@@ -241,7 +273,7 @@ export default function Sidebar({
 
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        {navigation.map((item) => {
+        {allNavigation.map((item) => {
           const isItemActive = isActive(item.href);
           const hasChildren = item.children && item.children.length > 0;
           const itemExpanded = isExpanded(item.name);

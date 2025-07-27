@@ -13,6 +13,9 @@ export * from './billing';
 // Export all supabase types
 export * from './core';
 
+// Export all admin types
+export * from './admin';
+
 // Interview types
 export type {
   Interview,
