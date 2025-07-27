@@ -17,9 +17,9 @@ import {
 } from '@/store/admin/adminSlice';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Button from '@/components/ui/Button';
-import { User, Subscription, SubscriptionFormData } from '@/types';
+import { User, SimpleSubscription, SubscriptionFormData } from '@/types';
 import { SubscriptionForm } from '@/components/admin/SubscriptionForm';
-import { PlusIcon, XMarkIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, XMarkIcon, PencilIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 export default function AdminSubscriptions() {
   const router = useRouter();
@@ -134,7 +134,7 @@ export default function AdminSubscriptions() {
     setShowCreateModal(true);
   };
 
-  const openEditModal = (subscription: Subscription) => {
+  const openEditModal = (subscription: SimpleSubscription) => {
     dispatch(setSelectedSubscription(subscription));
     setShowEditModal(true);
   };

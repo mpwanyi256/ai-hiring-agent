@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { AdminState, Subscription } from '@/types/admin';
+import { AdminState } from '@/types/admin';
 import {
   fetchPlatformStats,
   fetchSubscriptions,
@@ -26,7 +26,7 @@ const adminSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    setSelectedSubscription: (state, action: PayloadAction<Subscription | null>) => {
+    setSelectedSubscription: (state, action: PayloadAction<any>) => {
       state.selectedSubscription = action.payload;
     },
     clearSelectedSubscription: (state) => {
@@ -55,7 +55,7 @@ const adminSlice = createSlice({
       })
       .addCase(fetchSubscriptions.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.subscriptions = action.payload;
+        state.subscriptions = action.payload as any[];
       })
       .addCase(fetchSubscriptions.rejected, (state, action) => {
         state.isLoading = false;
@@ -68,7 +68,7 @@ const adminSlice = createSlice({
       })
       .addCase(createSubscription.fulfilled, (state, action) => {
         state.isCreating = false;
-        state.subscriptions.push(action.payload);
+        state.subscriptions.push(action.payload as any);
       })
       .addCase(createSubscription.rejected, (state, action) => {
         state.isCreating = false;
@@ -81,12 +81,13 @@ const adminSlice = createSlice({
       })
       .addCase(updateSubscription.fulfilled, (state, action) => {
         state.isUpdating = false;
-        const index = state.subscriptions.findIndex((sub) => sub.id === action.payload.id);
+        const payload = action.payload as any;
+        const index = state.subscriptions.findIndex((sub: any) => sub.id === payload.id);
         if (index !== -1) {
-          state.subscriptions[index] = action.payload;
+          state.subscriptions[index] = payload;
         }
-        if (state.selectedSubscription?.id === action.payload.id) {
-          state.selectedSubscription = action.payload;
+        if (state.selectedSubscription?.id === payload.id) {
+          state.selectedSubscription = payload;
         }
       })
       .addCase(updateSubscription.rejected, (state, action) => {
@@ -100,8 +101,9 @@ const adminSlice = createSlice({
       })
       .addCase(deleteSubscription.fulfilled, (state, action) => {
         state.isDeleting = false;
-        state.subscriptions = state.subscriptions.filter((sub) => sub.id !== action.payload);
-        if (state.selectedSubscription?.id === action.payload) {
+        const deletedId = action.payload as string;
+        state.subscriptions = state.subscriptions.filter((sub: any) => sub.id !== deletedId);
+        if (state.selectedSubscription?.id === deletedId) {
           state.selectedSubscription = null;
         }
       })

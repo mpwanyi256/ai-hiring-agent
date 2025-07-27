@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import Button from '@/components/ui/Button';
@@ -10,7 +10,7 @@ import { useAppDispatch } from '@/store';
 import { RootState } from '@/store';
 import { CheckIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 
-export default function PlansPage() {
+function PlansPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
@@ -284,5 +284,13 @@ export default function PlansPage() {
         </div>
       </Container>
     </div>
+  );
+}
+
+export default function PlansPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PlansPageContent />
+    </Suspense>
   );
 }
