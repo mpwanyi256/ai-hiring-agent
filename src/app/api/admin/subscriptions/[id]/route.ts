@@ -2,10 +2,10 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { TablesUpdate } from '@/lib/supabase';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient();
-    const { id } = params;
+    const { id } = await params;
     const updates: TablesUpdate<'subscriptions'> = await request.json();
 
     // RLS policies will handle admin access verification
@@ -31,10 +31,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const supabase = await createClient();
-    const { id } = params;
+    const { id } = await params;
 
     // RLS policies will handle admin access verification
     const { error } = await supabase.from('subscriptions').delete().eq('id', id);
