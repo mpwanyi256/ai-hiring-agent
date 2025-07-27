@@ -9,8 +9,11 @@ import {
   CheckAuthResponse,
   VerifyOtpResponse,
   ResendOtpResponse,
+  CompanyNameValidationData,
+  CompanyNameValidationResponse,
 } from '@/types/auth';
 import { apiUtils } from '../api';
+import { AxiosError } from 'axios';
 
 // Async thunks for authentication using API routes with axios
 export const signUp = createAsyncThunk<User, SignUpData>(
@@ -33,7 +36,7 @@ export const signUp = createAsyncThunk<User, SignUpData>(
 
 export const signIn = createAsyncThunk<User, SignInData>(
   'auth/signIn',
-  async ({ email, password }: SignInData) => {
+  async ({ email, password }: SignInData, { rejectWithValue }) => {
     try {
       const response = await apiUtils.post<LoginResponse>('/api/auth/signin', {
         email,
@@ -41,7 +44,26 @@ export const signIn = createAsyncThunk<User, SignInData>(
       });
       return response.user;
     } catch (error: unknown) {
-      throw new Error(error instanceof Error ? error.message : 'Sign in failed');
+      // Check if it's an axios error with response data
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as AxiosError<{
+          error: string;
+          email: string;
+          message: string;
+        }>;
+        const responseData = axiosError.response?.data;
+
+        // Handle EMAIL_NOT_CONFIRMED error specifically
+        if (responseData?.error === 'EMAIL_NOT_CONFIRMED') {
+          return rejectWithValue({
+            type: 'EMAIL_NOT_CONFIRMED',
+            email: responseData.email,
+            message: responseData.message || 'Email not confirmed',
+          });
+        }
+      }
+
+      return rejectWithValue(error);
     }
   },
 );
@@ -121,5 +143,23 @@ export const resendOtp = createAsyncThunk('auth/resendOtp', async (email: string
     return response.message;
   } catch (error: unknown) {
     throw new Error(error instanceof Error ? error.message : 'Failed to resend OTP');
+  }
+});
+
+// Company name validation thunk
+export const validateCompanyName = createAsyncThunk<
+  CompanyNameValidationResponse,
+  CompanyNameValidationData
+>('auth/validateCompanyName', async ({ companyName }: CompanyNameValidationData) => {
+  try {
+    const response = await apiUtils.post<CompanyNameValidationResponse>(
+      '/api/auth/validate-company-name',
+      {
+        companyName,
+      },
+    );
+    return response;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : 'Company name validation failed');
   }
 });

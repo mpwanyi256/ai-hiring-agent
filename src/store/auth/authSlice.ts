@@ -1,13 +1,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AuthState } from '@/types';
-import { 
-  signUp, 
-  signIn, 
-  signOut, 
-  checkAuth, 
+import {
+  signUp,
+  signIn,
+  signOut,
+  checkAuth,
   refreshUserData,
   verifyOtp,
-  resendOtp 
+  resendOtp,
 } from './authThunks';
 
 const initialState: AuthState = {
@@ -63,7 +63,12 @@ const authSlice = createSlice({
       .addCase(signIn.rejected, (state, action) => {
         state.isLoading = false;
         // Don't set error for EMAIL_NOT_CONFIRMED - let component handle redirect
-        if (action.payload && typeof action.payload === 'object' && 'type' in action.payload && action.payload.type === 'EMAIL_NOT_CONFIRMED') {
+        if (
+          action.error &&
+          typeof action.error === 'object' &&
+          'type' in action.error &&
+          action.error.type === 'EMAIL_NOT_CONFIRMED'
+        ) {
           return; // Don't set error, component will handle redirect
         }
         state.error = action.error.message || 'Sign in failed';
@@ -141,4 +146,4 @@ const authSlice = createSlice({
 
 export const { clearError, setLoading, clearAuth } = authSlice.actions;
 
-export default authSlice.reducer; 
+export default authSlice.reducer;

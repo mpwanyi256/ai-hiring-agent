@@ -75,3 +75,14 @@ export interface VerifyOtpResponse {
 export interface ResendOtpResponse {
   message: string;
 }
+
+// Company name validation interfaces
+export interface CompanyNameValidationData {
+  companyName: string;
+}
+
+export interface CompanyNameValidationResponse {
+  isAvailable: boolean;
+  message: string;
+  suggestions?: string[];
+}

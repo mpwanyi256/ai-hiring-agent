@@ -19,6 +19,7 @@ import { combineReducers } from 'redux';
 import teamsSlice from './teams/teamsSlice';
 import jobPermissionsSlice from './jobPermissions/jobPermissionsSlice';
 import messagesSlice from './messages/messagesSlice';
+import adminSlice from './admin/adminSlice';
 
 const rootReducer = combineReducers({
   auth: authSlice,
@@ -39,6 +40,7 @@ const rootReducer = combineReducers({
   teams: teamsSlice,
   jobPermissions: jobPermissionsSlice,
   messages: messagesSlice,
+  admin: adminSlice,
 });
 
 export const store = configureStore({
