@@ -19,7 +19,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Button from '@/components/ui/Button';
 import { User, Subscription, SubscriptionFormData } from '@/types';
 import { SubscriptionForm } from '@/components/admin/SubscriptionForm';
-import { PlusIcon, XMarkIcon, PencilIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, XMarkIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 export default function AdminSubscriptions() {
   const router = useRouter();
