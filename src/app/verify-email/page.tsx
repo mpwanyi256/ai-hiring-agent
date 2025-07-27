@@ -4,8 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
-import Container from '@/components/ui/Container';
-import TopNavigation from '@/components/navigation/TopNavigation';
+import AuthLayout from '@/components/auth/AuthLayout';
 import { checkAuth } from '@/store/auth/authThunks';
 import { KeyIcon, CheckCircleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '@/store';
@@ -25,6 +24,7 @@ function VerifyEmailContent() {
 
   const email = searchParams.get('email') || '';
   const inviteId = searchParams.get('invite') || '';
+  const nextStep = searchParams.get('next') || '';
 
   useEffect(() => {
     // Cooldown timer
@@ -141,12 +141,15 @@ function VerifyEmailContent() {
         // User is now verified and signed in
         await dispatch(checkAuth());
 
-        // Check if this was from an invite
-        if (inviteId) {
-          // Redirect to a welcome page for invited users or directly to dashboard
+        // Determine where to redirect based on the next parameter
+        if (nextStep === 'plans') {
+          // Redirect to plan selection for new signups
+          router.push(`/onboard/plans?email=${encodeURIComponent(email)}`);
+        } else if (inviteId) {
+          // Redirect to welcome page for invited users
           router.push('/dashboard?welcome=invite');
         } else {
-          // Regular signup flow
+          // Regular flow
           router.push('/dashboard');
         }
       }
@@ -212,177 +215,139 @@ function VerifyEmailContent() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Centralized Navigation */}
-      <TopNavigation showAuthButtons={false} />
+    <AuthLayout
+      title="Check your email"
+      subtitle={`We've sent a 6-digit verification code to ${email}`}
+      footerText="Wrong email address?"
+      footerLink={{
+        text: 'Back to signup',
+        href: '/signup',
+      }}
+    >
+      <div className="space-y-6">
+        {/* Success Message */}
+        {showSuccess && (
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center">
+              <CheckCircleIcon className="w-5 h-5 text-green-500 mr-2" />
+              <p className="text-green-700 text-sm">Verification code sent successfully!</p>
+            </div>
+          </div>
+        )}
 
-      {/* Main Content */}
-      <div className="py-6 sm:py-12 px-4 sm:px-0">
-        <Container>
-          <div className="max-w-md mx-auto">
-            <div className="bg-white p-4 sm:p-8 rounded-lg shadow-sm border border-gray-light text-center">
-              {/* Icon */}
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                <KeyIcon className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-              </div>
+        {/* Error Message */}
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
 
-              {/* Title */}
-              <h1 className="text-xl sm:text-2xl font-bold text-text mb-3 sm:mb-4">
-                Verify Your Email
-              </h1>
+        {/* Code Input */}
+        <div>
+          <label className="block text-sm font-medium text-text mb-4">
+            Enter verification code
+          </label>
+          <div className="flex justify-center space-x-3 mb-6">
+            {code.map((digit, index) => (
+              <input
+                key={index}
+                id={`code-${index}`}
+                type="text"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleCodeChange(e.target.value, index)}
+                onKeyDown={(e) => handleKeyDown(e, index)}
+                onPaste={handlePaste}
+                className={`w-12 h-12 text-center text-lg font-medium border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  codeExpired ? 'border-red-300 bg-red-50' : 'border-gray-light bg-white'
+                }`}
+                disabled={isVerifying}
+              />
+            ))}
+          </div>
+        </div>
 
-              {/* Description */}
-              <p className="text-sm sm:text-base text-muted-text mb-4 sm:mb-6">
-                We&apos;ve sent a 6-digit verification code to{' '}
-                <span className="font-medium text-text break-all">{email}</span>
-                {timeRemaining > 0 && (
-                  <span className="block text-xs mt-2 text-primary">
-                    Code expires in {timeRemaining} seconds
-                  </span>
-                )}
-                {codeExpired && (
-                  <span className="block text-xs mt-2 text-accent-red">
-                    Code has expired. Please request a new one.
-                  </span>
-                )}
-              </p>
+        {/* Timer */}
+        {!codeExpired && timeRemaining > 0 && (
+          <div className="text-center">
+            <p className="text-sm text-muted-text">
+              Code expires in {Math.max(resendCooldown, timeRemaining)} seconds
+            </p>
+          </div>
+        )}
 
-              {/* Success Message */}
-              {showSuccess && (
-                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-primary/10 border border-primary/20 rounded-lg">
-                  <div className="flex items-center justify-center space-x-2 text-primary">
-                    <CheckCircleIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <p className="text-sm font-medium">New verification code sent!</p>
-                  </div>
-                </div>
-              )}
+        {/* Action Buttons */}
+        <div className="space-y-3">
+          <Button
+            onClick={handleVerifyCode}
+            disabled={!isCodeComplete || isVerifying || codeExpired}
+            className="w-full"
+            isLoading={isVerifying}
+          >
+            {isVerifying ? 'Verifying...' : 'Verify Email'}
+          </Button>
 
-              {/* Error Message */}
-              {error && (
-                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-accent-red/10 border border-accent-red/20 rounded-lg">
-                  <p className="text-accent-red text-sm">{error}</p>
-                  {codeExpired && (
-                    <div className="mt-3">
-                      <Button
-                        onClick={() => handleResendCode()}
-                        disabled={!canResend}
-                        size="sm"
-                        className="w-full"
-                      >
-                        {isResending ? 'Sending...' : 'Send New Code'}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
+          <Button
+            onClick={() => handleResendCode()}
+            disabled={!canResend}
+            variant="outline"
+            className="w-full"
+          >
+            {isResending ? (
+              <>
+                <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2" />
+                Sending...
+              </>
+            ) : resendCooldown > 0 ? (
+              `Resend in ${resendCooldown}s`
+            ) : codeExpired ? (
+              'Send New Code'
+            ) : (
+              'Resend Code'
+            )}
+          </Button>
 
-              {/* Code Input */}
-              <div className="mb-4 sm:mb-6">
-                <div className="flex justify-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
-                  {code.map((digit, index) => (
-                    <input
-                      key={index}
-                      id={`code-${index}`}
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleCodeChange(e.target.value, index)}
-                      onKeyDown={(e) => handleKeyDown(e, index)}
-                      onPaste={handlePaste}
-                      className={`w-10 h-10 sm:w-12 sm:h-12 text-center text-base sm:text-lg font-semibold border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
-                        codeExpired
-                          ? 'border-accent-red/30 bg-accent-red/5 focus:ring-accent-red/50'
-                          : 'border-gray-light focus:ring-primary'
-                      }`}
-                      disabled={codeExpired}
-                    />
-                  ))}
-                </div>
-                <p className="text-xs text-muted-text">Enter the 6-digit code from your email</p>
-              </div>
+          {!codeExpired && timeRemaining > 0 && (
+            <p className="text-xs text-muted-text text-center">
+              You can request a new code in {Math.max(resendCooldown, timeRemaining)} seconds
+            </p>
+          )}
+        </div>
 
-              {/* Verify Button */}
-              <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
-                <Button
-                  onClick={handleVerifyCode}
-                  disabled={!isCodeComplete || isVerifying || codeExpired}
-                  className="w-full"
-                  isLoading={isVerifying}
-                >
-                  {isVerifying ? 'Verifying...' : 'Verify Email'}
-                </Button>
-
-                <Button
-                  onClick={() => handleResendCode()}
-                  disabled={!canResend}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {isResending ? (
-                    <>
-                      <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2" />
-                      Sending...
-                    </>
-                  ) : resendCooldown > 0 ? (
-                    `Resend in ${resendCooldown}s`
-                  ) : codeExpired ? (
-                    'Send New Code'
-                  ) : (
-                    'Resend Code'
-                  )}
-                </Button>
-
-                {!codeExpired && timeRemaining > 0 && (
-                  <p className="text-xs text-muted-text text-center">
-                    You can request a new code in {Math.max(resendCooldown, timeRemaining)} seconds
-                  </p>
-                )}
-              </div>
-
-              {/* Back to Signup */}
-              <div className="pt-4 sm:pt-6 border-t border-gray-light">
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center text-sm text-muted-text hover:text-primary"
-                >
-                  <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                  Back to Signup
-                </Link>
-              </div>
-
-              {/* Free Tier Info */}
-              <div className="mt-4 sm:mt-6 bg-gradient-to-r from-primary/5 to-accent-blue/5 rounded-lg border border-primary/20 p-3 sm:p-4">
-                <h3 className="font-semibold text-text mb-2">🎉 You&apos;re on the Free Tier</h3>
-                <p className="text-sm text-muted-text mb-2">Your account includes:</p>
-                <ul className="text-sm text-muted-text text-left space-y-1">
-                  <li>• 1 active job posting</li>
-                  <li>• 5 AI interviews per month</li>
-                  <li>• Basic candidate reports</li>
-                  <li>• Email support</li>
-                </ul>
+        {/* Next Steps Info */}
+        {nextStep === 'plans' && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start">
+              <KeyIcon className="w-5 h-5 text-blue-500 mr-2 mt-0.5" />
+              <div>
+                <p className="text-blue-700 text-sm font-medium">Almost there!</p>
+                <p className="text-blue-600 text-sm">
+                  After verification, you&apos;ll choose your subscription plan and start your
+                  14-day free trial.
+                </p>
               </div>
             </div>
           </div>
-        </Container>
+        )}
+
+        {/* Back to Signup */}
+        <div className="pt-4 border-t border-gray-light">
+          <Link
+            href="/signup"
+            className="inline-flex items-center text-sm text-muted-text hover:text-primary"
+          >
+            <ArrowLeftIcon className="w-4 h-4 mr-2" />
+            Back to Signup
+          </Link>
+        </div>
       </div>
-    </div>
+    </AuthLayout>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-muted-text">Loading...</p>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<div>Loading...</div>}>
       <VerifyEmailContent />
     </Suspense>
   );
