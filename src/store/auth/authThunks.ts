@@ -13,6 +13,7 @@ import {
   CompanyNameValidationResponse,
 } from '@/types/auth';
 import { apiUtils } from '../api';
+import { AxiosError } from 'axios';
 
 // Async thunks for authentication using API routes with axios
 export const signUp = createAsyncThunk<User, SignUpData>(
@@ -45,7 +46,11 @@ export const signIn = createAsyncThunk<User, SignInData>(
     } catch (error: unknown) {
       // Check if it's an axios error with response data
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as any;
+        const axiosError = error as AxiosError<{
+          error: string;
+          email: string;
+          message: string;
+        }>;
         const responseData = axiosError.response?.data;
 
         // Handle EMAIL_NOT_CONFIRMED error specifically
