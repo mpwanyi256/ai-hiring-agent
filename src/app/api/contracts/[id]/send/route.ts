@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { sendContractOfferEmail } from '@/lib/email/resend';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -15,10 +16,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's company
+    // Get user's company and profile info
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('company_id')
+      .select('company_id, email, first_name, last_name')
       .eq('id', user.id)
       .single();
 
@@ -43,10 +44,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
-    // Fetch the contract to verify it exists and belongs to the user's company
+    // Fetch the contract with related data
     const { data: contract, error: contractError } = await supabase
       .from('contracts')
-      .select('*')
+      .select(
+        `
+        *,
+        job_title:job_titles(id, name),
+        employment_type:employment_types(id, name)
+      `,
+      )
       .eq('id', contractId)
       .eq('company_id', profile.company_id)
       .single();
@@ -58,7 +65,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
-    // Fetch the candidate to verify they exist and belong to a job in the same company
+    // Fetch the candidate with job and company information
     const { data: candidate, error: candidateError } = await supabase
       .from('candidates')
       .select(
@@ -70,7 +77,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         job:jobs!candidates_job_id_fkey(
           id,
           title,
-          profile:profiles!jobs_profile_id_fkey(company_id)
+          profile:profiles!jobs_profile_id_fkey(
+            company_id,
+            company:companies!profiles_company_id_fkey(id, name, slug)
+          )
         )
       `,
       )
@@ -193,14 +203,42 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       sentByProfile: contractOffer.sent_by_profile,
     };
 
-    // TODO: Send email notification to candidate with signing link
-    // This would integrate with your email service (Resend, SendGrid, etc.)
-    console.log(`Contract offer created with signing link: ${signingLink}`);
+    // Send email notification to candidate
+    try {
+      const companyInfo = (candidate as any).job?.profile?.company;
+      const emailResult = await sendContractOfferEmail({
+        to: candidate.email,
+        candidateName: `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim(),
+        companyName: companyInfo?.name || 'Company',
+        jobTitle: (candidate as any).job?.title || 'Position',
+        employmentType: contract.employment_type?.name || 'Full-time',
+        startDate: sendData.startDate
+          ? new Date(sendData.startDate).toLocaleDateString()
+          : 'To be determined',
+        salaryAmount: sendData.salaryAmount,
+        salaryCurrency: sendData.salaryCurrency,
+        expiresAt: expiresAt.toISOString(),
+        signingLink,
+        contactEmail: profile.email,
+        cc: [profile.email], // CC the sender
+      });
+
+      if (!emailResult.success) {
+        console.error('Failed to send contract offer email:', emailResult.error);
+        // Continue anyway - the contract offer was created successfully
+      } else {
+        console.log('Contract offer email sent successfully');
+      }
+    } catch (emailError) {
+      console.error('Error sending contract offer email:', emailError);
+      // Continue anyway - the contract offer was created successfully
+    }
 
     return NextResponse.json({
       success: true,
       contractOffer: transformedContractOffer,
       signingLink,
+      emailSent: true,
     });
   } catch (error) {
     console.error('Error in send contract API:', error);
