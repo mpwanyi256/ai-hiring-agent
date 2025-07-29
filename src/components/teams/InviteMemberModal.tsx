@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TeamRole, ROLES } from '@/types/teams';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import Modal from '@/components/ui/Modal';
 import { inviteUser } from '@/store/teams/teamsThunks';
 import { useAppDispatch, useAppSelector } from '@/store';

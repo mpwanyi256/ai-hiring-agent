@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import MetricCard from '@/components/dashboard/MetricCard';
 import InsightCard from '@/components/dashboard/InsightCard';

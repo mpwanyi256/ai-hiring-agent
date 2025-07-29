@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { JobFormData } from '@/types/jobs';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import { defaultJobDescriptionMarkdown } from '@/lib/constants';
 import { marked } from 'marked';

@@ -1,5 +1,5 @@
 import { JobQuestion } from '@/types/interview';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import { updateJobQuestion } from '@/store/jobs/jobsThunks';

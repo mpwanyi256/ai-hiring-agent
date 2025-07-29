@@ -10,6 +10,9 @@ export * from './candidates';
 // Export all billing types
 export * from './billing';
 
+// Export all contract types
+export * from './contracts';
+
 // Export all supabase types
 export * from './core';
 

@@ -12,7 +12,7 @@ import {
   MinusIcon,
   ChatBubbleLeftIcon,
 } from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/providers/ToastProvider';
 
 interface TeamResponse {
@@ -210,7 +210,7 @@ export function TeamResponses() {
           <Button
             size="sm"
             onClick={() => setShowForm(!showForm)}
-            variant={responseData.userResponse ? 'outline' : 'primary'}
+            variant={responseData.userResponse ? 'outline' : 'default'}
           >
             {responseData.userResponse ? 'Update Response' : 'Add Response'}
           </Button>

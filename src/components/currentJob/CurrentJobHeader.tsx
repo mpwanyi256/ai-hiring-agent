@@ -6,7 +6,7 @@ import {
 } from '@/store/jobs/jobsSelectors';
 import { EyeIcon, LinkIcon, PlayIcon, SparklesIcon, XCircleIcon } from 'lucide-react';
 import Link from 'next/link';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import { copyInterviewLink } from '@/lib/utils';
 import { getJobStatusColor, getJobStatusLabel } from '@/lib/utils';
 import { JobStatus } from '@/types/jobs';

@@ -20,7 +20,7 @@ import {
   CheckIcon,
   StarIcon,
 } from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { JobPermissionLevel } from '@/types/jobPermissions';
 import { useToast } from '@/components/providers/ToastProvider';
 import { selectUser } from '@/store/auth/authSelectors';

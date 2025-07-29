@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { JobFormData, Skill, Trait } from '@/types/jobs';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 interface ExperienceRequirementsStepProps {
   form: UseFormReturn<JobFormData>;

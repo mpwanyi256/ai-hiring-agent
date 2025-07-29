@@ -8,7 +8,7 @@ import {
   JobType,
   JobFormData,
 } from '@/types/jobs';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 interface JobCreateStep1Props {
   form: UseFormReturn<JobFormData>;

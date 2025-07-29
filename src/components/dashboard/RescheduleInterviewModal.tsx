@@ -7,7 +7,7 @@ import {
   rescheduleInterview,
 } from '@/store/interview/interviewThunks';
 import Modal from '@/components/ui/Modal';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import InterviewCard from './InterviewCard';
 import DatePicker from '../interviews/DatePicker';
 import TimePicker from '../interviews/TimePicker';

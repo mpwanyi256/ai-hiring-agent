@@ -13,7 +13,7 @@ import DatePicker from './DatePicker';
 import TimePicker from './TimePicker';
 import DurationPicker from './DurationPicker';
 import TimezonePicker from './TimezonePicker';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import Modal from '../ui/Modal';
 import { apiSuccess } from '@/lib/notification';
 import { Loading } from '@/components/ui/Loading';

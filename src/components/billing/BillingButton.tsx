@@ -4,19 +4,19 @@ import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { createBillingPortalSession } from '@/store/billing/billingThunks';
 import { selectCustomerPortalUrl, selectBillingLoading } from '@/store/billing/billingSelectors';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { CreditCardIcon } from '@heroicons/react/24/outline';
 
 interface BillingButtonProps {
-  variant?: 'primary' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'outline' | 'ghost' | 'secondary';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
   children?: React.ReactNode;
 }
 
 export default function BillingButton({
   variant = 'outline',
-  size = 'md',
+  size = 'default',
   className = '',
   children,
 }: BillingButtonProps) {

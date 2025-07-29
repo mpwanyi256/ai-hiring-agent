@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Loading } from '@/components/ui/Loading';
 import { apiSuccess, apiError } from '@/lib/notification';
 

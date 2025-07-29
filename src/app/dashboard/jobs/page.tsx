@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import MetricCard from '@/components/dashboard/MetricCard';
 import JobsTable from '@/components/jobs/JobsTable';

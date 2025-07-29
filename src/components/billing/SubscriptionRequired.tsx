@@ -8,7 +8,7 @@ import {
   selectHasActiveSubscription,
   selectBillingLoading,
 } from '@/store/billing/billingSelectors';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { SparklesIcon, LockClosedIcon, CheckIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 

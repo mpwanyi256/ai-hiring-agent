@@ -8,7 +8,7 @@ import {
   grantJobPermission,
 } from '@/store/jobPermissions/jobPermissionsThunks';
 import { selectJobPermissions } from '@/store/jobPermissions/jobPermissionsSelectors';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { JobPermissionLevel } from '@/types/jobPermissions';
 import { useToast } from '@/components/providers/ToastProvider';
 import { JobPermissions } from './JobPermissions';

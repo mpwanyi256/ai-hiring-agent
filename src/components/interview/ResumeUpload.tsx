@@ -1,7 +1,7 @@
 'use client';
 
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { useResumeEvaluation } from '@/hooks/useResumeEvaluation';
 import FileUploadArea from './FileUploadArea';
 import ErrorDisplay from './ErrorDisplay';

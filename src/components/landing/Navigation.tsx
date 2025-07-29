@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import Container from '@/components/ui/Container';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchSubscriptionPlans } from '@/store/billing/billingThunks';

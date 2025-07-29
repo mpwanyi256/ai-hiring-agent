@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import { RootState, useAppDispatch, useAppSelector } from '@/store';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import TeamTabs from '@/components/teams/TeamTabs';
 import TeamFilterSearch from '@/components/teams/TeamFilterSearch';
 import { TeamMembersTable } from '@/components/teams/TeamMembersTable';

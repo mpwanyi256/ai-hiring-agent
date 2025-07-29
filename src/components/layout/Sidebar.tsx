@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
-import { RootState, useAppSelector } from '@/store';
+import { RootState } from '@/store';
 import { useState } from 'react';
 import {
   HomeIcon,
@@ -62,7 +62,7 @@ export default function Sidebar({
   const { user } = useSelector((state: RootState) => state.auth);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const { open: openSubscriptionModal } = useSubscriptionModal() || {};
-  const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
+  const hasActiveSubscription = useSelector(selectHasActiveSubscription);
 
   const toggleExpanded = (itemName: string) => {
     if (collapsed && !isMobile) return; // Don't expand in collapsed desktop mode
@@ -114,6 +114,26 @@ export default function Sidebar({
       href: '/dashboard/teams',
       icon: UserGroupIcon,
       description: 'Manage your hiring team',
+    },
+    {
+      name: 'Contracts',
+      href: '/dashboard/contracts',
+      icon: DocumentTextIcon,
+      description: 'Contract templates and offers',
+      children: [
+        {
+          name: 'Templates',
+          href: '/dashboard/contracts',
+          icon: DocumentTextIcon,
+          description: 'Contract templates',
+        },
+        {
+          name: 'Create Template',
+          href: '/dashboard/contracts/new',
+          icon: PlusIcon,
+          description: 'New contract template',
+        },
+      ],
     },
     {
       name: 'Reports',

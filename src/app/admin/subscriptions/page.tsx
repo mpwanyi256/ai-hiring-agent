@@ -16,7 +16,7 @@ import {
   clearError,
 } from '@/store/admin/adminSlice';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { User, SimpleSubscription, SubscriptionFormData } from '@/types';
 import { SubscriptionForm } from '@/components/admin/SubscriptionForm';
 import { PlusIcon, XMarkIcon, PencilIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import Container from '@/components/ui/Container';
 import TopNavigation from '@/components/navigation/TopNavigation';
 import { XCircleIcon } from '@heroicons/react/24/outline';

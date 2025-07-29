@@ -1,5 +1,5 @@
 import { SparklesIcon, PlusIcon } from '@heroicons/react/24/outline';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import { useAppSelector } from '@/store';
 import { selectCurrentJob, selectJobQuestions } from '@/store/jobs/jobsSelectors';
 import { useState } from 'react';

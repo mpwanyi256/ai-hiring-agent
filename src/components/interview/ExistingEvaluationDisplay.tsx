@@ -5,7 +5,7 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { JobData } from '@/lib/services/jobsService';
 import { InterviewEvaluation } from '@/types/interview';
 

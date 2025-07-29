@@ -1,12 +1,8 @@
 'use client';
 
 import React from 'react';
-import Button from '@/components/ui/Button';
-import { 
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline';
+import { Button } from '@/components/ui/button';
+import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface SearchAndFiltersProps {
   searchQuery: string;
@@ -22,7 +18,7 @@ const statusOptions = [
   { value: '', label: 'All Jobs' },
   { value: 'draft', label: 'Draft' },
   { value: 'interviewing', label: 'Active' },
-  { value: 'closed', label: 'Closed' }
+  { value: 'closed', label: 'Closed' },
 ];
 
 export default function SearchAndFilters({
@@ -32,7 +28,7 @@ export default function SearchAndFilters({
   onSearchChange,
   onStatusFilterChange,
   onToggleFilters,
-  onClearFilters
+  onClearFilters,
 }: SearchAndFiltersProps) {
   return (
     <div className="bg-white rounded-lg border border-gray-100 p-4">
@@ -60,9 +56,7 @@ export default function SearchAndFilters({
         >
           <FunnelIcon className="w-4 h-4 mr-2" />
           Filters
-          {statusFilter && (
-            <span className="ml-2 w-2 h-2 bg-primary rounded-full"></span>
-          )}
+          {statusFilter && <span className="ml-2 w-2 h-2 bg-primary rounded-full"></span>}
         </Button>
       </div>
 
@@ -71,15 +65,15 @@ export default function SearchAndFilters({
         <div className="mt-4 pt-4 border-t border-gray-100">
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-sm font-medium text-gray-700">Status:</span>
-            
+
             <div className="flex flex-wrap gap-2">
               {statusOptions.map((option) => (
                 <button
                   key={option.value}
                   onClick={() => onStatusFilterChange(option.value)}
                   className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
-                    statusFilter === option.value 
-                      ? 'bg-primary text-white border-primary' 
+                    statusFilter === option.value
+                      ? 'bg-primary text-white border-primary'
                       : 'bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary'
                   }`}
                 >
@@ -87,7 +81,7 @@ export default function SearchAndFilters({
                 </button>
               ))}
             </div>
-            
+
             {statusFilter && (
               <button
                 onClick={onClearFilters}
@@ -102,4 +96,4 @@ export default function SearchAndFilters({
       )}
     </div>
   );
-} 
+}

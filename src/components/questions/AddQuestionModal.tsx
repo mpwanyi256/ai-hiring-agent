@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { addManualQuestion } from '@/store/jobs/jobsThunks';
 import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
@@ -17,7 +17,7 @@ const questionTypes = [
   { value: 'general', label: 'General' },
   { value: 'technical', label: 'Technical' },
   { value: 'behavioral', label: 'Behavioral' },
-  { value: 'experience', label: 'Experience' }
+  { value: 'experience', label: 'Experience' },
 ];
 
 const categories = [
@@ -27,7 +27,7 @@ const categories = [
   'Experience Assessment',
   'Technical Assessment',
   'Closing',
-  'Custom'
+  'Custom',
 ];
 
 export default function AddQuestionModal({ isOpen, onClose }: AddQuestionModalProps) {
@@ -39,23 +39,25 @@ export default function AddQuestionModal({ isOpen, onClose }: AddQuestionModalPr
     questionType: 'general' as 'general' | 'technical' | 'behavioral' | 'experience',
     category: 'Custom',
     expectedDuration: 120,
-    isRequired: true
+    isRequired: true,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!job || !formData.questionText.trim()) {
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await dispatch(addManualQuestion({
-        jobId: job.id,
-        questionData: formData
-      })).unwrap();
-      
+      await dispatch(
+        addManualQuestion({
+          jobId: job.id,
+          questionData: formData,
+        }),
+      ).unwrap();
+
       apiSuccess('Question added successfully');
       handleClose();
     } catch (error) {
@@ -71,7 +73,7 @@ export default function AddQuestionModal({ isOpen, onClose }: AddQuestionModalPr
       questionType: 'general',
       category: 'Custom',
       expectedDuration: 120,
-      isRequired: true
+      isRequired: true,
     });
     onClose();
   };
@@ -100,7 +102,7 @@ export default function AddQuestionModal({ isOpen, onClose }: AddQuestionModalPr
             <textarea
               id="questionText"
               value={formData.questionText}
-              onChange={(e) => setFormData(prev => ({ ...prev, questionText: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, questionText: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               rows={3}
               placeholder="Enter your question here..."
@@ -116,14 +118,20 @@ export default function AddQuestionModal({ isOpen, onClose }: AddQuestionModalPr
             <select
               id="questionType"
               value={formData.questionType}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                questionType: e.target.value as 'general' | 'technical' | 'behavioral' | 'experience'
-              }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  questionType: e.target.value as
+                    | 'general'
+                    | 'technical'
+                    | 'behavioral'
+                    | 'experience',
+                }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               required
             >
-              {questionTypes.map(type => (
+              {questionTypes.map((type) => (
                 <option key={type.value} value={type.value}>
                   {type.label}
                 </option>
@@ -139,10 +147,10 @@ export default function AddQuestionModal({ isOpen, onClose }: AddQuestionModalPr
             <select
               id="category"
               value={formData.category}
-              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             >
-              {categories.map(category => (
+              {categories.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>
@@ -152,14 +160,22 @@ export default function AddQuestionModal({ isOpen, onClose }: AddQuestionModalPr
 
           {/* Expected Duration */}
           <div>
-            <label htmlFor="expectedDuration" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="expectedDuration"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Expected Duration (seconds)
             </label>
             <input
               type="number"
               id="expectedDuration"
               value={formData.expectedDuration}
-              onChange={(e) => setFormData(prev => ({ ...prev, expectedDuration: parseInt(e.target.value) || 120 }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  expectedDuration: parseInt(e.target.value) || 120,
+                }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               min="30"
               max="600"
@@ -173,7 +189,7 @@ export default function AddQuestionModal({ isOpen, onClose }: AddQuestionModalPr
               type="checkbox"
               id="isRequired"
               checked={formData.isRequired}
-              onChange={(e) => setFormData(prev => ({ ...prev, isRequired: e.target.checked }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, isRequired: e.target.checked }))}
               className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
             />
             <label htmlFor="isRequired" className="ml-2 block text-sm text-gray-700">
@@ -183,12 +199,7 @@ export default function AddQuestionModal({ isOpen, onClose }: AddQuestionModalPr
 
           {/* Actions */}
           <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button
@@ -203,4 +214,4 @@ export default function AddQuestionModal({ isOpen, onClose }: AddQuestionModalPr
       </div>
     </div>
   );
-} 
+}

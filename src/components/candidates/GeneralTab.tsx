@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CandidateWithEvaluation } from '@/types/candidates';
 import InterviewCard from '../dashboard/InterviewCard';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import { fetchApplicationEvents } from '@/store/interviews/interviewsThunks';
 import { clearApplicationEvents } from '@/store/interviews/interviewsSlice';
 import { useAppSelector } from '@/store';
@@ -193,7 +193,7 @@ const GeneralTab: React.FC<{
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Application Events</h3>
           {onScheduleEvent && (
-            <Button variant="primary" size="sm" onClick={onScheduleEvent}>
+            <Button variant="default" size="sm" onClick={onScheduleEvent}>
               Schedule Event
             </Button>
           )}

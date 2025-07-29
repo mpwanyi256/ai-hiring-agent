@@ -1,6 +1,6 @@
 import { ClockIcon, SparklesIcon } from 'lucide-react';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { triggerAIEvaluation } from '@/store/candidates/candidatesThunks';
 import { useAppDispatch } from '@/store';
 import { apiError, apiSuccess } from '@/lib/notification';

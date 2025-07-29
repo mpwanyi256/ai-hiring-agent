@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { setInterviewStep } from '@/store/interview/interviewSlice';
 import { JobData } from '@/lib/services/jobsService';
 import { ResumeEvaluation, JobQuestion } from '@/types/interview';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import {
   ChevronRightIcon,
   ChevronLeftIcon,

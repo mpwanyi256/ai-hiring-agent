@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
 import { fetchAIEvaluation, triggerAIEvaluation } from '@/store/candidates/candidatesThunks';
 import RadarChart from './RadarChart';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import {
   ClockIcon,
   ArrowTrendingUpIcon,

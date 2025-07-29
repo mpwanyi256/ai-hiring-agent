@@ -9,7 +9,7 @@ import {
   TrophyIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Job as CurrentJob } from '@/types';
 
 interface Evaluation {

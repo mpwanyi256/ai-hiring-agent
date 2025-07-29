@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import Container from '@/components/ui/Container';
 import TopNavigation from '@/components/navigation/TopNavigation';
 import { checkAuth } from '@/store/auth/authThunks';

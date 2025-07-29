@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { CalendarIcon, ClockIcon, UserIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { InterviewType, CreateInterviewScheduleRequest } from '@/types/interview';
 

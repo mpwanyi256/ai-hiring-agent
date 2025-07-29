@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import Container from '@/components/ui/Container';
 import { signOut } from '@/store/auth/authThunks';
 import { useAppDispatch, useAppSelector } from '@/store';

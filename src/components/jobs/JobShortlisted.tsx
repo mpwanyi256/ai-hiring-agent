@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { CandidateWithEvaluation, CandidateStatus } from '@/types/candidates';
 import { Loading } from '@/components/ui/Loading';
 import { UserIcon, CalendarIcon, StarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
 import RescheduleInterviewModal from '../dashboard/RescheduleInterviewModal';
 import { fetchShortlistedCandidates } from '@/store/candidates/candidatesThunks';

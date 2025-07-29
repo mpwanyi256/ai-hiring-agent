@@ -6,7 +6,7 @@ import {
 } from '@/store/integrations/integrationsSelectors';
 import { disconnectIntegration, fetchIntegrations } from '@/store/integrations/integrationsThunks';
 import { Integration, IntegrationProvider } from '@/types/integrations';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import Image from 'next/image';
 import { integrationService } from '@/lib/services/integrationService';
 

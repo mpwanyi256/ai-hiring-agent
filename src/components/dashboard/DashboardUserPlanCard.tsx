@@ -1,7 +1,7 @@
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import { useAppSelector } from '@/store';
 import { selectHasActiveSubscription, selectUser } from '@/store/auth/authSelectors';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import { useSubscriptionModal } from '../modals/SubscriptionModal';
 
 export const DashboardUserPlanCard = () => {

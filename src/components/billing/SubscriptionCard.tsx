@@ -9,7 +9,7 @@ import {
   selectBillingLoading,
 } from '@/store/billing/billingSelectors';
 import { SubscriptionPlan } from '@/types/billing';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { SparklesIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 interface SubscriptionCardProps {
@@ -81,7 +81,7 @@ export default function SubscriptionCard({
 
   const getButtonVariant = () => {
     if (isCurrentPlan) return 'ghost';
-    if (isRecommended) return 'primary';
+    if (isRecommended) return 'default';
     return 'outline';
   };
 

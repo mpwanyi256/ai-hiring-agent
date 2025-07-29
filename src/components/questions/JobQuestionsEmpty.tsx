@@ -1,5 +1,5 @@
 import { SparklesIcon } from '@heroicons/react/24/outline';
-import Button from '../ui/Button';
+import { Button } from '../ui/button';
 import { useState } from 'react';
 import { generateJobQuestions } from '@/store/jobs/jobsThunks';
 import { apiError } from '@/lib/notification';

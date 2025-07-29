@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Navigation from '@/components/landing/Navigation';
 import Footer from '@/components/landing/Footer';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import Container from '@/components/ui/Container';
 import { useToast } from '@/components/providers/ToastProvider';
 import { useAppDispatch, useAppSelector } from '@/store';

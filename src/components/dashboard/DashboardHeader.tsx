@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { CalendarDaysIcon, PlusIcon, SparklesIcon } from '@heroicons/react/24/outline';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { useAppSelector } from '@/store';
 import { selectHasActiveSubscription, selectUser } from '@/store/auth/authSelectors';
 import { useSubscriptionModal } from '../modals/SubscriptionModal';

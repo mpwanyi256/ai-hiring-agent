@@ -2,7 +2,7 @@ import { SparklesIcon } from '@heroicons/react/24/outline';
 import { JobData } from '@/lib/services/jobsService';
 import { ResumeEvaluation } from '@/types/interview';
 import { getScoreColor } from '@/lib/utils';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { apiSuccess } from '@/lib/notification';
 

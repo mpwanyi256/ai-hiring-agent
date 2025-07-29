@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import AuthLayout from '@/components/auth/AuthLayout';
 import { checkAuth } from '@/store/auth/authThunks';
 import { KeyIcon, CheckCircleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
@@ -282,7 +282,6 @@ function VerifyEmailContent() {
             onClick={handleVerifyCode}
             disabled={!isCodeComplete || isVerifying || codeExpired}
             className="w-full"
-            isLoading={isVerifying}
           >
             {isVerifying ? 'Verifying...' : 'Verify Email'}
           </Button>

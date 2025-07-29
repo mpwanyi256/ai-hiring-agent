@@ -1,5 +1,10 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
+import { persistStore, persistReducer } from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
 import { useDispatch, useSelector } from 'react-redux';
+import type { TypedUseSelectorHook } from 'react-redux';
+
+// Import all slices
 import authSlice from './auth/authSlice';
 import jobsSlice from './jobs/jobsSlice';
 import candidatesSlice from './candidates/candidatesSlice';
@@ -15,11 +20,11 @@ import dashboardReducer from './dashboard/dashboardSlice';
 import landingSlice from './landing/landingSlice';
 import billingSlice from './billing/billingSlice';
 import integrationsReducer from './integrations/integrationsSlice';
-import { combineReducers } from 'redux';
 import teamsSlice from './teams/teamsSlice';
 import jobPermissionsSlice from './jobPermissions/jobPermissionsSlice';
 import messagesSlice from './messages/messagesSlice';
 import adminSlice from './admin/adminSlice';
+import contractsSlice from './contracts/contractsSlice';
 
 const rootReducer = combineReducers({
   auth: authSlice,
@@ -41,10 +46,19 @@ const rootReducer = combineReducers({
   jobPermissions: jobPermissionsSlice,
   messages: messagesSlice,
   admin: adminSlice,
+  contracts: contractsSlice,
 });
 
+const persistConfig = {
+  key: 'root',
+  storage,
+  whitelist: ['auth'], // Only persist auth state
+};
+
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
 export const store = configureStore({
-  reducer: rootReducer,
+  reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
@@ -54,11 +68,13 @@ export const store = configureStore({
   devTools: process.env.NODE_ENV !== 'production',
 });
 
+export const persistor = persistStore(store);
+
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
 // Typed hooks
 export const useAppDispatch = () => useDispatch<AppDispatch>();
-export const useAppSelector = useSelector.withTypes<RootState>();
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 
 export default store;
