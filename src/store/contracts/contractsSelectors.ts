@@ -35,6 +35,7 @@ export const selectIsUpdating = (state: RootState) => state.contracts.isUpdating
 export const selectIsDeleting = (state: RootState) => state.contracts.isDeleting;
 export const selectIsSending = (state: RootState) => state.contracts.isSending;
 export const selectIsSigning = (state: RootState) => state.contracts.isSigning;
+export const selectIsGeneratingAI = (state: RootState) => state.contracts.isGeneratingAI;
 
 // Derived selectors
 export const selectContractById = createSelector(
@@ -202,9 +203,16 @@ export const selectIsAnyLoading = createSelector(
 );
 
 export const selectIsAnyOperationPending = createSelector(
-  [selectIsCreating, selectIsUpdating, selectIsDeleting, selectIsSending, selectIsSigning],
-  (isCreating, isUpdating, isDeleting, isSending, isSigning) =>
-    isCreating || isUpdating || isDeleting || isSending || isSigning,
+  [
+    selectIsCreating,
+    selectIsUpdating,
+    selectIsDeleting,
+    selectIsSending,
+    selectIsSigning,
+    selectIsGeneratingAI,
+  ],
+  (isCreating, isUpdating, isDeleting, isSending, isSigning, isGeneratingAI) =>
+    isCreating || isUpdating || isDeleting || isSending || isSigning || isGeneratingAI,
 );
 
 // Error state helpers

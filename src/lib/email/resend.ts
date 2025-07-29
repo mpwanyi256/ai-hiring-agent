@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { integrations } from '@/lib/constants';
+import { integrations, domainEmails } from '@/lib/constants';
 
 if (!integrations.resend.apiKey) {
   throw new Error('RESEND_API_KEY environment variable is required');
@@ -238,14 +238,19 @@ export async function sendContractOfferEmail(data: {
   });
 
   try {
-    const result = await resend.emails.send({
-      from: 'no-reply@intavia.app',
+    const emailData: any = {
+      from: domainEmails.noReply,
       to: data.to,
-      cc: data.cc,
       subject,
       html,
-    });
+    };
 
+    // Add CC if provided
+    if (data.cc && data.cc.length > 0) {
+      emailData.cc = data.cc;
+    }
+
+    const result = await resend.emails.send(emailData);
     return { success: true, data: result };
   } catch (error) {
     console.error('Error sending contract offer email:', error);
@@ -281,7 +286,7 @@ export async function sendContractSignedEmail(data: {
 
   try {
     const emailData: any = {
-      from: process.env.RESEND_FROM_EMAIL || 'noreply@intavia.com',
+      from: domainEmails.noReply,
       to: Array.isArray(data.to) ? data.to : [data.to],
       subject,
       html,
@@ -332,7 +337,7 @@ export async function sendContractRejectedEmail(data: {
 
   try {
     const result = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'noreply@intavia.com',
+      from: domainEmails.noReply,
       to: Array.isArray(data.to) ? data.to : [data.to],
       subject,
       html,

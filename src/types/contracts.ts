@@ -44,7 +44,7 @@ export interface ContractOffer {
   salaryCurrency: string;
   startDate?: string;
   endDate?: string;
-  additionalTerms?: Record<string, any>;
+  additionalTerms?: Record<string, string | number | boolean>;
   createdAt: string;
   updatedAt: string;
   // Populated relations
@@ -54,6 +54,18 @@ export interface ContractOffer {
     firstName?: string;
     lastName?: string;
     email?: string;
+    job?: {
+      id: string;
+      title: string;
+      profile?: {
+        company_id: string;
+        company?: {
+          id: string;
+          name: string;
+          slug: string;
+        };
+      };
+    };
   };
   sentByProfile?: {
     id: string;
@@ -117,6 +129,22 @@ export interface Employment {
   };
 }
 
+// Job Title and Employment Type interfaces
+export interface JobTitle {
+  id: string;
+  name: string;
+  companyId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmploymentType {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // API Request/Response Types
 export interface CreateContractData {
   title: string;
@@ -136,7 +164,7 @@ export interface SendContractData {
   salaryCurrency?: string;
   startDate?: string;
   endDate?: string;
-  additionalTerms?: Record<string, any>;
+  additionalTerms?: Record<string, string | number | boolean>;
 }
 
 export interface SignContractData {
@@ -165,6 +193,47 @@ export interface UpdateEmploymentData {
   employmentTypeId?: string;
   workplaceType?: string;
   jobType?: string;
+}
+
+// AI Generation Types
+export interface AIGenerateContractData {
+  title?: string;
+  jobTitleId?: string;
+  employmentTypeId?: string;
+  contractDuration?: string;
+  userPrompt: string;
+  companyId: string;
+  companyName: string;
+  companyIndustry?: string;
+  selectedJobTitle?: string;
+  selectedEmploymentType?: string;
+}
+
+export interface AIGenerateContractResponse {
+  success: boolean;
+  contractContent?: string;
+  context?: {
+    companyName: string;
+    companyIndustry: string;
+    contractTitle: string;
+    jobTitle: string;
+    employmentType: string;
+    contractDuration: string;
+    userRequirements: string;
+  };
+  tokensUsed?: number;
+  error?: string;
+}
+
+// Job Title Creation
+export interface CreateJobTitleData {
+  name: string;
+}
+
+export interface CreateJobTitleResponse {
+  success: boolean;
+  jobTitle?: JobTitle;
+  error?: string;
 }
 
 // Filters and Pagination
@@ -265,6 +334,7 @@ export interface ContractsState {
   isDeleting: boolean;
   isSending: boolean;
   isSigning: boolean;
+  isGeneratingAI: boolean;
 
   // Pagination
   contractsPagination: PaginationInfo;

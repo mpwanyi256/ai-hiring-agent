@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { AppDispatch } from '@/store';
-import { createContract, updateContract } from '@/store/contracts/contractsThunks';
+import { createContract, updateContract, createJobTitle } from '@/store/contracts/contractsThunks';
 import { fetchDepartments, fetchJobTitles, fetchEmploymentTypes } from '@/store/jobs/jobsThunks';
 import {
   selectIsCreating,
@@ -31,8 +31,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Contract, CreateContractData, UpdateContractData } from '@/types/contracts';
+import {
+  Contract,
+  CreateContractData,
+  UpdateContractData,
+  CreateJobTitleResponse,
+} from '@/types/contracts';
+import { JobTitle, EmploymentType } from '@/types/jobs';
 import {
   Loader2,
   Save,
@@ -46,7 +51,8 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import Link from 'next/link';
-import RichTextEditor from '@/components/ui/RichTextEditor';
+import RichTextEditor, { RichTextEditorRef } from '@/components/ui/RichTextEditor';
+import AIGenerationModal from './AIGenerationModal';
 
 interface ContractFormProps {
   contract?: Contract;
@@ -65,6 +71,9 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
   const jobTitlesLoading = useSelector(selectJobTitlesLoading);
   const employmentTypes = useSelector(selectEmploymentTypes);
   const employmentTypesLoading = useSelector(selectEmploymentTypesLoading);
+
+  // Rich text editor ref
+  const editorRef = useRef<RichTextEditorRef>(null);
 
   // Add mounted state to prevent hydration issues
   const [mounted, setMounted] = useState(false);
@@ -87,8 +96,6 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
   const [showAiGenerationModal, setShowAiGenerationModal] = useState(false);
   const [newJobTitleName, setNewJobTitleName] = useState('');
   const [isCreatingJobTitle, setIsCreatingJobTitle] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isGeneratingContract, setIsGeneratingContract] = useState(false);
 
   const [showPreview, setShowPreview] = useState(false);
 
@@ -189,35 +196,28 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     }));
   };
 
-  // Handle creating new job title
+  // Handle creating new job title using Redux
   const handleCreateJobTitle = async () => {
     if (!newJobTitleName.trim()) return;
 
     setIsCreatingJobTitle(true);
     try {
-      const response = await fetch('/api/job-titles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: newJobTitleName.trim() }),
-      });
+      const result = await dispatch(createJobTitle({ name: newJobTitleName.trim() }));
 
-      const data = await response.json();
+      if (result.type === 'contracts/createJobTitle/fulfilled') {
+        const response = result.payload as CreateJobTitleResponse;
+        if (response.success && response.jobTitle) {
+          // Refresh job titles
+          dispatch(fetchJobTitles());
 
-      if (response.ok) {
-        // Refresh job titles
-        dispatch(fetchJobTitles());
+          // Select the new job title
+          handleInputChange('jobTitleId', response.jobTitle.id);
+          setJobTitleSearch(response.jobTitle.name);
 
-        // Select the new job title
-        handleInputChange('jobTitleId', data.jobTitle.id);
-        setJobTitleSearch(data.jobTitle.name);
-
-        // Close modal and reset form
-        setShowJobTitleModal(false);
-        setNewJobTitleName('');
-      } else {
-        console.error('Error creating job title:', data.error);
+          // Close modal and reset form
+          setShowJobTitleModal(false);
+          setNewJobTitleName('');
+        }
       }
     } catch (error) {
       console.error('Error creating job title:', error);
@@ -226,64 +226,9 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     }
   };
 
-  // Handle AI contract generation
-  const handleAiGeneration = async () => {
-    if (!aiPrompt.trim()) return;
-
-    setIsGeneratingContract(true);
-    try {
-      // This would call your AI service to generate contract content
-      // For now, we'll simulate the generation
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const selectedJobTitle = jobTitles.find((jt) => jt.id === formData.jobTitleId);
-      const selectedEmploymentType = employmentTypes.find(
-        (et) => et.id === formData.employmentTypeId,
-      );
-
-      const generatedContract = `<h1>Employment Contract</h1>
-
-<p><strong>Company:</strong> {{ company_name }}</p>
-<p><strong>Employee:</strong> {{ candidate_name }}</p>
-<p><strong>Email:</strong> {{ candidate_email }}</p>
-
-<h2>Position Details</h2>
-<p><strong>Job Title:</strong> ${selectedJobTitle?.name || '{{ job_title }}'}</p>
-<p><strong>Employment Type:</strong> ${selectedEmploymentType?.name || '{{ employment_type }}'}</p>
-<p><strong>Start Date:</strong> {{ start_date }}</p>
-<p><strong>Contract Duration:</strong> ${formData.contractDuration || '{{ contract_duration }}'}</p>
-
-<h2>Compensation</h2>
-<p><strong>Salary:</strong> {{ salary_amount }} {{ salary_currency }}</p>
-
-<h2>AI-Generated Terms Based on Your Requirements</h2>
-<p>${aiPrompt}</p>
-
-<h2>Standard Terms and Conditions</h2>
-<p>This employment contract is governed by the applicable laws. The employee agrees to:</p>
-<ul>
-  <li>Perform duties to the best of their ability</li>
-  <li>Maintain confidentiality of company information</li>
-  <li>Comply with company policies and procedures</li>
-</ul>
-
-<h2>Signatures</h2>
-<p>By signing below, both parties agree to the terms outlined in this contract.</p>
-
-<p><strong>Employee Signature:</strong> _____________________</p>
-<p><strong>Date:</strong> _____________________</p>
-
-<p><strong>Company Representative:</strong> _____________________</p>
-<p><strong>Date:</strong> _____________________</p>`;
-
-      handleBodyChange(generatedContract);
-      setShowAiGenerationModal(false);
-      setAiPrompt('');
-    } catch (error) {
-      console.error('Error generating contract:', error);
-    } finally {
-      setIsGeneratingContract(false);
-    }
+  // Handle AI contract generation success
+  const handleAiGenerationSuccess = (generatedContent: string) => {
+    handleBodyChange(generatedContent);
   };
 
   // Sample placeholder variables for the contract body
@@ -305,10 +250,10 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
   ];
 
   const insertPlaceholder = (placeholder: string) => {
-    // Insert placeholder at the current cursor position in the rich text editor
-    const currentContent = formData.body;
-    const newContent = currentContent + (currentContent ? ' ' : '') + placeholder;
-    handleBodyChange(newContent);
+    // Use the editor ref to insert at cursor position
+    if (editorRef.current) {
+      editorRef.current.insertAtCursor(placeholder);
+    }
   };
 
   const defaultTemplate = `<h1>Employment Contract</h1>
@@ -613,90 +558,15 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                       Contract Template *
                     </Label>
                     <div className="flex gap-2">
-                      <Dialog open={showAiGenerationModal} onOpenChange={setShowAiGenerationModal}>
-                        <DialogTrigger asChild>
-                          <Button type="button" variant="outline" size="sm">
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            Generate with AI
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2">
-                              <Sparkles className="h-5 w-5" />
-                              AI Contract Generation
-                            </DialogTitle>
-                            <DialogDescription>
-                              Provide additional details about the contract requirements, and we
-                              will generate a customized template based on your selected fields.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-6">
-                            {/* Selected Fields Summary */}
-                            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                              <h4 className="font-medium text-sm">Selected Fields:</h4>
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                <div>
-                                  <strong>Title:</strong> {formData.title || 'Not specified'}
-                                </div>
-                                <div>
-                                  <strong>Job Title:</strong>{' '}
-                                  {jobTitles.find((jt) => jt.id === formData.jobTitleId)?.name ||
-                                    'Not selected'}
-                                </div>
-                                <div>
-                                  <strong>Employment Type:</strong>{' '}
-                                  {employmentTypes.find((et) => et.id === formData.employmentTypeId)
-                                    ?.name || 'Not selected'}
-                                </div>
-                                <div>
-                                  <strong>Duration:</strong>{' '}
-                                  {formData.contractDuration || 'Not specified'}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* AI Prompt Input */}
-                            <div className="space-y-2">
-                              <Label htmlFor="aiPrompt">Additional Requirements & Details</Label>
-                              <Textarea
-                                id="aiPrompt"
-                                placeholder="Describe specific requirements, benefits, responsibilities, or any special terms you want to include in the contract..."
-                                value={aiPrompt}
-                                onChange={(e) => setAiPrompt(e.target.value)}
-                                rows={6}
-                                className="resize-none"
-                              />
-                              <p className="text-xs text-muted-foreground">
-                                Example: &quot;Include health insurance benefits, flexible working
-                                hours, probation period of 3 months, and confidentiality clause for
-                                tech company.&quot;
-                              </p>
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => setShowAiGenerationModal(false)}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              type="button"
-                              onClick={handleAiGeneration}
-                              disabled={isGeneratingContract || !aiPrompt.trim()}
-                            >
-                              {isGeneratingContract ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <Sparkles className="h-4 w-4 mr-2" />
-                              )}
-                              Generate Contract
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAiGenerationModal(true)}
+                      >
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate with AI
+                      </Button>
                       <Button type="button" variant="outline" size="sm" onClick={loadTemplate}>
                         Load Default Template
                       </Button>
@@ -706,6 +576,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                   {!showPreview ? (
                     <div className="space-y-2">
                       <RichTextEditor
+                        ref={editorRef}
                         content={formData.body}
                         onChange={handleBodyChange}
                         placeholder="Enter your contract template here. Use the rich text editor for formatting and click placeholders from the sidebar to insert dynamic content."
@@ -713,7 +584,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                       />
                       <p className="text-sm text-muted-foreground">
                         Use the toolbar for formatting and click placeholders from the sidebar to
-                        insert dynamic content.
+                        insert dynamic content at your cursor position.
                       </p>
                     </div>
                   ) : (
@@ -756,7 +627,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
             <CardHeader>
               <CardTitle className="text-lg">Available Placeholders</CardTitle>
               <CardDescription>
-                Click to insert these placeholders into your contract.
+                Click to insert these placeholders at your cursor position.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -817,10 +688,29 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                   details.
                 </p>
               </div>
+              <div className="space-y-2">
+                <strong>Cursor Insertion:</strong>
+                <p className="text-muted-foreground">
+                  Click any placeholder to insert it at your current cursor position in the editor.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* AI Generation Modal */}
+      <AIGenerationModal
+        open={showAiGenerationModal}
+        onOpenChange={setShowAiGenerationModal}
+        title={formData.title}
+        jobTitleId={formData.jobTitleId}
+        employmentTypeId={formData.employmentTypeId}
+        contractDuration={formData.contractDuration}
+        jobTitles={jobTitles}
+        employmentTypes={employmentTypes}
+        onSuccess={handleAiGenerationSuccess}
+      />
     </div>
   );
 }

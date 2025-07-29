@@ -18,6 +18,11 @@ import {
   ContractOfferResponse,
   EmploymentListResponse,
   EmploymentResponse,
+  AIGenerateContractData,
+  AIGenerateContractResponse,
+  CreateJobTitleData,
+  CreateJobTitleResponse,
+  JobTitle,
 } from '@/types/contracts';
 
 // Contract Templates
@@ -110,6 +115,48 @@ export const deleteContract = createAsyncThunk<string, string>(
     }
 
     return contractId;
+  },
+);
+
+// AI Contract Generation
+export const generateContractWithAI = createAsyncThunk<
+  AIGenerateContractResponse,
+  AIGenerateContractData
+>('contracts/generateContractWithAI', async (aiData) => {
+  const response = await fetch('/api/contracts/generate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(aiData),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to generate contract with AI');
+  }
+
+  return response.json();
+});
+
+// Job Title Management
+export const createJobTitle = createAsyncThunk<CreateJobTitleResponse, CreateJobTitleData>(
+  'contracts/createJobTitle',
+  async (jobTitleData) => {
+    const response = await fetch('/api/job-titles', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(jobTitleData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create job title');
+    }
+
+    return response.json();
   },
 );
 

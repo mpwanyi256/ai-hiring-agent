@@ -13,6 +13,8 @@ import {
   fetchEmployment,
   createEmployment,
   updateEmployment,
+  generateContractWithAI,
+  createJobTitle,
 } from './contractsThunks';
 
 const initialState: ContractsState = {
@@ -40,6 +42,7 @@ const initialState: ContractsState = {
   isDeleting: false,
   isSending: false,
   isSigning: false,
+  isGeneratingAI: false,
 
   // Pagination
   contractsPagination: {
@@ -104,12 +107,12 @@ const contractsSlice = createSlice({
       const { id, status, signedAt, rejectedAt } = action.payload;
       const offer = state.contractOffers.find((o) => o.id === id);
       if (offer) {
-        offer.status = status as any;
+        offer.status = status as 'sent' | 'signed' | 'rejected';
         if (signedAt) offer.signedAt = signedAt;
         if (rejectedAt) offer.rejectedAt = rejectedAt;
       }
       if (state.currentContractOffer?.id === id) {
-        state.currentContractOffer.status = status as any;
+        state.currentContractOffer.status = status as 'sent' | 'signed' | 'rejected';
         if (signedAt) state.currentContractOffer.signedAt = signedAt;
         if (rejectedAt) state.currentContractOffer.rejectedAt = rejectedAt;
       }
@@ -202,6 +205,36 @@ const contractsSlice = createSlice({
       .addCase(deleteContract.rejected, (state, action) => {
         state.isDeleting = false;
         state.contractsError = action.error.message || 'Failed to delete contract';
+      });
+
+    // Generate Contract with AI
+    builder
+      .addCase(generateContractWithAI.pending, (state) => {
+        state.isGeneratingAI = true;
+        state.contractsError = null;
+      })
+      .addCase(generateContractWithAI.fulfilled, (state) => {
+        state.isGeneratingAI = false;
+        // The generated content will be handled by the component directly
+      })
+      .addCase(generateContractWithAI.rejected, (state, action) => {
+        state.isGeneratingAI = false;
+        state.contractsError = action.error.message || 'Failed to generate contract with AI';
+      });
+
+    // Create Job Title
+    builder
+      .addCase(createJobTitle.pending, (state) => {
+        state.contractsLoading = true;
+        state.contractsError = null;
+      })
+      .addCase(createJobTitle.fulfilled, (state) => {
+        state.contractsLoading = false;
+        // Job title creation success will be handled by refetching job titles
+      })
+      .addCase(createJobTitle.rejected, (state, action) => {
+        state.contractsLoading = false;
+        state.contractsError = action.error.message || 'Failed to create job title';
       });
 
     // Send Contract
