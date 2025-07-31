@@ -36,6 +36,10 @@ import {
   CreateContractData,
   UpdateContractData,
   CreateJobTitleResponse,
+  ContractsFilters,
+  ContractStatus,
+  ContractCategory,
+  BulkUpdateContractData,
 } from '@/types/contracts';
 import { JobTitle, EmploymentType } from '@/types/jobs';
 import {
@@ -49,10 +53,19 @@ import {
   Clock,
   FileText,
   Lightbulb,
+  TagIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import RichTextEditor, { RichTextEditorRef } from '@/components/ui/RichTextEditor';
 import AIGenerationModal from './AIGenerationModal';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 interface ContractFormProps {
   contract?: Contract;
@@ -77,12 +90,24 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
 
   // Add mounted state to prevent hydration issues
   const [mounted, setMounted] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    body: string;
+    jobTitleId: string;
+    employmentTypeId: string;
+    contractDuration: string;
+    status: ContractStatus;
+    category: ContractCategory;
+    tags: string[];
+  }>({
     title: '',
     body: '',
     jobTitleId: '',
     employmentTypeId: '',
     contractDuration: '',
+    status: 'draft',
+    category: 'general',
+    tags: [],
   });
 
   // Search states for dropdowns
@@ -134,6 +159,9 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
         jobTitleId: contract.jobTitleId || '',
         employmentTypeId: contract.employmentTypeId || '',
         contractDuration: contract.contractDuration || '',
+        status: contract.status || 'draft',
+        category: contract.category || 'general',
+        tags: contract.tags || [],
       });
     }
   }, [contract, dispatch]);
@@ -155,6 +183,9 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
           jobTitleId: formData.jobTitleId || undefined,
           employmentTypeId: formData.employmentTypeId || undefined,
           contractDuration: formData.contractDuration || undefined,
+          status: formData.status,
+          category: formData.category,
+          tags: formData.tags,
         };
 
         const result = await dispatch(createContract(contractData));
@@ -169,6 +200,9 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
           jobTitleId: formData.jobTitleId || undefined,
           employmentTypeId: formData.employmentTypeId || undefined,
           contractDuration: formData.contractDuration || undefined,
+          status: formData.status,
+          category: formData.category,
+          tags: formData.tags,
         };
 
         const result = await dispatch(updateContract(updateData));
@@ -181,7 +215,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -548,6 +582,89 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                       value={formData.contractDuration}
                       onChange={(e) => handleInputChange('contractDuration', e.target.value)}
                     />
+                  </div>
+
+                  {/* Status */}
+                  <div className="space-y-2">
+                    <Label htmlFor="status" className="text-sm font-medium">
+                      Status
+                    </Label>
+                    <Select
+                      value={formData.status}
+                      onValueChange={(value) => handleInputChange('status', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
+                        <SelectItem value="deprecated">Deprecated</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Category */}
+                  <div className="space-y-2">
+                    <Label htmlFor="category" className="text-sm font-medium">
+                      Category
+                    </Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => handleInputChange('category', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">General</SelectItem>
+                        <SelectItem value="technical">Technical</SelectItem>
+                        <SelectItem value="executive">Executive</SelectItem>
+                        <SelectItem value="intern">Intern</SelectItem>
+                        <SelectItem value="freelance">Freelance</SelectItem>
+                        <SelectItem value="custom">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Tags */}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="tags" className="text-sm font-medium flex items-center gap-2">
+                      <TagIcon className="h-4 w-4" />
+                      Tags (Optional)
+                    </Label>
+                    <Input
+                      id="tags"
+                      placeholder="e.g., remote, full-time, senior (separate with commas)"
+                      value={formData.tags.join(', ')}
+                      onChange={(e) => {
+                        const tags = e.target.value
+                          .split(',')
+                          .map((tag) => tag.trim())
+                          .filter(Boolean);
+                        handleInputChange('tags', tags);
+                      }}
+                    />
+                    {formData.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {formData.tags.map((tag, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newTags = formData.tags.filter((_, i) => i !== index);
+                                handleInputChange('tags', newTags);
+                              }}
+                              className="ml-1 hover:text-red-600"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 

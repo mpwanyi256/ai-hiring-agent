@@ -1,5 +1,17 @@
 // Types for the Contract Management System
 
+// Contract Status enum
+export type ContractStatus = 'draft' | 'active' | 'archived' | 'deprecated';
+
+// Contract Category enum
+export type ContractCategory =
+  | 'general'
+  | 'technical'
+  | 'executive'
+  | 'intern'
+  | 'freelance'
+  | 'custom';
+
 export interface Contract {
   id: string;
   companyId: string;
@@ -8,6 +20,12 @@ export interface Contract {
   body: string;
   employmentTypeId?: string;
   contractDuration?: string;
+  status: ContractStatus;
+  category: ContractCategory;
+  isFavorite: boolean;
+  tags: string[];
+  usageCount: number;
+  lastUsedAt?: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -152,10 +170,24 @@ export interface CreateContractData {
   jobTitleId?: string;
   employmentTypeId?: string;
   contractDuration?: string;
+  status?: ContractStatus;
+  category?: ContractCategory;
+  tags?: string[];
 }
 
 export interface UpdateContractData extends CreateContractData {
   id: string;
+  isFavorite?: boolean;
+}
+
+export interface BulkUpdateContractData {
+  contractIds: string[];
+  updates: {
+    status?: ContractStatus;
+    category?: ContractCategory;
+    tags?: string[];
+    isFavorite?: boolean;
+  };
 }
 
 export interface SendContractData {
@@ -165,6 +197,18 @@ export interface SendContractData {
   startDate?: string;
   endDate?: string;
   additionalTerms?: Record<string, string | number | boolean>;
+}
+
+export interface BulkSendContractData {
+  contractId: string;
+  candidates: {
+    candidateId: string;
+    salaryAmount?: number;
+    salaryCurrency?: string;
+    startDate?: string;
+    endDate?: string;
+    additionalTerms?: Record<string, string | number | boolean>;
+  }[];
 }
 
 export interface SignContractData {
@@ -239,9 +283,19 @@ export interface CreateJobTitleResponse {
 // Filters and Pagination
 export interface ContractsFilters {
   search?: string;
+  status?: ContractStatus;
+  category?: ContractCategory;
   jobTitleId?: string;
   employmentTypeId?: string;
   createdBy?: string;
+  isFavorite?: boolean;
+  tags?: string[];
+  dateRange?: {
+    from: string;
+    to: string;
+  };
+  sortBy?: 'title' | 'createdAt' | 'updatedAt' | 'usageCount' | 'lastUsedAt';
+  sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
 }
@@ -251,6 +305,12 @@ export interface ContractOffersFilters {
   candidateId?: string;
   contractId?: string;
   sentBy?: string;
+  dateRange?: {
+    from: string;
+    to: string;
+  };
+  sortBy?: 'sentAt' | 'signedAt' | 'rejectedAt';
+  sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
 }
@@ -274,11 +334,42 @@ export interface PaginationInfo {
   hasMore: boolean;
 }
 
+// Analytics Types
+export interface ContractAnalytics {
+  totalContracts: number;
+  contractsByStatus: Record<ContractStatus, number>;
+  contractsByCategory: Record<ContractCategory, number>;
+  mostUsedContracts: {
+    id: string;
+    title: string;
+    usageCount: number;
+  }[];
+  recentActivity: {
+    contractsCreated: number;
+    contractsSent: number;
+    contractsSigned: number;
+    contractsRejected: number;
+  };
+  conversionRate: number;
+  averageSigningTime: number; // in hours
+  popularJobTitles: {
+    id: string;
+    name: string;
+    contractCount: number;
+  }[];
+  popularEmploymentTypes: {
+    id: string;
+    name: string;
+    contractCount: number;
+  }[];
+}
+
 // API Response Types
 export interface ContractsListResponse {
   success: boolean;
   contracts: Contract[];
   pagination: PaginationInfo;
+  analytics?: ContractAnalytics;
 }
 
 export interface ContractResponse {
@@ -308,11 +399,23 @@ export interface EmploymentResponse {
   employment: Employment;
 }
 
+export interface ContractAnalyticsResponse {
+  success: boolean;
+  analytics: ContractAnalytics;
+}
+
+export interface BulkOperationResponse {
+  success: boolean;
+  affected: number;
+  errors?: string[];
+}
+
 // Redux State Types
 export interface ContractsState {
   // Contract templates
   contracts: Contract[];
   currentContract: Contract | null;
+  selectedContracts: string[];
   contractsLoading: boolean;
   contractsError: string | null;
 
@@ -328,6 +431,11 @@ export interface ContractsState {
   employmentLoading: boolean;
   employmentError: string | null;
 
+  // Analytics
+  analytics: ContractAnalytics | null;
+  analyticsLoading: boolean;
+  analyticsError: string | null;
+
   // UI state
   isCreating: boolean;
   isUpdating: boolean;
@@ -335,6 +443,7 @@ export interface ContractsState {
   isSending: boolean;
   isSigning: boolean;
   isGeneratingAI: boolean;
+  isBulkOperating: boolean;
 
   // Pagination
   contractsPagination: PaginationInfo;

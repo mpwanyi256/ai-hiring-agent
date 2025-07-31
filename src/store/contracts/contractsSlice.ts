@@ -1,11 +1,22 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ContractsState, Contract, ContractOffer, Employment } from '@/types/contracts';
+import {
+  ContractsState,
+  Contract,
+  ContractOffer,
+  Employment,
+  ContractAnalytics,
+} from '@/types/contracts';
 import {
   fetchContracts,
   fetchContractById,
   createContract,
   updateContract,
   deleteContract,
+  toggleContractFavorite,
+  bulkUpdateContracts,
+  bulkDeleteContracts,
+  bulkSendContracts,
+  fetchContractAnalytics,
   sendContract,
   fetchContractOffers,
   fetchContractOfferById,
@@ -21,6 +32,7 @@ const initialState: ContractsState = {
   // Contract templates
   contracts: [],
   currentContract: null,
+  selectedContracts: [],
   contractsLoading: false,
   contractsError: null,
 
@@ -36,6 +48,11 @@ const initialState: ContractsState = {
   employmentLoading: false,
   employmentError: null,
 
+  // Analytics
+  analytics: null,
+  analyticsLoading: false,
+  analyticsError: null,
+
   // UI state
   isCreating: false,
   isUpdating: false,
@@ -43,6 +60,7 @@ const initialState: ContractsState = {
   isSending: false,
   isSigning: false,
   isGeneratingAI: false,
+  isBulkOperating: false,
 
   // Pagination
   contractsPagination: {
@@ -82,6 +100,9 @@ const contractsSlice = createSlice({
     clearEmploymentError: (state) => {
       state.employmentError = null;
     },
+    clearAnalyticsError: (state) => {
+      state.analyticsError = null;
+    },
 
     // Set current items
     setCurrentContract: (state, action: PayloadAction<Contract | null>) => {
@@ -92,6 +113,26 @@ const contractsSlice = createSlice({
     },
     setCurrentEmployment: (state, action: PayloadAction<Employment | null>) => {
       state.currentEmployment = action.payload;
+    },
+
+    // Contract selection for bulk operations
+    toggleContractSelection: (state, action: PayloadAction<string>) => {
+      const contractId = action.payload;
+      const index = state.selectedContracts.indexOf(contractId);
+      if (index > -1) {
+        state.selectedContracts.splice(index, 1);
+      } else {
+        state.selectedContracts.push(contractId);
+      }
+    },
+    selectAllContracts: (state) => {
+      state.selectedContracts = state.contracts.map((contract) => contract.id);
+    },
+    deselectAllContracts: (state) => {
+      state.selectedContracts = [];
+    },
+    setSelectedContracts: (state, action: PayloadAction<string[]>) => {
+      state.selectedContracts = action.payload;
     },
 
     // Clear state
@@ -131,6 +172,8 @@ const contractsSlice = createSlice({
         if (action.payload.pagination) {
           state.contractsPagination = action.payload.pagination;
         }
+        // Clear selection when fetching new contracts
+        state.selectedContracts = [];
       })
       .addCase(fetchContracts.rejected, (state, action) => {
         state.contractsLoading = false;
@@ -201,10 +244,98 @@ const contractsSlice = createSlice({
         if (state.currentContract?.id === action.payload) {
           state.currentContract = null;
         }
+        // Remove from selection if it was selected
+        state.selectedContracts = state.selectedContracts.filter((id) => id !== action.payload);
       })
       .addCase(deleteContract.rejected, (state, action) => {
         state.isDeleting = false;
         state.contractsError = action.error.message || 'Failed to delete contract';
+      });
+
+    // Toggle Contract Favorite
+    builder
+      .addCase(toggleContractFavorite.pending, (state) => {
+        state.isUpdating = true;
+      })
+      .addCase(toggleContractFavorite.fulfilled, (state, action) => {
+        state.isUpdating = false;
+        const index = state.contracts.findIndex((c) => c.id === action.payload.id);
+        if (index !== -1) {
+          state.contracts[index] = action.payload;
+        }
+        if (state.currentContract?.id === action.payload.id) {
+          state.currentContract = action.payload;
+        }
+      })
+      .addCase(toggleContractFavorite.rejected, (state, action) => {
+        state.isUpdating = false;
+        state.contractsError = action.error.message || 'Failed to update favorite status';
+      });
+
+    // Bulk Update Contracts
+    builder
+      .addCase(bulkUpdateContracts.pending, (state) => {
+        state.isBulkOperating = true;
+        state.contractsError = null;
+      })
+      .addCase(bulkUpdateContracts.fulfilled, (state, action) => {
+        state.isBulkOperating = false;
+        // Clear selection after successful bulk operation
+        state.selectedContracts = [];
+        // Re-fetch contracts to get updated data
+      })
+      .addCase(bulkUpdateContracts.rejected, (state, action) => {
+        state.isBulkOperating = false;
+        state.contractsError = action.error.message || 'Failed to bulk update contracts';
+      });
+
+    // Bulk Delete Contracts
+    builder
+      .addCase(bulkDeleteContracts.pending, (state) => {
+        state.isBulkOperating = true;
+        state.contractsError = null;
+      })
+      .addCase(bulkDeleteContracts.fulfilled, (state, action) => {
+        state.isBulkOperating = false;
+        // Remove deleted contracts from state
+        const deletedIds = state.selectedContracts;
+        state.contracts = state.contracts.filter((c) => !deletedIds.includes(c.id));
+        state.selectedContracts = [];
+      })
+      .addCase(bulkDeleteContracts.rejected, (state, action) => {
+        state.isBulkOperating = false;
+        state.contractsError = action.error.message || 'Failed to bulk delete contracts';
+      });
+
+    // Bulk Send Contracts
+    builder
+      .addCase(bulkSendContracts.pending, (state) => {
+        state.isBulkOperating = true;
+        state.contractOffersError = null;
+      })
+      .addCase(bulkSendContracts.fulfilled, (state) => {
+        state.isBulkOperating = false;
+        // Clear selection after successful bulk operation
+        state.selectedContracts = [];
+      })
+      .addCase(bulkSendContracts.rejected, (state, action) => {
+        state.isBulkOperating = false;
+        state.contractOffersError = action.error.message || 'Failed to bulk send contracts';
+      });
+
+    // Fetch Contract Analytics
+    builder
+      .addCase(fetchContractAnalytics.pending, (state) => {
+        state.analyticsLoading = true;
+        state.analyticsError = null;
+      })
+      .addCase(fetchContractAnalytics.fulfilled, (state, action) => {
+        state.analyticsLoading = false;
+        state.analytics = action.payload.analytics;
+      })
+      .addCase(fetchContractAnalytics.rejected, (state, action) => {
+        state.analyticsLoading = false;
+        state.analyticsError = action.error.message || 'Failed to fetch analytics';
       });
 
     // Generate Contract with AI
@@ -368,9 +499,14 @@ export const {
   clearContractsError,
   clearContractOffersError,
   clearEmploymentError,
+  clearAnalyticsError,
   setCurrentContract,
   setCurrentContractOffer,
   setCurrentEmployment,
+  toggleContractSelection,
+  selectAllContracts,
+  deselectAllContracts,
+  setSelectedContracts,
   clearContractsState,
   updateContractOfferStatus,
 } = contractsSlice.actions;

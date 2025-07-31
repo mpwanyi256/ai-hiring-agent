@@ -131,7 +131,7 @@ export default function GoogleCalendarIntegration() {
             Connect your Google Calendar to automatically create interview events with Meet links.
           </div>
           <Button
-            variant="primary"
+            variant="default"
             onClick={() => {
               window.location.href = '/api/integrations/google/connect';
             }}

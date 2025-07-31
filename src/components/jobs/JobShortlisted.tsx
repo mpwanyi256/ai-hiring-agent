@@ -294,7 +294,7 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                       {!candidate.interviewDetails?.id ? (
                         <Button
                           size="sm"
-                          variant="primary"
+                          variant="default"
                           onClick={() => handleScheduleInterview(candidate)}
                         >
                           Schedule Interview

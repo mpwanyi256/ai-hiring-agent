@@ -82,7 +82,7 @@ const InterviewDetailsModal: React.FC<InterviewDetailsModalProps> = ({
           )}
           {/* Actions */}
           <div className="flex gap-2 mt-6">
-            <Button variant="primary" onClick={handleReschedule}>
+            <Button variant="default" onClick={handleReschedule}>
               Reschedule
             </Button>
             <Button variant="secondary" onClick={handleCancel}>
