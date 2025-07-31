@@ -3,22 +3,17 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import {
   Plus,
   Search,
-  Filter,
   MoreHorizontal,
   Edit,
   Copy,
   Trash2,
   Send,
   Star,
-  StarOff,
   Eye,
-  Download,
-  Loader2,
   FileText,
   Users,
   TrendingUp,
@@ -33,7 +28,7 @@ import {
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -55,13 +50,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
 // Redux imports
-import { RootState, AppDispatch } from '@/store';
+import { useAppSelector, useAppDispatch } from '@/store';
 import { fetchContracts, fetchContractAnalytics } from '@/store/contracts/contractsThunks';
 import {
   selectContracts,
@@ -74,13 +68,7 @@ import {
 } from '@/store/contracts/contractsSelectors';
 
 // Types from centralized file
-import {
-  Contract,
-  ContractAnalytics,
-  JobTitle,
-  EmploymentType,
-  ContractsFilters,
-} from '@/types/contracts';
+import { ContractsFilters } from '@/types/contracts';
 
 const CONTRACT_STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft', color: 'gray' },
@@ -100,16 +88,16 @@ const CONTRACT_CATEGORY_OPTIONS = [
 
 export default function ContractsPage() {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
 
   // Redux selectors
-  const contracts = useSelector(selectContracts);
-  const contractsLoading = useSelector(selectContractsLoading);
-  const contractsError = useSelector(selectContractsError);
-  const analytics = useSelector(selectContractAnalytics);
-  const analyticsLoading = useSelector(selectAnalyticsLoading);
-  const analyticsError = useSelector(selectAnalyticsError);
-  const pagination = useSelector(selectContractsPagination);
+  const contracts = useAppSelector(selectContracts);
+  const contractsLoading = useAppSelector(selectContractsLoading);
+  const contractsError = useAppSelector(selectContractsError);
+  const analytics = useAppSelector(selectContractAnalytics);
+  const analyticsLoading = useAppSelector(selectAnalyticsLoading);
+  const analyticsError = useAppSelector(selectAnalyticsError);
+  const pagination = useAppSelector(selectContractsPagination);
 
   // Local state for filters and UI
   const [filters, setFilters] = useState<ContractsFilters>({
@@ -122,7 +110,6 @@ export default function ContractsPage() {
     sortOrder: 'desc',
   });
   const [selectedContracts, setSelectedContracts] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
 
   // Fetch data on component mount and when filters change
   useEffect(() => {
