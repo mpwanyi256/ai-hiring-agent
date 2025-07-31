@@ -5,18 +5,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { AppDispatch } from '@/store';
 import { createContract, updateContract, createJobTitle } from '@/store/contracts/contractsThunks';
-import { fetchDepartments, fetchJobTitles, fetchEmploymentTypes } from '@/store/jobs/jobsThunks';
-import {
-  selectIsCreating,
-  selectIsUpdating,
-  selectContractsError,
-} from '@/store/contracts/contractsSelectors';
-import {
-  selectJobTitles,
-  selectJobTitlesLoading,
-  selectEmploymentTypes,
-  selectEmploymentTypesLoading,
-} from '@/store/jobs/jobsSelectors';
+import { fetchJobTitles, fetchEmploymentTypes } from '@/store/jobs/jobsThunks';
+import { selectContractsError } from '@/store/contracts/contractsSelectors';
+import { selectJobTitles, selectEmploymentTypes } from '@/store/jobs/jobsSelectors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,10 +29,11 @@ import {
   ContractStatus,
   ContractCategory,
 } from '@/types/contracts';
-import { JobTitle, EmploymentType } from '@/types/jobs';
+
 import { Loader2, Plus, Sparkles, Building2, Clock, FileText, TagIcon, X } from 'lucide-react';
 import RichTextEditor, { RichTextEditorRef } from '@/components/ui/RichTextEditor';
 import AIGenerationModal from './AIGenerationModal';
+import ContractPlaceholders from './ContractPlaceholders';
 import {
   Select,
   SelectContent,
@@ -60,15 +52,12 @@ interface ContractFormProps {
 export default function ContractForm({ contract, mode }: ContractFormProps) {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  const isCreating = useSelector(selectIsCreating);
-  const isUpdating = useSelector(selectIsUpdating);
+
   const error = useSelector(selectContractsError);
 
   // Job-related selectors
   const jobTitles = useSelector(selectJobTitles);
-  const jobTitlesLoading = useSelector(selectJobTitlesLoading);
   const employmentTypes = useSelector(selectEmploymentTypes);
-  const employmentTypesLoading = useSelector(selectEmploymentTypesLoading);
 
   // Rich text editor ref
   const editorRef = useRef<RichTextEditorRef>(null);
@@ -125,8 +114,6 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     }
   }, [contract, dispatch]);
 
-  const isLoading = isCreating || isUpdating;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -172,12 +159,12 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
           router.push('/dashboard/contracts');
         }
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to save contract template');
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | number | boolean | string[]) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -195,7 +182,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     try {
       const result = await dispatch(createJobTitle({ name: newJobTitleName.trim() }));
       if (result.type === 'contracts/createJobTitle/fulfilled') {
-        const payload = result.payload as any;
+        const payload = result.payload as { jobTitle?: { id: string; name: string } };
         const newJobTitle = payload?.jobTitle;
         if (newJobTitle) {
           handleInputChange('jobTitleId', newJobTitle.id);
@@ -204,7 +191,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
         setShowJobTitleModal(false);
         setNewJobTitleName('');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to create job title');
     } finally {
       setIsCreatingJobTitle(false);
@@ -240,10 +227,6 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
       </div>
     );
   }
-
-  // Get selected job title and employment type names for display
-  const selectedJobTitle = jobTitles?.find((jt) => jt.id === formData.jobTitleId);
-  const selectedEmploymentType = employmentTypes?.find((et) => et.id === formData.employmentTypeId);
 
   return (
     <div className="">
@@ -503,6 +486,28 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
+                <ContractPlaceholders
+                  onInsertPlaceholder={(placeholder) => {
+                    try {
+                      if (
+                        editorRef.current &&
+                        typeof editorRef.current.insertAtCursor === 'function'
+                      ) {
+                        editorRef.current.insertAtCursor(placeholder);
+                      } else {
+                        console.warn('Editor ref not available or insertAtCursor method not found');
+                        // Fallback: append to current content
+                        const currentContent = formData.body || '';
+                        handleBodyChange(currentContent + ' ' + placeholder + ' ');
+                      }
+                    } catch (error) {
+                      console.error('Error inserting placeholder:', error);
+                      // Fallback: append to current content
+                      const currentContent = formData.body || '';
+                      handleBodyChange(currentContent + ' ' + placeholder + ' ');
+                    }
+                  }}
+                />
                 <Button
                   type="button"
                   variant="outline"
