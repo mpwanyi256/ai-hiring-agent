@@ -13,20 +13,21 @@ import {
   ContractOffersFilters,
   EmploymentFilters,
   ContractsListResponse,
-  ContractResponse,
-  ContractOffersListResponse,
-  ContractOfferResponse,
-  EmploymentListResponse,
-  EmploymentResponse,
-  AIGenerateContractData,
-  AIGenerateContractResponse,
-  CreateJobTitleData,
-  CreateJobTitleResponse,
-  JobTitle,
   ContractAnalyticsResponse,
+  JobTitle,
   BulkUpdateContractData,
   BulkOperationResponse,
   BulkSendContractData,
+  ExtractPDFContractData,
+  ExtractPDFContractResponse,
+  AIEnhanceContractData,
+  AIEnhanceContractResponse,
+  AIGenerateContractData,
+  AIGenerateContractResponse,
+  ContractOffersListResponse,
+  CreateJobTitleData,
+  CreateJobTitleResponse,
+  EmploymentListResponse,
 } from '@/types/contracts';
 
 // Contract Templates
@@ -456,3 +457,45 @@ export const updateEmployment = createAsyncThunk<Employment, UpdateEmploymentDat
     return data.employment;
   },
 );
+
+// PDF Extraction and AI Enhancement
+export const extractPDFContract = createAsyncThunk<
+  ExtractPDFContractResponse,
+  ExtractPDFContractData
+>('contracts/extractPDFContract', async ({ file, useAiEnhancement }) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('useAiEnhancement', useAiEnhancement.toString());
+
+  const response = await fetch('/api/contracts/extract-pdf', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to extract content from PDF');
+  }
+
+  const data = await response.json();
+  return data;
+});
+
+export const enhanceContractWithAI = createAsyncThunk<
+  AIEnhanceContractResponse,
+  AIEnhanceContractData
+>('contracts/enhanceContractWithAI', async ({ content }) => {
+  const response = await fetch('/api/contracts/ai-enhance', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ content }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to enhance contract with AI');
+  }
+
+  const data = await response.json();
+  return data;
+});

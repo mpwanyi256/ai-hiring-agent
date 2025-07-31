@@ -465,3 +465,36 @@ export interface ContractPlaceholder {
   description: string;
   example: string;
 }
+
+// PDF Extraction Types
+export interface ExtractPDFContractData {
+  file: File;
+  useAiEnhancement: boolean;
+}
+
+export interface ExtractPDFContractResponse {
+  success: boolean;
+  content: string;
+  enhanced: boolean;
+  filename: string;
+  size: number;
+  metadata?: {
+    pages?: number;
+    wordCount: number;
+    fileType: string;
+  };
+}
+
+// AI Enhancement Types
+export interface AIEnhanceContractData {
+  content: string;
+}
+
+export interface AIEnhanceContractResponse {
+  success: boolean;
+  enhancedContent: string;
+  improvements: string[];
+  placeholdersAdded: string[];
+  originalLength: number;
+  enhancedLength: number;
+}

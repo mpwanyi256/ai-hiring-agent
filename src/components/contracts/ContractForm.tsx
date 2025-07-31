@@ -30,10 +30,22 @@ import {
   ContractCategory,
 } from '@/types/contracts';
 
-import { Loader2, Plus, Sparkles, Building2, Clock, FileText, TagIcon, X } from 'lucide-react';
+import {
+  Loader2,
+  Plus,
+  Sparkles,
+  Building2,
+  Clock,
+  FileText,
+  TagIcon,
+  X,
+  Upload,
+} from 'lucide-react';
 import RichTextEditor, { RichTextEditorRef } from '@/components/ui/RichTextEditor';
 import AIGenerationModal from './AIGenerationModal';
 import ContractPlaceholders from './ContractPlaceholders';
+import UploadContractModal from './UploadContractModal';
+import ContractRefineModal from './ContractRefineModal';
 import {
   Select,
   SelectContent,
@@ -87,6 +99,8 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
   // Modal states
   const [showJobTitleModal, setShowJobTitleModal] = useState(false);
   const [showAiGenerationModal, setShowAiGenerationModal] = useState(false);
+  const [showUploadContractModal, setShowUploadContractModal] = useState(false);
+  const [showRefineModal, setShowRefineModal] = useState(false);
   const [newJobTitleName, setNewJobTitleName] = useState('');
   const [isCreatingJobTitle, setIsCreatingJobTitle] = useState(false);
   const [tagInput, setTagInput] = useState('');
@@ -217,6 +231,16 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
       e.preventDefault();
       handleAddTag();
     }
+  };
+
+  const handleUploadedContent = (content: string) => {
+    handleBodyChange(content);
+    toast.success('Contract content loaded from uploaded file!');
+  };
+
+  const handleRefinedContent = (content: string) => {
+    handleBodyChange(content);
+    toast.success('Contract template refined successfully!');
   };
 
   // Don't render until mounted to prevent hydration issues
@@ -512,6 +536,26 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                   type="button"
                   variant="outline"
                   size="sm"
+                  onClick={() => setShowUploadContractModal(true)}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Contract
+                </Button>
+                {formData.body.trim() && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRefineModal(true)}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Refine
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => setShowAiGenerationModal(true)}
                 >
                   <Sparkles className="h-4 w-4 mr-2" />
@@ -545,6 +589,21 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
           </CardContent>
         </Card>
       </form>
+
+      {/* Upload Contract Modal */}
+      <UploadContractModal
+        open={showUploadContractModal}
+        onOpenChange={setShowUploadContractModal}
+        onContentExtracted={handleUploadedContent}
+      />
+
+      {/* Contract Refine Modal */}
+      <ContractRefineModal
+        open={showRefineModal}
+        onOpenChange={setShowRefineModal}
+        content={formData.body}
+        onContentRefined={handleRefinedContent}
+      />
     </div>
   );
 }
