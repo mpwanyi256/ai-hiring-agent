@@ -1,3 +1,4 @@
+import { Loader2 } from 'lucide-react';
 import React from 'react';
 
 interface LoadingOverlayProps {
@@ -6,10 +7,9 @@ interface LoadingOverlayProps {
 
 export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ message }) => {
   return (
-    <div className="h-[calc(100vh-100px)] inset-0 z-50 bg-primary/90 flex items-center justify-center">
-      <div className="flex flex-col gap-4 items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-        <span className="text-white">{message}</span>
+    <div className="h-[calc(100vh-100px)] inset-0 z-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     </div>
   );

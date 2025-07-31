@@ -1,7 +1,7 @@
 // Types for the Contract Management System
 
 // Contract Status enum
-export type ContractStatus = 'draft' | 'active' | 'archived' | 'deprecated';
+export type ContractStatus = 'draft' | 'active' | 'archived' | 'deprecated' | 'all';
 
 // Contract Category enum
 export type ContractCategory =
