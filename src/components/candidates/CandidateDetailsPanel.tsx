@@ -5,6 +5,7 @@ import { Tab } from '@headlessui/react';
 import GeneralTab from './GeneralTab';
 import EvaluationsTab from './EvaluationsTab';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
+import SendContractModal from '../contracts/SendContractModal';
 
 // --- Main Panel ---
 interface CandidateDetailsPanelProps {
@@ -31,8 +32,11 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [schedulingModalOpen, setSchedulingModalOpen] = useState(false);
+  const [sendContractModalOpen, setSendContractModalOpen] = useState(false);
   const handleScheduleEvent = () => setSchedulingModalOpen(true);
   const handleCloseSchedulingModal = () => setSchedulingModalOpen(false);
+  const handleSendContract = () => setSendContractModalOpen(true);
+  const handleCloseSendContractModal = () => setSendContractModalOpen(false);
 
   return (
     <SidePanel
@@ -42,14 +46,6 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
       title={`${candidate.firstName} ${candidate.lastName} - Details`}
     >
       <div className="flex flex-col h-full min-h-0">
-        {/* Note about team discussion */}
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            💬 <strong>Team discussions</strong> are now available in the main job view sidebar for
-            better collaboration across all candidates.
-          </p>
-        </div>
-
         {/* Tabs Section */}
         <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
           <Tab.List className="flex space-x-2 border-b mb-6 bg-white">
@@ -73,7 +69,11 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
             {tabs.map((tab) => (
               <Tab.Panel key={tab.name} className="h-full min-h-0 flex flex-col">
                 {tab.name === 'General' ? (
-                  <tab.Component candidate={candidate} onScheduleEvent={handleScheduleEvent} />
+                  <tab.Component
+                    candidate={candidate}
+                    onScheduleEvent={handleScheduleEvent}
+                    onSendContract={handleSendContract}
+                  />
                 ) : (
                   <tab.Component candidate={candidate} />
                 )}
@@ -86,6 +86,15 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
       <InterviewSchedulingModal
         isOpen={schedulingModalOpen}
         onClose={handleCloseSchedulingModal}
+        candidate={candidate}
+        jobId={candidate.jobId}
+        jobTitle={candidate.jobTitle}
+      />
+
+      {/* Send Contract Modal */}
+      <SendContractModal
+        isOpen={sendContractModalOpen}
+        onClose={handleCloseSendContractModal}
         candidate={candidate}
         jobId={candidate.jobId}
         jobTitle={candidate.jobTitle}
