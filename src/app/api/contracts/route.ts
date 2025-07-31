@@ -1,65 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { ContractsFilters, ContractStatus, ContractCategory } from '@/types/contracts';
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Get current user
+    // Get authenticated user
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
+
     if (authError || !user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user's company
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.company_id) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search') || '';
-    const jobTitleId = searchParams.get('jobTitleId');
-    const employmentTypeId = searchParams.get('employmentTypeId');
+    const search = searchParams.get('search') || undefined;
+    const status = (searchParams.get('status') as ContractStatus) || undefined;
+    const category = (searchParams.get('category') as ContractCategory) || undefined;
+    const jobTitleId = searchParams.get('jobTitleId') || undefined;
+    const employmentTypeId = searchParams.get('employmentTypeId') || undefined;
+    const createdBy = searchParams.get('createdBy') || undefined;
+    const isFavorite =
+      searchParams.get('isFavorite') === 'true'
+        ? true
+        : searchParams.get('isFavorite') === 'false'
+          ? false
+          : undefined;
+    const tags = searchParams.get('tags')?.split(',').filter(Boolean) || undefined;
+    const dateFrom = searchParams.get('dateFrom') || undefined;
+    const dateTo = searchParams.get('dateTo') || undefined;
+    const sortBy = searchParams.get('sortBy') || 'created_at';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50); // Cap at 50
+    const limit = parseInt(searchParams.get('limit') || '10');
 
-    // Calculate offset
     const offset = (page - 1) * limit;
 
-    // Build query using the comprehensive view - RLS will handle company filtering
-    let query = supabase
-      .from('contracts_comprehensive')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false });
+    // Use the enhanced paginated function with all new filters
+    const { data: contracts, error: contractsError } = await supabase.rpc(
+      'get_contracts_paginated',
+      {
+        p_company_id: profile.company_id,
+        p_limit: limit,
+        p_offset: offset,
+        p_search: search,
+        p_job_title_id: jobTitleId,
+        p_employment_type_id: employmentTypeId,
+        p_created_by: createdBy,
+        p_status: status,
+        p_category: category,
+        p_is_favorite: isFavorite,
+        p_tags: tags,
+        p_date_from: dateFrom ? new Date(dateFrom).toISOString() : null,
+        p_date_to: dateTo ? new Date(dateTo).toISOString() : null,
+        p_sort_by: sortBy,
+        p_sort_order: sortOrder,
+      },
+    );
 
-    // Apply filters
-    if (search) {
-      query = query.ilike('title', `%${search}%`);
-    }
-    if (jobTitleId) {
-      query = query.eq('job_title_id', jobTitleId);
-    }
-    if (employmentTypeId) {
-      query = query.eq('employment_type_id', employmentTypeId);
-    }
-
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1);
-
-    const { data: contracts, error, count } = await query;
-
-    if (error) {
-      console.error('Error fetching contracts:', error);
+    if (contractsError) {
+      console.error('Database error:', contractsError);
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to fetch contracts',
-          details: error.message,
-        },
+        { error: 'Failed to fetch contracts', details: contractsError.message },
         { status: 500 },
       );
     }
 
-    // Transform the results to match our TypeScript interfaces
+    // Transform the data to match our TypeScript interfaces
     const transformedContracts =
       contracts?.map((contract: any) => ({
         id: contract.id,
@@ -69,6 +91,12 @@ export async function GET(request: NextRequest) {
         body: contract.body,
         employmentTypeId: contract.employment_type_id,
         contractDuration: contract.contract_duration,
+        status: contract.status,
+        category: contract.category,
+        isFavorite: contract.is_favorite,
+        tags: contract.tags || [],
+        usageCount: contract.usage_count || 0,
+        lastUsedAt: contract.last_used_at,
         createdBy: contract.created_by,
         createdAt: contract.created_at,
         updatedAt: contract.updated_at,
@@ -77,30 +105,32 @@ export async function GET(request: NextRequest) {
               id: contract.job_title_id,
               name: contract.job_title_name,
             }
-          : null,
+          : undefined,
         employmentType: contract.employment_type_name
           ? {
               id: contract.employment_type_id,
               name: contract.employment_type_name,
             }
-          : null,
-        createdByProfile: {
-          id: contract.created_by_profile_id,
-          firstName: contract.created_by_first_name,
-          lastName: contract.created_by_last_name,
-          email: contract.created_by_email,
-        },
+          : undefined,
+        createdByProfile: contract.created_by_name
+          ? {
+              id: contract.created_by,
+              firstName: contract.created_by_name.split(' ')[0] || '',
+              lastName: contract.created_by_name.split(' ').slice(1).join(' ') || '',
+              email: contract.created_by_email,
+            }
+          : undefined,
       })) || [];
 
     // Calculate pagination info
-    const total = count || 0;
+    const total = contracts?.[0]?.total_count || 0;
     const totalPages = Math.ceil(total / limit);
     const hasMore = page < totalPages;
 
     const pagination = {
       page,
       limit,
-      total,
+      total: Number(total),
       totalPages,
       hasMore,
     };
@@ -112,13 +142,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error in contracts API:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Internal server error',
-      },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -126,16 +150,17 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Get current user
+    // Get authenticated user
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
+
     if (authError || !user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's company from auth context (could be passed in headers)
+    // Get user's company
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('company_id')
@@ -143,36 +168,39 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (profileError || !profile?.company_id) {
-      return NextResponse.json(
-        { success: false, error: 'User profile or company not found' },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
     const body = await request.json();
-    const { title, body: contractBody, jobTitleId, employmentTypeId, contractDuration } = body;
+    const {
+      title,
+      body: contractBody,
+      jobTitleId,
+      employmentTypeId,
+      contractDuration,
+      status = 'draft',
+      category = 'general',
+      tags = [],
+    } = body;
 
     // Validate required fields
     if (!title || !contractBody) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Title and body are required',
-        },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'Title and body are required' }, { status: 400 });
     }
 
-    // Create the contract - RLS will handle company filtering
-    const { data: contract, error } = await supabase
+    // Create the contract
+    const { data: contract, error: createError } = await supabase
       .from('contracts')
       .insert({
         company_id: profile.company_id,
-        title,
-        body: contractBody,
+        title: title.trim(),
+        body: contractBody.trim(),
         job_title_id: jobTitleId || null,
         employment_type_id: employmentTypeId || null,
         contract_duration: contractDuration || null,
+        status,
+        category,
+        tags,
         created_by: user.id,
       })
       .select(
@@ -187,19 +215,15 @@ export async function POST(request: NextRequest) {
       )
       .single();
 
-    if (error) {
-      console.error('Error creating contract:', error);
+    if (createError) {
+      console.error('Database error:', createError);
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to create contract',
-          details: error.message,
-        },
+        { error: 'Failed to create contract', details: createError.message },
         { status: 500 },
       );
     }
 
-    // Transform to match our TypeScript interface
+    // Transform the response
     const transformedContract = {
       id: contract.id,
       companyId: contract.company_id,
@@ -208,6 +232,12 @@ export async function POST(request: NextRequest) {
       body: contract.body,
       employmentTypeId: contract.employment_type_id,
       contractDuration: contract.contract_duration,
+      status: contract.status,
+      category: contract.category,
+      isFavorite: contract.is_favorite,
+      tags: contract.tags || [],
+      usageCount: contract.usage_count || 0,
+      lastUsedAt: contract.last_used_at,
       createdBy: contract.created_by,
       createdAt: contract.created_at,
       updatedAt: contract.updated_at,
@@ -221,13 +251,7 @@ export async function POST(request: NextRequest) {
       contract: transformedContract,
     });
   } catch (error) {
-    console.error('Error in contracts POST API:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Internal server error',
-      },
-      { status: 500 },
-    );
+    console.error('Error in create contract API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

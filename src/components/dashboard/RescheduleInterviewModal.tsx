@@ -233,7 +233,7 @@ const RescheduleInterviewModal: React.FC<RescheduleInterviewModalProps> = ({
             <div className="text-red-600 text-sm mb-3">
               Your Google Calendar connection has expired. Please reconnect to continue.
             </div>
-            <Button variant="primary" size="sm" onClick={handleReconnectGoogle}>
+            <Button variant="default" size="sm" onClick={handleReconnectGoogle}>
               Reconnect Google Calendar
             </Button>
           </div>
@@ -375,12 +375,18 @@ const RescheduleInterviewModal: React.FC<RescheduleInterviewModalProps> = ({
               <Button
                 type="button"
                 size="sm"
-                variant="primary"
+                variant="default"
                 onClick={handleSubmit}
                 disabled={loading || conflicts.length > 0 || googleTokenError}
-                isLoading={loading}
               >
-                Reschedule Interview
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Rescheduling...
+                  </>
+                ) : (
+                  'Reschedule Interview'
+                )}
               </Button>
             </div>
           </div>

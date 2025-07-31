@@ -70,13 +70,15 @@ const EditFieldModal: React.FC<EditFieldModalProps> = ({
           <Button variant="ghost" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button
-            variant="primary"
-            onClick={handleSave}
-            isLoading={loading}
-            disabled={inputValue === value || loading}
-          >
-            Save
+          <Button variant="default" onClick={handleSave} disabled={inputValue === value || loading}>
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                Saving...
+              </>
+            ) : (
+              'Save'
+            )}
           </Button>
         </div>
       </div>

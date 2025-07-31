@@ -12,7 +12,7 @@ interface QuickActionCardProps {
   iconColor?: string;
   iconBgColor?: string;
   buttonText: string;
-  buttonVariant?: 'primary' | 'outline';
+  buttonVariant?: 'default' | 'outline';
   href: string;
   onClick?: () => void;
 }
@@ -24,7 +24,7 @@ export default function QuickActionCard({
   iconColor = 'text-primary',
   iconBgColor = 'bg-primary/10',
   buttonText,
-  buttonVariant = 'primary',
+  buttonVariant = 'default',
   href,
   onClick,
 }: QuickActionCardProps) {

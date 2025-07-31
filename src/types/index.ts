@@ -10,8 +10,46 @@ export * from './candidates';
 // Export all billing types
 export * from './billing';
 
-// Export all contract types
-export * from './contracts';
+// Export all contract types (excluding conflicting EmploymentType)
+export type {
+  ContractStatus,
+  ContractCategory,
+  Contract,
+  ContractOffer,
+  Employment,
+  JobTitle,
+  CreateContractData,
+  UpdateContractData,
+  BulkUpdateContractData,
+  SendContractData,
+  BulkSendContractData,
+  SignContractData,
+  CreateEmploymentData,
+  UpdateEmploymentData,
+  AIGenerateContractData,
+  AIGenerateContractResponse,
+  CreateJobTitleData,
+  CreateJobTitleResponse,
+  ContractsFilters,
+  ContractOffersFilters,
+  EmploymentFilters,
+  PaginationInfo,
+  ContractAnalytics,
+  ContractsListResponse,
+  ContractResponse,
+  ContractOffersListResponse,
+  ContractOfferResponse,
+  EmploymentListResponse,
+  EmploymentResponse,
+  ContractAnalyticsResponse,
+  BulkOperationResponse,
+  ContractsState,
+  ContractEmailTemplate,
+  ContractPlaceholder,
+} from './contracts';
+
+// Re-export EmploymentType from contracts with a different name to avoid conflict
+export type { EmploymentType as ContractEmploymentType } from './contracts';
 
 // Export all supabase types
 export * from './core';

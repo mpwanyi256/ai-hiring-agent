@@ -158,13 +158,15 @@ const JobCreateStep2: React.FC<JobCreateStep2Props> = ({ form, onPrev, onNext, i
           >
             Cancel
           </Button>
-          <Button
-            type="button"
-            onClick={handleGenerateWithAI}
-            isLoading={isGenerating}
-            disabled={isGenerating}
-          >
-            Continue writing
+          <Button type="button" onClick={handleGenerateWithAI} disabled={isGenerating}>
+            {isGenerating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                Generating...
+              </>
+            ) : (
+              'Continue writing'
+            )}
           </Button>
         </div>
       </Modal>

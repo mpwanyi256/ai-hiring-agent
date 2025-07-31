@@ -2,6 +2,10 @@ import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 import { DocxLoader } from '@langchain/community/document_loaders/fs/docx';
 import { TextLoader } from 'langchain/document_loaders/fs/text';
 import { Document } from '@langchain/core/documents';
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+import { writeFileSync, unlinkSync, mkdtempSync, rmdirSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 
 export interface ParsedDocument {
   text: string;
@@ -38,7 +42,7 @@ class DocumentParsingService {
           break;
         case 'doc':
           // For .doc files, we'll fall back to buffer parsing since LangChain DocxLoader primarily handles .docx
-          documents = await this.parseDocWithFallback(file);
+          documents = await this.parseDocWithFallback(tempFile);
           break;
         case 'txt':
           documents = await this.parseTextWithLangChain(tempFile);
@@ -47,16 +51,10 @@ class DocumentParsingService {
           throw new Error(`Unsupported file type: ${fileType}`);
       }
 
-      // Combine all document text
-      const text = documents.map((doc) => doc.pageContent).join('\n\n');
-
-      // Clean and validate the extracted text
-      const cleanedText = this.cleanText(text);
+      // Combine all document content
+      const combinedText = documents.map((doc) => doc.pageContent).join('\n\n');
+      const cleanedText = this.cleanText(combinedText);
       const wordCount = this.countWords(cleanedText);
-
-      if (!cleanedText || cleanedText.length < 10) {
-        throw new Error(`Failed to extract meaningful text from ${fileType.toUpperCase()} file`);
-      }
 
       return {
         text: cleanedText,
@@ -68,16 +66,41 @@ class DocumentParsingService {
           fileSize: file.size,
         },
       };
-    } catch {
-      // LangChain PDF parsing error
-      // Fallback to basic extraction
+    } catch (error) {
+      console.error('LangChain PDF parsing failed:', error);
+
+      // Enhanced fallback for large/complex PDFs
       try {
-        // Attempting fallback PDF text extraction...
+        console.log('Attempting fallback PDF text extraction...');
+
+        // Try alternative parsing approach for large files
         const buffer = await file.arrayBuffer();
-        const decoder = new TextDecoder('utf-8');
-        const text = decoder.decode(buffer);
-        const extractedText = this.extractTextFromPDFString(text);
+
+        // Try multiple text extraction approaches
+        let extractedText = '';
+
+        // Approach 1: UTF-8 decoding
+        try {
+          const decoder = new TextDecoder('utf-8');
+          const text = decoder.decode(buffer);
+          extractedText = this.extractTextFromPDFString(text);
+        } catch (_e) {
+          console.log('UTF-8 decoding failed, trying latin1...');
+        }
+
+        // Approach 2: Latin1 decoding (for older PDFs)
+        if (!extractedText || extractedText.length < 10) {
+          try {
+            const decoder = new TextDecoder('latin1');
+            const text = decoder.decode(buffer);
+            extractedText = this.extractTextFromPDFString(text);
+          } catch (_e) {
+            console.log('Latin1 decoding also failed');
+          }
+        }
+
         if (extractedText && extractedText.length > 10) {
+          console.log(`Fallback extraction successful: ${extractedText.length} characters`);
           return {
             text: extractedText,
             metadata: {
@@ -89,60 +112,82 @@ class DocumentParsingService {
             },
           };
         }
-      } catch {
-        // Fallback PDF extraction failed
-        throw new Error(
-          'Failed to parse PDF file. The file may be corrupted, password-protected, or in an unsupported format.',
-        );
+      } catch (fallbackError) {
+        console.error('Fallback PDF extraction failed:', fallbackError);
       }
-      throw new Error(
-        'Failed to parse PDF file. The file may be corrupted, password-protected, or in an unsupported format.',
-      );
+
+      // If all methods fail, provide a more helpful error message
+      const errorMessage =
+        file.size > 5 * 1024 * 1024
+          ? 'Failed to parse large PDF file. The file may contain complex graphics, signatures, or be password-protected. Please try with a simpler PDF or convert to text format.'
+          : 'Failed to parse PDF file. The file may be corrupted, password-protected, or in an unsupported format.';
+
+      throw new Error(errorMessage);
     }
   }
 
   private async parsePDFWithLangChain(file: File): Promise<Document[]> {
-    try {
-      // Convert File to Blob for LangChain PDFLoader
-      const blob = new Blob([await file.arrayBuffer()], { type: 'application/pdf' });
+    let tempFilePath: string | null = null;
 
-      // Use LangChain PDFLoader with blob
-      const loader = new PDFLoader(blob, {
-        splitPages: true, // Split into separate pages for better parsing
+    try {
+      console.log(`Attempting to parse PDF: ${file.name} (${file.size} bytes)`);
+
+      // Create a temporary directory and file for LangChain PDFLoader
+      const tempDir = mkdtempSync(join(tmpdir(), 'pdf-parsing-'));
+      tempFilePath = join(tempDir, file.name);
+
+      // Write the file buffer to temporary file
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      writeFileSync(tempFilePath, buffer);
+
+      // Use LangChain PDFLoader with file path (as recommended)
+      const loader = new PDFLoader(tempFilePath);
+
+      // Set a timeout for large file parsing (30 seconds)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('PDF parsing timeout - file may be too complex')), 30000);
       });
 
-      const documents = await loader.load();
+      const documents = await Promise.race([loader.load(), timeoutPromise]);
 
       if (!documents || documents.length === 0) {
         throw new Error('No content extracted from PDF');
       }
 
-      return documents;
-    } catch {
-      // LangChain PDF parsing error
-      // Fallback to basic extraction
-      try {
-        // Attempting fallback PDF text extraction...
-        const buffer = await file.arrayBuffer();
-        const decoder = new TextDecoder('utf-8');
-        const text = decoder.decode(buffer);
-        const extractedText = this.extractTextFromPDFString(text);
+      // Optional: Split documents into smaller chunks for better processing
+      const textSplitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 2000,
+        chunkOverlap: 200,
+      });
 
-        if (extractedText && extractedText.length > 10) {
-          return [
-            new Document({
-              pageContent: extractedText,
-              metadata: { source: file.name },
-            }),
-          ];
-        }
-      } catch {
-        // Fallback PDF extraction failed
-      }
+      const splitDocs = await textSplitter.splitDocuments(documents);
 
-      throw new Error(
-        'Failed to parse PDF file. The file may be corrupted, password-protected, or in an unsupported format.',
+      console.log(
+        `Successfully parsed PDF: ${documents.length} pages, ${splitDocs.length} chunks extracted`,
       );
+      return splitDocs;
+    } catch (error) {
+      console.error('LangChain PDF parsing error:', error);
+      throw new Error(
+        `LangChain PDF parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    } finally {
+      // Clean up temporary file
+      if (tempFilePath) {
+        try {
+          unlinkSync(tempFilePath);
+          // Also try to remove the temp directory if it's empty
+          const tempDir = join(tempFilePath, '..');
+          try {
+            rmdirSync(tempDir);
+          } catch {
+            // Ignore if directory is not empty or doesn't exist
+          }
+        } catch (cleanupError) {
+          console.warn('Failed to clean up temporary file:', cleanupError);
+        }
+      }
     }
   }
 
@@ -153,6 +198,7 @@ class DocumentParsingService {
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       });
 
+      // Use LangChain DocxLoader with blob
       const loader = new DocxLoader(blob);
       const documents = await loader.load();
 
@@ -163,41 +209,32 @@ class DocumentParsingService {
       return documents;
     } catch {
       // LangChain DOCX parsing error
-      throw new Error('Failed to parse DOCX file. The file may be corrupted.');
+      throw new Error('LangChain DOCX parsing failed');
     }
   }
 
   private async parseDocWithFallback(file: File): Promise<Document[]> {
     try {
-      // Try to parse as DOCX first (some .doc files are actually .docx)
+      // For .doc files, try to use DocxLoader first (sometimes works)
       return await this.parseDocxWithLangChain(file);
     } catch {
-      // Fallback to basic text extraction for older .doc files
+      // If DocxLoader fails, try basic text extraction
       try {
         const buffer = await file.arrayBuffer();
         const decoder = new TextDecoder('utf-8');
-        let text = decoder.decode(buffer);
-
-        // Basic cleanup for .doc files
-        text = text.replace(/[^\x20-\x7E\n\r\t]/g, ' ');
-        text = this.cleanText(text);
-
-        if (text.length < 10) {
-          throw new Error('Insufficient text content extracted');
+        const text = decoder.decode(buffer);
+        if (text && text.length > 10) {
+          return [
+            new Document({
+              pageContent: text,
+              metadata: { source: file.name },
+            }),
+          ];
         }
-
-        return [
-          new Document({
-            pageContent: text,
-            metadata: { source: file.name },
-          }),
-        ];
       } catch {
-        // Fallback .doc parsing failed
-        throw new Error(
-          'Failed to parse DOC file. Please convert to DOCX format for better compatibility.',
-        );
+        // Fallback text extraction failed
       }
+      throw new Error('Failed to parse DOC file');
     }
   }
 
@@ -206,6 +243,7 @@ class DocumentParsingService {
       // Convert File to Blob for LangChain TextLoader
       const blob = new Blob([await file.arrayBuffer()], { type: 'text/plain' });
 
+      // Use LangChain TextLoader with blob
       const loader = new TextLoader(blob);
       const documents = await loader.load();
 
@@ -216,129 +254,66 @@ class DocumentParsingService {
       return documents;
     } catch {
       // LangChain text parsing error
-
-      // Fallback to direct text decoding
-      try {
-        const buffer = await file.arrayBuffer();
-        const decoder = new TextDecoder('utf-8');
-        const text = decoder.decode(buffer);
-
-        return [
-          new Document({
-            pageContent: text,
-            metadata: { source: file.name },
-          }),
-        ];
-      } catch {
-        // Fallback text parsing failed
-        throw new Error('Failed to parse text file. The file encoding may not be supported.');
-      }
+      throw new Error('LangChain text parsing failed');
     }
   }
 
+  // Extract text from PDF string using basic regex patterns
   private extractTextFromPDFString(pdfString: string): string {
-    // Basic text extraction from PDF string representation
-    // This is a fallback method and won't work for all PDFs
-    const textMatches = pdfString.match(/\((.*?)\)/g);
+    // Basic PDF text extraction using regex patterns
+    // This is a fallback method and may not work for all PDFs
+    const textMatches = pdfString.match(/BT\s*[\s\S]*?ET/g);
     if (textMatches) {
       return textMatches
-        .map((match) => match.slice(1, -1))
-        .join(' ')
-        .replace(/\\[a-z]/g, ' ')
+        .map((match) => {
+          // Extract text between parentheses or brackets
+          const textContent = match.match(/\((.*?)\)/g) || match.match(/\[(.*?)\]/g);
+          return textContent ? textContent.map((t) => t.slice(1, -1)).join(' ') : '';
+        })
+        .join('\n')
+        .replace(/\\[rn]/g, '\n')
         .replace(/\s+/g, ' ')
         .trim();
     }
 
-    // If no text matches found, try to extract readable characters
+    // Fallback: try to extract any readable text
     return pdfString
-      .replace(/[^\x20-\x7E]/g, ' ')
+      .replace(/[^\x20-\x7E\n\r\t]/g, '') // Remove non-printable characters
       .replace(/\s+/g, ' ')
       .trim();
   }
 
+  // Clean extracted text
   private cleanText(text: string): string {
-    if (!text || typeof text !== 'string') {
-      return '';
-    }
-
-    return (
-      text
-        // Remove extra whitespace and normalize line breaks
-        .replace(/\r\n/g, '\n')
-        .replace(/\r/g, '\n')
-        .replace(/\t/g, ' ')
-        .replace(/\s+/g, ' ')
-        // Remove special characters that might interfere with processing
-        .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
-        // Trim and ensure we have actual content
-        .trim()
-    );
+    return text
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '') // Remove control characters
+      .trim();
   }
 
+  // Count words in text
   private countWords(text: string): number {
-    if (!text || typeof text !== 'string') {
-      return 0;
-    }
-
     return text.split(/\s+/).filter((word) => word.length > 0).length;
   }
 
+  // Get file type from file extension
   private getFileType(file: File): string {
-    const mimeType = file.type.toLowerCase();
     const extension = file.name.split('.').pop()?.toLowerCase();
-
-    // Check by MIME type first
-    switch (mimeType) {
-      case 'application/pdf':
-        return 'pdf';
-      case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-        return 'docx';
-      case 'application/msword':
-        return 'doc';
-      case 'text/plain':
-        return 'txt';
-    }
-
-    // Fallback to extension
-    switch (extension) {
-      case 'pdf':
-        return 'pdf';
-      case 'docx':
-        return 'docx';
-      case 'doc':
-        return 'doc';
-      case 'txt':
-        return 'txt';
-      default:
-        throw new Error(`Unsupported file type: ${file.name}`);
-    }
+    return extension || '';
   }
 
   // Utility method to validate file before parsing
   validateFile(file: File): { isValid: boolean; error?: string } {
-    const maxSize = 10 * 1024 * 1024; // 10MB limit
-    const allowedTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/msword',
-      'text/plain',
-    ];
-
-    const allowedExtensions = ['pdf', 'docx', 'doc', 'txt'];
-    const extension = file.name.split('.').pop()?.toLowerCase();
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const supportedTypes = ['pdf', 'docx', 'doc', 'txt'];
 
     if (file.size > maxSize) {
-      return {
-        isValid: false,
-        error: 'File size exceeds 10MB limit',
-      };
+      return { isValid: false, error: 'File size exceeds 10MB limit' };
     }
 
-    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension || '')) {
-      return {
-        isValid: false,
-        error: 'Unsupported file type. Please upload PDF, DOC, DOCX, or TXT files.',
-      };
+    const fileType = this.getFileType(file);
+    if (!supportedTypes.includes(fileType)) {
+      return { isValid: false, error: `Unsupported file type: ${fileType}` };
     }
 
     return { isValid: true };
@@ -348,25 +323,11 @@ class DocumentParsingService {
   async parseResume(file: File): Promise<string> {
     const validation = this.validateFile(file);
     if (!validation.isValid) {
-      throw new Error(validation.error);
+      throw new Error(validation.error || 'Invalid file');
     }
 
-    const parsedDoc = await this.parseDocument(file);
-
-    // Ensure we have meaningful content
-    if (!parsedDoc.text || parsedDoc.text.length < 50) {
-      throw new Error(
-        'The uploaded file appears to be empty or contains insufficient text content.',
-      );
-    }
-
-    if (parsedDoc.metadata.wordCount < 10) {
-      throw new Error(
-        'The resume appears to have very little content. Please ensure the file is readable.',
-      );
-    }
-
-    return parsedDoc.text;
+    const parsedDocument = await this.parseDocument(file);
+    return parsedDocument.text;
   }
 }
 

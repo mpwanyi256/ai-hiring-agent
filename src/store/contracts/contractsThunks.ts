@@ -13,16 +13,21 @@ import {
   ContractOffersFilters,
   EmploymentFilters,
   ContractsListResponse,
-  ContractResponse,
-  ContractOffersListResponse,
-  ContractOfferResponse,
-  EmploymentListResponse,
-  EmploymentResponse,
+  ContractAnalyticsResponse,
+  JobTitle,
+  BulkUpdateContractData,
+  BulkOperationResponse,
+  BulkSendContractData,
+  ExtractPDFContractData,
+  ExtractPDFContractResponse,
+  AIEnhanceContractData,
+  AIEnhanceContractResponse,
   AIGenerateContractData,
   AIGenerateContractResponse,
+  ContractOffersListResponse,
   CreateJobTitleData,
   CreateJobTitleResponse,
-  JobTitle,
+  EmploymentListResponse,
 } from '@/types/contracts';
 
 // Contract Templates
@@ -32,9 +37,18 @@ export const fetchContracts = createAsyncThunk<ContractsListResponse, ContractsF
     const params = new URLSearchParams();
 
     if (filters.search) params.append('search', filters.search);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.category) params.append('category', filters.category);
     if (filters.jobTitleId) params.append('jobTitleId', filters.jobTitleId);
     if (filters.employmentTypeId) params.append('employmentTypeId', filters.employmentTypeId);
     if (filters.createdBy) params.append('createdBy', filters.createdBy);
+    if (filters.isFavorite !== undefined)
+      params.append('isFavorite', filters.isFavorite.toString());
+    if (filters.tags && filters.tags.length > 0) params.append('tags', filters.tags.join(','));
+    if (filters.dateRange?.from) params.append('dateFrom', filters.dateRange.from);
+    if (filters.dateRange?.to) params.append('dateTo', filters.dateRange.to);
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
     if (filters.page) params.append('page', filters.page.toString());
     if (filters.limit) params.append('limit', filters.limit.toString());
 
@@ -118,6 +132,98 @@ export const deleteContract = createAsyncThunk<string, string>(
   },
 );
 
+export const toggleContractFavorite = createAsyncThunk<
+  Contract,
+  { id: string; isFavorite: boolean }
+>('contracts/toggleContractFavorite', async ({ id, isFavorite }) => {
+  const response = await fetch(`/api/contracts/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ isFavorite }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update contract favorite status');
+  }
+
+  const data = await response.json();
+  return data.contract;
+});
+
+// Bulk Operations
+export const bulkUpdateContracts = createAsyncThunk<BulkOperationResponse, BulkUpdateContractData>(
+  'contracts/bulkUpdateContracts',
+  async (bulkData) => {
+    const response = await fetch('/api/contracts/bulk-update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bulkData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to bulk update contracts');
+    }
+
+    return response.json();
+  },
+);
+
+export const bulkDeleteContracts = createAsyncThunk<BulkOperationResponse, string[]>(
+  'contracts/bulkDeleteContracts',
+  async (contractIds) => {
+    const response = await fetch('/api/contracts/bulk-delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ contractIds }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to bulk delete contracts');
+    }
+
+    return response.json();
+  },
+);
+
+export const bulkSendContracts = createAsyncThunk<BulkOperationResponse, BulkSendContractData>(
+  'contracts/bulkSendContracts',
+  async (bulkSendData) => {
+    const response = await fetch('/api/contracts/bulk-send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bulkSendData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to bulk send contracts');
+    }
+
+    return response.json();
+  },
+);
+
+// Analytics
+export const fetchContractAnalytics = createAsyncThunk<ContractAnalyticsResponse, void>(
+  'contracts/fetchContractAnalytics',
+  async () => {
+    const response = await fetch('/api/contracts/analytics');
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch contract analytics');
+    }
+
+    return response.json();
+  },
+);
+
 // AI Contract Generation
 export const generateContractWithAI = createAsyncThunk<
   AIGenerateContractResponse,
@@ -191,6 +297,10 @@ export const fetchContractOffers = createAsyncThunk<
   if (filters.candidateId) params.append('candidateId', filters.candidateId);
   if (filters.contractId) params.append('contractId', filters.contractId);
   if (filters.sentBy) params.append('sentBy', filters.sentBy);
+  if (filters.dateRange?.from) params.append('dateFrom', filters.dateRange.from);
+  if (filters.dateRange?.to) params.append('dateTo', filters.dateRange.to);
+  if (filters.sortBy) params.append('sortBy', filters.sortBy);
+  if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
 
@@ -347,3 +457,45 @@ export const updateEmployment = createAsyncThunk<Employment, UpdateEmploymentDat
     return data.employment;
   },
 );
+
+// PDF Extraction and AI Enhancement
+export const extractPDFContract = createAsyncThunk<
+  ExtractPDFContractResponse,
+  ExtractPDFContractData
+>('contracts/extractPDFContract', async ({ file, useAiEnhancement }) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('useAiEnhancement', useAiEnhancement.toString());
+
+  const response = await fetch('/api/contracts/extract-pdf', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to extract content from PDF');
+  }
+
+  const data = await response.json();
+  return data;
+});
+
+export const enhanceContractWithAI = createAsyncThunk<
+  AIEnhanceContractResponse,
+  AIEnhanceContractData
+>('contracts/enhanceContractWithAI', async ({ content }) => {
+  const response = await fetch('/api/contracts/ai-enhance', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ content }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to enhance contract with AI');
+  }
+
+  const data = await response.json();
+  return data;
+});

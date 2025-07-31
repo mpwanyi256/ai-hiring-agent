@@ -8,10 +8,14 @@ import Sidebar from './Sidebar';
 import { LoadingOverlay } from '../generics/LoadingOverlay';
 import SidePanel from '@/components/ui/SidePanel';
 import { SparklesIcon } from '@heroicons/react/24/outline';
+import { Loader2 } from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   title?: string;
+  subtitle?: string;
+  leftNode?: React.ReactNode;
+  rightNode?: React.ReactNode;
   loading?: boolean;
   loadingMessage?: string;
   requireSubscription?: boolean;
@@ -21,6 +25,9 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({
   children,
   title,
+  subtitle,
+  leftNode,
+  rightNode,
   loading,
   loadingMessage,
   className,
@@ -37,10 +44,9 @@ export default function DashboardLayout({
   // Render loading state
   if (isLoading || (!isAuthenticated && !user)) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-muted-text">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </div>
     );
@@ -103,10 +109,21 @@ export default function DashboardLayout({
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Page Title (if provided) */}
-          {title && (
+          {/* Page Header (if provided) */}
+          {(title || subtitle || leftNode || rightNode) && (
             <div className="bg-white border-b border-surface px-4 sm:px-6 py-4">
-              <h1 className="text-xl sm:text-2xl font-bold text-text">{title}</h1>
+              <div className="flex justify-between items-start">
+                <div className="flex items-start gap-3 flex-1">
+                  {leftNode && <div className="flex-shrink-0">{leftNode}</div>}
+                  <div className="flex-1">
+                    {title && (
+                      <h1 className="text-2xl font-bold tracking-tight text-text">{title}</h1>
+                    )}
+                    {subtitle && <p className="text-muted-foreground mt-1">{subtitle}</p>}
+                  </div>
+                </div>
+                {rightNode && <div className="ml-4 flex-shrink-0">{rightNode}</div>}
+              </div>
             </div>
           )}
 
