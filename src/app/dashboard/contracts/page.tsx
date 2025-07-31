@@ -396,7 +396,7 @@ export default function ContractsPage() {
                     {contract.jobTitle && (
                       <p className="text-xs text-muted-foreground">{contract.jobTitle.name}</p>
                     )}
-                    {contract.tags.length > 0 && (
+                    {contract?.tags?.length > 0 && (
                       <div className="flex gap-1 flex-wrap">
                         {contract.tags.slice(0, 2).map((tag) => (
                           <Badge key={tag} variant="secondary" className="text-xs px-1 py-0">
