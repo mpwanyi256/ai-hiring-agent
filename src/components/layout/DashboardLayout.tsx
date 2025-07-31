@@ -14,6 +14,7 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
   title?: string;
   subtitle?: string;
+  leftNode?: React.ReactNode;
   rightNode?: React.ReactNode;
   loading?: boolean;
   loadingMessage?: string;
@@ -25,6 +26,7 @@ export default function DashboardLayout({
   children,
   title,
   subtitle,
+  leftNode,
   rightNode,
   loading,
   loadingMessage,
@@ -108,14 +110,17 @@ export default function DashboardLayout({
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Page Header (if provided) */}
-          {(title || subtitle || rightNode) && (
+          {(title || subtitle || leftNode || rightNode) && (
             <div className="bg-white border-b border-surface px-4 sm:px-6 py-4">
               <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  {title && (
-                    <h1 className="text-2xl font-bold tracking-tight text-text">{title}</h1>
-                  )}
-                  {subtitle && <p className="text-muted-foreground mt-1">{subtitle}</p>}
+                <div className="flex items-start gap-3 flex-1">
+                  {leftNode && <div className="flex-shrink-0">{leftNode}</div>}
+                  <div className="flex-1">
+                    {title && (
+                      <h1 className="text-2xl font-bold tracking-tight text-text">{title}</h1>
+                    )}
+                    {subtitle && <p className="text-muted-foreground mt-1">{subtitle}</p>}
+                  </div>
                 </div>
                 {rightNode && <div className="ml-4 flex-shrink-0">{rightNode}</div>}
               </div>
