@@ -61,7 +61,6 @@ const SendContractModal: React.FC<SendContractModalProps> = ({
   isOpen,
   onClose,
   candidate,
-  jobId,
   jobTitle,
 }) => {
   const dispatch = useDispatch<AppDispatch>();

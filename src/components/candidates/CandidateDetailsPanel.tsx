@@ -96,7 +96,6 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
         isOpen={sendContractModalOpen}
         onClose={handleCloseSendContractModal}
         candidate={candidate}
-        jobId={candidate.jobId}
         jobTitle={candidate.jobTitle}
       />
     </SidePanel>
