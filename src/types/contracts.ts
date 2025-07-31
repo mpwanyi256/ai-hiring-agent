@@ -265,7 +265,11 @@ export interface AIGenerateContractResponse {
     contractDuration: string;
     userRequirements: string;
   };
+  improvements?: string[];
+  placeholdersAdded?: string[];
   tokensUsed?: number;
+  originalLength?: number;
+  enhancedLength?: number;
   error?: string;
 }
 

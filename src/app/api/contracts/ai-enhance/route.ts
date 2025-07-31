@@ -3,44 +3,67 @@ import { createClient } from '@/lib/supabase/server';
 import OpenAI from 'openai';
 import { ai } from '@/lib/constants';
 
-// Function to clean markdown formatting and ensure HTML output
+// Function to clean markdown formatting and ensure HTML output while preserving placeholders
 function cleanMarkdownFromResponse(text: string): string {
-  let cleaned = text;
+  if (!text || text.trim().length === 0) {
+    return text;
+  }
 
-  // Step 1: Handle markdown bold patterns (**text** or __text__)
+  let cleaned = text.trim();
+
+  // Step 1: Preserve placeholders by temporarily replacing them
+  const placeholders: string[] = [];
+  const placeholderRegex = /\{\{\s*[^}]+\s*\}\}/g;
+  cleaned = cleaned.replace(placeholderRegex, (match) => {
+    const index = placeholders.length;
+    placeholders.push(match);
+    return `__PLACEHOLDER_${index}__`;
+  });
+
+  // Step 2: Handle markdown bold patterns (**text** or __text__)
   // Use global flag and non-greedy matching
   cleaned = cleaned.replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
   cleaned = cleaned.replace(/__([^_\n]+?)__/g, '<strong>$1</strong>');
 
-  // Step 2: Handle markdown headings first (to avoid conflicts)
+  // Step 3: Handle markdown headings first (to avoid conflicts)
   cleaned = cleaned.replace(/^#{3}\s+(.+)$/gm, '<h3>$1</h3>');
   cleaned = cleaned.replace(/^#{2}\s+(.+)$/gm, '<h2>$1</h2>');
   cleaned = cleaned.replace(/^#{1}\s+(.+)$/gm, '<h1>$1</h1>');
 
-  // Step 3: Handle remaining single asterisks for italic (after bold is processed)
+  // Step 4: Handle remaining single asterisks for italic (after bold is processed)
   // Since bold is already handled, remaining single asterisks should be italic
   cleaned = cleaned.replace(/\*([^*\n]+?)\*/g, '<em>$1</em>');
 
-  // Step 4: Handle underscores for italic (with word boundaries)
+  // Step 5: Handle underscores for italic (with word boundaries, but avoid placeholder markers)
   cleaned = cleaned.replace(/\b_([^_\n]+?)_\b/g, '<em>$1</em>');
 
-  // Step 5: Convert markdown lists to HTML
+  // Step 6: Convert markdown lists to HTML
   cleaned = cleaned.replace(/^\s*[-*+]\s+(.+)$/gm, '<li>$1</li>');
 
-  // Step 6: Wrap consecutive <li> items in <ul>
+  // Step 7: Wrap consecutive <li> items in <ul>
   cleaned = cleaned.replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>');
 
-  // Step 7: Remove markdown code blocks and inline code
-  cleaned = cleaned.replace(/```[\s\S]*?```/g, '');
+  // Step 8: Extract content from HTML code blocks and remove other code blocks
+  // First, extract HTML content from ```html blocks
+  const htmlBlockMatch = cleaned.match(/```html\s*([\s\S]*?)```/i);
+  if (htmlBlockMatch) {
+    cleaned = htmlBlockMatch[1].trim();
+  } else {
+    // Remove any other code blocks
+    cleaned = cleaned.replace(/```[\s\S]*?```/g, '');
+  }
+  // Remove inline code
   cleaned = cleaned.replace(/`([^`]+)`/g, '$1');
 
-  // Step 8: Clean up any remaining markdown artifacts
-  cleaned = cleaned.replace(/[*_#`~\[\]]/g, '');
+  // Step 9: Clean up remaining markdown artifacts (but preserve placeholder markers)
+  cleaned = cleaned.replace(/[*#`~\[\]]/g, '');
+  // Only remove standalone underscores, not those in placeholder markers
+  cleaned = cleaned.replace(/(?<!__PLACEHOLDER_\d+)_(?!_)/g, '');
 
-  // Step 9: Convert double line breaks to paragraph breaks
+  // Step 10: Convert double line breaks to paragraph breaks
   cleaned = cleaned.replace(/\n\s*\n/g, '</p>\n<p>');
 
-  // Step 10: Wrap content in paragraphs if not already wrapped
+  // Step 11: Wrap content in paragraphs if not already wrapped
   if (!cleaned.includes('<p>') && !cleaned.includes('<h') && !cleaned.includes('<ul>')) {
     cleaned = '<p>' + cleaned + '</p>';
   } else if (!cleaned.startsWith('<')) {
@@ -50,11 +73,16 @@ function cleanMarkdownFromResponse(text: string): string {
     cleaned = cleaned + '</p>';
   }
 
-  // Step 11: Clean up malformed HTML and extra whitespace
+  // Step 12: Clean up malformed HTML and extra whitespace
   cleaned = cleaned.replace(/<p>\s*<\/p>/g, '');
   cleaned = cleaned.replace(/\s+/g, ' ');
   cleaned = cleaned.replace(/\n+/g, '\n');
   cleaned = cleaned.trim();
+
+  // Step 13: Restore placeholders
+  placeholders.forEach((placeholder, index) => {
+    cleaned = cleaned.replace(`__PLACEHOLDER_${index}__`, placeholder);
+  });
 
   return cleaned;
 }
@@ -75,29 +103,34 @@ async function enhanceContractWithAI(content: string): Promise<{
     });
 
     // Create a comprehensive prompt for contract enhancement with HTML output
-    const prompt = `You are an expert contract template generator. Please enhance the following contract text by:
+    const prompt = `You are an expert contract template generator. Transform the following contract text into a professional, enhanced version by:
 
-1. Correcting grammar, spelling, and improving professional language (count the number of grammar/spelling corrections you make)
-2. Replacing specific values with appropriate placeholders (e.g., {{ candidate_name }}, {{ company_name }}, {{ job_title }}, {{ salary_amount }}, {{ start_date }}, {{ employment_type }}, {{ contract_duration }})
-3. Ensuring consistent formatting and structure
-4. Making the language more professional and legally appropriate
+1. Correcting all grammar, spelling, and language issues
+2. Replacing specific values with appropriate placeholders using EXACT format: {{ candidate_name }}, {{ company_name }}, {{ job_title }}, {{ salary_amount }}, {{ start_date }}, {{ employment_type }}, {{ contract_duration }}
+3. Improving formatting and structure for professional presentation
+4. Enhancing language to be more legally appropriate and professional
 5. Adding any missing standard contract clauses if appropriate
 
-IMPORTANT FORMATTING REQUIREMENTS:
-- Return the contract as clean HTML (use <p>, <h1>, <h2>, <h3>, <ul>, <li>, <strong>, <em> tags as appropriate)
+CRITICAL PLACEHOLDER REQUIREMENTS:
+- ALL placeholders MUST use double curly braces with underscores: {{ placeholder_name }}
+- NEVER remove underscores from placeholders: {{ candidate_name }} NOT {{ candidatename }}
+- NEVER use spaces in placeholder names: {{ candidate_name }} NOT {{ candidate name }}
+- Common placeholders to use: {{ candidate_name }}, {{ company_name }}, {{ job_title }}, {{ salary_amount }}, {{ start_date }}, {{ employment_type }}, {{ contract_duration }}, {{ candidate_email }}, {{ company_address }}, {{ signing_date }}
+
+CRITICAL OUTPUT REQUIREMENTS:
+- Return ONLY the enhanced contract content as clean HTML
+- Use proper HTML tags: <p>, <h1>, <h2>, <h3>, <ul>, <li>, <strong>, <em>
 - Do NOT use markdown formatting (no **, __, ##, ---, etc.)
-- Do NOT include any AI commentary, explanations, or meta-text
-- Preserve paragraph structure and use proper HTML line breaks
-- Use <strong> for emphasis instead of **bold**
-- Use <em> for italics instead of *italic*
-- Use <h1>, <h2>, <h3> for headings instead of # ## ###
-- Use <ul><li> for lists instead of - or *
+- Do NOT include any explanations, summaries, meta-text, or commentary about changes made
+- Do NOT mention the number of corrections or improvements
+- Do NOT add any text that is not part of the actual contract content
+- The response should be ready to use directly as contract content
 
 Contract text to enhance:
 
 ${content}
 
-Return ONLY the enhanced contract text as clean HTML with placeholders. Do not include any explanations, summaries, or additional commentary.`;
+IMPORTANT: Return ONLY the enhanced contract HTML content. No explanations, no summaries, no commentary - just the improved contract text.`;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -113,9 +146,32 @@ Return ONLY the enhanced contract text as clean HTML with placeholders. Do not i
 
     const rawEnhancedText = response.choices[0]?.message?.content?.trim();
 
+    console.log('AI Enhancement - Raw response length:', rawEnhancedText?.length || 0);
+    console.log(
+      'AI Enhancement - Raw response preview:',
+      rawEnhancedText?.substring(0, 200) + '...',
+    );
+
     if (rawEnhancedText && rawEnhancedText.length > 0) {
       // Clean any markdown formatting from the AI response
       const enhancedText = cleanMarkdownFromResponse(rawEnhancedText);
+
+      console.log('AI Enhancement - Cleaned response length:', enhancedText?.length || 0);
+      console.log(
+        'AI Enhancement - Cleaned response preview:',
+        enhancedText?.substring(0, 200) + '...',
+      );
+
+      // Validate that we have actual content, not just metadata
+      if (
+        enhancedText.length < 50 ||
+        enhancedText.includes('Number of grammar/spelling corrections')
+      ) {
+        console.warn(
+          'AI Enhancement - Response appears to be metadata instead of content, falling back',
+        );
+        throw new Error('AI returned metadata instead of enhanced content');
+      }
 
       // Analyze what improvements were made
       const originalWords = content.split(/\s+/).length;

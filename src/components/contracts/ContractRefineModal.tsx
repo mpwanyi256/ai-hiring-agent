@@ -12,7 +12,8 @@ import {
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2, CheckCircle, AlertCircle, Zap } from 'lucide-react';
+import { Sparkles, CheckCircle, AlertTriangle, Loader2, AlertCircle, Zap } from 'lucide-react';
+import AIGenerationLoader, { AILoaderPresets } from '@/components/ui/AIGenerationLoader';
 import { toast } from 'sonner';
 
 interface ContractRefineModalProps {
@@ -130,18 +131,25 @@ export default function ContractRefineModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Current State */}
-          <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-            {getStateIcon()}
-            <div className="flex-1">
-              <p className="text-sm font-medium">{getStateMessage()}</p>
-              {refineState === 'idle' && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Content length: {content.length.toLocaleString()} characters
-                </p>
-              )}
+          {/* Show creative loader during analysis */}
+          {refineState === 'analyzing' ? (
+            <div className="py-8">
+              <AIGenerationLoader {...AILoaderPresets.contractRefinement} size="lg" />
             </div>
-          </div>
+          ) : (
+            /* Current State */
+            <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+              {getStateIcon()}
+              <div className="flex-1">
+                <p className="text-sm font-medium">{getStateMessage()}</p>
+                {refineState === 'idle' && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Content length: {content.length.toLocaleString()} characters
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* What AI Will Do */}
           {refineState === 'idle' && (

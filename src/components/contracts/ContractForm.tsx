@@ -40,6 +40,7 @@ import {
   TagIcon,
   X,
   Upload,
+  Save,
 } from 'lucide-react';
 import RichTextEditor, { RichTextEditorRef } from '@/components/ui/RichTextEditor';
 import AIGenerationModal from './AIGenerationModal';
@@ -104,6 +105,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
   const [newJobTitleName, setNewJobTitleName] = useState('');
   const [isCreatingJobTitle, setIsCreatingJobTitle] = useState(false);
   const [tagInput, setTagInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize form data after component mounts and fetch options
   useEffect(() => {
@@ -136,6 +138,12 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
       return;
     }
 
+    if (isSubmitting) {
+      return; // Prevent double submission
+    }
+
+    setIsSubmitting(true);
+
     try {
       if (mode === 'create') {
         const contractData: CreateContractData = {
@@ -153,6 +161,8 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
         if (result.type === 'contracts/createContract/fulfilled') {
           toast.success('Contract template created successfully');
           router.push('/dashboard/contracts');
+        } else {
+          toast.error('Failed to create contract template');
         }
       } else {
         const updateData: UpdateContractData = {
@@ -171,10 +181,15 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
         if (result.type === 'contracts/updateContract/fulfilled') {
           toast.success('Contract template updated successfully');
           router.push('/dashboard/contracts');
+        } else {
+          toast.error('Failed to update contract template');
         }
       }
-    } catch {
+    } catch (error) {
+      console.error('Error saving contract:', error);
       toast.error('Failed to save contract template');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -588,6 +603,41 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
             />
           </CardContent>
         </Card>
+
+        {/* Form Actions */}
+        <div className="flex items-center justify-between pt-6 border-t">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <FileText className="h-4 w-4" />
+            {mode === 'create' ? 'Create new contract template' : 'Update contract template'}
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => window.history.back()}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !formData.title.trim() || !formData.body.trim()}
+              className="min-w-[120px]"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {mode === 'create' ? 'Creating...' : 'Updating...'}
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  {mode === 'create' ? 'Create Contract' : 'Update Contract'}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </form>
 
       {/* Upload Contract Modal */}
