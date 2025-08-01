@@ -30,6 +30,27 @@ export interface RecentActivityItem {
   created_at: string;
 }
 
+export interface DashboardMetrics {
+  candidates: {
+    total: number;
+    thisWeek: number;
+    trend: {
+      value: number;
+      isPositive: boolean;
+      label: string;
+    };
+  };
+  responseTime: {
+    averageHours: number;
+    formattedTime: string;
+    trend: {
+      value: number;
+      isPositive: boolean;
+      label: string;
+    };
+  };
+}
+
 interface DashboardState {
   upcomingInterviews: UpcomingInterview[];
   isLoading: boolean;
@@ -41,6 +62,9 @@ interface DashboardState {
   recentActivityLoading: boolean;
   recentActivityError: string | null;
   totalUpcomingInterviews: number;
+  metrics: DashboardMetrics | null;
+  metricsLoading: boolean;
+  metricsError: string | null;
 }
 
 const initialState: DashboardState = {
@@ -54,6 +78,9 @@ const initialState: DashboardState = {
   recentActivityLoading: false,
   recentActivityError: null,
   totalUpcomingInterviews: 0,
+  metrics: null,
+  metricsLoading: false,
+  metricsError: null,
 };
 
 const dashboardSlice = createSlice({
@@ -90,6 +117,15 @@ const dashboardSlice = createSlice({
     setRecentActivityError(state, action: PayloadAction<string | null>) {
       state.recentActivityError = action.payload;
     },
+    setDashboardMetrics(state, action: PayloadAction<DashboardMetrics>) {
+      state.metrics = action.payload;
+    },
+    setMetricsLoading(state, action: PayloadAction<boolean>) {
+      state.metricsLoading = action.payload;
+    },
+    setMetricsError(state, action: PayloadAction<string | null>) {
+      state.metricsError = action.payload;
+    },
     clearDashboardData: (state) => {
       return initialState;
     },
@@ -107,6 +143,18 @@ export const {
   setRecentActivity,
   setRecentActivityLoading,
   setRecentActivityError,
+  setDashboardMetrics,
+  setMetricsLoading,
+  setMetricsError,
   clearDashboardData,
 } = dashboardSlice.actions;
+
+// Selectors
+export const selectDashboardMetrics = (state: { dashboard: DashboardState }) =>
+  state.dashboard.metrics;
+export const selectMetricsLoading = (state: { dashboard: DashboardState }) =>
+  state.dashboard.metricsLoading;
+export const selectMetricsError = (state: { dashboard: DashboardState }) =>
+  state.dashboard.metricsError;
+
 export default dashboardSlice.reducer;

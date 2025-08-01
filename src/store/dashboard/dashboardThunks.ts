@@ -13,6 +13,10 @@ import {
   setRecentActivityLoading,
   setRecentActivityError,
   RecentActivityItem,
+  setDashboardMetrics,
+  setMetricsLoading,
+  setMetricsError,
+  DashboardMetrics,
 } from './dashboardSlice';
 import { RootState } from '@/store';
 
@@ -115,3 +119,35 @@ export const fetchRecentActivity = createAsyncThunk<
     }
   },
 );
+
+export const fetchDashboardMetrics = createAsyncThunk<
+  DashboardMetrics,
+  void,
+  { rejectValue: string }
+>('dashboard/fetchDashboardMetrics', async (_, { dispatch, rejectWithValue, getState }) => {
+  const user = (getState() as RootState).auth.user;
+  if (!user) {
+    return rejectWithValue('User not found');
+  }
+
+  dispatch(setMetricsLoading(true));
+  dispatch(setMetricsError(null));
+
+  try {
+    const res = await fetch(`/api/dashboard/metrics?companyId=${user.companyId}`);
+    const data = await res.json();
+
+    if (data.success) {
+      dispatch(setDashboardMetrics(data.metrics));
+      return data.metrics;
+    } else {
+      dispatch(setMetricsError(data.error || 'Failed to load metrics'));
+      return rejectWithValue(data.error || 'Failed to load metrics');
+    }
+  } catch {
+    dispatch(setMetricsError('Failed to load metrics'));
+    return rejectWithValue('Failed to load metrics');
+  } finally {
+    dispatch(setMetricsLoading(false));
+  }
+});
