@@ -151,7 +151,9 @@ export async function POST(request: NextRequest) {
           candidateName: `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim(),
           companyName,
           jobTitle: candidate.job_title || 'Position',
-          employmentType: contract.employment_type?.name || 'Full-time',
+          employmentType: Array.isArray(contract.employment_type)
+            ? (contract.employment_type[0] as any)?.name || 'Full-time'
+            : (contract.employment_type as any)?.name || 'Full-time',
           startDate: new Date(contractData.startDate).toLocaleDateString(),
           salaryAmount: contractData.salaryAmount,
           salaryCurrency: contractData.salaryCurrency,
@@ -159,7 +161,6 @@ export async function POST(request: NextRequest) {
           signingLink,
           contactEmail: profile.email,
           cc: ccList,
-          customMessage: contractData.customMessage,
         });
 
         if (!emailResult.success) {

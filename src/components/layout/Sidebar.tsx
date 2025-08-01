@@ -205,6 +205,12 @@ export default function Sidebar({
           icon: BellIcon,
           description: 'Email notifications',
         },
+        {
+          name: 'AI Models',
+          href: '/dashboard/settings/ai-models',
+          icon: SparklesIcon,
+          description: 'AI models',
+        },
       ],
     },
   ];

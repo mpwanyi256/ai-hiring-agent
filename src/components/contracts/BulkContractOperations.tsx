@@ -80,9 +80,7 @@ interface BulkContractData {
 
 export default function BulkContractOperations() {
   const dispatch = useDispatch<AppDispatch>();
-  const { contracts, loading: contractsLoading } = useSelector(
-    (state: RootState) => state.contracts,
-  );
+  const { contracts, contractsLoading } = useSelector((state: RootState) => state.contracts);
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set());

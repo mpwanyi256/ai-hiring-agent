@@ -126,7 +126,7 @@ const dashboardSlice = createSlice({
     setMetricsError(state, action: PayloadAction<string | null>) {
       state.metricsError = action.payload;
     },
-    clearDashboardData: (state) => {
+    clearDashboardData: () => {
       return initialState;
     },
   },

@@ -322,27 +322,6 @@ export default function NotificationSettings() {
           </div>
         </div>
       )}
-
-      {/* Configuration Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <div className="flex items-start space-x-3">
-          <BellIcon className="w-5 h-5 text-blue-600 mt-0.5" />
-          <div>
-            <h3 className="font-medium text-blue-900">Supabase-Powered Notifications</h3>
-            <p className="text-sm text-blue-700 mt-1">
-              Email notifications are processed automatically every 5 minutes using Supabase Edge
-              Functions and database cron jobs for maximum reliability.
-            </p>
-            <ul className="text-sm text-blue-700 mt-2 space-y-1">
-              <li>• Notifications are queued automatically when team events occur</li>
-              <li>• Emails are sent using professional templates via Resend</li>
-              <li>• Processing is handled by Supabase Edge Functions</li>
-              <li>• Database cron jobs ensure reliable scheduled processing</li>
-              <li>• All notification activity is tracked in the audit log</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

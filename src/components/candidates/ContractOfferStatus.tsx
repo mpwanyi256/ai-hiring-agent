@@ -189,17 +189,19 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({ candidateId }
                 )}
 
                 {/* Signature Display */}
-                {offer.status === 'signed' && offer.additionalTerms?.signature && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <h5 className="text-sm font-medium text-gray-900 mb-2">Signature:</h5>
-                    <SignatureDisplay
-                      signature={offer.additionalTerms.signature}
-                      compact={true}
-                      showMetadata={false}
-                      className="mb-2"
-                    />
-                  </div>
-                )}
+                {offer.status === 'signed' &&
+                  offer.additionalTerms?.signature &&
+                  typeof offer.additionalTerms.signature === 'object' && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <h5 className="text-sm font-medium text-gray-900 mb-2">Signature:</h5>
+                      <SignatureDisplay
+                        signature={offer.additionalTerms.signature as any}
+                        compact={true}
+                        showMetadata={false}
+                        className="mb-2"
+                      />
+                    </div>
+                  )}
 
                 {/* Additional Terms (excluding signature) */}
                 {offer.additionalTerms &&
