@@ -181,9 +181,44 @@ const RescheduleInterviewModal: React.FC<RescheduleInterviewModalProps> = ({
   };
 
   const handleReconnectGoogle = () => {
-    // TODO: Implement Google reconnection flow
-    window.open('/api/auth/google/connect', '_blank');
-    setGoogleTokenError(false);
+    // Open Google auth in a popup window for better UX
+    const popup = window.open(
+      '/api/integrations/google/connect',
+      'google-auth',
+      'width=500,height=600,scrollbars=yes,resizable=yes',
+    );
+
+    if (popup) {
+      // Listen for the popup to close (user completed auth)
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          // Check if Google integration is now working
+          setTimeout(() => {
+            setGoogleTokenError(false);
+            // Refresh the page or check integration status
+            console.log(
+              'Google Calendar reconnection completed - please refresh if issues persist',
+            );
+            // Optionally reload the page to refresh integration status
+            // window.location.reload();
+          }, 1000);
+        }
+      }, 1000);
+
+      // Set a timeout to close the popup if it takes too long
+      setTimeout(() => {
+        if (!popup.closed) {
+          popup.close();
+          clearInterval(checkClosed);
+          console.log('Google auth popup timed out');
+        }
+      }, 300000); // 5 minutes timeout
+    } else {
+      // Fallback if popup is blocked
+      console.log('Popup blocked, redirecting to Google auth');
+      window.location.href = '/api/integrations/google/connect';
+    }
   };
 
   const formatOffset = (hours: number, minutes: number) => {

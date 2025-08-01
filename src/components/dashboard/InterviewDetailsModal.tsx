@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/button';
+import { useAppDispatch } from '@/store';
+import { cancelInterview } from '@/store/interviews/interviewsThunks';
 import RescheduleInterviewModal from './RescheduleInterviewModal';
 
 interface InterviewDetailsModalProps {
@@ -14,7 +16,11 @@ const InterviewDetailsModal: React.FC<InterviewDetailsModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const dispatch = useAppDispatch();
+  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+  const [showGoogleReconnectPrompt, setShowGoogleReconnectPrompt] = useState(false);
 
   if (!interview) return null;
 
@@ -26,10 +32,66 @@ const InterviewDetailsModal: React.FC<InterviewDetailsModalProps> = ({
 
   // Placeholder handlers for reschedule/cancel
   const handleReschedule = () => {
-    setRescheduleModalOpen(true);
+    setIsRescheduleModalOpen(true);
   };
   const handleCancel = () => {
-    // TODO: Trigger cancel interview logic
+    setShowCancelConfirmation(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!interview?.interview_id) return;
+
+    setIsCancelling(true);
+    try {
+      const result = await dispatch(
+        cancelInterview({ interviewId: interview.interview_id }),
+      ).unwrap();
+
+      // Check if Google integration is disconnected
+      if (result?.googleIntegrationStatus && !result.googleIntegrationStatus.connected) {
+        setShowCancelConfirmation(false);
+        setShowGoogleReconnectPrompt(true);
+      } else {
+        setShowCancelConfirmation(false);
+        onClose(); // Close the modal after successful cancellation
+      }
+    } catch (error) {
+      console.error('Failed to cancel interview:', error);
+      setShowCancelConfirmation(false);
+      // You might want to show an error toast here
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const handleGoogleReconnect = () => {
+    // Open Google auth in a popup window
+    const popup = window.open(
+      '/api/integrations/google/connect',
+      'google-auth',
+      'width=500,height=600,scrollbars=yes,resizable=yes',
+    );
+
+    if (popup) {
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          setTimeout(() => {
+            setShowGoogleReconnectPrompt(false);
+            onClose(); // Close the modal after reconnection
+          }, 1000);
+        }
+      }, 1000);
+
+      setTimeout(() => {
+        if (!popup.closed) {
+          popup.close();
+          clearInterval(checkClosed);
+        }
+      }, 300000);
+    } else {
+      window.location.href = '/api/integrations/google/connect';
+    }
   };
 
   const handleRescheduleSuccess = () => {
@@ -97,10 +159,66 @@ const InterviewDetailsModal: React.FC<InterviewDetailsModalProps> = ({
 
       <RescheduleInterviewModal
         interview={interview}
-        isOpen={rescheduleModalOpen}
-        onClose={() => setRescheduleModalOpen(false)}
+        isOpen={isRescheduleModalOpen}
+        onClose={() => setIsRescheduleModalOpen(false)}
         onSuccess={handleRescheduleSuccess}
       />
+
+      {/* Cancel Confirmation Modal */}
+      <Modal isOpen={showCancelConfirmation} onClose={() => setShowCancelConfirmation(false)}>
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Cancel Interview</h3>
+          <p className="text-gray-600 mb-6">
+            Are you sure you want to cancel this interview with{' '}
+            <span className="font-medium">
+              {interview.candidate_first_name} {interview.candidate_last_name}
+            </span>
+            ? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setShowCancelConfirmation(false)}
+              disabled={isCancelling}
+            >
+              Keep Interview
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmCancel} disabled={isCancelling}>
+              {isCancelling ? 'Cancelling...' : 'Cancel Interview'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Google Reconnection Prompt Modal */}
+      <Modal isOpen={showGoogleReconnectPrompt} onClose={() => setShowGoogleReconnectPrompt(false)}>
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Interview Cancelled Successfully
+          </h3>
+          <p className="text-gray-600 mb-4">
+            The interview has been cancelled successfully. However, your Google Calendar integration
+            is disconnected, so the calendar event could not be removed automatically.
+          </p>
+          <p className="text-gray-600 mb-6">
+            Would you like to reconnect your Google Calendar to manage future calendar events?
+          </p>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowGoogleReconnectPrompt(false);
+                onClose();
+              }}
+            >
+              Skip for Now
+            </Button>
+            <Button variant="default" onClick={handleGoogleReconnect}>
+              Reconnect Google Calendar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };
