@@ -36,8 +36,8 @@ const DashboardNavigation: React.FC<DashboardNavigationProps> = ({
           </Button>
         )}
 
-        {/* Logo (only show when sidebar is collapsed) */}
-        {sidebarCollapsed && <Logo />}
+        {/* Logo */}
+        <Logo />
       </div>
 
       {/* Right side */}

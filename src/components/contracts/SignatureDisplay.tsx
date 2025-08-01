@@ -37,8 +37,9 @@ const SignatureDisplay: React.FC<SignatureDisplayProps> = ({
           <Image
             src={signature.signatureData}
             alt="Signature"
+            width={200}
+            height={64}
             className="max-h-16 max-w-full object-contain"
-            style={{ filter: 'invert(1)' }} // Make signature black on white background
           />
         </div>
       );
@@ -62,18 +63,22 @@ const SignatureDisplay: React.FC<SignatureDisplayProps> = ({
 
   if (compact) {
     return (
-      <div className={`inline-flex items-center gap-2 ${className}`}>
-        {signature.type === 'drawn' ? (
-          <PenTool className="h-4 w-4 text-blue-600" />
-        ) : (
-          <Type className="h-4 w-4 text-blue-600" />
-        )}
-        <span className="text-sm font-medium">
-          {signature.type === 'drawn' ? 'Hand-drawn' : 'Typed'} signature
-        </span>
-        {signature.fullName && (
-          <span className="text-sm text-gray-600">by {signature.fullName}</span>
-        )}
+      <div className={`space-y-2 ${className}`}>
+        <div className="flex items-center gap-2">
+          {signature.type === 'drawn' ? (
+            <PenTool className="h-4 w-4 text-blue-600" />
+          ) : (
+            <Type className="h-4 w-4 text-blue-600" />
+          )}
+          <span className="text-sm font-medium">
+            {signature.type === 'drawn' ? 'Hand-drawn' : 'Typed'} signature
+          </span>
+          {signature.fullName && (
+            <span className="text-sm text-gray-600">by {signature.fullName}</span>
+          )}
+        </div>
+        {/* Render the actual signature content */}
+        <div className="pl-6">{renderSignature()}</div>
       </div>
     );
   }
