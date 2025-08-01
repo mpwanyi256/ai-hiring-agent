@@ -4,6 +4,7 @@ import { CandidateWithEvaluation } from '@/types/candidates';
 import { Tab } from '@headlessui/react';
 import GeneralTab from './GeneralTab';
 import EvaluationsTab from './EvaluationsTab';
+import TimelineTab from './TimelineTab';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
 import SendContractModal from '../contracts/SendContractModal';
 
@@ -20,7 +21,7 @@ function classNames(...classes: string[]) {
 
 const tabs = [
   { name: 'General', Component: GeneralTab },
-  // { name: 'Events', Component: EventsTab },
+  { name: 'Timeline', Component: TimelineTab },
   { name: 'Evaluations', Component: EvaluationsTab },
   // { name: 'Experience', Component: ExperienceTab },
 ];

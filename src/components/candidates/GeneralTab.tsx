@@ -190,6 +190,9 @@ const GeneralTab: React.FC<{
         </div>
       </div>
 
+      {/* Contract Offer Status */}
+      <ContractOfferStatus candidateId={candidate.id} />
+
       {/* Application Events */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
@@ -467,9 +470,6 @@ const GeneralTab: React.FC<{
           </div>
         )}
       </div>
-
-      {/* Contract Offer Status */}
-      <ContractOfferStatus candidateId={candidate.id} />
     </div>
   );
 };

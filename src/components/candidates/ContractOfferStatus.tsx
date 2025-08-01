@@ -8,6 +8,7 @@ import {
 import { formatCurrency, getContractStatusBadge, formatDate } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import SignatureDisplay from '../contracts/SignatureDisplay';
 import {
   FileSignature,
   Send,
@@ -187,19 +188,39 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({ candidateId }
                   </div>
                 )}
 
-                {offer.additionalTerms && Object.keys(offer.additionalTerms).length > 0 && (
+                {/* Signature Display */}
+                {offer.status === 'signed' && offer.additionalTerms?.signature && (
                   <div className="mt-3 pt-3 border-t border-gray-200">
-                    <h5 className="text-sm font-medium text-gray-900 mb-2">Additional Terms:</h5>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      {Object.entries(offer.additionalTerms).map(([key, value]) => (
-                        <div key={key} className="flex">
-                          <span className="font-medium capitalize">{key.replace('_', ' ')}:</span>
-                          <span className="ml-2">{String(value)}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <h5 className="text-sm font-medium text-gray-900 mb-2">Signature:</h5>
+                    <SignatureDisplay
+                      signature={offer.additionalTerms.signature}
+                      compact={true}
+                      showMetadata={false}
+                      className="mb-2"
+                    />
                   </div>
                 )}
+
+                {/* Additional Terms (excluding signature) */}
+                {offer.additionalTerms &&
+                  Object.keys(offer.additionalTerms).filter((key) => key !== 'signature').length >
+                    0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <h5 className="text-sm font-medium text-gray-900 mb-2">Additional Terms:</h5>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        {Object.entries(offer.additionalTerms)
+                          .filter(([key]) => key !== 'signature')
+                          .map(([key, value]) => (
+                            <div key={key} className="flex">
+                              <span className="font-medium capitalize">
+                                {key.replace('_', ' ')}:
+                              </span>
+                              <span className="ml-2">{String(value)}</span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
               </div>
             );
           })}
