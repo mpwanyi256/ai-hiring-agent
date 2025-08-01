@@ -24,6 +24,7 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { selectApplicationEvents } from '@/store/interviews/interviewsSelectors';
+import ContractOfferStatus from './ContractOfferStatus';
 
 interface TeamResponseSummary {
   total_responses: number;
@@ -466,6 +467,9 @@ const GeneralTab: React.FC<{
           </div>
         )}
       </div>
+
+      {/* Contract Offer Status */}
+      <ContractOfferStatus candidateId={candidate.id} />
     </div>
   );
 };

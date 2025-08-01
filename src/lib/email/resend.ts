@@ -135,6 +135,70 @@ const CONTRACT_SIGNED_TEMPLATE = {
   `,
 };
 
+const CANDIDATE_CONTRACT_CONFIRMATION_TEMPLATE = {
+  subject: 'Contract Signed Successfully - {{job_title}} at {{company_name}}',
+  html: `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 30px; border-radius: 8px 8px 0 0; color: white; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px; font-weight: bold;">Contract Signed Successfully!</h1>
+        <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">{{company_name}}</p>
+      </div>
+      
+      <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+        <h2 style="color: #1f2937; margin: 0 0 20px 0;">Dear {{candidate_name}},</h2>
+        
+        <p style="color: #4b5563; line-height: 1.6; margin: 0 0 15px 0;">
+          Congratulations! You have successfully signed your employment contract for the <strong>{{job_title}}</strong> position at {{company_name}}.
+        </p>
+        
+        <div style="background: #f0fdf4; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #10b981;">
+          <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Contract Details:</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Position:</td>
+              <td style="padding: 8px 0; color: #1f2937;">{{job_title}}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Start Date:</td>
+              <td style="padding: 8px 0; color: #1f2937;">{{start_date}}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Signed On:</td>
+              <td style="padding: 8px 0; color: #1f2937;">{{signed_at}}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <p style="color: #4b5563; line-height: 1.6; margin: 20px 0;">
+          Your signed contract is attached to this email and can also be downloaded using the link below:
+        </p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="{{download_link}}" 
+             style="display: inline-block; background: #10b981; color: white; padding: 15px 30px; 
+                    text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; margin-right: 10px;">
+            Download Contract
+          </a>
+        </div>
+        
+        <p style="color: #4b5563; line-height: 1.6; margin: 20px 0;">
+          Please keep this contract for your records. If you have any questions, feel free to contact us.
+        </p>
+        
+        <p style="color: #4b5563; line-height: 1.6; margin: 20px 0;">
+          Welcome to the team!
+        </p>
+      </div>
+      
+      <div style="background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; text-align: center;">
+        <p style="color: #6b7280; font-size: 12px; margin: 0;">
+          This email was sent by the AI Automated Hiring platform.
+        </p>
+      </div>
+    </div>
+  `,
+};
+
 const CONTRACT_REJECTED_TEMPLATE = {
   subject: 'Contract Declined - {{candidate_name}} - {{job_title}}',
   html: `
@@ -310,6 +374,56 @@ export async function sendContractSignedEmail(data: {
   }
 }
 
+export async function sendCandidateContractConfirmation(data: {
+  to: string;
+  candidateName: string;
+  companyName: string;
+  jobTitle: string;
+  startDate: string;
+  signedAt: string;
+  downloadLink: string;
+  attachmentPath?: string;
+}) {
+  const subject = replaceTemplateVariables(CANDIDATE_CONTRACT_CONFIRMATION_TEMPLATE.subject, {
+    job_title: data.jobTitle,
+    company_name: data.companyName,
+  });
+
+  const html = replaceTemplateVariables(CANDIDATE_CONTRACT_CONFIRMATION_TEMPLATE.html, {
+    candidate_name: data.candidateName,
+    company_name: data.companyName,
+    job_title: data.jobTitle,
+    start_date: new Date(data.startDate).toLocaleDateString(),
+    signed_at: new Date(data.signedAt).toLocaleDateString(),
+    download_link: data.downloadLink,
+  });
+
+  try {
+    const emailData: any = {
+      from: domainEmails.noReply,
+      to: data.to,
+      subject,
+      html,
+    };
+
+    // Add attachment if provided
+    if (data.attachmentPath) {
+      emailData.attachments = [
+        {
+          filename: `contract-${data.candidateName.replace(/\s+/g, '-')}.pdf`,
+          path: data.attachmentPath,
+        },
+      ];
+    }
+
+    const result = await resend.emails.send(emailData);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('Error sending candidate contract confirmation:', error);
+    return { success: false, error };
+  }
+}
+
 export async function sendContractRejectedEmail(data: {
   to: string | string[];
   candidateName: string;
@@ -331,7 +445,7 @@ export async function sendContractRejectedEmail(data: {
     company_name: data.companyName,
     job_title: data.jobTitle,
     rejected_at: new Date(data.rejectedAt).toLocaleDateString(),
-    rejection_reason: data.rejectionReason,
+    rejection_reason: data.rejectionReason || 'No reason provided',
     dashboard_link: data.dashboardLink,
   });
 
@@ -342,7 +456,6 @@ export async function sendContractRejectedEmail(data: {
       subject,
       html,
     });
-
     return { success: true, data: result };
   } catch (error) {
     console.error('Error sending contract rejected email:', error);

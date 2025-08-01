@@ -16,7 +16,7 @@ export const inputTypes = [
 ];
 
 export const app = {
-  baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://intavia.app',
   name: 'Intavia',
   domain: 'intavia.app',
   description: 'AI Hiring Platform',

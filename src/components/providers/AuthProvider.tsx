@@ -18,7 +18,11 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         // Check current auth state via API route
         const response = await dispatch(checkAuth()).unwrap();
         if (!response) {
-          router.push('/signin');
+          const currentPath = window.location.pathname;
+          console.log('Current path:', currentPath);
+          if (currentPath.startsWith('/dashboard')) {
+            router.push('/signin');
+          }
         }
       } catch (error) {
         console.error('Auth initialization failed:', error);

@@ -288,10 +288,7 @@ The Hiring Team`;
           <div className="space-y-4">
             {/* Salary/Compensation */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Salary/Compensation *
-              </Label>
+              <Label className="flex items-center gap-2">Salary/Compensation *</Label>
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   id="salary"
@@ -304,8 +301,8 @@ The Hiring Team`;
                   <SelectTrigger>
                     <SelectValue placeholder="Currency" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
-                    <div className="sticky top-0 p-2 bg-background border-b">
+                  <SelectContent className="max-h-[300px] p-0">
+                    <div className="sticky top-0 z-10 p-2 bg-background border-b shadow-sm">
                       <Input
                         placeholder="Search currencies..."
                         className="h-8"
@@ -320,11 +317,13 @@ The Hiring Team`;
                         }}
                       />
                     </div>
-                    {currencies.map((currency) => (
-                      <SelectItem key={currency.id} value={currency.code} data-currency-item>
-                        {currency.symbol} {currency.code} - {currency.name}
-                      </SelectItem>
-                    ))}
+                    <div className="max-h-[240px] overflow-y-auto">
+                      {currencies.map((currency) => (
+                        <SelectItem key={currency.id} value={currency.code} data-currency-item>
+                          {currency.symbol} - {currency.name}
+                        </SelectItem>
+                      ))}
+                    </div>
                   </SelectContent>
                 </Select>
               </div>
