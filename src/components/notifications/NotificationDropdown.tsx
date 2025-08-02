@@ -14,43 +14,52 @@ import {
   Calendar,
   Settings,
   ExternalLink,
+  Loader2,
 } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
-
-interface Notification {
-  id: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  category: string;
-  title: string;
-  message: string;
-  actionUrl?: string;
-  actionText?: string;
-  isRead: boolean;
-  createdAt: string;
-  readAt?: string;
-}
+import { Notification, NotificationsResponse } from '@/types/notifications';
 
 interface NotificationDropdownProps {
   className?: string;
 }
 
-const getNotificationIcon = (type: string, category: string) => {
+const getNotificationIcon = (type: string) => {
   const iconClass = 'h-4 w-4';
 
-  if (category === 'candidate') return <User className={iconClass} />;
-  if (category === 'contract') return <FileText className={iconClass} />;
-  if (category === 'interview') return <Calendar className={iconClass} />;
-  if (category === 'system') return <Settings className={iconClass} />;
-
   switch (type) {
-    case 'success':
+    case 'contract_offer':
+      return <FileText className={iconClass} />;
+    case 'interview':
+      return <Calendar className={iconClass} />;
+    case 'application':
+      return <User className={iconClass} />;
+    case 'evaluation':
       return <CheckCircle className={iconClass} />;
-    case 'warning':
-      return <AlertTriangle className={iconClass} />;
-    case 'error':
-      return <XCircle className={iconClass} />;
+    case 'system':
+      return <Settings className={iconClass} />;
     default:
       return <Info className={iconClass} />;
+  }
+};
+
+const getNotificationActionUrl = (notification: Notification): string | null => {
+  switch (notification.type) {
+    case 'contract_offer':
+      return notification.candidate_id
+        ? `/dashboard/jobs/candidates/${notification.candidate_id}`
+        : null;
+    case 'interview':
+      return `/dashboard/interviews/${notification.entity_id}`;
+    case 'application':
+      return notification.candidate_id
+        ? `/dashboard/jobs/candidates/${notification.candidate_id}`
+        : null;
+    case 'evaluation':
+      return notification.candidate_id
+        ? `/dashboard/jobs/candidates/${notification.candidate_id}`
+        : null;
+    default:
+      return null;
   }
 };
 
@@ -67,50 +76,97 @@ const getNotificationColor = (type: string) => {
   }
 };
 
-// Mock data - this would come from API in real implementation
+// Fetch notifications from API
+const fetchNotifications = async (limit = 10): Promise<NotificationsResponse> => {
+  try {
+    const response = await fetch(`/api/notifications?limit=${limit}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch notifications');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch notifications:', error);
+    return {
+      success: false,
+      error: 'Failed to fetch notifications',
+      notifications: [],
+      total: 0,
+      unreadCount: 0,
+    };
+  }
+};
+
+// Mark notifications as read
+const markNotificationsAsRead = async (notificationIds: string[]): Promise<void> => {
+  try {
+    const response = await fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        notificationIds,
+        markAsRead: true,
+      }),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to mark notifications as read');
+    }
+  } catch (error) {
+    console.error('Failed to mark notifications as read:', error);
+  }
+};
+
+// Mock fallback data for development
 const mockNotifications: Notification[] = [
   {
     id: '1',
-    type: 'success',
-    category: 'contract',
+    type: 'contract_offer',
     title: 'Contract Signed',
-    message: 'John Doe has signed the employment contract',
-    actionUrl: '/dashboard/jobs/job-1/candidates/candidate-1',
-    actionText: 'View Details',
-    isRead: false,
-    createdAt: '2024-01-25T14:30:00Z',
+    message: 'Sarah Johnson has successfully signed the contract for Frontend Developer position.',
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    status: 'success',
+    read: false,
+    company_id: 'company-1',
+    entity_type: 'contract_offer',
+    entity_id: 'offer-123',
+    candidate_id: 'candidate-1',
   },
   {
     id: '2',
-    type: 'info',
-    category: 'candidate',
+    type: 'application',
     title: 'New Application',
-    message: 'Jane Smith applied for Senior Developer position',
-    actionUrl: '/dashboard/jobs/job-2/candidates/candidate-2',
-    actionText: 'Review Application',
-    isRead: false,
-    createdAt: '2024-01-25T12:15:00Z',
+    message: 'Michael Chen applied for the Backend Developer position.',
+    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    status: 'info',
+    read: true,
+    company_id: 'company-1',
+    entity_type: 'candidate',
+    entity_id: 'candidate-456',
+    candidate_id: 'candidate-456',
   },
   {
     id: '3',
-    type: 'warning',
-    category: 'contract',
-    title: 'Contract Expiring Soon',
-    message: 'Contract offer for Mike Johnson expires in 2 days',
-    actionUrl: '/dashboard/jobs/job-1/candidates/candidate-3',
-    actionText: 'Extend Offer',
-    isRead: true,
-    createdAt: '2024-01-24T16:45:00Z',
-    readAt: '2024-01-24T17:00:00Z',
+    type: 'interview',
+    title: 'Interview Reminder',
+    message: 'Interview with Emma Davis is scheduled in 30 minutes.',
+    timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    status: 'warning',
+    read: false,
+    company_id: 'company-1',
+    entity_type: 'interview',
+    entity_id: 'interview-789',
+    candidate_id: 'candidate-789',
   },
 ];
 
 const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
   const recentNotifications = notifications.slice(0, 5); // Show only 5 most recent
 
   // Close dropdown when clicking outside
@@ -130,24 +186,60 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
     };
   }, [isOpen]);
 
-  const markAsRead = (notificationId: string) => {
+  // Load notifications from API
+  useEffect(() => {
+    const loadNotifications = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetchNotifications(10);
+        if (response.success && response.notifications.length > 0) {
+          setNotifications(response.notifications);
+        }
+      } catch (error) {
+        console.error('Failed to load notifications:', error);
+        // Keep mock data as fallback
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      loadNotifications();
+    }
+  }, [isOpen]);
+
+  const markAsRead = async (notificationId: string) => {
+    // Update local state immediately for better UX
     setNotifications((prev) =>
       prev.map((notification) =>
-        notification.id === notificationId
-          ? { ...notification, isRead: true, readAt: new Date().toISOString() }
-          : notification,
+        notification.id === notificationId ? { ...notification, read: true } : notification,
       ),
     );
+
+    // Update on server
+    try {
+      await markNotificationsAsRead([notificationId]);
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+      // Revert local state on error
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === notificationId ? { ...notification, read: false } : notification,
+        ),
+      );
+    }
   };
 
   const handleNotificationClick = (notification: Notification) => {
-    if (!notification.isRead) {
+    if (!notification.read) {
       markAsRead(notification.id);
     }
     setIsOpen(false);
 
-    if (notification.actionUrl) {
-      window.location.href = notification.actionUrl;
+    // Generate action URL based on notification type and entity
+    const actionUrl = getNotificationActionUrl(notification);
+    if (actionUrl) {
+      window.location.href = actionUrl;
     }
   };
 
@@ -203,7 +295,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
                   <div
                     key={notification.id}
                     className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-                      !notification.isRead ? 'bg-blue-50/30' : ''
+                      !notification.read ? 'bg-blue-50/30' : ''
                     }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
@@ -212,7 +304,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
                       <div
                         className={`p-1.5 rounded-full ${getNotificationColor(notification.type)} flex-shrink-0`}
                       >
-                        {getNotificationIcon(notification.type, notification.category)}
+                        {getNotificationIcon(notification.type)}
                       </div>
 
                       {/* Content */}
@@ -220,19 +312,19 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <h4
                             className={`text-sm font-medium truncate ${
-                              notification.isRead ? 'text-gray-600' : 'text-gray-900'
+                              notification.read ? 'text-gray-600' : 'text-gray-900'
                             }`}
                           >
                             {notification.title}
                           </h4>
-                          {!notification.isRead && (
+                          {!notification.read && (
                             <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1"></div>
                           )}
                         </div>
 
                         <p
                           className={`text-xs mb-2 line-clamp-2 ${
-                            notification.isRead ? 'text-gray-500' : 'text-gray-700'
+                            notification.read ? 'text-gray-500' : 'text-gray-700'
                           }`}
                         >
                           {notification.message}
@@ -240,13 +332,13 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
 
                         <div className="flex items-center justify-between">
                           <time className="text-xs text-gray-400">
-                            {formatDateTime(notification.createdAt)}
+                            {formatDateTime(notification.timestamp)}
                           </time>
 
-                          {notification.actionUrl && (
+                          {getNotificationActionUrl(notification) && (
                             <div className="flex items-center text-xs text-blue-600">
                               <ExternalLink className="h-3 w-3 mr-1" />
-                              <span>{notification.actionText || 'View'}</span>
+                              <span>View Details</span>
                             </div>
                           )}
                         </div>

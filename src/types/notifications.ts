@@ -1,3 +1,4 @@
+// Timeline Event Types
 export interface TimelineEvent {
   id: string;
   type:
@@ -23,6 +24,7 @@ export interface TimelineEvent {
     role?: string;
     avatar?: string;
   };
+  candidate_id?: string;
 }
 
 export interface TimelineEventsResponse {
@@ -32,16 +34,74 @@ export interface TimelineEventsResponse {
   total: number;
 }
 
-// interface TimelineEvent {
-//   id: string;
-//   type: string;
-//   title: string;
-//   description?: string;
-//   timestamp: string;
-//   status?: string;
-//   metadata?: Record<string, any>;
-//   performer?: {
-//     name: string;
-//     role?: string;
-//   };
-// }
+// Notification Types
+export interface Notification {
+  id: string;
+  type: 'contract_offer' | 'interview' | 'evaluation' | 'application' | 'system';
+  title: string;
+  message: string;
+  timestamp: string;
+  status: 'success' | 'warning' | 'error' | 'info';
+  read: boolean;
+  candidate_id?: string;
+  company_id: string;
+  metadata?: Record<string, any>;
+  entity_type: string;
+  entity_id: string;
+}
+
+export interface NotificationsResponse {
+  success: boolean;
+  error: string | null;
+  notifications: Notification[];
+  total: number;
+  unreadCount: number;
+}
+
+// Notification State Management
+export interface NotificationState {
+  notifications: Notification[];
+  isLoading: boolean;
+  error: string | null;
+  unreadCount: number;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+  };
+}
+
+// Notification Action Types
+export type NotificationActionType = 'mark_read' | 'mark_unread' | 'delete';
+
+export interface NotificationAction {
+  type: NotificationActionType;
+  notificationIds: string[];
+}
+
+// Notification Filter Types
+export interface NotificationFilters {
+  type?: Notification['type'];
+  status?: Notification['status'];
+  read?: boolean;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+// Notification Preferences
+export interface NotificationPreferences {
+  email: {
+    contractOffers: boolean;
+    interviews: boolean;
+    evaluations: boolean;
+    applications: boolean;
+  };
+  inApp: {
+    contractOffers: boolean;
+    interviews: boolean;
+    evaluations: boolean;
+    applications: boolean;
+  };
+  frequency: 'immediate' | 'hourly' | 'daily' | 'weekly';
+}
