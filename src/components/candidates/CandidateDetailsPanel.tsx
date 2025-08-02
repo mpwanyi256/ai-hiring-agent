@@ -3,6 +3,8 @@ import SidePanel from '../ui/SidePanel';
 import { CandidateWithEvaluation } from '@/types/candidates';
 import { Tab } from '@headlessui/react';
 import GeneralTab from './GeneralTab';
+import OffersTab from './OffersTab';
+import EventsTab from './EventsTab';
 import EvaluationsTab from './EvaluationsTab';
 import TimelineTab from './TimelineTab';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
@@ -18,6 +20,8 @@ interface CandidateDetailsPanelProps {
 
 const tabs = [
   { name: 'General', Component: GeneralTab },
+  { name: 'Offers', Component: OffersTab },
+  { name: 'Events', Component: EventsTab },
   { name: 'Timeline', Component: TimelineTab },
   { name: 'Evaluations', Component: EvaluationsTab },
   // { name: 'Experience', Component: ExperienceTab },
@@ -67,6 +71,14 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
             {tabs.map((tab) => (
               <Tab.Panel key={tab.name} className="h-full min-h-0 flex flex-col">
                 {tab.name === 'General' ? (
+                  <tab.Component
+                    candidate={candidate}
+                    onScheduleEvent={handleScheduleEvent}
+                    onSendContract={handleSendContract}
+                  />
+                ) : tab.name === 'Offers' ? (
+                  <tab.Component candidate={candidate} onSendContract={handleSendContract} />
+                ) : tab.name === 'Events' ? (
                   <tab.Component
                     candidate={candidate}
                     onScheduleEvent={handleScheduleEvent}

@@ -11,6 +11,7 @@ interface InterviewCardProps {
 
 export default function InterviewCard({ interview }: InterviewCardProps) {
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const isCancelled = interview.interview_status === 'cancelled';
 
   return (
     <>
@@ -44,14 +45,14 @@ export default function InterviewCard({ interview }: InterviewCardProps) {
           <div className="text-xs text-gray-500 mt-1">
             {interview.interview_date} at {interview.interview_time.slice(0, 5)}
             <span
-              className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${interview.interview_status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}
+              className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${isCancelled ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}
             >
               {interview.interview_status.replace('_', ' ')}
             </span>
           </div>
         </div>
         {/* Meet Link */}
-        {interview.meet_link && (
+        {!isCancelled && interview.meet_link && (
           <a
             href={interview.meet_link}
             target="_blank"
@@ -64,17 +65,20 @@ export default function InterviewCard({ interview }: InterviewCardProps) {
         )}
 
         {/* Event Details Button */}
-        <div className="flex items-center ml-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowRescheduleModal(true)}
-            className="h-7 px-2"
-          >
-            <Settings className="h-3 w-3 mr-1" />
-            Details
-          </Button>
-        </div>
+        {!isCancelled && (
+          <div className="flex items-center ml-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRescheduleModal(true)}
+              className="h-7 px-2"
+              disabled={isCancelled}
+            >
+              <Settings className="h-3 w-3 mr-1" />
+              Details
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Reschedule Interview Modal */}

@@ -169,7 +169,7 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
 
   return (
     <>
-      <Card className="mt-6">
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center">

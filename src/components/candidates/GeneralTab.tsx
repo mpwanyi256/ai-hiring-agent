@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CandidateWithEvaluation } from '@/types/candidates';
-import InterviewCard from '../dashboard/InterviewCard';
-import { Button } from '../ui/button';
-import { fetchApplicationEvents } from '@/store/interviews/interviewsThunks';
-import { clearApplicationEvents } from '@/store/interviews/interviewsSlice';
-import { useAppSelector } from '@/store';
-import { useAppDispatch } from '@/store';
+
 import {
   Loader2,
   Users,
@@ -23,8 +18,6 @@ import {
   Brain,
   Lightbulb,
 } from 'lucide-react';
-import { selectApplicationEvents } from '@/store/interviews/interviewsSelectors';
-import ContractOfferStatus from './ContractOfferStatus';
 
 interface TeamResponseSummary {
   total_responses: number;
@@ -53,30 +46,17 @@ const GeneralTab: React.FC<{
   onScheduleEvent?: () => void;
   onSendContract: () => void;
 }> = ({ candidate, onScheduleEvent, onSendContract }) => {
-  const dispatch = useAppDispatch();
-  const [isLoading, setIsLoading] = useState(false);
   const [teamSummaryLoading, setTeamSummaryLoading] = useState(false);
   const [resumeLoading, setResumeLoading] = useState(false);
   const [teamSummary, setTeamSummary] = useState<TeamResponseSummary | null>(null);
   const [resumeEvaluation, setResumeEvaluation] = useState<ResumeEvaluation | null>(null);
-  const applicationEvents = useAppSelector(selectApplicationEvents);
-
   useEffect(() => {
-    setIsLoading(true);
-    dispatch(fetchApplicationEvents(candidate.id)).finally(() => {
-      setIsLoading(false);
-    });
-
     // Fetch team response summary
     fetchTeamResponseSummary();
 
     // Fetch resume evaluation
     fetchResumeEvaluation();
-
-    return () => {
-      dispatch(clearApplicationEvents());
-    };
-  }, [candidate.id, dispatch]);
+  }, [candidate.id]);
 
   const fetchTeamResponseSummary = async () => {
     if (!candidate.jobId) return;
@@ -125,14 +105,6 @@ const GeneralTab: React.FC<{
   const getVotePercentage = (votes: number, total: number): number => {
     return total > 0 ? Math.round((votes / total) * 100) : 0;
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center">
-        <Loader2 className="w-4 h-4 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 min-h-[calc(100vh-350px)] overflow-y-auto pb-4">
@@ -187,56 +159,6 @@ const GeneralTab: React.FC<{
               {candidate.isCompleted ? 'Completed' : 'In Progress'}
             </p>
           </div>
-        </div>
-      </div>
-
-      {/* Contract Offer Status */}
-      <ContractOfferStatus
-        candidateId={candidate.id}
-        onSendContract={onSendContract}
-        candidate={candidate}
-      />
-
-      {/* Application Events */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Application Events</h3>
-          <div className="flex items-center gap-2">
-            {onScheduleEvent && (
-              <Button variant="outline" size="sm" onClick={onScheduleEvent}>
-                Schedule Event
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-3 max-h-[290px] overflow-y-auto">
-          {applicationEvents.length > 0 ? (
-            applicationEvents.map((event) => (
-              <InterviewCard
-                key={event.id}
-                interview={{
-                  interview_id: event.id,
-                  candidate_id: candidate.id,
-                  interview_date: event.date,
-                  interview_time: event.time,
-                  interview_status: event.status,
-                  candidate_first_name: candidate.firstName,
-                  candidate_last_name: candidate.lastName,
-                  candidate_email: candidate.email,
-                  job_title: event.jobTitle,
-                  event_summary: event.eventSummary,
-                  meet_link: event.meetingLink || undefined,
-                  job_id: event.jobId,
-                }}
-              />
-            ))
-          ) : (
-            <div className="text-center py-6 text-gray-500">
-              <Clock className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-              <p className="text-sm">No events scheduled</p>
-            </div>
-          )}
         </div>
       </div>
 
