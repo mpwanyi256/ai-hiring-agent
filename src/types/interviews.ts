@@ -88,6 +88,9 @@ export interface InterviewsState {
   isLoading: boolean;
   error: string | null;
   applicationEvents: Event[];
+  timelineEvents: any[];
+  timelineLoading: boolean;
+  timelineError: string | null;
   pagination: {
     page: number;
     limit: number;

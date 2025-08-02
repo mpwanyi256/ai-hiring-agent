@@ -204,6 +204,25 @@ export const fetchInterviewDetails = createAsyncThunk(
   },
 );
 
+// Fetch candidate timeline events
+export const fetchCandidateTimeline = createAsyncThunk(
+  'interviews/fetchCandidateTimeline',
+  async (candidateId: string, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}/timeline`);
+      const data = await response.json();
+
+      if (!data.success) {
+        return rejectWithValue(data.error || 'Failed to fetch candidate timeline');
+      }
+
+      return data.events;
+    } catch {
+      return rejectWithValue('Failed to fetch candidate timeline');
+    }
+  },
+);
+
 // Get interview availability for a candidate
 export const getInterviewAvailability = createAsyncThunk(
   'interviews/getAvailability',

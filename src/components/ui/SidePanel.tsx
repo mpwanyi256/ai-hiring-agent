@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface SidePanelProps {
   isOpen: boolean;
@@ -37,6 +38,12 @@ const SidePanel: React.FC<SidePanelProps> = ({
             widthMap[width] || widthMap.md,
           )}
         >
+          <VisuallyHidden>
+            <DialogPrimitive.Title>{title || 'Side Panel'}</DialogPrimitive.Title>
+            <DialogPrimitive.Description>
+              {title ? `${title} panel content` : 'Side panel content'}
+            </DialogPrimitive.Description>
+          </VisuallyHidden>
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div className="text-lg font-semibold">{title}</div>
             <button

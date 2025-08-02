@@ -7,6 +7,7 @@ import {
   scheduleInterview,
   updateInterviewStatus,
   fetchApplicationEvents,
+  fetchCandidateTimeline,
 } from './interviewsThunks';
 import { InterviewsState, Interview } from '@/types/interviews';
 
@@ -16,6 +17,9 @@ const initialState: InterviewsState = {
   isLoading: false,
   error: null,
   applicationEvents: [],
+  timelineEvents: [],
+  timelineLoading: false,
+  timelineError: null,
   pagination: {
     page: 1,
     limit: 10,
@@ -66,6 +70,10 @@ const interviewsSlice = createSlice({
     },
     clearApplicationEvents: (state) => {
       state.applicationEvents = [];
+    },
+    clearTimelineEvents: (state) => {
+      state.timelineEvents = [];
+      state.timelineError = null;
     },
   },
   extraReducers: (builder) => {
@@ -191,6 +199,19 @@ const interviewsSlice = createSlice({
         state.scheduling.isUpdating = false;
         state.scheduling.updatingInterviewId = null;
         state.error = action.error.message || 'Failed to update interview status';
+      })
+      // Fetch Candidate Timeline
+      .addCase(fetchCandidateTimeline.pending, (state) => {
+        state.timelineLoading = true;
+        state.timelineError = null;
+      })
+      .addCase(fetchCandidateTimeline.fulfilled, (state, action) => {
+        state.timelineLoading = false;
+        state.timelineEvents = action.payload.events;
+      })
+      .addCase(fetchCandidateTimeline.rejected, (state, action) => {
+        state.timelineLoading = false;
+        state.timelineError = action.error.message || 'Failed to fetch timeline events';
       });
   },
 });
@@ -205,6 +226,7 @@ export const {
   removeInterviewFromList,
   clearInterviews,
   clearApplicationEvents,
+  clearTimelineEvents,
 } = interviewsSlice.actions;
 
 export default interviewsSlice.reducer;

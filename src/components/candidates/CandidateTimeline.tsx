@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate, formatDateTime } from '@/lib/utils';
+import { AppDispatch } from '@/store';
+import { fetchCandidateTimeline } from '@/store/interviews/interviewsThunks';
+import {
+  selectTimelineEvents,
+  selectTimelineLoading,
+  selectTimelineError,
+} from '@/store/interviews/interviewsSelectors';
 import {
   UserPlus,
   FileText,
@@ -53,8 +61,6 @@ export interface TimelineEvent {
 
 interface CandidateTimelineProps {
   candidateId: string;
-  events?: TimelineEvent[];
-  loading?: boolean;
 }
 
 const getEventIcon = (type: TimelineEvent['type'], status?: string) => {
@@ -211,11 +217,21 @@ const mockEvents: TimelineEvent[] = [
   },
 ];
 
-const CandidateTimeline: React.FC<CandidateTimelineProps> = ({
-  candidateId,
-  events = mockEvents,
-  loading = false,
-}) => {
+export default function CandidateTimeline({ candidateId }: CandidateTimelineProps) {
+  const dispatch = useDispatch<AppDispatch>();
+  const events = useSelector(selectTimelineEvents);
+  const loading = useSelector(selectTimelineLoading);
+  const error = useSelector(selectTimelineError);
+
+  useEffect(() => {
+    if (candidateId) {
+      dispatch(fetchCandidateTimeline(candidateId));
+    }
+  }, [dispatch, candidateId]);
+
+  // Use mock data as fallback if no events from Redux
+  const timelineEvents = events && events.length > 0 ? events : mockEvents;
+
   if (loading) {
     return (
       <Card>
@@ -346,6 +362,4 @@ const CandidateTimeline: React.FC<CandidateTimelineProps> = ({
       </CardContent>
     </Card>
   );
-};
-
-export default CandidateTimeline;
+}
