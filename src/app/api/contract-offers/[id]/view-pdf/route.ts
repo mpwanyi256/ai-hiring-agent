@@ -34,8 +34,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .eq('id', contractOfferId)
       .single();
 
-    console.log('Found PDF', contractOffer);
-
     if (fetchError || !contractOffer) {
       console.error('Error fetching contract offer for PDF view:', fetchError);
       return NextResponse.json({ error: 'Contract offer not found' }, { status: 404 });

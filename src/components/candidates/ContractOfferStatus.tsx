@@ -384,7 +384,7 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
                   <div className="flex items-center justify-between mb-3">
                     <span className="font-medium text-gray-700">Signed Contract PDF:</span>
                     <a
-                      href={`/api/contract-offers/${selectedContract.id}/download`}
+                      href={`/api/contract-offers/${selectedContract.id}/view-pdf`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-800 text-sm font-medium"
