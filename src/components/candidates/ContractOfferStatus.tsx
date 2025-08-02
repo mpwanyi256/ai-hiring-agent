@@ -25,6 +25,7 @@ import {
   FileText,
   RefreshCw,
 } from 'lucide-react';
+import { ContractOffer } from '@/types';
 
 interface ContractOfferStatusProps {
   candidateId: string;
@@ -49,7 +50,9 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
   const [selectedContract, setSelectedContract] = useState<any>(null);
 
   // Filter contract offers for this specific candidate
-  const candidateOffers = contractOffers.filter((offer) => offer.candidateId === candidateId);
+  const candidateOffers = contractOffers.filter(
+    (offer: ContractOffer) => offer.candidateId === candidateId,
+  );
 
   useEffect(() => {
     // Fetch contract offers when component mounts
@@ -153,7 +156,7 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {candidateOffers.map((offer) => {
+            {candidateOffers.map((offer: ContractOffer) => {
               const statusBadge = getContractStatusBadge(offer.status);
               const expired = isExpired(offer);
 
@@ -252,6 +255,23 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
                       )}
                     </div>
                   </div>
+
+                  {/* Rejection Reason Display */}
+                  {offer.status === 'rejected' && offer.rejectionReason && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="flex items-start space-x-2">
+                        <XCircle className="h-4 w-4 mt-0.5 text-red-500 flex-shrink-0" />
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-900 mb-1">
+                            Rejection Reason:
+                          </h5>
+                          <p className="text-sm text-gray-700 bg-red-50 border border-red-200 rounded-md p-2">
+                            {offer.rejectionReason}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {offer.status === 'sent' && !expired && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
@@ -467,9 +487,17 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
                 <XCircle className="h-4 w-4" />
                 <span className="font-medium">Contract Rejected</span>
               </div>
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-red-600 mb-2">
                 Rejected on: {formatDate(selectedContract.rejectedAt)}
               </p>
+              {selectedContract.rejectionReason && (
+                <div className="mt-3 pt-3 border-t border-red-200">
+                  <p className="text-sm font-medium text-red-700 mb-1">Rejection Reason:</p>
+                  <p className="text-sm text-red-600 bg-red-100 border border-red-200 rounded-md p-2">
+                    {selectedContract.rejectionReason}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">

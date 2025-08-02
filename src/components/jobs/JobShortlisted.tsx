@@ -291,23 +291,6 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
-                      {!candidate.interviewDetails?.id ? (
-                        <Button
-                          size="sm"
-                          variant="default"
-                          onClick={() => handleScheduleInterview(candidate)}
-                        >
-                          Schedule Interview
-                        </Button>
-                      ) : (
-                        <Button
-                          className="text-xs h-8"
-                          variant="secondary"
-                          onClick={() => handleRescheduleInterview(candidate)}
-                        >
-                          Edit/Reschedule
-                        </Button>
-                      )}
                       <Button
                         size="sm"
                         variant="outline"

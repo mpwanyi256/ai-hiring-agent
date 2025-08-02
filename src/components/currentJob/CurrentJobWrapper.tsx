@@ -51,7 +51,7 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center py-12">
         <Loading message="Loading job details..." />
       </div>
     );

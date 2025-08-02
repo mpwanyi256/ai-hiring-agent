@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS user_activities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
     activity_type VARCHAR(50) NOT NULL, -- 'candidate_status_change', 'contract_sent', 'interview_scheduled', etc.
     entity_type VARCHAR(50) NOT NULL, -- 'candidate', 'contract', 'interview', etc.
     entity_id UUID NOT NULL, -- ID of the related entity
@@ -15,6 +15,78 @@ CREATE TABLE IF NOT EXISTS user_activities (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Add company_id column if it doesn't exist (for existing user_activities table)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_activities' AND column_name = 'company_id') THEN
+        ALTER TABLE user_activities ADD COLUMN company_id UUID REFERENCES companies(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+-- Add activity_type column if it doesn't exist (rename from event_type)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_activities' AND column_name = 'activity_type') THEN
+        -- If event_type exists, rename it to activity_type
+        IF EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_activities' AND column_name = 'event_type') THEN
+            ALTER TABLE user_activities RENAME COLUMN event_type TO activity_type;
+        ELSE
+            ALTER TABLE user_activities ADD COLUMN activity_type VARCHAR(50) NOT NULL DEFAULT 'unknown';
+        END IF;
+    END IF;
+END $$;
+
+-- Add title column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_activities' AND column_name = 'title') THEN
+        ALTER TABLE user_activities ADD COLUMN title VARCHAR(255) NOT NULL DEFAULT 'Activity';
+    END IF;
+END $$;
+
+-- Add description column if it doesn't exist (rename from message)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_activities' AND column_name = 'description') THEN
+        -- If message exists, rename it to description
+        IF EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_activities' AND column_name = 'message') THEN
+            ALTER TABLE user_activities RENAME COLUMN message TO description;
+        ELSE
+            ALTER TABLE user_activities ADD COLUMN description TEXT;
+        END IF;
+    END IF;
+END $$;
+
+-- Rename meta to metadata if needed
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_activities' AND column_name = 'metadata') THEN
+        -- If meta exists, rename it to metadata
+        IF EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_activities' AND column_name = 'meta') THEN
+            ALTER TABLE user_activities RENAME COLUMN meta TO metadata;
+        ELSE
+            ALTER TABLE user_activities ADD COLUMN metadata JSONB DEFAULT '{}';
+        END IF;
+    END IF;
+END $$;
+
+-- Add updated_at column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_activities' AND column_name = 'updated_at') THEN
+        ALTER TABLE user_activities ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+    END IF;
+END $$;
 
 -- Create notifications table for user notifications
 CREATE TABLE IF NOT EXISTS notifications (

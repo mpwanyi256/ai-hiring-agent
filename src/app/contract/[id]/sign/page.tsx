@@ -431,6 +431,7 @@ export default function ContractSigningPage() {
                       onClick={handleRejectContract}
                       disabled={actionLoading}
                       variant="destructive"
+                      className="text-white"
                     >
                       {actionLoading ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />

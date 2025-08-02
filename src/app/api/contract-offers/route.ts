@@ -32,10 +32,25 @@ export async function GET(request: NextRequest) {
       .eq('contract_company_id', profile.company_id)
       .order('sent_at', { ascending: false });
 
+    // Temporary fix: Fetch rejection reasons separately since the view doesn't include them
+    const { data: rejectionReasons, error: rejectionError } = await supabase
+      .from('contract_offers')
+      .select('id, rejection_reason')
+      .in('id', contractOffers?.map((offer) => offer.id) || []);
+
     if (error) {
       console.error('Error fetching contract offers:', error);
       return NextResponse.json({ error: 'Failed to fetch contract offers' }, { status: 500 });
     }
+
+    if (rejectionError) {
+      console.error('Error fetching rejection reasons:', rejectionError);
+    }
+
+    // Create a map of rejection reasons for quick lookup
+    const rejectionReasonMap = new Map(
+      rejectionReasons?.map((r) => [r.id, r.rejection_reason]) || [],
+    );
 
     // Transform the data to match the frontend interface
     const transformedOffers =
@@ -52,6 +67,7 @@ export async function GET(request: NextRequest) {
         sentAt: offer.sent_at,
         signedAt: offer.signed_at,
         rejectedAt: offer.rejected_at,
+        rejectionReason: rejectionReasonMap.get(offer.id) || null,
         signingToken: offer.signing_token,
         additionalTerms: offer.additional_terms,
         contract: {
