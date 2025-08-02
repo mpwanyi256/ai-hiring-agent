@@ -410,3 +410,70 @@ export const selectQuickFilters = createSelector(
     ).length,
   }),
 );
+
+// Contract Offer Statistics
+export const selectContractOfferStats = createSelector([selectContractOffers], (offers) => {
+  const totalSent = offers.length;
+  const totalSigned = offers.filter((o) => o.status === 'signed').length;
+  const totalRejected = offers.filter((o) => o.status === 'rejected').length;
+  const totalPending = offers.filter((o) => o.status === 'sent').length;
+
+  const signedRate = totalSent > 0 ? (totalSigned / totalSent) * 100 : 0;
+  const rejectedRate = totalSent > 0 ? (totalRejected / totalSent) * 100 : 0;
+  const pendingRate = totalSent > 0 ? (totalPending / totalSent) * 100 : 0;
+
+  // Calculate average response time for signed/rejected contracts
+  const respondedOffers = offers.filter((o) => o.status !== 'sent');
+  const avgResponseTime =
+    respondedOffers.length > 0
+      ? respondedOffers.reduce((acc, offer) => {
+          const sentDate = new Date(offer.sentAt);
+          const responseDate = new Date(offer.signedAt || offer.rejectedAt || offer.sentAt);
+          return acc + (responseDate.getTime() - sentDate.getTime());
+        }, 0) / respondedOffers.length
+      : 0;
+
+  return {
+    totalSent,
+    totalSigned,
+    totalRejected,
+    totalPending,
+    signedRate,
+    rejectedRate,
+    pendingRate,
+    avgResponseTime: Math.round(avgResponseTime / (1000 * 60 * 60 * 24)), // Convert to days
+  };
+});
+
+// Filtered Contract Offers
+export const selectFilteredContractOffers = createSelector(
+  [
+    selectContractOffers,
+    (state: RootState, filters: { search?: string; status?: string; contractId?: string }) =>
+      filters,
+  ],
+  (offers, filters) => {
+    return offers.filter((offer) => {
+      const matchesSearch =
+        !filters.search ||
+        offer.candidate?.firstName?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        false ||
+        offer.candidate?.lastName?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        false ||
+        offer.candidate?.email?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        false ||
+        offer.contract?.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        false;
+
+      const matchesStatus =
+        !filters.status || filters.status === 'all' || offer.status === filters.status;
+
+      const matchesContract =
+        !filters.contractId ||
+        filters.contractId === 'all' ||
+        offer.contract?.id === filters.contractId;
+
+      return matchesSearch && matchesStatus && matchesContract;
+    });
+  },
+);

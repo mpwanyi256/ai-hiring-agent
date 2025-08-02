@@ -25,6 +25,7 @@ import jobPermissionsSlice from './jobPermissions/jobPermissionsSlice';
 import messagesSlice from './messages/messagesSlice';
 import adminSlice from './admin/adminSlice';
 import contractsSlice from './contracts/contractsSlice';
+import aiSlice from './ai/aiSlice';
 
 const rootReducer = combineReducers({
   auth: authSlice,
@@ -47,6 +48,7 @@ const rootReducer = combineReducers({
   messages: messagesSlice,
   admin: adminSlice,
   contracts: contractsSlice,
+  ai: aiSlice,
 });
 
 const persistConfig = {

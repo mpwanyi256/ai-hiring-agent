@@ -1,10 +1,6 @@
-// PDF generation service for contracts
-// Note: This is a simplified implementation. For production, consider using:
-// - Puppeteer (for full HTML to PDF conversion)
-// - jsPDF (for programmatic PDF creation)
-// - External services like PDFShift, HTMLCSSPdf, etc.
-
+// PDF generation service for contracts using Puppeteer
 import { createClient } from '@/lib/supabase/server';
+import puppeteer from 'puppeteer';
 
 // Helper function to replace contract placeholders with actual data
 function replaceContractPlaceholders(htmlContent: string, data: Record<string, any>): string {
@@ -33,26 +29,7 @@ function replaceContractPlaceholders(htmlContent: string, data: Record<string, a
   return result;
 }
 
-// Convert HTML to styled text format for simple PDF generation
-function htmlToSimpleText(html: string): string {
-  // Simple HTML to text conversion for basic contract generation
-  return html
-    .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n$1\n' + '='.repeat(50) + '\n')
-    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n$1\n' + '-'.repeat(30) + '\n')
-    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '\n$1\n')
-    .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
-    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '$1')
-    .replace(/<em[^>]*>(.*?)<\/em>/gi, '$1')
-    .replace(/<li[^>]*>(.*?)<\/li>/gi, '• $1\n')
-    .replace(/<ul[^>]*>(.*?)<\/ul>/gi, '$1\n')
-    .replace(/<ol[^>]*>(.*?)<\/ol>/gi, '$1\n')
-    .replace(/<[^>]+>/g, '') // Remove all other HTML tags
-    .replace(/\n\s*\n\s*\n/g, '\n\n') // Clean up extra newlines
-    .trim();
-}
-
-// Simple PDF generation (placeholder implementation)
-// TODO: Replace with actual PDF library implementation
+// Generate PDF using Puppeteer for proper PDF output
 export async function generateContractPDF(data: {
   contractHtml: string;
   candidateName: string;
@@ -71,35 +48,132 @@ export async function generateContractPDF(data: {
   buffer?: Buffer;
   error?: any;
 }> {
+  let browser;
   try {
     // Replace placeholders in the HTML content
-    const processedHtml = replaceContractPlaceholders(data.contractHtml, data);
+    const filledHtml = replaceContractPlaceholders(data.contractHtml, data);
 
-    // For now, we'll create a simple text-based representation
-    // In production, this should be replaced with proper PDF generation
-    const contractText = htmlToSimpleText(processedHtml);
+    // Create a complete HTML document with proper styling for PDF
+    const htmlDocument = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Employment Contract - ${data.candidateName}</title>
+        <style>
+          body {
+            font-family: 'Times New Roman', serif;
+            line-height: 1.6;
+            color: #000;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: white;
+          }
+          h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 28px;
+          }
+          h2 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 20px;
+          }
+          h3 {
+            color: #34495e;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            font-size: 16px;
+          }
+          p {
+            margin-bottom: 15px;
+            text-align: justify;
+          }
+          strong {
+            color: #2c3e50;
+          }
+          .signature-section {
+            margin-top: 40px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+          }
+          .contract-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+          }
+          .contract-footer {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+          }
+          @media print {
+            body { margin: 0; padding: 20px; }
+            .contract-header { background: #667eea !important; }
+          }
+        </style>
+      </head>
+      <body>
+        ${filledHtml}
+      </body>
+      </html>
+    `;
 
-    const fullContract = `
-EMPLOYMENT CONTRACT
-${data.companyName} - ${data.jobTitle}
-Generated on: ${new Date().toLocaleDateString()}
+    // Launch Puppeteer browser
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+      ],
+    });
 
-${contractText}
+    const page = await browser.newPage();
 
----
-This contract was generated electronically through the Intavia platform.
-This document contains confidential information and is intended solely for the named recipient.
-`;
+    // Set content and generate PDF
+    await page.setContent(htmlDocument, { waitUntil: 'networkidle0' });
 
-    // Create a simple text buffer (in production, this should be a proper PDF)
-    const buffer = Buffer.from(fullContract, 'utf8');
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '20mm',
+        right: '15mm',
+        bottom: '20mm',
+        left: '15mm',
+      },
+    });
+
+    await browser.close();
 
     return {
       success: true,
-      buffer,
+      buffer: Buffer.from(pdfBuffer),
     };
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    console.error('Error generating PDF with Puppeteer:', error);
+    if (browser) {
+      await browser.close();
+    }
     return {
       success: false,
       error,
@@ -111,7 +185,7 @@ This document contains confidential information and is intended solely for the n
 export async function saveContractPDF(
   pdfBuffer: Buffer,
   fileName: string,
-  bucketName: string = 'contracts',
+  bucketName: string = 'signed-contracts',
 ): Promise<{
   success: boolean;
   path?: string;
@@ -184,7 +258,12 @@ export async function generateAndSaveContractPDF(data: {
     const timestamp = new Date().toISOString().split('T')[0];
     const candidateName =
       `${data.candidateData.first_name || ''} ${data.candidateData.last_name || ''}`.trim();
-    const fileName = `signed/${data.companyData.slug}/${timestamp}_${candidateName.replace(/\s+/g, '-')}_${data.contractOffer.id}.pdf`;
+    // Use company name as slug if slug is not available
+    const companySlug =
+      data.companyData.slug ||
+      data.companyData.name?.replace(/\s+/g, '-').toLowerCase() ||
+      'company';
+    const fileName = `signed/${companySlug}/${timestamp}_${candidateName.replace(/\s+/g, '-')}_${data.contractOffer.id}.pdf`;
 
     // Save to storage
     const saveResult = await saveContractPDF(pdfResult.buffer, fileName);

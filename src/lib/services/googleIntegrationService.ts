@@ -47,8 +47,78 @@ export async function getValidGoogleAccessToken({
         .eq('id', integration.id);
     } catch (err) {
       console.error('Failed to refresh Google access token:', err);
+
+      // If refresh token is invalid (invalid_grant), mark integration as disconnected
+      if (err instanceof Error && err.message.includes('invalid_grant')) {
+        console.log('Refresh token invalid, marking integration as disconnected');
+        await supabase
+          .from('integrations')
+          .update({
+            access_token: null,
+            refresh_token: null,
+            expires_at: null,
+            status: 'disconnected',
+          })
+          .eq('id', integration.id);
+      }
+
       return null;
     }
   }
   return accessToken;
+}
+
+/**
+ * Check if Google integration is properly connected and has valid tokens
+ */
+export async function isGoogleIntegrationConnected({
+  userId,
+  companyId,
+}: {
+  userId: string;
+  companyId: string;
+}): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { data: integration } = await supabase
+    .from('integrations')
+    .select('id, access_token, refresh_token, status')
+    .eq('user_id', userId)
+    .eq('company_id', companyId)
+    .eq('provider', 'google')
+    .maybeSingle();
+
+  if (!integration) return false;
+
+  // Check if integration is marked as disconnected or missing tokens
+  if (integration.status === 'disconnected' || !integration.refresh_token) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Mark Google integration as disconnected (for use when auth fails)
+ */
+export async function markGoogleIntegrationDisconnected({
+  userId,
+  companyId,
+}: {
+  userId: string;
+  companyId: string;
+}): Promise<void> {
+  const supabase = await createClient();
+
+  await supabase
+    .from('integrations')
+    .update({
+      access_token: null,
+      refresh_token: null,
+      expires_at: null,
+      status: 'disconnected',
+    })
+    .eq('user_id', userId)
+    .eq('company_id', companyId)
+    .eq('provider', 'google');
 }

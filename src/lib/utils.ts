@@ -308,9 +308,6 @@ export const getInterviewScoreColor = (score: number) => {
 export const getResumeScoreColor = (score: number) => {
   if (score >= 80) return 'text-green-500';
   if (score >= 60) return 'text-yellow-500';
-  if (score >= 40) return 'text-orange-500';
-  if (score >= 20) return 'text-red-500';
-  return 'text-red-500';
 };
 
 export const getCandidateStatusOptions = (): CandidateStatusOptions[] => {
@@ -337,3 +334,84 @@ export const getAllCandidateStatusOptions = (): CandidateStatusOptions[] => {
     { value: 'withdrawn', label: 'Withdrawn', color: 'bg-gray-100 text-gray-800' },
   ];
 };
+
+// Contract-related utility functions
+export function formatCurrency(amount: number, currency: string = 'USD'): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
+  }).format(amount);
+}
+
+export function getContractStatusBadge(status: string) {
+  switch (status) {
+    case 'sent':
+      return {
+        label: 'Pending',
+        className: 'bg-blue-50 text-blue-700 border-blue-200',
+        icon: 'Clock',
+      };
+    case 'signed':
+      return {
+        label: 'Signed',
+        className: 'bg-green-50 text-green-700 border-green-200',
+        icon: 'CheckCircle',
+      };
+    case 'rejected':
+      return {
+        label: 'Rejected',
+        className: 'bg-red-50 text-red-700 border-red-200',
+        icon: 'XCircle',
+      };
+    default:
+      return {
+        label: status,
+        className: 'bg-gray-50 text-gray-700 border-gray-200',
+        icon: 'FileText',
+      };
+  }
+}
+
+export function isContractExpired(offer: { status: string; expiresAt: string }): boolean {
+  return offer.status === 'sent' && new Date(offer.expiresAt) < new Date();
+}
+
+export function calculateContractStats(offers: any[]) {
+  const totalSent = offers.length;
+  const totalSigned = offers.filter((o) => o.status === 'signed').length;
+  const totalRejected = offers.filter((o) => o.status === 'rejected').length;
+  const totalPending = offers.filter((o) => o.status === 'sent').length;
+
+  const signedRate = totalSent > 0 ? (totalSigned / totalSent) * 100 : 0;
+  const rejectedRate = totalSent > 0 ? (totalRejected / totalSent) * 100 : 0;
+  const pendingRate = totalSent > 0 ? (totalPending / totalSent) * 100 : 0;
+
+  return {
+    totalSent,
+    totalSigned,
+    totalRejected,
+    totalPending,
+    signedRate,
+    rejectedRate,
+    pendingRate,
+  };
+}
+
+export function getContractCategoryBadge(category: string) {
+  switch (category) {
+    case 'general':
+      return 'bg-gray-100 text-gray-800';
+    case 'technical':
+      return 'bg-blue-100 text-blue-800';
+    case 'executive':
+      return 'bg-purple-100 text-purple-800';
+    case 'intern':
+      return 'bg-green-100 text-green-800';
+    case 'freelance':
+      return 'bg-orange-100 text-orange-800';
+    case 'custom':
+      return 'bg-indigo-100 text-indigo-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+}

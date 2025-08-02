@@ -28,7 +28,7 @@ const interviewSlice = createSlice({
     resetInterviewConflicts: (state) => {
       state.conflicts = [];
     },
-    clearInterviewData: (state) => {
+    clearInterviewData: () => {
       return initialState;
     },
   },

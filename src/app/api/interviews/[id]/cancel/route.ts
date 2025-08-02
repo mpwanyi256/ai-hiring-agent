@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getValidGoogleAccessToken } from '@/lib/services/googleIntegrationService';
+import {
+  getValidGoogleAccessToken,
+  isGoogleIntegrationConnected,
+} from '@/lib/services/googleIntegrationService';
 import { deleteInterviewEvent } from '@/lib/services/googleCalendarService';
 import { sendInterviewCancellationNotification } from '@/lib/services/emailService';
 import { AppRequestParams } from '@/types/api';
@@ -40,16 +43,30 @@ export async function PATCH(request: NextRequest, { params }: AppRequestParams<{
     }
     // Remove Google Calendar event if integrated
     if (interview.calendar_event_id) {
-      const accessToken = await getValidGoogleAccessToken({
+      const isConnected = await isGoogleIntegrationConnected({
         userId: user.id,
         companyId: profile.company_id,
       });
-      if (accessToken) {
-        try {
-          await deleteInterviewEvent({ accessToken, eventId: interview.calendar_event_id });
-        } catch (calendarError) {
-          console.error('Failed to delete Google Calendar event:', calendarError);
+
+      if (isConnected) {
+        const accessToken = await getValidGoogleAccessToken({
+          userId: user.id,
+          companyId: profile.company_id,
+        });
+
+        if (accessToken) {
+          try {
+            await deleteInterviewEvent({ accessToken, eventId: interview.calendar_event_id });
+            console.log('Successfully deleted Google Calendar event');
+          } catch (calendarError) {
+            console.error('Failed to delete Google Calendar event:', calendarError);
+            // Interview cancellation should still proceed even if calendar deletion fails
+          }
+        } else {
+          console.log('Google access token unavailable, skipping calendar event deletion');
         }
+      } else {
+        console.log('Google integration disconnected, skipping calendar event deletion');
       }
     }
     // Update interview status to cancelled
@@ -104,7 +121,22 @@ export async function PATCH(request: NextRequest, { params }: AppRequestParams<{
     } catch (emailError) {
       console.error('Error sending interview cancellation email:', emailError);
     }
-    return NextResponse.json({ success: true, interview: updatedInterview });
+    // Check if Google integration is disconnected to inform the frontend
+    const googleIntegrationConnected = await isGoogleIntegrationConnected({
+      userId: user.id,
+      companyId: profile.company_id,
+    });
+
+    return NextResponse.json({
+      success: true,
+      interview: updatedInterview,
+      googleIntegrationStatus: {
+        connected: googleIntegrationConnected,
+        message: googleIntegrationConnected
+          ? null
+          : 'Google Calendar integration is disconnected. Please reconnect to manage calendar events.',
+      },
+    });
   } catch (error) {
     console.error('Error in interviews PATCH /cancel:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });

@@ -14,7 +14,6 @@ import {
   EmploymentFilters,
   ContractsListResponse,
   ContractAnalyticsResponse,
-  JobTitle,
   BulkUpdateContractData,
   BulkOperationResponse,
   BulkSendContractData,
@@ -494,6 +493,68 @@ export const enhanceContractWithAI = createAsyncThunk<
 
   if (!response.ok) {
     throw new Error('Failed to enhance contract with AI');
+  }
+
+  const data = await response.json();
+  return data;
+});
+
+// Send Contract Offer
+export const sendContractOffer = createAsyncThunk<
+  { success: boolean; contractOffer: any; message: string },
+  {
+    contractId: string;
+    candidateId: string;
+    salaryAmount: number;
+    salaryCurrency: string;
+    startDate?: string;
+    endDate?: string;
+    customMessage?: string;
+    ccEmails?: string[];
+  }
+>('contracts/sendContractOffer', async (contractData, { getState, rejectWithValue }) => {
+  const state = getState() as {
+    auth: {
+      user: {
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        companyId: string;
+        companyName: string;
+      } | null;
+    };
+  };
+  const user = state.auth.user;
+
+  if (!user) {
+    return rejectWithValue('User not authenticated');
+  }
+
+  // Extract only the required user fields
+  const userInfo = {
+    id: user?.id,
+    email: user?.email,
+    firstName: user?.firstName,
+    lastName: user?.lastName,
+    companyId: user?.companyId,
+    companyName: user?.companyName,
+  };
+
+  const response = await fetch(`/api/contracts/${contractData.contractId}/send`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      ...contractData,
+      userInfo, // Pass only required user fields
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to send contract');
   }
 
   const data = await response.json();

@@ -33,13 +33,26 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardUserPlanCard } from '@/components/dashboard/DashboardUserPlanCard';
 import { DashboardSubscriptionMessage } from '@/components/dashboard/DashboardSubscriptionMessage';
 import { selectHasActiveSubscription } from '@/store/auth/authSelectors';
+import { useAppDispatch } from '@/store';
+import { fetchDashboardMetrics } from '@/store/dashboard/dashboardThunks';
+import {
+  selectDashboardMetrics,
+  selectMetricsLoading,
+  selectMetricsError,
+} from '@/store/dashboard/dashboardSlice';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
   const [loading, setLoading] = useState(true);
   const [showInviteWelcome, setShowInviteWelcome] = useState(false);
   const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
+
+  // Dashboard metrics state
+  const metrics = useAppSelector(selectDashboardMetrics);
+  const metricsLoading = useAppSelector(selectMetricsLoading);
+  const metricsError = useAppSelector(selectMetricsError);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1000);
@@ -55,6 +68,13 @@ export default function DashboardPage() {
       router.replace('/dashboard');
     }
   }, [router]);
+
+  // Fetch dashboard metrics
+  useEffect(() => {
+    if (user && user.companyId) {
+      dispatch(fetchDashboardMetrics());
+    }
+  }, [dispatch, user]);
 
   if (!user) return null;
 
@@ -156,36 +176,44 @@ export default function DashboardPage() {
                   label: 'Monthly limit',
                 }}
               />
-              {/* TODO: Add candidates metric */}
-              <MetricCard
-                title="Candidates"
-                value={79}
-                subtitle="All time"
-                icon={UsersIcon}
-                iconColor="text-purple-600"
-                iconBgColor="bg-purple-50"
-                trend={{
-                  value: 8,
-                  isPositive: true,
-                  label: 'this week',
-                }}
-                onClick={() => router.push('/dashboard/candidates')}
-              />
+              {/* Candidates metric */}
+              {metricsLoading ? (
+                <MetricCardSkeleton />
+              ) : (
+                <MetricCard
+                  title="Candidates"
+                  value={metrics?.candidates?.total || 0}
+                  subtitle="All time"
+                  icon={UsersIcon}
+                  iconColor="text-purple-600"
+                  iconBgColor="bg-purple-50"
+                  trend={{
+                    value: metrics?.candidates?.trend?.value || 0,
+                    isPositive: metrics?.candidates?.trend?.isPositive || true,
+                    label: metrics?.candidates?.trend?.label || 'this week',
+                  }}
+                  onClick={() => router.push('/dashboard/candidates')}
+                />
+              )}
 
-              {/* TODO: Add avg. response time metric */}
-              <MetricCard
-                title="Avg. Response Time"
-                value="2.3h"
-                subtitle="To complete interview"
-                icon={ClockIcon}
-                iconColor="text-emerald-600"
-                iconBgColor="bg-emerald-50"
-                trend={{
-                  value: 12,
-                  isPositive: false,
-                  label: 'vs last week',
-                }}
-              />
+              {/* Average response time metric */}
+              {metricsLoading ? (
+                <MetricCardSkeleton />
+              ) : (
+                <MetricCard
+                  title="Avg. Response Time"
+                  value={metrics?.responseTime?.formattedTime || '0h'}
+                  subtitle="To complete interview"
+                  icon={ClockIcon}
+                  iconColor="text-emerald-600"
+                  iconBgColor="bg-emerald-50"
+                  trend={{
+                    value: metrics?.responseTime?.trend?.value || 0,
+                    isPositive: metrics?.responseTime?.trend?.isPositive || true,
+                    label: metrics?.responseTime?.trend?.label || 'vs last week',
+                  }}
+                />
+              )}
             </>
           )}
         </div>

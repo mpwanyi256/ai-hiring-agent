@@ -24,6 +24,7 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { selectApplicationEvents } from '@/store/interviews/interviewsSelectors';
+import ContractOfferStatus from './ContractOfferStatus';
 
 interface TeamResponseSummary {
   total_responses: number;
@@ -50,7 +51,8 @@ interface ResumeEvaluation {
 const GeneralTab: React.FC<{
   candidate: CandidateWithEvaluation;
   onScheduleEvent?: () => void;
-}> = ({ candidate, onScheduleEvent }) => {
+  onSendContract?: () => void;
+}> = ({ candidate, onScheduleEvent, onSendContract }) => {
   const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [teamSummaryLoading, setTeamSummaryLoading] = useState(false);
@@ -133,7 +135,7 @@ const GeneralTab: React.FC<{
   }
 
   return (
-    <div className="space-y-6 min-h-[calc(100vh-350px)] overflow-y-auto">
+    <div className="space-y-6 min-h-[calc(100vh-350px)] overflow-y-auto pb-4">
       {/* Candidate Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
@@ -188,15 +190,27 @@ const GeneralTab: React.FC<{
         </div>
       </div>
 
+      {/* Contract Offer Status */}
+      <ContractOfferStatus candidateId={candidate.id} />
+
       {/* Application Events */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Application Events</h3>
-          {onScheduleEvent && (
-            <Button variant="default" size="sm" onClick={onScheduleEvent}>
-              Schedule Event
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {onScheduleEvent && (
+              <Button variant="outline" size="sm" onClick={onScheduleEvent}>
+                Schedule Event
+              </Button>
+            )}
+            {onSendContract &&
+              ['shortlisted', 'reference_check', 'offer_extended'].includes(candidate.status) && (
+                <Button variant="default" size="sm" onClick={onSendContract}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  Send Contract
+                </Button>
+              )}
+          </div>
         </div>
 
         <div className="space-y-3 max-h-60 overflow-y-auto">

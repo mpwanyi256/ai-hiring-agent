@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendContractOfferEmail } from '@/lib/email/resend';
+import { app } from '@/lib/constants';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -16,22 +17,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's company and profile info
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('company_id, email, first_name, last_name')
-      .eq('id', user.id)
-      .single();
+    const sendData = await request.json();
+    const { userInfo } = sendData;
 
-    if (profileError || !profile?.company_id) {
-      return NextResponse.json(
-        { success: false, error: 'User profile or company not found' },
-        { status: 404 },
-      );
+    // Use profile data from thunk if available, otherwise fetch from DB
+    let profile = userInfo;
+    if (!profile) {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('company_id, email, first_name, last_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profileData?.company_id) {
+        return NextResponse.json(
+          { success: false, error: 'User profile or company not found' },
+          { status: 404 },
+        );
+      }
+      profile = profileData;
     }
-
-    const body = await request.json();
-    const sendData = body;
 
     // Validate required fields
     if (!sendData.candidateId || !sendData.salaryAmount || !sendData.salaryCurrency) {
@@ -55,7 +60,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       `,
       )
       .eq('id', contractId)
-      .eq('company_id', profile.company_id)
+      .eq('company_id', userInfo?.companyId || profile?.company_id)
       .single();
 
     if (contractError || !contract) {
@@ -65,35 +70,52 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
-    // Fetch the candidate with job and company information
+    // Fetch candidate details using the candidate_details view
     const { data: candidate, error: candidateError } = await supabase
-      .from('candidates')
+      .from('candidate_details')
       .select(
         `
         id,
         first_name,
         last_name,
         email,
-        job:jobs!candidates_job_id_fkey(
-          id,
-          title,
-          profile:profiles!jobs_profile_id_fkey(
-            company_id,
-            company:companies!profiles_company_id_fkey(id, name, slug)
-          )
-        )
+        job_id,
+        job_title,
+        profile_id
       `,
       )
       .eq('id', sendData.candidateId)
       .single();
 
     if (candidateError || !candidate) {
+      console.error('Candidate query error:', candidateError);
       return NextResponse.json({ success: false, error: 'Candidate not found' }, { status: 404 });
     }
 
+    // Get job details to verify company ownership
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('profile_id')
+      .eq('id', candidate.job_id)
+      .single();
+
+    if (jobError || !job) {
+      return NextResponse.json({ success: false, error: 'Job not found' }, { status: 404 });
+    }
+
+    // Get profile to verify company
+    const { data: jobProfile, error: jobProfileError } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', job.profile_id)
+      .single();
+
+    if (jobProfileError || !jobProfile) {
+      return NextResponse.json({ success: false, error: 'Job profile not found' }, { status: 404 });
+    }
+
     // Verify the candidate belongs to a job in the same company as the contract
-    const candidateCompanyId = (candidate as any).job?.profile?.company_id;
-    if (candidateCompanyId !== contract.company_id) {
+    if (jobProfile.company_id !== contract.company_id) {
       return NextResponse.json(
         { success: false, error: 'Candidate and contract must be from the same company' },
         { status: 403 },
@@ -156,9 +178,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           id, title, body, job_title:job_titles(id, name),
           employment_type:employment_types(id, name)
         ),
-        candidate:candidates(
-          id, first_name, last_name, email
-        ),
         sent_by_profile:profiles!contract_offers_sent_by_fkey(
           id, first_name, last_name, email
         )
@@ -179,7 +198,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Generate the public signing link
-    const signingLink = `${process.env.NEXT_PUBLIC_APP_URL}/contract/${contractOffer.id}/sign?token=${signingToken}`;
+    const signingLink = `${app.baseUrl}/contract/${contractOffer.id}/sign?token=${signingToken}`;
 
     // Transform to match our TypeScript interface
     const transformedContractOffer = {
@@ -199,18 +218,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       createdAt: contractOffer.created_at,
       updatedAt: contractOffer.updated_at,
       contract: contractOffer.contract,
-      candidate: contractOffer.candidate,
+      candidate: {
+        id: candidate.id,
+        first_name: candidate.first_name,
+        last_name: candidate.last_name,
+        email: candidate.email,
+      },
       sentByProfile: contractOffer.sent_by_profile,
     };
 
     // Send email notification to candidate
     try {
-      const companyInfo = (candidate as any).job?.profile?.company;
+      // Build CC list with sender and additional recipients
+      const ccList = [profile.email]; // Always CC the sender
+      if (sendData.ccEmails && Array.isArray(sendData.ccEmails)) {
+        ccList.push(...sendData.ccEmails.filter((email: string) => email && email.trim()));
+      }
+
       const emailResult = await sendContractOfferEmail({
         to: candidate.email,
         candidateName: `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim(),
-        companyName: companyInfo?.name || 'Company',
-        jobTitle: (candidate as any).job?.title || 'Position',
+        companyName: userInfo?.companyName || profile?.companyName || 'Company',
+        jobTitle: candidate.job_title || 'Position',
         employmentType: contract.employment_type?.name || 'Full-time',
         startDate: sendData.startDate
           ? new Date(sendData.startDate).toLocaleDateString()
@@ -220,7 +249,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         expiresAt: expiresAt.toISOString(),
         signingLink,
         contactEmail: profile.email,
-        cc: [profile.email], // CC the sender
+        cc: ccList,
       });
 
       if (!emailResult.success) {
