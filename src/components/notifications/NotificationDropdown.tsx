@@ -115,9 +115,12 @@ export default function NotificationDropdown() {
                             </p>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatDistanceToNow(new Date(notification.created_at), {
-                              addSuffix: true,
-                            })}
+                            {notification.created_at &&
+                            !isNaN(new Date(notification.created_at).getTime())
+                              ? formatDistanceToNow(new Date(notification.created_at), {
+                                  addSuffix: true,
+                                })
+                              : 'Unknown time'}
                           </p>
                         </div>
                         {!notification.is_read && (
