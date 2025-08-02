@@ -12,16 +12,11 @@ import {
 } from '@/store/interviews/interviewsSelectors';
 import {
   UserPlus,
-  FileText,
-  Calendar,
   CheckCircle,
   XCircle,
-  Send,
-  Eye,
   MessageSquare,
   Star,
   Clock,
-  AlertTriangle,
   Briefcase,
   Mail,
   Phone,
@@ -31,33 +26,7 @@ import {
   TrendingUp,
   FileSignature,
 } from 'lucide-react';
-
-export interface TimelineEvent {
-  id: string;
-  type:
-    | 'application'
-    | 'evaluation'
-    | 'interview'
-    | 'contract'
-    | 'status_change'
-    | 'note'
-    | 'email'
-    | 'call'
-    | 'meeting'
-    | 'assessment'
-    | 'reference'
-    | 'offer';
-  title: string;
-  description?: string;
-  timestamp: string;
-  status?: 'success' | 'warning' | 'error' | 'info' | 'pending';
-  metadata?: Record<string, any>;
-  performer?: {
-    name: string;
-    role?: string;
-    avatar?: string;
-  };
-}
+import { TimelineEvent } from '@/types/notifications';
 
 interface CandidateTimelineProps {
   candidateId: string;
@@ -156,67 +125,6 @@ const getStatusBadge = (status?: string) => {
   );
 };
 
-// Mock data for demonstration - this would come from API in real implementation
-const mockEvents: TimelineEvent[] = [
-  {
-    id: '1',
-    type: 'application',
-    title: 'Application Submitted',
-    description: 'Candidate applied for the position through the company website',
-    timestamp: '2024-01-15T09:00:00Z',
-    status: 'success',
-    performer: { name: 'System', role: 'Automated' },
-  },
-  {
-    id: '2',
-    type: 'evaluation',
-    title: 'Initial Screening',
-    description: 'Resume reviewed and candidate marked as qualified',
-    timestamp: '2024-01-16T14:30:00Z',
-    status: 'success',
-    performer: { name: 'Sarah Johnson', role: 'HR Manager' },
-    metadata: { score: 8.5, notes: 'Strong technical background' },
-  },
-  {
-    id: '3',
-    type: 'email',
-    title: 'Interview Invitation Sent',
-    description: 'First round interview scheduled',
-    timestamp: '2024-01-17T10:15:00Z',
-    status: 'success',
-    performer: { name: 'Sarah Johnson', role: 'HR Manager' },
-  },
-  {
-    id: '4',
-    type: 'interview',
-    title: 'Technical Interview',
-    description: 'First round technical interview completed',
-    timestamp: '2024-01-20T15:00:00Z',
-    status: 'success',
-    performer: { name: 'Mike Chen', role: 'Tech Lead' },
-    metadata: { duration: 60, rating: 'Excellent', notes: 'Strong problem-solving skills' },
-  },
-  {
-    id: '5',
-    type: 'status_change',
-    title: 'Status Updated',
-    description: 'Candidate moved to shortlisted status',
-    timestamp: '2024-01-21T09:00:00Z',
-    status: 'success',
-    performer: { name: 'Sarah Johnson', role: 'HR Manager' },
-  },
-  {
-    id: '6',
-    type: 'contract',
-    title: 'Contract Offer Sent',
-    description: 'Employment contract sent to candidate',
-    timestamp: '2024-01-25T11:30:00Z',
-    status: 'pending',
-    performer: { name: 'Sarah Johnson', role: 'HR Manager' },
-    metadata: { salary: '$85,000', startDate: '2024-02-15' },
-  },
-];
-
 export default function CandidateTimeline({ candidateId }: CandidateTimelineProps) {
   const dispatch = useDispatch<AppDispatch>();
   const events = useSelector(selectTimelineEvents);
@@ -228,9 +136,6 @@ export default function CandidateTimeline({ candidateId }: CandidateTimelineProp
       dispatch(fetchCandidateTimeline(candidateId));
     }
   }, [dispatch, candidateId]);
-
-  // Use mock data as fallback if no events from Redux
-  const timelineEvents = events && events.length > 0 ? events : mockEvents;
 
   if (loading) {
     return (
@@ -298,7 +203,7 @@ export default function CandidateTimeline({ candidateId }: CandidateTimelineProp
             const colorClasses = getEventColor(event.type, event.status);
 
             return (
-              <div key={event.id} className="relative flex gap-4">
+              <div key={event.id} className="relative flex gap-4 border-b border-gray-200">
                 {/* Timeline line */}
                 {!isLast && (
                   <div className="absolute left-4 top-8 w-0.5 h-full bg-gray-200 -z-10"></div>
@@ -334,24 +239,6 @@ export default function CandidateTimeline({ candidateId }: CandidateTimelineProp
                       {event.performer.role && (
                         <span className="text-gray-400">({event.performer.role})</span>
                       )}
-                    </div>
-                  )}
-
-                  {event.metadata && Object.keys(event.metadata).length > 0 && (
-                    <div className="bg-gray-50 rounded-lg p-3 mt-2">
-                      <div className="space-y-1">
-                        {Object.entries(event.metadata).map(([key, value]) => (
-                          <div key={key} className="flex justify-between text-xs">
-                            <span className="text-gray-500 capitalize">
-                              {key
-                                .replace(/([A-Z])/g, ' $1')
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              :
-                            </span>
-                            <span className="text-gray-700 font-medium">{String(value)}</span>
-                          </div>
-                        ))}
-                      </div>
                     </div>
                   )}
                 </div>

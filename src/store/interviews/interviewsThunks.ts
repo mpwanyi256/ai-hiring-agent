@@ -14,6 +14,7 @@ import {
 import { RootState } from '..';
 import { apiUtils } from '../api';
 import { APIResponse } from '@/types';
+import { TimelineEvent, TimelineEventsResponse } from '@/types/notifications';
 
 // Fetch interviews with filters
 export const fetchInterviews = createAsyncThunk(
@@ -209,14 +210,15 @@ export const fetchCandidateTimeline = createAsyncThunk(
   'interviews/fetchCandidateTimeline',
   async (candidateId: string, { rejectWithValue }) => {
     try {
-      const response = await fetch(`/api/candidates/${candidateId}/timeline`);
-      const data = await response.json();
+      const response = await apiUtils.get<TimelineEventsResponse>(
+        `/api/candidates/${candidateId}/timeline`,
+      );
 
-      if (!data.success) {
-        return rejectWithValue(data.error || 'Failed to fetch candidate timeline');
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Failed to fetch candidate timeline');
       }
 
-      return data.events;
+      return response.events;
     } catch {
       return rejectWithValue('Failed to fetch candidate timeline');
     }

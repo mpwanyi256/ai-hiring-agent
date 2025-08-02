@@ -207,7 +207,7 @@ const interviewsSlice = createSlice({
       })
       .addCase(fetchCandidateTimeline.fulfilled, (state, action) => {
         state.timelineLoading = false;
-        state.timelineEvents = action.payload.events;
+        state.timelineEvents = action.payload;
       })
       .addCase(fetchCandidateTimeline.rejected, (state, action) => {
         state.timelineLoading = false;
