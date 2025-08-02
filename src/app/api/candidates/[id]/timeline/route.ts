@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { TimelineEvent, TimelineEventsResponse } from '@/types/notifications';
+import { TimelineEventsResponse } from '@/types/notifications';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const candidateId = params.id;
+    const { id: candidateId } = await params;
     const supabase = await createClient();
 
     // Use the candidate_timeline_events view for simplified querying

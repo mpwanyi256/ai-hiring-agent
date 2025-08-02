@@ -4,6 +4,8 @@ import { JobStatus } from '@/types/jobs';
 import { apiError, apiSuccess } from './notification';
 import { twMerge } from 'tailwind-merge';
 import { app } from './constants';
+import { Notification } from '@/types/notifications';
+import { CheckCircle, Info, User, FileText, Calendar, Settings } from 'lucide-react';
 
 // Utility function to merge classes with Tailwind
 export function cn(...inputs: ClassValue[]) {
@@ -376,7 +378,7 @@ export function isContractExpired(offer: { status: string; expiresAt: string }):
   return offer.status === 'sent' && new Date(offer.expiresAt) < new Date();
 }
 
-export function calculateContractStats(offers: any[]) {
+export function calculateContractStats(offers: Array<{ status: string }>) {
   const totalSent = offers.length;
   const totalSigned = offers.filter((o) => o.status === 'signed').length;
   const totalRejected = offers.filter((o) => o.status === 'rejected').length;
@@ -398,20 +400,83 @@ export function calculateContractStats(offers: any[]) {
 }
 
 export function getContractCategoryBadge(category: string) {
-  switch (category) {
-    case 'general':
-      return 'bg-gray-100 text-gray-800';
-    case 'technical':
-      return 'bg-blue-100 text-blue-800';
-    case 'executive':
-      return 'bg-purple-100 text-purple-800';
-    case 'intern':
-      return 'bg-green-100 text-green-800';
-    case 'freelance':
-      return 'bg-orange-100 text-orange-800';
-    case 'custom':
-      return 'bg-indigo-100 text-indigo-800';
+  const badges = {
+    full_time: { label: 'Full-time', className: 'bg-blue-100 text-blue-800' },
+    part_time: { label: 'Part-time', className: 'bg-green-100 text-green-800' },
+    contract: { label: 'Contract', className: 'bg-yellow-100 text-yellow-800' },
+    freelance: { label: 'Freelance', className: 'bg-purple-100 text-purple-800' },
+    internship: { label: 'Internship', className: 'bg-orange-100 text-orange-800' },
+    temporary: { label: 'Temporary', className: 'bg-red-100 text-red-800' },
+  };
+
+  const badge = badges[category as keyof typeof badges] || {
+    label: category,
+    className: 'bg-gray-100 text-gray-800',
+  };
+
+  return badge;
+}
+
+// Notification utility functions
+export function getNotificationIcon(type: string) {
+  switch (type) {
+    case 'contract_offer':
+      return FileText;
+    case 'interview':
+      return Calendar;
+    case 'application':
+      return User;
+    case 'evaluation':
+      return CheckCircle;
+    case 'system':
+      return Settings;
     default:
-      return 'bg-gray-100 text-gray-800';
+      return Info;
+  }
+}
+
+export function getNotificationActionUrl(notification: Notification): string | null {
+  switch (notification.type) {
+    case 'contract_offer':
+      return notification.candidate_id
+        ? `/dashboard/jobs/candidates/${notification.candidate_id}`
+        : null;
+    case 'interview':
+      return `/dashboard/interviews/${notification.entity_id}`;
+    case 'application':
+      return notification.candidate_id
+        ? `/dashboard/jobs/candidates/${notification.candidate_id}`
+        : null;
+    case 'evaluation':
+      return notification.candidate_id
+        ? `/dashboard/jobs/candidates/${notification.candidate_id}`
+        : null;
+    default:
+      return null;
+  }
+}
+
+export function getNotificationTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    contract_offer: 'Contract Offer',
+    interview: 'Interview',
+    application: 'Application',
+    evaluation: 'Evaluation',
+    system: 'System',
+  };
+
+  return labels[type] || type;
+}
+
+export function getNotificationPriorityColor(priority: string): string {
+  switch (priority) {
+    case 'high':
+      return 'text-red-600 bg-red-50';
+    case 'medium':
+      return 'text-yellow-600 bg-yellow-50';
+    case 'low':
+      return 'text-green-600 bg-green-50';
+    default:
+      return 'text-gray-600 bg-gray-50';
   }
 }

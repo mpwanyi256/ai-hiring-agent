@@ -88,7 +88,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     tags: string[];
   }>({
     title: contract?.title || '',
-    body: contract?.body || '',
+    body: contract?.content || '',
     jobTitleId: contract?.jobTitleId || '',
     employmentTypeId: contract?.employmentTypeId || '',
     contractDuration: contract?.contractDuration || '',
@@ -119,7 +119,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     if (contract) {
       setFormData({
         title: contract.title || '',
-        body: contract.body || '',
+        body: contract.content || '',
         jobTitleId: contract.jobTitleId || '',
         employmentTypeId: contract.employmentTypeId || '',
         contractDuration: contract.contractDuration || '',
@@ -148,11 +148,10 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
       if (mode === 'create') {
         const contractData: CreateContractData = {
           title: formData.title.trim(),
-          body: formData.body.trim(),
+          content: formData.body.trim(),
           jobTitleId: formData.jobTitleId || undefined,
           employmentTypeId: formData.employmentTypeId || undefined,
-          contractDuration: formData.contractDuration || undefined,
-          status: formData.status,
+          status: formData.status as 'draft' | 'active',
           category: formData.category,
           tags: formData.tags,
         };
@@ -168,11 +167,10 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
         const updateData: UpdateContractData = {
           id: contract!.id,
           title: formData.title.trim(),
-          body: formData.body.trim(),
+          content: formData.body.trim(),
           jobTitleId: formData.jobTitleId || undefined,
           employmentTypeId: formData.employmentTypeId || undefined,
-          contractDuration: formData.contractDuration || undefined,
-          status: formData.status,
+          status: formData.status as 'draft' | 'active' | 'archived',
           category: formData.category,
           tags: formData.tags,
         };

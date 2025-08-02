@@ -464,7 +464,7 @@ export const extractPDFContract = createAsyncThunk<
 >('contracts/extractPDFContract', async ({ file, useAiEnhancement }) => {
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('useAiEnhancement', useAiEnhancement.toString());
+  formData.append('useAiEnhancement', (useAiEnhancement || false).toString());
 
   const response = await fetch('/api/contracts/extract-pdf', {
     method: 'POST',

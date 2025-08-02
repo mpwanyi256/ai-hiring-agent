@@ -13,6 +13,7 @@ export interface Contract {
   isFavorite: boolean;
   contractDuration?: string;
   usageCount?: number;
+  lastUsedAt?: string;
   createdAt: string;
   updatedAt: string;
   // Optional fields for detailed views
@@ -188,6 +189,8 @@ export interface ContractAnalyticsResponse {
   draftContracts: number;
   archivedContracts: number;
   favoriteContracts: number;
+  conversionRate?: number;
+  averageSigningTime?: number;
   contractsByCategory: Array<{
     category: string;
     count: number;
@@ -259,6 +262,11 @@ export interface CreateEmploymentData {
   contractOfferId?: string;
   profileId?: string;
   candidateId?: string;
+  employeeId?: string;
+  departmentId?: string;
+  employmentTypeId?: string;
+  workplaceType?: string;
+  jobType?: string;
 }
 
 export interface UpdateEmploymentData {
@@ -333,15 +341,25 @@ export interface AIEnhanceContractResponse {
 }
 
 export interface AIGenerateContractData {
+  title: string;
   jobTitle: string;
+  jobTitleId: string;
   employmentType: string;
+  employmentTypeId: string;
   category: string;
+  contractDuration?: string;
+  userPrompt: string;
+  companyId: string;
+  companyName: string;
+  selectedJobTitle?: string;
+  selectedEmploymentType?: string;
   additionalRequirements?: string;
 }
 
 export interface AIGenerateContractResponse {
   success: boolean;
   content: string;
+  contractContent: string;
   title: string;
   category: string;
   tags: string[];

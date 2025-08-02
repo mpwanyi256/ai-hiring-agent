@@ -14,7 +14,7 @@ import {
 import { RootState } from '..';
 import { apiUtils } from '../api';
 import { APIResponse } from '@/types';
-import { TimelineEvent, TimelineEventsResponse } from '@/types/notifications';
+import { TimelineEventsResponse } from '@/types/notifications';
 
 // Fetch interviews with filters
 export const fetchInterviews = createAsyncThunk(

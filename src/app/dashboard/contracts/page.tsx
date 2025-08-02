@@ -217,7 +217,7 @@ export default function ContractsPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
               <div className="ml-2">
                 <p className="text-xs font-medium text-muted-foreground">Active Contracts</p>
-                <p className="text-xl font-bold">{analytics.contractsByStatus?.active || 0}</p>
+                <p className="text-xl font-bold">{analytics.activeContracts || 0}</p>
               </div>
             </div>
           </CardContent>

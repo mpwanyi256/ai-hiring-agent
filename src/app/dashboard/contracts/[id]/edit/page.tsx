@@ -49,7 +49,7 @@ export default function EditContractPage() {
       <ContractPreviewModal
         contract={{
           title: contract.title || '',
-          body: contract.body || '',
+          body: contract.content || '',
           jobTitle: contract.jobTitle || undefined,
           employmentType: contract.employmentType || undefined,
           contractDuration: contract.contractDuration || '',

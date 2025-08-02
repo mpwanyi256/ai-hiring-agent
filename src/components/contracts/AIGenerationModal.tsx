@@ -61,8 +61,11 @@ export default function AIGenerationModal({
     try {
       const aiData: AIGenerateContractData = {
         title,
+        jobTitle: selectedJobTitle?.name || '',
         jobTitleId,
+        employmentType: selectedEmploymentType?.name || '',
         employmentTypeId,
+        category: 'general', // Default category
         contractDuration,
         userPrompt: aiPrompt.trim(),
         companyId: companyDetails.id,

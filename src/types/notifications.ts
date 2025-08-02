@@ -18,7 +18,7 @@ export interface TimelineEvent {
   description?: string;
   timestamp: string;
   status?: 'success' | 'warning' | 'error' | 'info' | 'pending';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   performer?: {
     name: string;
     role?: string;
@@ -41,11 +41,14 @@ export interface Notification {
   title: string;
   message: string;
   timestamp: string;
+  created_at: string;
   status: 'success' | 'warning' | 'error' | 'info';
+  priority: 'low' | 'medium' | 'high';
   read: boolean;
+  is_read: boolean;
   candidate_id?: string;
   company_id: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   entity_type: string;
   entity_id: string;
 }

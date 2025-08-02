@@ -97,7 +97,6 @@ export const selectContractsByStatus = createSelector([selectContracts], (contra
     draft: contracts.filter((c) => c.status === 'draft'),
     active: contracts.filter((c) => c.status === 'active'),
     archived: contracts.filter((c) => c.status === 'archived'),
-    deprecated: contracts.filter((c) => c.status === 'deprecated'),
   };
 });
 
@@ -120,7 +119,7 @@ export const selectFavoriteContracts = createSelector([selectContracts], (contra
 
 // Most Used Contracts
 export const selectMostUsedContracts = createSelector([selectContracts], (contracts) =>
-  [...contracts].sort((a, b) => b.usageCount - a.usageCount).slice(0, 10),
+  [...contracts].sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0)).slice(0, 10),
 );
 
 // Recently Used Contracts
@@ -182,25 +181,25 @@ export const selectTagUsage = createSelector([selectContracts], (contracts) => {
 // Employment for specific candidate
 export const selectEmploymentForCandidate = createSelector(
   [selectEmployment, (state: RootState, candidateId: string) => candidateId],
-  (employment, candidateId) => employment.find((emp) => emp.candidateId === candidateId),
+  (employment, candidateId) => employment.find((emp) => emp.id === candidateId),
 );
 
 // Employment by Company (via profile relationship)
 export const selectEmploymentByCompany = createSelector(
   [selectEmployment, (state: RootState, companyId: string) => companyId],
-  (employment, companyId) => employment.filter((emp) => emp.profile?.company?.id === companyId),
+  (employment, companyId) => employment.filter((emp) => emp.companyId === companyId),
 );
 
 // Employment by Job (via candidate relationship)
 export const selectEmploymentByJob = createSelector(
   [selectEmployment, (state: RootState, jobId: string) => jobId],
-  (employment, jobId) => employment.filter((emp) => emp.candidate?.job?.id === jobId),
+  (employment, jobId) => employment.filter((emp) => emp.id === jobId),
 );
 
 // Employment by Department
 export const selectEmploymentByDepartment = createSelector(
   [selectEmployment, (state: RootState, departmentId: string) => departmentId],
-  (employment, departmentId) => employment.filter((emp) => emp.departmentId === departmentId),
+  (employment, departmentId) => employment.filter((emp) => emp.companyId === departmentId),
 );
 
 // Enhanced Statistics selectors
@@ -210,7 +209,6 @@ export const selectContractsStats = createSelector([selectContracts], (contracts
     draft: contracts.filter((c) => c.status === 'draft').length,
     active: contracts.filter((c) => c.status === 'active').length,
     archived: contracts.filter((c) => c.status === 'archived').length,
-    deprecated: contracts.filter((c) => c.status === 'deprecated').length,
   },
   byCategory: {
     general: contracts.filter((c) => c.category === 'general').length,
@@ -221,10 +219,10 @@ export const selectContractsStats = createSelector([selectContracts], (contracts
     custom: contracts.filter((c) => c.category === 'custom').length,
   },
   favorites: contracts.filter((c) => c.isFavorite).length,
-  totalUsage: contracts.reduce((sum, c) => sum + c.usageCount, 0),
+  totalUsage: contracts.reduce((sum, c) => sum + (c.usageCount || 0), 0),
   averageUsage:
     contracts.length > 0
-      ? contracts.reduce((sum, c) => sum + c.usageCount, 0) / contracts.length
+      ? contracts.reduce((sum, c) => sum + (c.usageCount || 0), 0) / contracts.length
       : 0,
   byJobTitle: contracts.reduce(
     (acc, contract) => {
@@ -274,8 +272,8 @@ export const selectEmploymentStats = createSelector([selectEmployment], (employm
   inactive: employment.filter((emp) => !emp.isActive).length,
   byDepartment: employment.reduce(
     (acc, emp) => {
-      if (emp.department) {
-        acc[emp.department.name] = (acc[emp.department.name] || 0) + 1;
+      if (emp.companyId) {
+        acc[emp.companyId] = (acc[emp.companyId] || 0) + 1;
       }
       return acc;
     },
@@ -402,7 +400,7 @@ export const selectQuickFilters = createSelector(
   [selectContracts, selectContractOffers],
   (contracts, offers) => ({
     needsAttention: contracts.filter((c) => c.status === 'draft').length,
-    mostUsed: contracts.filter((c) => c.usageCount > 0).length,
+    mostUsed: contracts.filter((c) => (c.usageCount || 0) > 0).length,
     favorites: contracts.filter((c) => c.isFavorite).length,
     pendingOffers: offers.filter((o) => o.status === 'sent').length,
     recentlyCreated: contracts.filter(

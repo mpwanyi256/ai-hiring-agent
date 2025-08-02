@@ -15,10 +15,6 @@ import {
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import {
   Bell,
-  CheckCircle,
-  AlertTriangle,
-  Info,
-  XCircle,
   Search,
   Filter,
   MoreHorizontal,
@@ -26,15 +22,17 @@ import {
   Trash2,
   Eye,
   EyeOff,
-  Calendar,
+  Loader2,
   User,
   FileText,
-  Users,
-  Briefcase,
+  Calendar,
   Settings,
-  Loader2,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Info,
 } from 'lucide-react';
-import { formatDate, formatDateTime } from '@/lib/utils';
+import { formatDateTime } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface Notification {

@@ -76,10 +76,9 @@ export default function ContractTemplateManager() {
   // Form states
   const [formData, setFormData] = useState<CreateContractData>({
     title: '',
-    body: '',
+    content: '',
     category: 'general',
     employmentTypeId: undefined,
-    contractDuration: '',
   });
 
   const categories = [
@@ -119,7 +118,7 @@ export default function ContractTemplateManager() {
         (contract) =>
           contract.title.toLowerCase().includes(term) ||
           contract.category.toLowerCase().includes(term) ||
-          contract.body.toLowerCase().includes(term),
+          contract.content.toLowerCase().includes(term),
       );
     }
 
@@ -194,10 +193,9 @@ export default function ContractTemplateManager() {
   const handleDuplicateContract = async (contract: Contract) => {
     const duplicateData = {
       title: `${contract.title} (Copy)`,
-      body: contract.body,
+      content: contract.content,
       category: contract.category,
       employmentTypeId: contract.employmentTypeId,
-      contractDuration: contract.contractDuration,
     };
 
     try {
@@ -217,10 +215,9 @@ export default function ContractTemplateManager() {
     setSelectedContract(contract);
     setFormData({
       title: contract.title,
-      body: contract.body,
+      content: contract.content,
       category: contract.category,
       employmentTypeId: contract.employmentTypeId,
-      contractDuration: contract.contractDuration || '',
     });
     setIsEditModalOpen(true);
   };
@@ -233,10 +230,9 @@ export default function ContractTemplateManager() {
   const resetForm = () => {
     setFormData({
       title: '',
-      body: '',
+      content: '',
       category: 'general',
       employmentTypeId: undefined,
-      contractDuration: '',
     });
   };
 
@@ -352,22 +348,13 @@ export default function ContractTemplateManager() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="duration">Contract Duration (optional)</Label>
-                  <Input
-                    id="duration"
-                    value={formData.contractDuration}
-                    onChange={(e) => setFormData({ ...formData, contractDuration: e.target.value })}
-                    placeholder="e.g., 12 months, Permanent"
-                  />
-                </div>
               </div>
               <div>
-                <Label htmlFor="body">Contract Body *</Label>
+                <Label htmlFor="content">Contract Body *</Label>
                 <Textarea
-                  id="body"
-                  value={formData.body}
-                  onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+                  id="content"
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   rows={12}
                   placeholder="Enter the contract template content..."
                   className="font-mono text-sm"
@@ -377,7 +364,10 @@ export default function ContractTemplateManager() {
                 <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateContract} disabled={!formData.title || !formData.body}>
+                <Button
+                  onClick={handleCreateContract}
+                  disabled={!formData.title || !formData.content}
+                >
                   <Save className="h-4 w-4 mr-2" />
                   Create Template
                 </Button>
@@ -460,9 +450,7 @@ export default function ContractTemplateManager() {
                     <TableCell>
                       <div>
                         <div className="font-medium">{contract.title}</div>
-                        <div className="text-sm text-gray-500">
-                          {contract.contractDuration && `Duration: ${contract.contractDuration}`}
-                        </div>
+                        <div className="text-sm text-gray-500"></div>
                       </div>
                     </TableCell>
                     <TableCell>{getCategoryBadge(contract.category)}</TableCell>
@@ -576,21 +564,13 @@ export default function ContractTemplateManager() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="edit-duration">Contract Duration (optional)</Label>
-                <Input
-                  id="edit-duration"
-                  value={formData.contractDuration}
-                  onChange={(e) => setFormData({ ...formData, contractDuration: e.target.value })}
-                />
-              </div>
             </div>
             <div>
-              <Label htmlFor="edit-body">Contract Body *</Label>
+              <Label htmlFor="edit-content">Contract Body *</Label>
               <Textarea
-                id="edit-body"
-                value={formData.body}
-                onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+                id="edit-content"
+                value={formData.content}
+                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 rows={12}
                 className="font-mono text-sm"
               />
@@ -599,7 +579,10 @@ export default function ContractTemplateManager() {
               <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleUpdateContract} disabled={!formData.title || !formData.body}>
+              <Button
+                onClick={handleUpdateContract}
+                disabled={!formData.title || !formData.content}
+              >
                 <Save className="h-4 w-4 mr-2" />
                 Save Changes
               </Button>
@@ -625,12 +608,6 @@ export default function ContractTemplateManager() {
                   <span className="font-medium">Employment Type:</span>{' '}
                   {selectedContract.employmentType?.name || 'N/A'}
                 </div>
-                {selectedContract.contractDuration && (
-                  <div>
-                    <span className="font-medium">Duration:</span>{' '}
-                    {selectedContract.contractDuration}
-                  </div>
-                )}
                 <div>
                   <span className="font-medium">Status:</span>{' '}
                   {getStatusBadge(selectedContract.status)}
@@ -639,7 +616,7 @@ export default function ContractTemplateManager() {
               <div className="border-t pt-4">
                 <div
                   className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: selectedContract.body }}
+                  dangerouslySetInnerHTML={{ __html: selectedContract.content }}
                 />
               </div>
             </div>
