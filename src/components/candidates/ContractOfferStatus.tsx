@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchContractOffers } from '@/store/contracts/contractsThunks';
+import {
+  fetchContractOffers,
+  cancelContractOffer,
+  resendContractOffer,
+} from '@/store/contracts/contractsThunks';
 import {
   selectContractOffers,
   selectContractOffersLoading,
@@ -31,6 +35,7 @@ interface ContractOfferStatusProps {
   candidateId: string;
   onSendContract?: () => void;
   candidate?: {
+    id: string;
     status: string;
   };
 }
@@ -68,6 +73,31 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
   const handleResendContract = (offer: any) => {
     setSelectedContract(offer);
     setShowResendContractModal(true);
+  };
+
+  const handleCancelContract = async (offerId: string) => {
+    try {
+      await dispatch(cancelContractOffer(offerId)).unwrap();
+      // Refetch contract offers to update the UI
+      if (candidate?.id) {
+        dispatch(fetchContractOffers({ candidateId: candidate.id }));
+      }
+    } catch (error) {
+      console.error('Failed to cancel contract offer:', error);
+    }
+  };
+
+  const handleResendContractSubmit = async (contractId: string, data: any) => {
+    try {
+      await dispatch(resendContractOffer({ contractId, ...data })).unwrap();
+      // Refetch contract offers to update the UI
+      if (candidate?.id) {
+        dispatch(fetchContractOffers({ candidateId: candidate.id }));
+      }
+      setShowResendContractModal(false);
+    } catch (error) {
+      console.error('Failed to resend contract offer:', error);
+    }
   };
 
   const canSendContract =

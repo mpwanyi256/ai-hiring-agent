@@ -12,6 +12,7 @@ export interface Contract {
   createdBy: string;
   isFavorite: boolean;
   contractDuration?: string;
+  usageCount?: number;
   createdAt: string;
   updatedAt: string;
   // Optional fields for detailed views
@@ -91,6 +92,13 @@ export interface Employment {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  // Additional properties for analytics and filtering
+  employmentType?: {
+    id: string;
+    name: string;
+  };
+  jobType?: string;
+  workplaceType?: string;
 }
 
 // Filter types
@@ -119,6 +127,7 @@ export interface ContractOffersFilters {
   candidateId?: string;
   contractId?: string;
   jobId?: string;
+  sentBy?: string;
   dateRange?: {
     from: string;
     to: string;
@@ -132,6 +141,10 @@ export interface ContractOffersFilters {
 export interface EmploymentFilters {
   search?: string;
   isActive?: boolean;
+  departmentId?: string;
+  employmentTypeId?: string;
+  jobType?: string;
+  workplaceType?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   page?: number;
@@ -207,6 +220,7 @@ export interface CreateContractData {
 }
 
 export interface UpdateContractData {
+  id: string;
   title?: string;
   content?: string;
   category?: string;
@@ -242,9 +256,13 @@ export interface SignContractData {
 export interface CreateEmploymentData {
   name: string;
   description?: string;
+  contractOfferId?: string;
+  profileId?: string;
+  candidateId?: string;
 }
 
 export interface UpdateEmploymentData {
+  id: string;
   name?: string;
   description?: string;
   isActive?: boolean;
@@ -282,6 +300,7 @@ export interface BulkOperationResponse {
 export interface ExtractPDFContractData {
   file: File;
   enhanceWithAI?: boolean;
+  useAiEnhancement?: boolean;
   jobTitle?: string;
   employmentType?: string;
   category?: string;
@@ -418,6 +437,89 @@ export interface ContractsState {
 
 // Utility types
 export type ContractStatus = 'draft' | 'active' | 'archived';
+export type ContractCategory = string;
+export type EmploymentType = string;
+
+// Job Title interface
+export interface JobTitle {
+  id: string;
+  name: string;
+  companyId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Pagination interface
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
+// Contract Analytics interface
+export interface ContractAnalytics {
+  totalContracts: number;
+  activeContracts: number;
+  draftContracts: number;
+  archivedContracts: number;
+  contractsThisMonth: number;
+  contractsLastMonth: number;
+  monthlyGrowth: number;
+  mostUsed: number;
+  categoryBreakdown: Record<string, number>;
+  statusBreakdown: Record<string, number>;
+}
+
+// Response types
+export interface ContractResponse {
+  success: boolean;
+  contract?: Contract;
+  error?: string;
+}
+
+export interface ContractOfferResponse {
+  success: boolean;
+  contractOffer?: ContractOffer;
+  error?: string;
+}
+
+export interface EmploymentResponse {
+  success: boolean;
+  employment?: Employment;
+  error?: string;
+}
+
+export interface ContractAnalyticsResponse {
+  success: boolean;
+  analytics?: ContractAnalytics;
+  error?: string;
+}
+
+export interface BulkOperationResponse {
+  success: boolean;
+  processed: number;
+  failed: number;
+  errors?: string[];
+}
+
+// Email and Placeholder types
+export interface ContractEmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  content: string;
+  type: 'offer' | 'signed' | 'rejected' | 'reminder';
+}
+
+export interface ContractPlaceholder {
+  key: string;
+  label: string;
+  description: string;
+  category: 'candidate' | 'company' | 'contract' | 'date';
+  example: string;
+}
 export type ContractOfferStatus = 'sent' | 'viewed' | 'signed' | 'rejected' | 'expired';
 export type SignatureType = 'typed' | 'drawn';
 

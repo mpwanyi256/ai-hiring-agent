@@ -7,16 +7,13 @@ import EvaluationsTab from './EvaluationsTab';
 import TimelineTab from './TimelineTab';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
 import SendContractModal from '../contracts/SendContractModal';
+import { cn } from '@/lib/utils';
 
 // --- Main Panel ---
 interface CandidateDetailsPanelProps {
   isOpen: boolean;
   candidate: CandidateWithEvaluation;
   onClose: () => void;
-}
-
-function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(' ');
 }
 
 const tabs = [
@@ -54,7 +51,7 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
               <Tab
                 key={tab.name}
                 className={({ selected }: { selected: boolean }) =>
-                  classNames(
+                  cn(
                     'px-4 py-2 text-sm font-medium rounded-t',
                     selected
                       ? 'bg-white border-b-2 border-primary-600 text-primary-700'

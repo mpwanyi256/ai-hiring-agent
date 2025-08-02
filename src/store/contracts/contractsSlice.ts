@@ -20,6 +20,7 @@ import {
   updateEmployment,
   generateContractWithAI,
   createJobTitle,
+  cancelContractOffer,
 } from './contractsThunks';
 
 const initialState: ContractsState = {
@@ -509,6 +510,28 @@ const contractsSlice = createSlice({
       .addCase(updateEmployment.rejected, (state, action) => {
         state.isUpdating = false;
         state.employmentError = action.error.message || 'Failed to update employment record';
+      })
+
+      // Cancel Contract Offer
+      .addCase(cancelContractOffer.pending, (state) => {
+        state.contractOffersLoading = true;
+        state.contractOffersError = null;
+      })
+      .addCase(cancelContractOffer.fulfilled, (state, action) => {
+        state.contractOffersLoading = false;
+        // Update the contract offer status in the state
+        const contractOfferId = action.meta.arg;
+        const offerIndex = state.contractOffers.findIndex((offer) => offer.id === contractOfferId);
+        if (offerIndex !== -1) {
+          state.contractOffers[offerIndex].status = 'expired';
+        }
+        if (state.currentContractOffer?.id === contractOfferId) {
+          state.currentContractOffer.status = 'expired';
+        }
+      })
+      .addCase(cancelContractOffer.rejected, (state, action) => {
+        state.contractOffersLoading = false;
+        state.contractOffersError = action.error.message || 'Failed to cancel contract offer';
       });
   },
 });

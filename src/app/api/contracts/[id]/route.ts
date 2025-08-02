@@ -108,19 +108,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: 'Title cannot be empty' }, { status: 400 });
     }
 
-    if (updateData.body !== undefined && !updateData.body) {
-      return NextResponse.json({ success: false, error: 'Body cannot be empty' }, { status: 400 });
+    if (updateData.content !== undefined && !updateData.content) {
+      return NextResponse.json(
+        { success: false, error: 'Content cannot be empty' },
+        { status: 400 },
+      );
     }
 
     // Build update object
     const updateObj: any = {};
     if (updateData.title !== undefined) updateObj.title = updateData.title;
-    if (updateData.body !== undefined) updateObj.body = updateData.body;
+    if (updateData.content !== undefined) updateObj.content = updateData.content;
     if (updateData.jobTitleId !== undefined) updateObj.job_title_id = updateData.jobTitleId;
     if (updateData.employmentTypeId !== undefined)
       updateObj.employment_type_id = updateData.employmentTypeId;
-    if (updateData.contractDuration !== undefined)
-      updateObj.contract_duration = updateData.contractDuration;
 
     // Update the contract
     const { data: contract, error } = await supabase
