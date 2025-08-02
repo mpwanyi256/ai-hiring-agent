@@ -122,13 +122,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
-    // Check if there's already a contract offer for this candidate
-    const { data: existingOffer, error: existingError } = await supabase
+    // Check if there's already a pending contract offer for this candidate
+    const { data: existingOffers, error: existingError } = await supabase
       .from('contract_offers')
       .select('id, status')
       .eq('contract_id', contractId)
       .eq('candidate_id', sendData.candidateId)
-      .limit(1);
+      .order('created_at', { ascending: false });
 
     if (existingError) {
       console.error('Error checking existing offers:', existingError);
@@ -141,9 +141,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
-    if (existingOffer && existingOffer.length > 0) {
+    // Check if there are any pending (sent) offers
+    const pendingOffers = existingOffers?.filter((offer) => offer.status === 'sent') || [];
+
+    if (pendingOffers.length > 0) {
       return NextResponse.json(
-        { success: false, error: 'Contract offer already exists for this candidate' },
+        {
+          success: false,
+          error:
+            'A pending contract offer already exists for this candidate. Please wait for the candidate to respond or cancel the existing offer before sending a new one.',
+        },
         { status: 409 },
       );
     }

@@ -1,11 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import {
-  ContractsState,
-  Contract,
-  ContractOffer,
-  Employment,
-  ContractAnalytics,
-} from '@/types/contracts';
+import { ContractsState, Contract, ContractOffer, Employment } from '@/types/contracts';
 import {
   fetchContracts,
   fetchContractById,
@@ -32,37 +26,8 @@ const initialState: ContractsState = {
   // Contract templates
   contracts: [],
   currentContract: null,
-  selectedContracts: [],
   contractsLoading: false,
   contractsError: null,
-
-  // Contract offers
-  contractOffers: [],
-  currentContractOffer: null,
-  contractOffersLoading: false,
-  contractOffersError: null,
-
-  // Employment records
-  employment: [],
-  currentEmployment: null,
-  employmentLoading: false,
-  employmentError: null,
-
-  // Analytics
-  analytics: null,
-  analyticsLoading: false,
-  analyticsError: null,
-
-  // UI state
-  isCreating: false,
-  isUpdating: false,
-  isDeleting: false,
-  isSending: false,
-  isSigning: false,
-  isGeneratingAI: false,
-  isBulkOperating: false,
-
-  // Pagination
   contractsPagination: {
     page: 1,
     limit: 10,
@@ -70,6 +35,12 @@ const initialState: ContractsState = {
     totalPages: 0,
     hasMore: false,
   },
+
+  // Contract offers
+  contractOffers: [],
+  currentContractOffer: null,
+  contractOffersLoading: false,
+  contractOffersError: null,
   contractOffersPagination: {
     page: 1,
     limit: 10,
@@ -77,6 +48,12 @@ const initialState: ContractsState = {
     totalPages: 0,
     hasMore: false,
   },
+
+  // Employment types
+  employment: [],
+  currentEmployment: null,
+  employmentLoading: false,
+  employmentError: null,
   employmentPagination: {
     page: 1,
     limit: 10,
@@ -84,6 +61,38 @@ const initialState: ContractsState = {
     totalPages: 0,
     hasMore: false,
   },
+
+  // Analytics
+  analytics: null,
+  analyticsLoading: false,
+  analyticsError: null,
+
+  // UI state
+  filters: {
+    contracts: {},
+    contractOffers: {},
+    employment: {},
+  },
+
+  // Selection state
+  selectedContracts: [],
+
+  // Operation states
+  isCreating: false,
+  isUpdating: false,
+  isDeleting: false,
+  isBulkOperating: false,
+  isSending: false,
+  isSigning: false,
+  isGeneratingAI: false,
+
+  // Legacy bulk operations (keeping for compatibility)
+  bulkOperationLoading: false,
+  bulkOperationError: null,
+
+  // AI operations
+  aiOperationLoading: false,
+  aiOperationError: null,
 };
 
 const contractsSlice = createSlice({
@@ -170,7 +179,10 @@ const contractsSlice = createSlice({
         state.contractsLoading = false;
         state.contracts = action.payload.contracts;
         if (action.payload.pagination) {
-          state.contractsPagination = action.payload.pagination;
+          state.contractsPagination = {
+            ...action.payload.pagination,
+            hasMore: action.payload.pagination.page < action.payload.pagination.totalPages,
+          };
         }
         // Clear selection when fetching new contracts
         state.selectedContracts = [];
@@ -331,7 +343,7 @@ const contractsSlice = createSlice({
       })
       .addCase(fetchContractAnalytics.fulfilled, (state, action) => {
         state.analyticsLoading = false;
-        state.analytics = action.payload.analytics;
+        state.analytics = action.payload;
       })
       .addCase(fetchContractAnalytics.rejected, (state, action) => {
         state.analyticsLoading = false;
@@ -394,7 +406,10 @@ const contractsSlice = createSlice({
         state.contractOffersLoading = false;
         state.contractOffers = action.payload.contractOffers;
         if (action.payload.pagination) {
-          state.contractOffersPagination = action.payload.pagination;
+          state.contractOffersPagination = {
+            ...action.payload.pagination,
+            hasMore: action.payload.pagination.page < action.payload.pagination.totalPages,
+          };
         }
       })
       .addCase(fetchContractOffers.rejected, (state, action) => {
@@ -448,7 +463,10 @@ const contractsSlice = createSlice({
         state.employmentLoading = false;
         state.employment = action.payload.employment;
         if (action.payload.pagination) {
-          state.employmentPagination = action.payload.pagination;
+          state.employmentPagination = {
+            ...action.payload.pagination,
+            hasMore: action.payload.pagination.page < action.payload.pagination.totalPages,
+          };
         }
       })
       .addCase(fetchEmployment.rejected, (state, action) => {

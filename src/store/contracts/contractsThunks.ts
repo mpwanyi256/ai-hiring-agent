@@ -560,3 +560,24 @@ export const sendContractOffer = createAsyncThunk<
   const data = await response.json();
   return data;
 });
+
+// Cancel Contract Offer
+export const cancelContractOffer = createAsyncThunk<
+  { success: boolean; message: string; contractOffer: any },
+  string
+>('contracts/cancelContractOffer', async (contractOfferId) => {
+  const response = await fetch(`/api/contracts/${contractOfferId}/cancel`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to cancel contract offer');
+  }
+
+  const data = await response.json();
+  return data;
+});

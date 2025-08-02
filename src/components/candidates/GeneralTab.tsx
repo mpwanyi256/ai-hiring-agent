@@ -193,10 +193,7 @@ const GeneralTab: React.FC<{
       {/* Contract Offer Status */}
       <ContractOfferStatus
         candidateId={candidate.id}
-        onSendContract={() => {
-          console.log('Send contract');
-          onSendContract();
-        }}
+        onSendContract={onSendContract}
         candidate={candidate}
       />
 
@@ -213,7 +210,7 @@ const GeneralTab: React.FC<{
           </div>
         </div>
 
-        <div className="space-y-3 max-h-60 overflow-y-auto">
+        <div className="space-y-3 max-h-[290px] overflow-y-auto">
           {applicationEvents.length > 0 ? (
             applicationEvents.map((event) => (
               <InterviewCard
