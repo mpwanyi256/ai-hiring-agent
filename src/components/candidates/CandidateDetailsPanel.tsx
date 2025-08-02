@@ -76,7 +76,7 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
                     onSendContract={handleSendContract}
                   />
                 ) : (
-                  <tab.Component candidate={candidate} />
+                  <tab.Component candidate={candidate} onSendContract={handleSendContract} />
                 )}
               </Tab.Panel>
             ))}

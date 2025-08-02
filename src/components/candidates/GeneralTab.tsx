@@ -51,7 +51,7 @@ interface ResumeEvaluation {
 const GeneralTab: React.FC<{
   candidate: CandidateWithEvaluation;
   onScheduleEvent?: () => void;
-  onSendContract?: () => void;
+  onSendContract: () => void;
 }> = ({ candidate, onScheduleEvent, onSendContract }) => {
   const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(false);
@@ -191,7 +191,14 @@ const GeneralTab: React.FC<{
       </div>
 
       {/* Contract Offer Status */}
-      <ContractOfferStatus candidateId={candidate.id} />
+      <ContractOfferStatus
+        candidateId={candidate.id}
+        onSendContract={() => {
+          console.log('Send contract');
+          onSendContract();
+        }}
+        candidate={candidate}
+      />
 
       {/* Application Events */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -203,13 +210,6 @@ const GeneralTab: React.FC<{
                 Schedule Event
               </Button>
             )}
-            {onSendContract &&
-              ['shortlisted', 'reference_check', 'offer_extended'].includes(candidate.status) && (
-                <Button variant="default" size="sm" onClick={onSendContract}>
-                  <FileText className="h-4 w-4 mr-1" />
-                  Send Contract
-                </Button>
-              )}
           </div>
         </div>
 
