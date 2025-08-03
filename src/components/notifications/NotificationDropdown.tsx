@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { selectUser } from '@/store/auth/authSelectors';
 import {
-  selectNotifications,
   selectUnreadCount,
   selectNotificationsLoading,
   selectRecentNotifications,

@@ -239,6 +239,27 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const supabase = await createClient();
 
+    // Get the current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get candidate details to find the current status
+    const { data: candidateDetails, error: candidateError } = await supabase
+      .from('candidates')
+      .select('id, job_id, status')
+      .eq('id', id)
+      .single();
+
+    if (candidateError || !candidateDetails) {
+      return NextResponse.json({ success: false, error: 'Candidate not found' }, { status: 404 });
+    }
+
     // Update candidate status
     const { data, error } = await supabase
       .from('candidates')
@@ -256,6 +277,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         },
         { status: 500 },
       );
+    }
+
+    // Manually trigger notifications with actor exclusion
+    const { error: notificationError } = await supabase.rpc(
+      'handle_candidate_status_notification',
+      {
+        p_candidate_id: id,
+        p_old_status: candidateDetails.status,
+        p_new_status: status,
+        p_exclude_user_id: user.id,
+      },
+    );
+
+    if (notificationError) {
+      console.error('Error creating notifications:', notificationError);
+      // Don't fail the request if notifications fail
     }
 
     return NextResponse.json({
