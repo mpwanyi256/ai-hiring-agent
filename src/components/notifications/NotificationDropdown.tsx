@@ -18,7 +18,7 @@ import { Notification } from '@/types/notifications';
 import { NotificationBell } from './NotificationBell';
 import { NotificationHeader } from './NotificationHeader';
 import { NotificationList } from './NotificationList';
-import { NotificationFooter } from './NotificationFooter';
+// import { NotificationFooter } from './NotificationFooter';
 
 interface NotificationDropdownProps {
   className?: string;
@@ -114,10 +114,10 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
           />
 
           {/* Footer */}
-          <NotificationFooter
+          {/* <NotificationFooter
             hasNotifications={notifications.length > 0}
             onClose={handleCloseDropdown}
-          />
+          /> */}
         </div>
       )}
     </div>

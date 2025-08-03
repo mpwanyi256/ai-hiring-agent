@@ -11,7 +11,7 @@ import {
   BriefcaseIcon,
   UserGroupIcon,
   ChartBarIcon,
-  ClockIcon,
+  // ClockIcon,
   CogIcon,
   SparklesIcon,
   XMarkIcon,
@@ -135,52 +135,52 @@ export default function Sidebar({
         },
       ],
     },
-    {
-      name: 'Reports',
-      href: '/dashboard/reports',
-      icon: ChartBarIcon,
-      description: 'Analytics and insights',
-      children: [
-        {
-          name: 'Performance',
-          href: '/dashboard/reports/performance',
-          icon: ChartBarIcon,
-          description: 'Hiring metrics',
-        },
-        {
-          name: 'Candidate Analytics',
-          href: '/dashboard/reports/candidates',
-          icon: UserGroupIcon,
-          description: 'Application insights',
-        },
-        {
-          name: 'Export Data',
-          href: '/dashboard/reports/export',
-          icon: DocumentTextIcon,
-          description: 'Download reports',
-        },
-      ],
-    },
-    {
-      name: 'History',
-      href: '/dashboard/history',
-      icon: ClockIcon,
-      description: 'Interview records',
-      children: [
-        {
-          name: 'All Interviews',
-          href: '/dashboard/history',
-          icon: ClockIcon,
-          description: 'Complete history',
-        },
-        {
-          name: 'Recent',
-          href: '/dashboard/history/recent',
-          icon: ClockIcon,
-          description: 'Last 30 days',
-        },
-      ],
-    },
+    // {
+    //   name: 'Reports',
+    //   href: '/dashboard/reports',
+    //   icon: ChartBarIcon,
+    //   description: 'Analytics and insights',
+    //   children: [
+    //     {
+    //       name: 'Performance',
+    //       href: '/dashboard/reports/performance',
+    //       icon: ChartBarIcon,
+    //       description: 'Hiring metrics',
+    //     },
+    //     {
+    //       name: 'Candidate Analytics',
+    //       href: '/dashboard/reports/candidates',
+    //       icon: UserGroupIcon,
+    //       description: 'Application insights',
+    //     },
+    //     {
+    //       name: 'Export Data',
+    //       href: '/dashboard/reports/export',
+    //       icon: DocumentTextIcon,
+    //       description: 'Download reports',
+    //     },
+    //   ],
+    // },
+    // {
+    //   name: 'History',
+    //   href: '/dashboard/history',
+    //   icon: ClockIcon,
+    //   description: 'Interview records',
+    //   children: [
+    //     {
+    //       name: 'All Interviews',
+    //       href: '/dashboard/history',
+    //       icon: ClockIcon,
+    //       description: 'Complete history',
+    //     },
+    //     {
+    //       name: 'Recent',
+    //       href: '/dashboard/history/recent',
+    //       icon: ClockIcon,
+    //       description: 'Last 30 days',
+    //     },
+    //   ],
+    // },
     {
       name: 'Settings',
       href: '/dashboard/settings',

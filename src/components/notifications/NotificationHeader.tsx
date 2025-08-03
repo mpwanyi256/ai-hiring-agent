@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+// import Link from 'next/link';
 
 interface NotificationHeaderProps {
   unreadCount: number;
@@ -9,7 +9,7 @@ interface NotificationHeaderProps {
 
 export const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   unreadCount,
-  onClose,
+  // onClose,
   onMarkAllAsRead,
 }) => {
   return (
@@ -25,13 +25,13 @@ export const NotificationHeader: React.FC<NotificationHeaderProps> = ({
               Mark all read
             </button>
           )}
-          <Link
+          {/* <Link
             href="/dashboard/notifications"
             onClick={onClose}
             className="text-sm text-blue-600 hover:text-blue-700 font-medium"
           >
             View All
-          </Link>
+          </Link> */}
         </div>
       </div>
       {unreadCount > 0 && (
