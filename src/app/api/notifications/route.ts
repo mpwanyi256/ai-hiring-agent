@@ -72,32 +72,19 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { notificationIds, markAsRead } = await request.json();
+    const { notificationIds, markAsRead, userId } = await request.json();
     const supabase = await createClient();
 
-    // Get current user from Supabase auth
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: markAsRead })
+      .in('id', notificationIds)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error updating notifications:', error);
+      return NextResponse.json({ error: 'Failed to update notifications' }, { status: 500 });
     }
-
-    // Get user's company ID
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile?.company_id) {
-      return NextResponse.json({ error: 'Company not found' }, { status: 404 });
-    }
-
-    // Note: Since notifications is a view, we can't directly update it
-    // In a real implementation, you'd have a separate notifications table
-    // For now, we'll return success to maintain API compatibility
 
     return NextResponse.json({
       success: true,

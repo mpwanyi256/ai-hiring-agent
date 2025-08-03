@@ -18,7 +18,7 @@ import {
 import {
   fetchNotifications,
   markNotificationsAsRead,
-} from '@/store/notifications/notificationsSlice';
+} from '@/store/notifications/notificationsThunks';
 import {
   getNotificationIcon,
   getNotificationActionUrl,
@@ -35,14 +35,14 @@ export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      dispatch(fetchNotifications({}));
-    }
-  }, [dispatch, isOpen]);
+    dispatch(fetchNotifications({}));
+  }, [dispatch]);
 
   const handleNotificationClick = async (notificationId: string, isRead: boolean) => {
     if (!isRead) {
-      await dispatch(markNotificationsAsRead([notificationId]));
+      await dispatch(
+        markNotificationsAsRead({ notificationIds: [notificationId], markAsRead: true }),
+      );
     }
   };
 
@@ -53,7 +53,7 @@ export default function NotificationDropdown() {
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <Badge
-              variant="destructive"
+              variant="secondary"
               className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
@@ -86,18 +86,16 @@ export default function NotificationDropdown() {
             <div className="divide-y">
               {notifications.map((notification) => {
                 const Icon = getNotificationIcon(notification.type);
-                const actionUrl = getNotificationActionUrl(notification);
                 const priorityColor = getNotificationPriorityColor(notification.priority);
 
                 return (
                   <div
                     key={notification.id}
-                    className={`p-4 hover:bg-muted/50 transition-colors ${
+                    className={`p-4 hover:bg-muted/50 transition-colors hover:cursor-pointer ${
                       !notification.is_read ? 'bg-blue-50/50' : ''
                     }`}
                   >
-                    <Link
-                      href={actionUrl || '#'}
+                    <div
                       onClick={() => handleNotificationClick(notification.id, notification.is_read)}
                       className="block"
                     >
@@ -127,7 +125,7 @@ export default function NotificationDropdown() {
                           <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2" />
                         )}
                       </div>
-                    </Link>
+                    </div>
                   </div>
                 );
               })}
@@ -137,9 +135,19 @@ export default function NotificationDropdown() {
 
         {notifications.length > 0 && (
           <div className="p-4 border-t">
-            <Link href="/dashboard/notifications" className="text-sm text-primary hover:underline">
-              View all notifications
-            </Link>
+            <div
+              onClick={() =>
+                dispatch(
+                  markNotificationsAsRead({
+                    notificationIds: notifications.map((n) => n.id),
+                    markAsRead: true,
+                  }),
+                )
+              }
+              className="text-sm text-primary hover:underline"
+            >
+              Mark all as read
+            </div>
           </div>
         )}
       </DropdownMenuContent>

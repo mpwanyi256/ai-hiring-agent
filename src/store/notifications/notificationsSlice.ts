@@ -1,38 +1,6 @@
-import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { Notification, NotificationState, NotificationsResponse } from '@/types/notifications';
-import { apiUtils } from '../api';
-
-// Thunks
-export const fetchNotifications = createAsyncThunk(
-  'notifications/fetchNotifications',
-  async (params: { limit?: number; offset?: number } = {}) => {
-    const { limit = 20, offset = 0 } = params;
-
-    try {
-      const response = await apiUtils.get(`/api/notifications?limit=${limit}&offset=${offset}`);
-      return response as NotificationsResponse;
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-      throw error;
-    }
-  },
-);
-
-export const markNotificationsAsRead = createAsyncThunk(
-  'notifications/markAsRead',
-  async (notificationIds: string[]) => {
-    try {
-      await apiUtils.patch('/api/notifications', {
-        notificationIds,
-        markAsRead: true,
-      });
-      return { notificationIds, markAsRead: true };
-    } catch (error) {
-      console.error('Failed to mark notifications as read:', error);
-      throw error;
-    }
-  },
-);
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Notification, NotificationState } from '@/types/notifications';
+import { fetchNotifications, markNotificationsAsRead } from './notificationsThunks';
 
 const initialState: NotificationState = {
   notifications: [],
@@ -111,8 +79,14 @@ const notificationsSlice = createSlice({
       .addCase(markNotificationsAsRead.pending, () => {
         // Optimistic update is handled in the component
       })
-      .addCase(markNotificationsAsRead.fulfilled, () => {
-        // Success - optimistic update was correct
+      .addCase(markNotificationsAsRead.fulfilled, (state, { payload }) => {
+        const { notificationIds } = payload;
+        state.notifications.forEach((notification) => {
+          if (notificationIds.includes(notification.id)) {
+            notification.is_read = true;
+          }
+        });
+        state.unreadCount = state.notifications.filter((n) => !n.is_read).length;
       })
       .addCase(markNotificationsAsRead.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to mark notifications as read';
