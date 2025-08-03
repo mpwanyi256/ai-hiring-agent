@@ -20,7 +20,7 @@ import {
   selectEmploymentTypes,
   selectEmploymentTypesLoading,
 } from '@/store/jobs/jobsSelectors';
-import { RootState, useAppDispatch, useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
 import { WorkplaceType, JobType, CreateJobPayload } from '@/types/jobs';
 import JobCreateStep1 from '@/components/forms/JobCreateStep1';
 import JobCreateStep2 from '@/components/forms/JobCreateStep2';
@@ -31,6 +31,7 @@ import { experienceLevels } from '@/lib/constants';
 import { JobFormData, jobSchema } from '@/types/jobs';
 import { apiError, apiSuccess } from '@/lib/notification';
 import Modal from '@/components/ui/Modal';
+import { selectUser } from '@/store/auth/authSelectors';
 
 const workplaceTypes: { value: WorkplaceType; label: string }[] = [
   { value: 'on_site', label: 'On-site' },
@@ -50,7 +51,7 @@ const jobTypes: { value: JobType; label: string }[] = [
 export default function NewJobPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state: RootState) => state.auth);
+  const user = useAppSelector(selectUser);
 
   // Store selectors
   const allSkills = useAppSelector(selectSkillsData);
