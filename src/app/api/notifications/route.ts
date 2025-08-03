@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       .from('notifications_details')
       .select('*', { count: 'exact' })
       .eq('company_id', profile.company_id)
+      .is('read_at', null)
       .order('timestamp', { ascending: false })
       .range(offset, offset + limit - 1);
 
