@@ -20,7 +20,10 @@ export const fetchJobPermissions = createAsyncThunk(
 // Grant job permission to a user by user_id
 export const grantJobPermissionById = createAsyncThunk(
   'jobPermissions/grantJobPermissionById',
-  async (params: { job_id: string; user_id: string; permission_level: JobPermissionLevel }) => {
+  async (
+    params: { job_id: string; user_id: string; permission_level: JobPermissionLevel },
+    { dispatch },
+  ) => {
     const response = await fetch(`/api/jobs/${params.job_id}/permissions`, {
       method: 'POST',
       headers: {
@@ -38,6 +41,10 @@ export const grantJobPermissionById = createAsyncThunk(
     }
 
     const data = await response.json();
+
+    // fetch job permissions
+    dispatch(fetchJobPermissions(params.job_id));
+
     return data.permission;
   },
 );
@@ -45,7 +52,10 @@ export const grantJobPermissionById = createAsyncThunk(
 // Grant job permission to a user by email
 export const grantJobPermission = createAsyncThunk(
   'jobPermissions/grantJobPermission',
-  async (params: { job_id: string; user_email: string; permission_level: JobPermissionLevel }) => {
+  async (
+    params: { job_id: string; user_email: string; permission_level: JobPermissionLevel },
+    { dispatch },
+  ) => {
     const response = await fetch(`/api/jobs/${params.job_id}/permissions`, {
       method: 'POST',
       headers: {
@@ -62,6 +72,9 @@ export const grantJobPermission = createAsyncThunk(
       throw new Error(error.error || 'Failed to grant job permission');
     }
 
+    // fetch job permissions
+    dispatch(fetchJobPermissions(params.job_id));
+
     const data = await response.json();
     return data.permission;
   },
@@ -70,7 +83,7 @@ export const grantJobPermission = createAsyncThunk(
 // Remove job permission from a user
 export const removeJobPermission = createAsyncThunk(
   'jobPermissions/removeJobPermission',
-  async (params: { job_id: string; user_id: string }) => {
+  async (params: { job_id: string; user_id: string }, { dispatch }) => {
     const response = await fetch(
       `/api/jobs/${params.job_id}/permissions?user_id=${params.user_id}`,
       {
@@ -83,6 +96,9 @@ export const removeJobPermission = createAsyncThunk(
       throw new Error(error.error || 'Failed to remove job permission');
     }
 
+    // fetch job permissions
+    dispatch(fetchJobPermissions(params.job_id));
+
     return { job_id: params.job_id, user_id: params.user_id };
   },
 );
@@ -90,7 +106,10 @@ export const removeJobPermission = createAsyncThunk(
 // Update job permission level
 export const updateJobPermission = createAsyncThunk(
   'jobPermissions/updateJobPermission',
-  async (params: { job_id: string; user_id: string; permission_level: JobPermissionLevel }) => {
+  async (
+    params: { job_id: string; user_id: string; permission_level: JobPermissionLevel },
+    { dispatch },
+  ) => {
     const response = await fetch(`/api/jobs/${params.job_id}/permissions`, {
       method: 'POST',
       headers: {
@@ -108,6 +127,10 @@ export const updateJobPermission = createAsyncThunk(
     }
 
     const data = await response.json();
+
+    // fetch job permissions
+    dispatch(fetchJobPermissions(params.job_id));
+
     return data.permission;
   },
 );
