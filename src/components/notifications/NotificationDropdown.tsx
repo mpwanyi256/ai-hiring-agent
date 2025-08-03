@@ -40,9 +40,29 @@ export default function NotificationDropdown() {
 
   const handleNotificationClick = async (notificationId: string, isRead: boolean) => {
     if (!isRead) {
+      try {
+        await dispatch(
+          markNotificationsAsRead({ notificationIds: [notificationId], markAsRead: true }),
+        ).unwrap();
+      } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+      }
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    const unreadNotifications = notifications.filter((n) => !n.is_read && !n.read);
+    if (unreadNotifications.length === 0) return;
+
+    try {
       await dispatch(
-        markNotificationsAsRead({ notificationIds: [notificationId], markAsRead: true }),
-      );
+        markNotificationsAsRead({
+          notificationIds: unreadNotifications.map((n) => n.id),
+          markAsRead: true,
+        }),
+      ).unwrap();
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
     }
   };
 
@@ -113,9 +133,9 @@ export default function NotificationDropdown() {
                             </p>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">
-                            {notification.created_at &&
-                            !isNaN(new Date(notification.created_at).getTime())
-                              ? formatDistanceToNow(new Date(notification.created_at), {
+                            {notification.timestamp &&
+                            !isNaN(new Date(notification.timestamp).getTime())
+                              ? formatDistanceToNow(new Date(notification.timestamp), {
                                   addSuffix: true,
                                 })
                               : 'Unknown time'}
@@ -135,19 +155,13 @@ export default function NotificationDropdown() {
 
         {notifications.length > 0 && (
           <div className="p-4 border-t">
-            <div
-              onClick={() =>
-                dispatch(
-                  markNotificationsAsRead({
-                    notificationIds: notifications.map((n) => n.id),
-                    markAsRead: true,
-                  }),
-                )
-              }
-              className="text-sm text-primary hover:underline"
+            <button
+              onClick={handleMarkAllAsRead}
+              disabled={loading || notifications.filter((n) => !n.is_read && !n.read).length === 0}
+              className="text-sm text-primary hover:underline disabled:text-muted-foreground disabled:cursor-not-allowed"
             >
-              Mark all as read
-            </div>
+              {loading ? 'Marking as read...' : 'Mark all as read'}
+            </button>
           </div>
         )}
       </DropdownMenuContent>

@@ -1,7 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { NotificationsResponse } from '@/types/notifications';
 import { apiUtils } from '../api';
-import { RootState } from '..';
 
 // Fetch notifications
 export const fetchNotifications = createAsyncThunk(
@@ -23,30 +22,22 @@ export const fetchNotifications = createAsyncThunk(
 export const markNotificationsAsRead = createAsyncThunk<
   { notificationIds: string[]; markAsRead: boolean },
   { notificationIds: string[]; markAsRead: boolean }
->(
-  'notifications/markAsRead',
-  async ({ notificationIds, markAsRead }, { getState, rejectWithValue }) => {
-    try {
-      const state = getState() as RootState;
+>('notifications/markAsRead', async ({ notificationIds, markAsRead }, { rejectWithValue }) => {
+  try {
+    await apiUtils.patch('/api/notifications', {
+      notificationIds,
+      markAsRead,
+    });
 
-      const userId = state.auth.user?.id;
-
-      if (!userId) {
-        throw new Error('User not found');
-      }
-
-      await apiUtils.patch('/api/notifications', {
-        notificationIds,
-        markAsRead,
-        userId,
-      });
-      return { notificationIds, markAsRead: true };
-    } catch (error) {
-      console.error('Failed to mark notifications as read:', error);
-      return rejectWithValue(error);
-    }
-  },
-);
+    // Return the original parameters for state updates
+    return { notificationIds, markAsRead };
+  } catch (error) {
+    console.error('Failed to mark notifications as read:', error);
+    return rejectWithValue(
+      error instanceof Error ? error.message : 'Failed to mark notifications as read',
+    );
+  }
+});
 
 // Mark notifications as unread
 export const markNotificationsAsUnread = createAsyncThunk(

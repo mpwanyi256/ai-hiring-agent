@@ -80,13 +80,15 @@ const notificationsSlice = createSlice({
         // Optimistic update is handled in the component
       })
       .addCase(markNotificationsAsRead.fulfilled, (state, { payload }) => {
-        const { notificationIds } = payload;
+        const { notificationIds, markAsRead } = payload;
         state.notifications.forEach((notification) => {
           if (notificationIds.includes(notification.id)) {
-            notification.is_read = true;
+            notification.is_read = markAsRead;
+            notification.read = markAsRead; // Update both fields for compatibility
           }
         });
         state.unreadCount = state.notifications.filter((n) => !n.is_read).length;
+        state.isLoading = false;
       })
       .addCase(markNotificationsAsRead.rejected, (state, action) => {
         state.error = action.error.message || 'Failed to mark notifications as read';
