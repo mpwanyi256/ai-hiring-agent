@@ -19,13 +19,9 @@ import {
   fetchNotifications,
   markNotificationsAsRead,
 } from '@/store/notifications/notificationsThunks';
-import {
-  getNotificationIcon,
-  getNotificationActionUrl,
-  getNotificationPriorityColor,
-} from '@/lib/utils';
+import { getNotificationIcon, getNotificationPriorityColor } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import Link from 'next/link';
+import { apiError, apiSuccess } from '@/lib/notification';
 
 export default function NotificationDropdown() {
   const dispatch = useAppDispatch();
@@ -44,8 +40,9 @@ export default function NotificationDropdown() {
         await dispatch(
           markNotificationsAsRead({ notificationIds: [notificationId], markAsRead: true }),
         ).unwrap();
-      } catch (error) {
-        console.error('Failed to mark notification as read:', error);
+        apiSuccess('Notification marked as read');
+      } catch {
+        apiError('Failed to mark notification as read');
       }
     }
   };
@@ -61,8 +58,9 @@ export default function NotificationDropdown() {
           markAsRead: true,
         }),
       ).unwrap();
-    } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+      apiSuccess(`${unreadNotifications.length} notifications marked as read`);
+    } catch {
+      apiError('Failed to mark all notifications as read');
     }
   };
 

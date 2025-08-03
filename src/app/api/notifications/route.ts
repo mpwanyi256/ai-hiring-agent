@@ -75,84 +75,49 @@ export async function PATCH(request: NextRequest) {
     const { notificationIds, markAsRead } = await request.json();
     const supabase = await createClient();
 
-    // Check authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Validate input
+    if (!Array.isArray(notificationIds) || notificationIds.length === 0) {
+      return NextResponse.json({ error: 'No notification IDs provided' }, { status: 400 });
     }
 
-    // Get user profile to get company_id
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile?.company_id) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    if (typeof markAsRead !== 'boolean') {
+      return NextResponse.json({ error: 'markAsRead must be a boolean' }, { status: 400 });
     }
 
-    // Separate real notification IDs from synthetic ones
-    const realNotificationIds: string[] = [];
-    const syntheticNotificationIds: string[] = [];
+    // Validate UUID format for notification IDs
+    const validNotificationIds: string[] = [];
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
     for (const id of notificationIds) {
-      if (id.startsWith('contract-') || id.startsWith('interview-')) {
-        syntheticNotificationIds.push(id);
+      if (uuidRegex.test(id)) {
+        validNotificationIds.push(id);
       } else {
-        // Validate UUID format for real notifications
-        const uuidRegex =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        if (uuidRegex.test(id)) {
-          realNotificationIds.push(id);
-        }
+        console.warn('Invalid notification ID format:', id);
       }
     }
 
-    let updatedCount = 0;
-
-    // Update real notifications in the notifications table
-    if (realNotificationIds.length > 0) {
-      const { error: updateError, count } = await supabase
-        .from('notifications')
-        .update({
-          is_read: markAsRead,
-          read_at: markAsRead ? new Date().toISOString() : null,
-        })
-        .in('id', realNotificationIds)
-        .eq('user_id', user.id)
-        .eq('company_id', profile.company_id);
-
-      if (updateError) {
-        console.error('Error updating real notifications:', updateError);
-        return NextResponse.json({ error: 'Failed to update notifications' }, { status: 500 });
-      }
-
-      updatedCount += count || 0;
+    if (validNotificationIds.length === 0) {
+      return NextResponse.json({ error: 'No valid notification IDs provided' }, { status: 400 });
     }
 
-    // For synthetic notifications, we can't update them directly since they're view-based
-    // In a production system, you might want to create actual notification records
-    // or track read status separately for synthetic notifications
-    if (syntheticNotificationIds.length > 0) {
-      console.log(
-        `Synthetic notifications marked as ${markAsRead ? 'read' : 'unread'}:`,
-        syntheticNotificationIds,
-      );
-      // For now, we'll just log this. In production, you might want to:
-      // 1. Create actual notification records for these synthetic notifications
-      // 2. Store read status in a separate table
-      // 3. Use user preferences or session storage
+    // Update notifications in the notifications table
+    // RLS policies will handle user/company access control
+    const { error: updateError } = await supabase
+      .from('notifications')
+      .update({
+        is_read: markAsRead,
+        read_at: markAsRead ? new Date().toISOString() : null,
+      })
+      .in('id', validNotificationIds);
+
+    if (updateError) {
+      console.error('Error updating notifications:', updateError);
+      return NextResponse.json({ error: 'Failed to update notifications' }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
-      message: `${updatedCount} notifications marked as ${markAsRead ? 'read' : 'unread'}`,
-      updatedCount,
-      syntheticCount: syntheticNotificationIds.length,
+      message: `${validNotificationIds.length} notifications marked as ${markAsRead ? 'read' : 'unread'}`,
     });
   } catch (error) {
     console.error('Error in PATCH /api/notifications:', error);
