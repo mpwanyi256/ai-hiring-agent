@@ -5,6 +5,9 @@ import ReduxProvider from '@/components/providers/ReduxProvider';
 import AuthProvider from '@/components/providers/AuthProvider';
 import { ToastProvider } from '@/components/providers/ToastProvider';
 import { Toaster } from 'sonner';
+import CookieConsent from '@/components/cookies/CookieConsent';
+import { isDev, integrations } from '@/lib/constants';
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -30,6 +33,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/images/logo.png" />
       </head>
+
       <body className={`${inter.variable} font-sans antialiased`}>
         <ReduxProvider>
           <AuthProvider>
@@ -37,7 +41,13 @@ export default function RootLayout({
           </AuthProvider>
         </ReduxProvider>
         <Toaster position="top-right" />
+        <CookieConsent />
       </body>
+
+      {/* Google Tag manager script in Production */}
+      {!isDev && integrations.google.analyticsId && (
+        <GoogleAnalytics gaId={integrations.google.analyticsId} />
+      )}
     </html>
   );
 }

@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Skill } from '@/types/jobs';
-import { fetchSkills } from './skillsThunks';
+import { fetchSkills, createSkill } from './skillsThunks';
 
 export interface SkillsState {
   skills: Skill[];
@@ -43,9 +43,13 @@ const skillsSlice = createSlice({
       .addCase(fetchSkills.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch skills';
+      })
+      // Create Skill
+      .addCase(createSkill.fulfilled, (state, action: PayloadAction<Skill>) => {
+        state.skills.push(action.payload);
       });
   },
 });
 
 export const { clearError, clearSkills } = skillsSlice.actions;
-export default skillsSlice.reducer; 
+export default skillsSlice.reducer;

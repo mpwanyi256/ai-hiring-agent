@@ -1,14 +1,16 @@
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import {
+  JobFormData,
   Department,
   JobTitle,
   EmploymentType,
   WorkplaceType,
   JobType,
-  JobFormData,
 } from '@/types/jobs';
 import { Button } from '@/components/ui/button';
+import ComboboxWithCreate from '@/components/ui/ComboboxWithCreate';
+import CurrencySelect from '@/components/ui/CurrencySelect';
 
 interface JobCreateStep1Props {
   form: UseFormReturn<JobFormData>;
@@ -18,50 +20,55 @@ interface JobCreateStep1Props {
   setJobTitleSearch: (v: string) => void;
   jobTitleDropdownOpen: boolean;
   setJobTitleDropdownOpen: (v: boolean) => void;
-  filteredJobTitles: JobTitle[];
   departments: Department[];
   departmentsLoading: boolean;
   departmentSearch: string;
   setDepartmentSearch: (v: string) => void;
   departmentDropdownOpen: boolean;
   setDepartmentDropdownOpen: (v: boolean) => void;
-  filteredDepartments: Department[];
   employmentTypes: EmploymentType[];
   employmentTypesLoading: boolean;
   employmentTypeSearch: string;
   setEmploymentTypeSearch: (v: string) => void;
   employmentTypeDropdownOpen: boolean;
   setEmploymentTypeDropdownOpen: (v: boolean) => void;
-  filteredEmploymentTypes: EmploymentType[];
   workplaceTypes: { value: WorkplaceType; label: string }[];
   jobTypes: { value: JobType; label: string }[];
   onNext: () => void;
+  onCreateJobTitle: (name: string) => Promise<void>;
+  onCreateDepartment: (name: string) => Promise<void>;
+  onCreateEmploymentType: (name: string) => Promise<void>;
 }
 
 const JobCreateStep1: React.FC<JobCreateStep1Props> = ({
   form,
   jobTitles,
+  jobTitlesLoading,
   jobTitleSearch,
   setJobTitleSearch,
   jobTitleDropdownOpen,
   setJobTitleDropdownOpen,
-  filteredJobTitles,
   departments,
+  departmentsLoading,
   departmentSearch,
   setDepartmentSearch,
   departmentDropdownOpen,
   setDepartmentDropdownOpen,
-  filteredDepartments,
   employmentTypes,
+  employmentTypesLoading,
   employmentTypeSearch,
   setEmploymentTypeSearch,
   employmentTypeDropdownOpen,
   setEmploymentTypeDropdownOpen,
-  filteredEmploymentTypes,
   workplaceTypes,
   jobTypes,
   onNext,
+  onCreateJobTitle,
+  onCreateDepartment,
+  onCreateEmploymentType,
 }) => {
+  const salaryCurrency = form.watch('salaryCurrency') || 'USD';
+
   const canMoveToNext =
     form.watch('jobTitleId') &&
     form.watch('departmentId') &&
@@ -71,180 +78,177 @@ const JobCreateStep1: React.FC<JobCreateStep1Props> = ({
 
   return (
     <div className="bg-white rounded-lg border border-gray-light p-6 text-[15px]">
-      <h2 className="text-lg font-semibold text-text mb-6">Basic Job Details</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Job Title */}
-        <div className="relative" data-dropdown="job-title">
-          <label htmlFor="jobTitleId" className="block text-sm font-medium text-text mb-2">
-            Job Title *
-          </label>
-          <input
-            id="jobTitleId"
-            type="text"
-            autoComplete="off"
-            value={jobTitleSearch}
-            onChange={(e) => setJobTitleSearch(e.target.value)}
-            onFocus={() => setJobTitleDropdownOpen(true)}
-            placeholder="Search job titles..."
-            className="w-full px-4 py-2 border border-gray-light rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-[15px]"
+      <h2 className="text-lg font-semibold text-text mb-6">Basic Information</h2>
+
+      <div className="space-y-6">
+        {/* Job Title and Department Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ComboboxWithCreate
+            options={jobTitles}
+            value={form.watch('jobTitleId') || ''}
+            onChange={(value) => form.setValue('jobTitleId', value)}
+            onCreateNew={onCreateJobTitle}
+            placeholder="Search or add job title..."
+            label="Job Title"
+            loading={jobTitlesLoading}
+            error={form.formState.errors.jobTitleId?.message}
+            searchValue={jobTitleSearch}
+            onSearchChange={setJobTitleSearch}
+            dropdownOpen={jobTitleDropdownOpen}
+            onDropdownToggle={setJobTitleDropdownOpen}
+            dataDropdown="job-title"
+            createLabel="Add job title"
           />
-          {jobTitleDropdownOpen && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {filteredJobTitles.length > 0 ? (
-                filteredJobTitles.map((jt) => (
-                  <button
-                    key={jt.id}
-                    type="button"
-                    className="w-full px-4 py-2 text-left hover:bg-primary/10 text-text"
-                    onClick={() => {
-                      form.setValue('jobTitleId', jt.id);
-                      setJobTitleSearch(jt.name);
-                      setJobTitleDropdownOpen(false);
-                    }}
-                  >
-                    {jt.name}
-                  </button>
-                ))
-              ) : (
-                <div className="px-4 py-4 text-muted-text text-sm text-center">
-                  No job titles found
-                </div>
-              )}
-            </div>
-          )}
-          <input
-            type="hidden"
-            {...form.register('jobTitleId', { required: true })}
-            value={jobTitles.find((jt) => jt.name === jobTitleSearch)?.id || ''}
+
+          <ComboboxWithCreate
+            options={departments}
+            value={form.watch('departmentId') || ''}
+            onChange={(value) => form.setValue('departmentId', value)}
+            onCreateNew={onCreateDepartment}
+            placeholder="Search or add department..."
+            label="Department"
+            loading={departmentsLoading}
+            error={form.formState.errors.departmentId?.message}
+            searchValue={departmentSearch}
+            onSearchChange={setDepartmentSearch}
+            dropdownOpen={departmentDropdownOpen}
+            onDropdownToggle={setDepartmentDropdownOpen}
+            dataDropdown="department"
+            createLabel="Add department"
           />
         </div>
-        {/* Department */}
-        <div className="relative" data-dropdown="department">
-          <label htmlFor="departmentId" className="block text-sm font-medium text-text mb-2">
-            Department *
-          </label>
-          <input
-            id="departmentId"
-            type="text"
-            autoComplete="off"
-            value={departmentSearch}
-            onChange={(e) => setDepartmentSearch(e.target.value)}
-            onFocus={() => setDepartmentDropdownOpen(true)}
-            placeholder="Search departments..."
-            className="w-full px-4 py-2 border border-gray-light rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-[15px]"
-          />
-          {departmentDropdownOpen && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {filteredDepartments.length > 0 ? (
-                filteredDepartments.map((d) => (
-                  <button
-                    key={d.id}
-                    type="button"
-                    className="w-full px-4 py-2 text-left hover:bg-primary/10 text-text"
-                    onClick={() => {
-                      form.setValue('departmentId', d.id);
-                      setDepartmentSearch(d.name);
-                      setDepartmentDropdownOpen(false);
-                    }}
-                  >
-                    {d.name}
-                  </button>
-                ))
-              ) : (
-                <div className="px-4 py-4 text-muted-text text-sm text-center">
-                  No departments found
-                </div>
-              )}
-            </div>
-          )}
-          <input
-            type="hidden"
-            {...form.register('departmentId', { required: true })}
-            value={departments.find((d) => d.name === departmentSearch)?.id || ''}
-          />
-        </div>
+
         {/* Employment Type */}
-        <div className="relative" data-dropdown="employment-type">
-          <label htmlFor="employmentTypeId" className="block text-sm font-medium text-text mb-2">
-            Employment Type *
-          </label>
-          <input
-            id="employmentTypeId"
-            type="text"
-            autoComplete="off"
-            value={employmentTypeSearch}
-            onChange={(e) => setEmploymentTypeSearch(e.target.value)}
-            onFocus={() => setEmploymentTypeDropdownOpen(true)}
-            placeholder="Search employment types..."
-            className="w-full px-4 py-2 border border-gray-light rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-[15px]"
+        <div>
+          <ComboboxWithCreate
+            options={employmentTypes}
+            value={form.watch('employmentTypeId') || ''}
+            onChange={(value) => form.setValue('employmentTypeId', value)}
+            onCreateNew={onCreateEmploymentType}
+            placeholder="Search or add employment type..."
+            label="Employment Type"
+            loading={employmentTypesLoading}
+            error={form.formState.errors.employmentTypeId?.message}
+            searchValue={employmentTypeSearch}
+            onSearchChange={setEmploymentTypeSearch}
+            dropdownOpen={employmentTypeDropdownOpen}
+            onDropdownToggle={setEmploymentTypeDropdownOpen}
+            dataDropdown="employment-type"
+            createLabel="Add employment type"
           />
-          {employmentTypeDropdownOpen && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-light rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {filteredEmploymentTypes.length > 0 ? (
-                filteredEmploymentTypes.map((et) => (
-                  <button
-                    key={et.id}
-                    type="button"
-                    className="w-full px-4 py-2 text-left hover:bg-primary/10 text-text"
-                    onClick={() => {
-                      form.setValue('employmentTypeId', et.id);
-                      setEmploymentTypeSearch(et.name);
-                      setEmploymentTypeDropdownOpen(false);
-                    }}
-                  >
-                    {et.name}
-                  </button>
-                ))
-              ) : (
-                <div className="px-4 py-4 text-muted-text text-sm text-center">
-                  No employment types found
-                </div>
-              )}
+        </div>
+
+        {/* Salary Range */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Salary Range (Optional)
+          </label>
+          <div className="space-y-4">
+            {/* Min and Max Salary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="salaryMin" className="block text-sm font-medium text-gray-700 mb-1">
+                  Minimum Salary
+                </label>
+                <input
+                  id="salaryMin"
+                  type="number"
+                  placeholder="e.g., 50000"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  {...form.register('salaryMin', { valueAsNumber: true })}
+                />
+              </div>
+              <div>
+                <label htmlFor="salaryMax" className="block text-sm font-medium text-gray-700 mb-1">
+                  Maximum Salary
+                </label>
+                <input
+                  id="salaryMax"
+                  type="number"
+                  placeholder="e.g., 75000"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  {...form.register('salaryMax', { valueAsNumber: true })}
+                />
+              </div>
             </div>
+
+            {/* Currency and Duration */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <CurrencySelect
+                  value={salaryCurrency}
+                  onValueChange={(value) => form.setValue('salaryCurrency', value)}
+                  placeholder="Select currency"
+                  label="Currency"
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="salaryPeriod"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Salary Period
+                </label>
+                <select
+                  id="salaryPeriod"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  {...form.register('salaryPeriod')}
+                >
+                  <option value="yearly">Per Year</option>
+                  <option value="monthly">Per Month</option>
+                  <option value="weekly">Per Week</option>
+                  <option value="daily">Per Day</option>
+                  <option value="hourly">Per Hour</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          {form.formState.errors.salaryMax && (
+            <p className="mt-1 text-sm text-red-600">{form.formState.errors.salaryMax.message}</p>
           )}
-          <input
-            type="hidden"
-            {...form.register('employmentTypeId', { required: true })}
-            value={employmentTypes.find((et) => et.name === employmentTypeSearch)?.id || ''}
-          />
         </div>
-        {/* Workplace Type */}
-        <div>
-          <label htmlFor="workplaceType" className="block text-sm font-medium text-text mb-2">
-            Workplace Type *
-          </label>
-          <select
-            id="workplaceType"
-            {...form.register('workplaceType', { required: true })}
-            className="w-full px-4 py-2 border border-gray-light rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-[15px]"
-          >
-            <option value="">Select workplace type</option>
-            {workplaceTypes.map((wt) => (
-              <option key={wt.value} value={wt.value}>
-                {wt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        {/* Job Type */}
-        <div>
-          <label htmlFor="jobType" className="block text-sm font-medium text-text mb-2">
-            Job Type *
-          </label>
-          <select
-            id="jobType"
-            {...form.register('jobType', { required: true })}
-            className="w-full px-4 py-2 border border-gray-light rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-[15px]"
-          >
-            <option value="">Select job type</option>
-            {jobTypes.map((jt) => (
-              <option key={jt.value} value={jt.value}>
-                {jt.label}
-              </option>
-            ))}
-          </select>
+
+        {/* Workplace Type and Job Type Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label htmlFor="workplaceType" className="block text-sm font-medium text-text mb-2">
+              Workplace Type *
+            </label>
+            <select
+              id="workplaceType"
+              {...form.register('workplaceType', { required: true })}
+              className="w-full px-4 py-2 border border-gray-light rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-[15px]"
+            >
+              <option value="">Select workplace type</option>
+              {workplaceTypes.map((wt) => (
+                <option key={wt.value} value={wt.value}>
+                  {wt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="jobType" className="block text-sm font-medium text-text mb-2">
+              Job Type *
+            </label>
+            <select
+              id="jobType"
+              {...form.register('jobType', { required: true })}
+              className="w-full px-4 py-2 border border-gray-light rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-[15px]"
+            >
+              <option value="">Select job type</option>
+              {jobTypes.map((jt) => (
+                <option key={jt.value} value={jt.value}>
+                  {jt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
+
       <div className="flex justify-end mt-8">
         <Button
           type="button"

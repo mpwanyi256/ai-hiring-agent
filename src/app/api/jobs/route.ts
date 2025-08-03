@@ -69,6 +69,10 @@ export async function POST(request: NextRequest) {
       employmentTypeId,
       workplaceType,
       jobType,
+      salaryMin,
+      salaryMax,
+      salaryCurrency,
+      salaryPeriod,
     } = body;
 
     // Validate required fields
@@ -103,16 +107,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate salary range if provided
+    if (salaryMin !== undefined && salaryMax !== undefined && salaryMin > salaryMax) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Minimum salary cannot be greater than maximum salary',
+        },
+        { status: 400 },
+      );
+    }
+
     // Enforce subscription and job limit checks
     const supabase = await createClient();
     // Get user details (subscription and usage)
     const { data: userDetails, error: userError } = await supabase
       .from('user_details')
-      .select('subscription_status, max_jobs, active_jobs')
+      .select('subscription_status, max_jobs, active_jobs_count')
       .eq('id', profileId)
       .single();
 
     if (userError || !userDetails) {
+      console.error('User details error:', userError);
       return NextResponse.json(
         {
           success: false,
@@ -132,7 +148,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (userDetails.max_jobs !== -1 && userDetails.active_jobs >= userDetails.max_jobs) {
+    if (userDetails.max_jobs !== -1 && userDetails.active_jobs_count >= userDetails.max_jobs) {
       return NextResponse.json(
         {
           success: false,
@@ -154,6 +170,10 @@ export async function POST(request: NextRequest) {
       employmentTypeId,
       workplaceType,
       jobType,
+      salaryMin,
+      salaryMax,
+      salaryCurrency,
+      salaryPeriod,
     });
 
     console.log('Created new job:', {

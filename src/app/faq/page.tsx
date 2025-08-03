@@ -122,12 +122,12 @@ export default function FAQPage() {
         'Yes, we integrate with most major ATS platforms including Workday, BambooHR, Greenhouse, and others. Our Professional and Enterprise plans include pre-built integrations.',
       category: 'integration',
     },
-    {
-      question: 'Do you provide API access?',
-      answer:
-        'Yes, our Professional and Enterprise plans include API access for custom integrations. You can automate candidate data import/export and build custom workflows.',
-      category: 'integration',
-    },
+    // {
+    //   question: 'Do you provide API access?',
+    //   answer:
+    //     'Yes, our Professional and Enterprise plans include API access for custom integrations. You can automate candidate data import/export and build custom workflows.',
+    //   category: 'integration',
+    // },
     {
       question: 'Can I export evaluation results?',
       answer:

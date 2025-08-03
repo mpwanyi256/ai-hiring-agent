@@ -18,6 +18,7 @@ import { Notification } from '@/types/notifications';
 import { NotificationBell } from './NotificationBell';
 import { NotificationHeader } from './NotificationHeader';
 import { NotificationList } from './NotificationList';
+import { apiSuccess } from '@/lib/notification';
 // import { NotificationFooter } from './NotificationFooter';
 
 interface NotificationDropdownProps {
@@ -61,19 +62,16 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
     };
   }, [isOpen]);
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
     if (!notification.isRead && user?.id) {
-      dispatch(
+      await dispatch(
         markNotificationAsRead({
           notificationId: notification.id,
           userId: user.id,
         }),
-      );
-    }
-    setIsOpen(false);
+      ).unwrap();
 
-    if (notification.actionUrl) {
-      window.location.href = notification.actionUrl;
+      apiSuccess('Notification marked as read');
     }
   };
 

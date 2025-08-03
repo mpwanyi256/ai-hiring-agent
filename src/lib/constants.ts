@@ -45,6 +45,7 @@ export const integrations = {
     clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
     clientSecret: process.env.NEXT_PUBLIC_GOOGLE_SECRET_ID,
     redirectUri: process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI,
+    analyticsId: process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID,
   },
   resend: {
     apiKey: process.env.NEXT_PUBLIC_RESEND_API_KEY,
