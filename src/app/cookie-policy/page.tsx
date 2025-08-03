@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Navigation from '@/components/landing/Navigation';
 import { ShieldCheckIcon, CogIcon, ChartBarIcon, MegaphoneIcon } from '@heroicons/react/24/outline';
+import Footer from '@/components/landing/Footer';
 
 export default function CookiePolicyPage() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -250,6 +251,7 @@ export default function CookiePolicyPage() {
           </p>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
