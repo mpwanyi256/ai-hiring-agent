@@ -10,7 +10,6 @@ interface LogoProps {
 
 const Logo: React.FC<LogoProps> = ({ className = '' }) => {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
-  console.log('isAuthenticated', isAuthenticated);
 
   return (
     <Link
