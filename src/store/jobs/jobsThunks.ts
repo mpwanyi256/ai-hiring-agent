@@ -411,6 +411,40 @@ export const fetchEmploymentTypes = createAsyncThunk('jobs/fetchEmploymentTypes'
   }
 });
 
+// Create new entities
+export const createDepartment = createAsyncThunk('jobs/createDepartment', async (name: string) => {
+  try {
+    const response = await apiUtils.post<{ department: Department }>('/api/departments', { name });
+    return response.department;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to create department');
+  }
+});
+
+export const createJobTitle = createAsyncThunk('jobs/createJobTitle', async (name: string) => {
+  try {
+    const response = await apiUtils.post<{ jobTitle: JobTitle }>('/api/job-titles', { name });
+    return response.jobTitle;
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to create job title');
+  }
+});
+
+export const createEmploymentType = createAsyncThunk(
+  'jobs/createEmploymentType',
+  async (name: string) => {
+    try {
+      const response = await apiUtils.post<{ employmentType: EmploymentType }>(
+        '/api/employment-types',
+        { name },
+      );
+      return response.employmentType;
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to create employment type');
+    }
+  },
+);
+
 export const generateJobDescriptionWithAI = createAsyncThunk(
   'jobs/generateJobDescriptionWithAI',
   async (

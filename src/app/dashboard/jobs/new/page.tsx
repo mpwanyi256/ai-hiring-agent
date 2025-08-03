@@ -5,11 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { createJob } from '@/store/jobs/jobsThunks';
-import { fetchSkills } from '@/store/skills/skillsThunks';
-import { fetchTraits } from '@/store/traits/traitsThunks';
+import {
+  createJob,
+  fetchDepartments,
+  fetchJobTitles,
+  fetchEmploymentTypes,
+  createDepartment,
+  createJobTitle,
+  createEmploymentType,
+} from '@/store/jobs/jobsThunks';
+import { fetchSkills, createSkill } from '@/store/skills/skillsThunks';
+import { fetchTraits, createTrait } from '@/store/traits/traitsThunks';
 import { fetchJobTemplates } from '@/store/jobTemplates/jobTemplatesThunks';
-import { fetchDepartments, fetchJobTitles, fetchEmploymentTypes } from '@/store/jobs/jobsThunks';
 import { selectSkillsData } from '@/store/skills/skillsSelectors';
 import { selectTraitsData } from '@/store/traits/traitsSelectors';
 import {
@@ -31,6 +38,7 @@ import { experienceLevels } from '@/lib/constants';
 import { JobFormData, jobSchema } from '@/types/jobs';
 import { apiError, apiSuccess } from '@/lib/notification';
 import Modal from '@/components/ui/Modal';
+import AIGenerationLoader from '@/components/ui/AIGenerationLoader';
 import { selectUser } from '@/store/auth/authSelectors';
 
 const workplaceTypes: { value: WorkplaceType; label: string }[] = [
@@ -59,6 +67,7 @@ export default function NewJobPage() {
 
   // Step state
   const [step, setStep] = useState(1);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
 
   // Redux selectors for dropdowns
   const departments = useAppSelector(selectDepartments);
@@ -125,6 +134,10 @@ export default function NewJobPage() {
       employmentTypeId: '',
       workplaceType: '',
       jobType: '',
+      salaryMin: undefined,
+      salaryMax: undefined,
+      salaryCurrency: 'USD',
+      salaryPeriod: 'yearly',
     },
   });
 
@@ -244,21 +257,89 @@ export default function NewJobPage() {
         jobType: data.jobType,
         saveAsTemplate: !!data.saveAsTemplate,
         templateName: data.templateName,
+        salaryMin: data.salaryMin,
+        salaryMax: data.salaryMax,
+        salaryCurrency: data.salaryCurrency || 'USD',
+        salaryPeriod: data.salaryPeriod || 'yearly',
       };
 
       // Create the job
       const job = await dispatch(createJob(jobData)).unwrap();
 
-      // Show success message
-      apiSuccess('Job created successfully! Redirecting...');
+      // Show success message and start AI generation
+      apiSuccess('Job created successfully! Generating interview questions...');
+      setIsSubmitting(false);
+      setIsGeneratingQuestions(true);
+
+      // Generate questions (this is already handled in the thunk)
+      // The thunk automatically calls generateJobQuestions after creating the job
+
+      // Wait a moment to show the loading state
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Redirect to the new job page
       router.push(`/dashboard/jobs/${job.id}`);
     } catch (error) {
       console.error('Failed to create job:', error);
       apiError('Failed to create job. Please try again.');
-    } finally {
       setIsSubmitting(false);
+      setIsGeneratingQuestions(false);
+    }
+  };
+
+  // Create handlers
+  const handleCreateJobTitle = async (name: string) => {
+    try {
+      await dispatch(createJobTitle(name)).unwrap();
+      // Refresh the list
+      await dispatch(fetchJobTitles());
+    } catch (error) {
+      console.error('Failed to create job title:', error);
+      apiError('Failed to create job title. Please try again.');
+    }
+  };
+
+  const handleCreateDepartment = async (name: string) => {
+    try {
+      await dispatch(createDepartment(name)).unwrap();
+      // Refresh the list
+      await dispatch(fetchDepartments());
+    } catch (error) {
+      console.error('Failed to create department:', error);
+      apiError('Failed to create department. Please try again.');
+    }
+  };
+
+  const handleCreateEmploymentType = async (name: string) => {
+    try {
+      await dispatch(createEmploymentType(name)).unwrap();
+      // Refresh the list
+      await dispatch(fetchEmploymentTypes());
+    } catch (error) {
+      console.error('Failed to create employment type:', error);
+      apiError('Failed to create employment type. Please try again.');
+    }
+  };
+
+  const handleCreateSkill = async (name: string) => {
+    try {
+      await dispatch(createSkill({ name })).unwrap();
+      // Refresh the list
+      await dispatch(fetchSkills());
+    } catch (error) {
+      console.error('Failed to create skill:', error);
+      apiError('Failed to create skill. Please try again.');
+    }
+  };
+
+  const handleCreateTrait = async (name: string) => {
+    try {
+      await dispatch(createTrait({ name })).unwrap();
+      // Refresh the list
+      await dispatch(fetchTraits());
+    } catch (error) {
+      console.error('Failed to create trait:', error);
+      apiError('Failed to create trait. Please try again.');
     }
   };
 
@@ -292,6 +373,9 @@ export default function NewJobPage() {
       workplaceTypes={workplaceTypes}
       jobTypes={jobTypes}
       onNext={() => setStep(2)}
+      onCreateJobTitle={handleCreateJobTitle}
+      onCreateDepartment={handleCreateDepartment}
+      onCreateEmploymentType={handleCreateEmploymentType}
     />
   );
 
@@ -304,6 +388,8 @@ export default function NewJobPage() {
       experienceLevels={experienceLevels}
       onPrev={() => setStep(1)}
       onNext={() => setStep(3)}
+      onCreateSkill={handleCreateSkill}
+      onCreateTrait={handleCreateTrait}
     />
   );
 
@@ -361,6 +447,20 @@ export default function NewJobPage() {
             </a>
           </div>
         </Modal>
+
+        {/* AI Generation Modal */}
+        <Modal
+          isOpen={isGeneratingQuestions}
+          onClose={() => {}}
+          title="Generating Interview Questions"
+        >
+          <AIGenerationLoader
+            message="Creating personalized interview questions..."
+            submessage="This process may take a few moments"
+            size="lg"
+          />
+        </Modal>
+
         {/* Stepper UI */}
         <div className="flex items-center justify-center mb-8 gap-4 text-[14px]">
           <div

@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Trait } from '@/types/jobs';
-import { fetchTraits } from './traitsThunks';
+import { fetchTraits, createTrait } from './traitsThunks';
 
 export interface TraitsState {
   traits: Trait[];
@@ -43,9 +43,13 @@ const traitsSlice = createSlice({
       .addCase(fetchTraits.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch traits';
+      })
+      // Create Trait
+      .addCase(createTrait.fulfilled, (state, action: PayloadAction<Trait>) => {
+        state.traits.push(action.payload);
       });
   },
 });
 
 export const { clearError, clearTraits } = traitsSlice.actions;
-export default traitsSlice.reducer; 
+export default traitsSlice.reducer;

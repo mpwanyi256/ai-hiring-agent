@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
 import { fetchContracts } from '@/store/contracts/contractsThunks';
+import { fetchCurrencies } from '@/store/currencies/currenciesThunks';
+import { selectCurrencies } from '@/store/currencies/currenciesSelectors';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -58,6 +60,8 @@ import {
   Search,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import CurrencySelect from '@/components/ui/CurrencySelect';
+import { CandidateWithEvaluation } from '@/types/candidates';
 
 interface Candidate {
   id: string;
@@ -81,6 +85,7 @@ interface BulkContractData {
 export default function BulkContractOperations() {
   const dispatch = useDispatch<AppDispatch>();
   const { contracts, contractsLoading } = useSelector((state: RootState) => state.contracts);
+  const { currencies } = useSelector((state: RootState) => state.currencies);
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set());
@@ -107,14 +112,6 @@ export default function BulkContractOperations() {
   // Confirmation dialog
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const [currencies] = useState([
-    { code: 'USD', symbol: '$', name: 'US Dollar' },
-    { code: 'EUR', symbol: '€', name: 'Euro' },
-    { code: 'GBP', symbol: '£', name: 'British Pound' },
-    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-  ]);
-
   useEffect(() => {
     loadData();
   }, []);
@@ -124,6 +121,12 @@ export default function BulkContractOperations() {
       dispatch(fetchContracts());
     }
   }, [dispatch, contracts.length]);
+
+  useEffect(() => {
+    if (currencies.length === 0) {
+      dispatch(fetchCurrencies());
+    }
+  }, [dispatch, currencies.length]);
 
   useEffect(() => {
     filterCandidates();
@@ -352,21 +355,12 @@ export default function BulkContractOperations() {
                 </div>
                 <div>
                   <Label htmlFor="bulk-currency">Currency *</Label>
-                  <Select
+                  <CurrencySelect
                     value={bulkData.salaryCurrency}
                     onValueChange={(value) => setBulkData({ ...bulkData, salaryCurrency: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencies.map((currency) => (
-                        <SelectItem key={currency.code} value={currency.code}>
-                          {currency.symbol} {currency.code} - {currency.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select currency"
+                    showLabel={false}
+                  />
                 </div>
               </div>
 

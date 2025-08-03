@@ -690,6 +690,10 @@ class JobsService {
     employmentTypeId: string;
     workplaceType: string;
     jobType: string;
+    salaryMin?: number;
+    salaryMax?: number;
+    salaryCurrency?: string;
+    salaryPeriod?: string;
   }): Promise<JobData> {
     try {
       const supabase = await createClient();
@@ -706,6 +710,10 @@ class JobsService {
         employment_type_id: jobData.employmentTypeId,
         workplace_type: jobData.workplaceType,
         job_type: jobData.jobType,
+        salary_min: jobData.salaryMin,
+        salary_max: jobData.salaryMax,
+        salary_currency: jobData.salaryCurrency,
+        salary_period: jobData.salaryPeriod,
         is_active: false,
       };
 

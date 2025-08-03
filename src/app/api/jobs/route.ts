@@ -69,6 +69,10 @@ export async function POST(request: NextRequest) {
       employmentTypeId,
       workplaceType,
       jobType,
+      salaryMin,
+      salaryMax,
+      salaryCurrency,
+      salaryPeriod,
     } = body;
 
     // Validate required fields
@@ -98,6 +102,17 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Invalid interview format. Must be "text" or "video"',
+        },
+        { status: 400 },
+      );
+    }
+
+    // Validate salary range if provided
+    if (salaryMin !== undefined && salaryMax !== undefined && salaryMin > salaryMax) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Minimum salary cannot be greater than maximum salary',
         },
         { status: 400 },
       );
@@ -154,6 +169,10 @@ export async function POST(request: NextRequest) {
       employmentTypeId,
       workplaceType,
       jobType,
+      salaryMin,
+      salaryMax,
+      salaryCurrency,
+      salaryPeriod,
     });
 
     console.log('Created new job:', {
