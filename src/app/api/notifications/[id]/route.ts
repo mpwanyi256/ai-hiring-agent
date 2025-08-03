@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient();
     const body = await request.json();
     const { isRead, userId } = body;
+    const { id } = await params;
 
     // Validate the notification ID is a valid UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(params.id)) {
+    if (!uuidRegex.test(id)) {
       return NextResponse.json({ error: 'Invalid notification ID' }, { status: 400 });
     }
 
@@ -26,7 +27,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const { error } = await supabase
       .from('notifications')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', userId);
 
     if (error) {
