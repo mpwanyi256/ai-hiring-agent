@@ -398,25 +398,6 @@ export function useMessagesRedux({
     [dispatch, jobId, enabled, currentUser, messages, stopTyping],
   );
 
-  // Retry failed message
-  const retryMessage = useCallback(
-    async (tempId: string) => {
-      const optimisticMsg = optimisticMessages.get(tempId);
-      if (!optimisticMsg) return;
-
-      // Update status to sending
-      setOptimisticMessages((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(tempId, { ...optimisticMsg, status: 'sending' });
-        return newMap;
-      });
-
-      // Try sending again
-      await sendMessage(optimisticMsg.text, optimisticMsg.replyTo?.id);
-    },
-    [optimisticMessages, sendMessage],
-  );
-
   const addReaction = useCallback(
     async (messageId: string, emoji: string) => {
       try {
