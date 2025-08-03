@@ -67,51 +67,12 @@ const getNotificationColor = (type: string) => {
   }
 };
 
-// Mock data - this would come from API in real implementation
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    type: 'success',
-    category: 'contract',
-    title: 'Contract Signed',
-    message: 'John Doe has signed the employment contract',
-    actionUrl: '/dashboard/jobs/job-1/candidates/candidate-1',
-    actionText: 'View Details',
-    isRead: false,
-    createdAt: '2024-01-25T14:30:00Z',
-  },
-  {
-    id: '2',
-    type: 'info',
-    category: 'candidate',
-    title: 'New Application',
-    message: 'Jane Smith applied for Senior Developer position',
-    actionUrl: '/dashboard/jobs/job-2/candidates/candidate-2',
-    actionText: 'Review Application',
-    isRead: false,
-    createdAt: '2024-01-25T12:15:00Z',
-  },
-  {
-    id: '3',
-    type: 'warning',
-    category: 'contract',
-    title: 'Contract Expiring Soon',
-    message: 'Contract offer for Mike Johnson expires in 2 days',
-    actionUrl: '/dashboard/jobs/job-1/candidates/candidate-3',
-    actionText: 'Extend Offer',
-    isRead: true,
-    createdAt: '2024-01-24T16:45:00Z',
-    readAt: '2024-01-24T17:00:00Z',
-  },
-];
-
 const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
-  const recentNotifications = notifications.slice(0, 5); // Show only 5 most recent
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -191,7 +152,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
 
           {/* Notifications List */}
           <div className="max-h-80 overflow-y-auto">
-            {recentNotifications.length === 0 ? (
+            {notifications.length === 0 ? (
               <div className="p-6 text-center">
                 <Bell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">No notifications</p>
@@ -199,7 +160,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {recentNotifications.map((notification) => (
+                {notifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
@@ -259,7 +220,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
           </div>
 
           {/* Footer */}
-          {recentNotifications.length > 0 && (
+          {notifications.length > 0 && (
             <div className="p-3 border-t border-gray-100 bg-gray-50">
               <Link
                 href="/dashboard/notifications"
