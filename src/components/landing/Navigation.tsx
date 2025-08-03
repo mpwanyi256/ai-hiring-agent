@@ -9,8 +9,7 @@ import Container from '@/components/ui/Container';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchSubscriptionPlans } from '@/store/billing/billingThunks';
 import { selectSubscriptionPlans } from '@/store/billing/billingSelectors';
-import Image from 'next/image';
-import { app } from '@/lib/constants';
+import Logo from '../navigation/Logo';
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -44,29 +43,16 @@ export default function Navigation() {
     }
     return pathname === path;
   };
+  const isDashboardPage = pathname.startsWith('/dashboard');
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+    <header
+      className={`border-b border-surface bg-white shadow-sm sticky top-0 z-50 ${isDashboardPage ? '' : 'fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100'}`}
+    >
       <Container>
         <div className="flex items-center justify-between h-18">
           {/* Logo */}
-          <Link
-            href={isAuthenticated ? '/dashboard' : '/'}
-            className="flex items-center space-x-3 hover-lift"
-          >
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
-              <Image
-                src="/images/logo.png"
-                alt={`${app.name} Logo`}
-                width={40}
-                height={40}
-                objectFit="contain"
-              />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent text-2xl">
-              {app.name}
-            </span>
-          </Link>
+          <Logo />
 
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center space-x-1">
@@ -419,6 +405,6 @@ export default function Navigation() {
           </div>
         )}
       </Container>
-    </nav>
+    </header>
   );
 }
