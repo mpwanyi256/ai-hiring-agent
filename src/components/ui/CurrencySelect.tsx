@@ -51,9 +51,11 @@ const CurrencySelect: React.FC<CurrencySelectProps> = ({
   const currenciesError = useSelector(selectCurrenciesError);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
 
   // Load currencies on mount if not already loaded
   useEffect(() => {
+    setIsMounted(true);
     if (currencies.length === 0) {
       dispatch(fetchCurrencies());
     }
@@ -81,6 +83,9 @@ const CurrencySelect: React.FC<CurrencySelectProps> = ({
     });
   };
 
+  // Get selected currency for display
+  const selectedCurrency = currencies.find((currency) => currency.code === value);
+
   return (
     <div className={className}>
       {showLabel && (
@@ -91,7 +96,17 @@ const CurrencySelect: React.FC<CurrencySelectProps> = ({
 
       <Select value={value} onValueChange={onValueChange} disabled={disabled || currenciesLoading}>
         <SelectTrigger id={id} className={error ? 'border-red-300' : ''}>
-          <SelectValue placeholder={currenciesLoading ? 'Loading currencies...' : placeholder} />
+          <SelectValue
+            placeholder={isMounted && currenciesLoading ? 'Loading currencies...' : placeholder}
+          >
+            {isMounted && selectedCurrency ? (
+              <span>
+                {selectedCurrency.code} - {selectedCurrency.name}
+              </span>
+            ) : (
+              value || placeholder
+            )}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent className="max-h-[300px] p-0">
           {searchable && (
@@ -105,14 +120,14 @@ const CurrencySelect: React.FC<CurrencySelectProps> = ({
           )}
 
           <div className="max-h-[240px] overflow-y-auto">
-            {currenciesLoading ? (
+            {isMounted && currenciesLoading ? (
               <SelectItem value="loading" disabled>
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Loading currencies...
                 </div>
               </SelectItem>
-            ) : currenciesError ? (
+            ) : isMounted && currenciesError ? (
               <SelectItem value="error" disabled>
                 <div className="text-red-600 text-sm">Error loading currencies</div>
               </SelectItem>

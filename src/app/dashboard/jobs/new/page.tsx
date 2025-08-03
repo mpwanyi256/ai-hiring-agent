@@ -91,17 +91,6 @@ export default function NewJobPage() {
   const [departmentDropdownOpen, setDepartmentDropdownOpen] = useState(false);
   const [employmentTypeDropdownOpen, setEmploymentTypeDropdownOpen] = useState(false);
 
-  // Filtered options
-  const filteredJobTitles = jobTitles.filter((jt) =>
-    jt.name.toLowerCase().includes(jobTitleSearch.toLowerCase()),
-  );
-  const filteredDepartments = departments.filter((d) =>
-    d.name.toLowerCase().includes(departmentSearch.toLowerCase()),
-  );
-  const filteredEmploymentTypes = employmentTypes.filter((et) =>
-    et.name.toLowerCase().includes(employmentTypeSearch.toLowerCase()),
-  );
-
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -355,21 +344,18 @@ export default function NewJobPage() {
       setJobTitleSearch={setJobTitleSearch}
       jobTitleDropdownOpen={jobTitleDropdownOpen}
       setJobTitleDropdownOpen={setJobTitleDropdownOpen}
-      filteredJobTitles={filteredJobTitles}
       departments={departments}
       departmentsLoading={departmentsLoading}
       departmentSearch={departmentSearch}
       setDepartmentSearch={setDepartmentSearch}
       departmentDropdownOpen={departmentDropdownOpen}
       setDepartmentDropdownOpen={setDepartmentDropdownOpen}
-      filteredDepartments={filteredDepartments}
       employmentTypes={employmentTypes}
       employmentTypesLoading={employmentTypesLoading}
       employmentTypeSearch={employmentTypeSearch}
       setEmploymentTypeSearch={setEmploymentTypeSearch}
       employmentTypeDropdownOpen={employmentTypeDropdownOpen}
       setEmploymentTypeDropdownOpen={setEmploymentTypeDropdownOpen}
-      filteredEmploymentTypes={filteredEmploymentTypes}
       workplaceTypes={workplaceTypes}
       jobTypes={jobTypes}
       onNext={() => setStep(2)}

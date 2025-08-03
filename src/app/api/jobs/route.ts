@@ -123,11 +123,12 @@ export async function POST(request: NextRequest) {
     // Get user details (subscription and usage)
     const { data: userDetails, error: userError } = await supabase
       .from('user_details')
-      .select('subscription_status, max_jobs, active_jobs')
+      .select('subscription_status, max_jobs, active_jobs_count')
       .eq('id', profileId)
       .single();
 
     if (userError || !userDetails) {
+      console.error('User details error:', userError);
       return NextResponse.json(
         {
           success: false,
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (userDetails.max_jobs !== -1 && userDetails.active_jobs >= userDetails.max_jobs) {
+    if (userDetails.max_jobs !== -1 && userDetails.active_jobs_count >= userDetails.max_jobs) {
       return NextResponse.json(
         {
           success: false,
