@@ -76,6 +76,10 @@ export interface CreateJobPayload {
   jobType: string;
   saveAsTemplate: boolean;
   templateName?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
+  salaryPeriod?: 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 }
 
 export interface Job {
@@ -266,31 +270,40 @@ export interface GetCompanyJobsResponse {
   };
 }
 
-export const jobSchema = z.object({
-  title: z.string().min(2, 'Job title must be at least 2 characters'),
-  skills: z.array(z.string().min(1)).optional(),
-  experienceLevel: z.string().optional(),
-  traits: z.array(z.string().min(1)).optional(),
-  interviewFormat: z.enum(['text', 'video']),
-  jobDescription: z.string().min(10, 'Job description must be at least 10 characters'),
-  jobDescriptionUrl: z.string().url().optional().or(z.literal('')),
-  customFields: z
-    .array(
-      z.object({
-        key: z.string().min(1, 'Field name is required'),
-        value: z.string().min(1, 'Field value is required'),
-        inputType: z.enum(['text', 'textarea', 'number', 'file', 'url', 'email']),
-      }),
-    )
-    .optional(),
-  saveAsTemplate: z.boolean().optional(),
-  templateName: z.string().optional(),
-  jobTitleId: z.string().min(1, 'Job title is required'),
-  departmentId: z.string().min(1, 'Department is required'),
-  employmentTypeId: z.string().min(1, 'Employment type is required'),
-  workplaceType: z.string().min(1, 'Workplace type is required'),
-  jobType: z.string().min(1, 'Job type is required'),
-});
+export const jobSchema = z
+  .object({
+    title: z.string().min(2, 'Job title must be at least 2 characters'),
+    skills: z.array(z.string().min(1)).optional(),
+    experienceLevel: z.string().optional(),
+    traits: z.array(z.string().min(1)).optional(),
+    interviewFormat: z.enum(['text', 'video']),
+    jobDescription: z.string().min(10, 'Job description must be at least 10 characters'),
+    jobDescriptionUrl: z.string().url().optional().or(z.literal('')),
+    customFields: z
+      .array(
+        z.object({
+          key: z.string().min(1, 'Field name is required'),
+          value: z.string().min(1, 'Field value is required'),
+          inputType: z.enum(['text', 'textarea', 'number', 'file', 'url', 'email']),
+        }),
+      )
+      .optional(),
+    saveAsTemplate: z.boolean().optional(),
+    templateName: z.string().optional(),
+    jobTitleId: z.string().min(1, 'Job title is required'),
+    departmentId: z.string().min(1, 'Department is required'),
+    employmentTypeId: z.string().min(1, 'Employment type is required'),
+    workplaceType: z.string().min(1, 'Workplace type is required'),
+    jobType: z.string().min(1, 'Job type is required'),
+    salaryMin: z.number().min(0, 'Minimum salary must be positive').optional(),
+    salaryMax: z.number().min(0, 'Maximum salary must be positive').optional(),
+    salaryCurrency: z.string().min(3, 'Currency must be at least 3 characters').optional(),
+    salaryPeriod: z.enum(['hourly', 'daily', 'weekly', 'monthly', 'yearly']).optional(),
+  })
+  .refine((data) => !data.salaryMin || !data.salaryMax || data.salaryMin <= data.salaryMax, {
+    message: 'Minimum salary must be less than or equal to maximum salary',
+    path: ['salaryMax'],
+  });
 
 export type JobFormData = z.infer<typeof jobSchema>;
 

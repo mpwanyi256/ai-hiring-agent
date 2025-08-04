@@ -1,85 +1,133 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
-// Mock traits data for development - matching the existing Trait interface
-const mockTraits = [
-  {
-    id: '1',
-    name: 'Leadership',
-    description: 'Ability to guide and motivate teams',
-    category: 'Management',
-  },
-  {
-    id: '2',
-    name: 'Problem Solving',
-    description: 'Analytical thinking and solution-oriented approach',
-    category: 'Cognitive',
-  },
-  {
-    id: '3',
-    name: 'Communication',
-    description: 'Clear and effective verbal and written communication',
-    category: 'Interpersonal',
-  },
-  {
-    id: '4',
-    name: 'Adaptability',
-    description: 'Flexibility and openness to change',
-    category: 'Personal',
-  },
-  {
-    id: '5',
-    name: 'Teamwork',
-    description: 'Collaborative working style',
-    category: 'Interpersonal',
-  },
-  {
-    id: '6',
-    name: 'Initiative',
-    description: 'Proactive and self-motivated approach',
-    category: 'Personal',
-  },
-  {
-    id: '7',
-    name: 'Time Management',
-    description: 'Efficient prioritization and organization',
-    category: 'Professional',
-  },
-  {
-    id: '8',
-    name: 'Creativity',
-    description: 'Innovative thinking and original ideas',
-    category: 'Cognitive',
-  },
-  {
-    id: '9',
-    name: 'Decision Making',
-    description: 'Ability to make sound decisions under pressure',
-    category: 'Cognitive',
-  },
-  {
-    id: '10',
-    name: 'Emotional Intelligence',
-    description: 'Understanding and managing emotions effectively',
-    category: 'Interpersonal',
-  },
-];
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // In a real application, you would fetch from a database
-    // For now, return mock data
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user's company
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.company_id) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    }
+
+    // Get search query from URL params
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+
+    // Fetch traits (global + company-specific)
+    let query = supabase
+      .from('traits_view')
+      .select('*')
+      .or(`company_id.is.null,company_id.eq.${profile.company_id}`)
+      .order('name');
+
+    if (search) {
+      query = query.ilike('name', `%${search}%`);
+    }
+
+    const { data: traits, error } = await query;
+
+    if (error) {
+      console.error('Error fetching traits:', error);
+      return NextResponse.json({ error: 'Failed to fetch traits' }, { status: 500 });
+    }
+
     return NextResponse.json({
       success: true,
-      traits: mockTraits,
+      traits: traits || [],
     });
   } catch (error) {
-    console.error('Error fetching traits:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch traits',
-      },
-      { status: 500 }
-    );
+    console.error('Error in traits API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user's company
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.company_id) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    }
+
+    const body = await request.json();
+    const { name, description, categoryId } = body;
+
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: 'Trait name is required' }, { status: 400 });
+    }
+
+    // Check if trait already exists for this company
+    const { data: existingTrait, error: checkError } = await supabase
+      .from('traits')
+      .select('id')
+      .eq('name', name.trim())
+      .eq('company_id', profile.company_id)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing trait:', checkError);
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
+
+    if (existingTrait) {
+      return NextResponse.json({ error: 'Trait already exists for your company' }, { status: 409 });
+    }
+
+    // Create new trait
+    const { data: newTrait, error: createError } = await supabase
+      .from('traits')
+      .insert({
+        name: name.trim(),
+        description: description?.trim() || null,
+        category_id: categoryId || null,
+        company_id: profile.company_id,
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Error creating trait:', createError);
+      return NextResponse.json({ error: 'Failed to create trait' }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      trait: newTrait,
+    });
+  } catch (error) {
+    console.error('Error in create trait API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export async function POST() {
+export async function DELETE() {
   try {
     const supabase = await createClient();
 
-    // Get current user from Supabase session
+    // Get the authenticated user
     const {
       data: { user },
-      error: userError,
+      error: authError,
     } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Delete the Google integration for this user
@@ -23,18 +24,14 @@ export async function POST() {
 
     if (deleteError) {
       console.error('Error disconnecting Google integration:', deleteError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to disconnect integration' },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: 'Failed to disconnect Google Calendar' }, { status: 500 });
     }
 
     return NextResponse.json({
-      success: true,
-      message: 'Google integration disconnected successfully',
+      message: 'Google Calendar disconnected successfully',
     });
   } catch (error) {
-    console.error('Error in disconnect Google integration:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    console.error('Error in Google disconnect:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

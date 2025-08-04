@@ -23,18 +23,11 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  User,
-  FileText,
-  DollarSign,
-  Calendar,
-  Mail,
-  Send,
-  Loader2,
-  CheckCircle,
-} from 'lucide-react';
+import { User, FileText, Calendar, Mail, Send, Loader2, CheckCircle } from 'lucide-react';
 import { fetchContracts, sendContractOffer } from '@/store/contracts/contractsThunks';
 import { selectContracts, selectContractsLoading } from '@/store/contracts/contractsSelectors';
+import { fetchCurrencies } from '@/store/currencies/currenciesThunks';
+import CurrencySelect from '@/components/ui/CurrencySelect';
 import { CandidateWithEvaluation } from '@/types/candidates';
 import { toast } from 'sonner';
 
@@ -43,17 +36,6 @@ interface SendContractModalProps {
   onClose: () => void;
   candidate: CandidateWithEvaluation;
   jobTitle: string;
-}
-
-interface ContractOfferData {
-  candidateId: string;
-  salaryAmount: number;
-  salaryCurrency: string;
-  startDate?: string;
-  endDate?: string;
-  additionalTerms?: Record<string, any>;
-  customMessage?: string;
-  ccEmails?: string[];
 }
 
 const SendContractModal: React.FC<SendContractModalProps> = ({
@@ -72,9 +54,6 @@ const SendContractModal: React.FC<SendContractModalProps> = ({
   const [startDate, setStartDate] = useState<string>('');
   const [ccEmails, setCcEmails] = useState<string>('');
   const [isSending, setIsSending] = useState(false);
-  const [currencies, setCurrencies] = useState<
-    Array<{ id: string; code: string; name: string; symbol: string }>
-  >([]);
 
   const defaultMessage = `Hi ${candidate.firstName},
 
@@ -91,22 +70,10 @@ The Hiring Team`;
     if (isOpen && contracts.length === 0) {
       dispatch(fetchContracts());
     }
-    if (isOpen && currencies.length === 0) {
-      fetchCurrencies();
+    if (isOpen) {
+      dispatch(fetchCurrencies());
     }
-  }, [isOpen, dispatch, contracts.length, currencies.length]);
-
-  const fetchCurrencies = async () => {
-    try {
-      const response = await fetch('/api/currencies');
-      if (response.ok) {
-        const data = await response.json();
-        setCurrencies(data);
-      }
-    } catch (error) {
-      console.error('Error fetching currencies:', error);
-    }
-  };
+  }, [isOpen, dispatch, contracts.length]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -296,35 +263,7 @@ The Hiring Team`;
                   value={salary}
                   onChange={(e) => setSalary(e.target.value)}
                 />
-                <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Currency" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px] p-0">
-                    <div className="sticky top-0 z-10 p-2 bg-background border-b shadow-sm">
-                      <Input
-                        placeholder="Search currencies..."
-                        className="h-8"
-                        onChange={(e) => {
-                          const searchTerm = e.target.value.toLowerCase();
-                          const items = document.querySelectorAll('[data-currency-item]');
-                          items.forEach((item) => {
-                            const htmlItem = item as HTMLElement;
-                            const text = htmlItem.textContent?.toLowerCase() || '';
-                            htmlItem.style.display = text.includes(searchTerm) ? 'block' : 'none';
-                          });
-                        }}
-                      />
-                    </div>
-                    <div className="max-h-[240px] overflow-y-auto">
-                      {currencies.map((currency) => (
-                        <SelectItem key={currency.id} value={currency.code} data-currency-item>
-                          {currency.symbol} - {currency.name}
-                        </SelectItem>
-                      ))}
-                    </div>
-                  </SelectContent>
-                </Select>
+                <CurrencySelect value={selectedCurrency} onValueChange={setSelectedCurrency} />
               </div>
             </div>
 

@@ -32,13 +32,6 @@ const permissionLevelLabels = {
   [JobPermissionLevel.ADMIN]: 'Admin',
 };
 
-const permissionLevelColors = {
-  [JobPermissionLevel.VIEWER]: 'bg-gray-100 text-gray-800',
-  [JobPermissionLevel.INTERVIEWER]: 'bg-blue-100 text-blue-800',
-  [JobPermissionLevel.MANAGER]: 'bg-purple-100 text-purple-800',
-  [JobPermissionLevel.ADMIN]: 'bg-green-100 text-green-800',
-};
-
 interface CompanyMember {
   id: string;
   first_name: string | null;

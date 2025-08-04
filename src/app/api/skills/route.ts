@@ -1,85 +1,133 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
-// Mock skills data for development - matching the existing Skill interface
-const mockSkills = [
-  {
-    id: '1',
-    name: 'JavaScript',
-    description: 'Programming language for web development',
-    category: 'Programming Languages',
-  },
-  {
-    id: '2',
-    name: 'React',
-    description: 'Frontend JavaScript library',
-    category: 'Frontend Frameworks',
-  },
-  {
-    id: '3',
-    name: 'Node.js',
-    description: 'Backend JavaScript runtime',
-    category: 'Backend Technologies',
-  },
-  {
-    id: '4',
-    name: 'TypeScript',
-    description: 'Typed superset of JavaScript',
-    category: 'Programming Languages',
-  },
-  {
-    id: '5',
-    name: 'Python',
-    description: 'General-purpose programming language',
-    category: 'Programming Languages',
-  },
-  {
-    id: '6',
-    name: 'Next.js',
-    description: 'React framework for production',
-    category: 'Frontend Frameworks',
-  },
-  {
-    id: '7',
-    name: 'SQL',
-    description: 'Database query language',
-    category: 'Databases',
-  },
-  {
-    id: '8',
-    name: 'Git',
-    description: 'Version control system',
-    category: 'Tools',
-  },
-  {
-    id: '9',
-    name: 'AWS',
-    description: 'Amazon Web Services cloud platform',
-    category: 'Cloud Platforms',
-  },
-  {
-    id: '10',
-    name: 'Docker',
-    description: 'Containerization platform',
-    category: 'DevOps',
-  },
-];
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // In a real application, you would fetch from a database
-    // For now, return mock data
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user's company
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.company_id) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    }
+
+    // Get search query from URL params
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+
+    // Fetch skills (global + company-specific)
+    let query = supabase
+      .from('skills_view')
+      .select('*')
+      .or(`company_id.is.null,company_id.eq.${profile.company_id}`)
+      .order('name');
+
+    if (search) {
+      query = query.ilike('name', `%${search}%`);
+    }
+
+    const { data: skills, error } = await query;
+
+    if (error) {
+      console.error('Error fetching skills:', error);
+      return NextResponse.json({ error: 'Failed to fetch skills' }, { status: 500 });
+    }
+
     return NextResponse.json({
       success: true,
-      skills: mockSkills,
+      skills: skills || [],
     });
   } catch (error) {
-    console.error('Error fetching skills:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch skills',
-      },
-      { status: 500 }
-    );
+    console.error('Error in skills API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user's company
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.company_id) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    }
+
+    const body = await request.json();
+    const { name, description, categoryId } = body;
+
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: 'Skill name is required' }, { status: 400 });
+    }
+
+    // Check if skill already exists for this company
+    const { data: existingSkill, error: checkError } = await supabase
+      .from('skills')
+      .select('id')
+      .eq('name', name.trim())
+      .eq('company_id', profile.company_id)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing skill:', checkError);
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
+
+    if (existingSkill) {
+      return NextResponse.json({ error: 'Skill already exists for your company' }, { status: 409 });
+    }
+
+    // Create new skill
+    const { data: newSkill, error: createError } = await supabase
+      .from('skills')
+      .insert({
+        name: name.trim(),
+        description: description?.trim() || null,
+        category_id: categoryId || null,
+        company_id: profile.company_id,
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Error creating skill:', createError);
+      return NextResponse.json({ error: 'Failed to create skill' }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      skill: newSkill,
+    });
+  } catch (error) {
+    console.error('Error in create skill API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

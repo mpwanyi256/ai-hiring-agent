@@ -97,40 +97,11 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
     return 'text-red-600 bg-red-50';
   };
 
-  const handleScheduleInterview = (candidate: CandidateWithEvaluation) => {
-    setSchedulingModal({
-      isOpen: true,
-      candidate,
-    });
-  };
-
   const handleCloseSchedulingModal = () => {
     setSchedulingModal({
       isOpen: false,
       candidate: null,
     });
-  };
-
-  const handleRescheduleInterview = (candidate: CandidateWithEvaluation) => {
-    if (candidate.interviewDetails) {
-      setRescheduleModal({
-        isOpen: true,
-        interview: {
-          interview_id: candidate.interviewDetails.id,
-          candidate_id: candidate.id,
-          job_id: jobId,
-          interview_date: candidate.interviewDetails.date,
-          interview_time: candidate.interviewDetails.time,
-          timezone: candidate.interviewDetails.timezone_id,
-          notes: candidate.interviewDetails.notes,
-          candidate_first_name: candidate.firstName,
-          candidate_last_name: candidate.lastName,
-          job_title: candidate.jobTitle,
-          meet_link: candidate.interviewDetails.meet_link,
-          interview_status: candidate.interviewDetails.status,
-        },
-      });
-    }
   };
 
   const handleCloseRescheduleModal = () => {
@@ -272,17 +243,6 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
                       <span className="text-gray-400 text-sm">No score</span>
                     )}
                   </td>
-                  {/* <td className="px-6 py-4 whitespace-nowrap">
-                    {candidate.evaluation?.recommendation ? (
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRecommendationColor(candidate.evaluation.recommendation)}`}
-                      >
-                        {candidate.evaluation.recommendation.replace('_', ' ')}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 text-sm">No recommendation</span>
-                    )}
-                  </td> */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <UpdateApplicationStatus
                       candidateId={candidate.id}

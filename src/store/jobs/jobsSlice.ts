@@ -18,6 +18,9 @@ import {
   fetchDepartments,
   fetchJobTitles,
   fetchEmploymentTypes,
+  createDepartment,
+  createJobTitle,
+  createEmploymentType,
 } from './jobsThunks';
 import { parseJobDetails } from '@/lib/utils';
 
@@ -305,6 +308,18 @@ const jobsSlice = createSlice({
       .addCase(fetchEmploymentTypes.rejected, (state, action) => {
         state.employmentTypesLoading = false;
         state.employmentTypesError = action.error.message || 'Failed to fetch employment types';
+      })
+      // Create Department
+      .addCase(createDepartment.fulfilled, (state, action) => {
+        state.departments.push(action.payload);
+      })
+      // Create Job Title
+      .addCase(createJobTitle.fulfilled, (state, action) => {
+        state.jobTitles.push(action.payload);
+      })
+      // Create Employment Type
+      .addCase(createEmploymentType.fulfilled, (state, action) => {
+        state.employmentTypes.push(action.payload);
       });
   },
 });
