@@ -10,7 +10,6 @@ import TabNavigation from '@/components/ui/TabNavigation';
 import GeneralTab from '@/components/settings/GeneralTab';
 import AccountTab from '@/components/settings/AccountTab';
 import BillingTab from '@/components/settings/BillingTab';
-import ProfileTab from '@/components/settings/ProfileTab';
 import ConnectedAccountsTab from '@/components/settings/ConnectedAccountsTab';
 import NotificationSettings from '@/components/settings/NotificationSettings';
 
@@ -18,7 +17,6 @@ const tabs = [
   { id: 'general', label: 'General' },
   { id: 'account', label: 'Account' },
   { id: 'billing', label: 'Billing' },
-  { id: 'profile', label: 'Profile' },
   { id: 'connected', label: 'Connected Accounts' },
   { id: 'notifications', label: 'Notifications' },
 ];
@@ -51,7 +49,6 @@ function SettingsContent() {
         {activeTab === 'general' && <GeneralTab />}
         {activeTab === 'account' && <AccountTab />}
         {activeTab === 'billing' && <BillingTab />}
-        {activeTab === 'profile' && <ProfileTab />}
         {activeTab === 'connected' && <ConnectedAccountsTab />}
         {activeTab === 'notifications' && <NotificationSettings />}
       </div>
