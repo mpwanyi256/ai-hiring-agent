@@ -37,17 +37,27 @@ export interface TimelineEventsResponse {
 // Notification Types
 export interface Notification {
   id: string;
-  type: 'contract_offer' | 'interview' | 'evaluation' | 'application' | 'system';
+  type: 'info' | 'success' | 'warning' | 'error';
+  category: 'candidate' | 'contract' | 'interview' | 'system';
   title: string;
   message: string;
   timestamp: string;
   created_at: string;
   status: 'success' | 'warning' | 'error' | 'info';
+  isRead: boolean;
   priority: 'low' | 'medium' | 'high';
+  companyId: string;
+  relatedEntityId: string;
+  relatedEntityType: string;
+  userId: string;
+  readAt: string;
   read: boolean;
   is_read: boolean;
   candidate_id?: string;
   company_id: string;
+  createdAt: string;
+  actionUrl: string;
+  actionText: string;
   metadata?: Record<string, unknown>;
   entity_type: string;
   entity_id: string;
@@ -107,23 +117,6 @@ export interface NotificationPreferences {
     applications: boolean;
   };
   frequency: 'immediate' | 'hourly' | 'daily' | 'weekly';
-}
-
-export interface Notification {
-  id: string;
-  type: 'contract_offer' | 'interview' | 'evaluation' | 'application' | 'system';
-  category: 'candidate' | 'contract' | 'interview' | 'system';
-  title: string;
-  message: string;
-  actionUrl?: string;
-  actionText?: string;
-  isRead: boolean;
-  createdAt: string;
-  readAt?: string;
-  userId: string;
-  companyId: string;
-  relatedEntityId?: string;
-  relatedEntityType?: string;
 }
 
 export interface NotificationState {
