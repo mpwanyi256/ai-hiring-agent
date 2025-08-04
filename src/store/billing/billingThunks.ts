@@ -1,6 +1,13 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { createClient } from '@/lib/supabase/client';
-import type { BillingNotificationPreferences, SubscriptionPlan } from '@/types/billing';
+import type {
+  BillingNotificationPreferences,
+  SubscriptionPlan,
+  UserSubscription,
+} from '@/types/billing';
+import { apiUtils } from '../api';
+import { APIResponse } from '@/types';
+import { RootState } from '..';
 
 export const createCheckoutSession = createAsyncThunk(
   'billing/createCheckoutSession',
@@ -29,23 +36,21 @@ export const createCheckoutSession = createAsyncThunk(
 
 export const createPortalSession = createAsyncThunk(
   'billing/createPortalSession',
-  async ({ customerId }: { customerId: string }, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
-      const response = await fetch('/api/billing/create-portal-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ customerId }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create portal session');
+      const state = getState() as RootState;
+      const subscription = state.billing.subscription;
+      if (!subscription?.stripe_customer_id) {
+        throw new Error('No customer ID found. Please contact support.');
       }
 
-      return data;
+      const response = await apiUtils.post<APIResponse<{ url: string }>>(
+        '/api/billing/create-portal-session',
+        {
+          customerId: subscription.stripe_customer_id,
+        },
+      );
+      return response.data;
     } catch (error: unknown) {
       return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
     }
@@ -57,18 +62,10 @@ export const fetchSubscriptionPlans = createAsyncThunk<SubscriptionPlan[], void>
   'billing/fetchSubscriptionPlans',
   async (_, { rejectWithValue }) => {
     try {
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('is_active', true)
-        .order('price_monthly');
-
-      if (error) {
-        throw error;
-      }
-      return data as SubscriptionPlan[];
+      const response = await apiUtils.get<APIResponse<SubscriptionPlan[]>>(
+        '/api/billing/subscriptions',
+      );
+      return response.data;
     } catch (error: unknown) {
       return rejectWithValue(
         error instanceof Error ? error.message : 'Failed to fetch subscription plans',
@@ -77,45 +74,30 @@ export const fetchSubscriptionPlans = createAsyncThunk<SubscriptionPlan[], void>
   },
 );
 
-export const getUserSubscription = createAsyncThunk(
-  'billing/getUserSubscription',
-  async (_, { rejectWithValue }) => {
-    try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+export const getUserSubscription = createAsyncThunk<
+  UserSubscription | null,
+  void,
+  {
+    rejectValue: string;
+    getState: () => RootState;
+  }
+>('billing/getUserSubscription', async (_, { rejectWithValue, getState }) => {
+  try {
+    const state = getState() as RootState;
+    const user = state.auth.user;
 
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      const { data: subscription, error } = await supabase
-        .from('user_subscriptions')
-        .select(
-          `
-          *,
-          subscriptions (
-            name,
-            description,
-            max_jobs,
-            max_interviews_per_month
-          )
-        `,
-        )
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw new Error(error.message);
-      }
-
-      return subscription;
-    } catch (error: unknown) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
+    if (!user || !user.id) {
+      return rejectWithValue('You need to be authenticated');
     }
-  },
-);
+
+    const response = await apiUtils.get<APIResponse<UserSubscription | null>>(
+      `/api/billing/subscriptions/${user.id}`,
+    );
+    return response.data;
+  } catch (error: unknown) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
+  }
+});
 
 export const retryFailedPayment = createAsyncThunk(
   'billing/retryFailedPayment',

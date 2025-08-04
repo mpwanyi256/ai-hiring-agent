@@ -3,11 +3,7 @@
 import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { createPortalSession } from '@/store/billing/billingThunks';
-import {
-  selectCustomerPortalUrl,
-  selectBillingLoading,
-  selectSubscription,
-} from '@/store/billing/billingSelectors';
+import { selectBillingLoading, selectSubscription } from '@/store/billing/billingSelectors';
 import { Button } from '@/components/ui/button';
 import { CreditCardIcon } from '@heroicons/react/24/outline';
 
@@ -26,7 +22,6 @@ export default function BillingButton({
 }: BillingButtonProps) {
   const dispatch = useAppDispatch();
   const subscription = useAppSelector(selectSubscription);
-  const customerPortalUrl = useAppSelector(selectCustomerPortalUrl);
   const isLoading = useAppSelector(selectBillingLoading);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,16 +36,7 @@ export default function BillingButton({
         return;
       }
 
-      await dispatch(
-        createPortalSession({
-          customerId: subscription.stripe_customer_id,
-        }),
-      ).unwrap();
-
-      // Redirect to Stripe billing portal
-      if (customerPortalUrl) {
-        window.location.href = customerPortalUrl;
-      }
+      await dispatch(createPortalSession());
     } catch (error: unknown) {
       console.error('Failed to open billing portal:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);

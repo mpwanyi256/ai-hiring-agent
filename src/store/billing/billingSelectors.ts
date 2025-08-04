@@ -55,10 +55,6 @@ export const selectPlanDetails = createSelector(
   [selectSubscription, selectSubscriptionPlans],
   (subscription, plans) => {
     if (!subscription) return null;
-    // Use the joined subscription data if available, otherwise find by ID
-    if (subscription.subscriptions) {
-      return subscription.subscriptions;
-    }
     return plans.find((plan) => plan.id === subscription.subscription_id) || null;
   },
 );

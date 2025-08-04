@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+'use client';
+import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { getUserSubscription } from '@/store/billing/billingThunks';
 import {
@@ -6,7 +7,6 @@ import {
   selectTrialDaysRemaining,
   selectIsTrialing,
   selectHasActiveSubscription,
-  selectBillingLoading,
   selectPlanDetails,
 } from '@/store/billing/billingSelectors';
 import { selectUser } from '@/store/auth/authSelectors';
@@ -20,11 +20,14 @@ export default function BillingTab() {
   const trialDaysRemaining = useAppSelector(selectTrialDaysRemaining);
   const isTrialing = useAppSelector(selectIsTrialing);
   const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
-  const isLoading = useAppSelector(selectBillingLoading);
+  const [isLoading, setIsLoading] = useState(false);
   const user = useAppSelector(selectUser);
 
   useEffect(() => {
-    dispatch(getUserSubscription());
+    setIsLoading(true);
+    dispatch(getUserSubscription()).finally(() => {
+      setIsLoading(false);
+    });
   }, [dispatch]);
 
   return (
@@ -48,7 +51,7 @@ export default function BillingTab() {
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
-                <h3 className="font-medium text-gray-900">{currentPlan?.name}</h3>
+                <h3 className="font-medium text-gray-900 capitalize">{currentPlan?.name}</h3>
                 <p className="text-sm text-gray-600">${currentPlan?.price_monthly}/month</p>
               </div>
               <div className="text-right">

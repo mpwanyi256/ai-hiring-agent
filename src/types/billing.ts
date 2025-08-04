@@ -1,18 +1,26 @@
 export interface SubscriptionPlan {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   price_monthly: number;
   price_yearly: number;
-  interval: 'month' | 'year';
-  features: string[];
   max_jobs: number;
   max_interviews_per_month: number;
-  stripe_price_id: string;
-  trial_days: number;
+  features: string[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  trial_days: number;
+  interval: 'month' | 'year';
+  stripe_product_id: string;
+  stripe_price_id_dev: string;
+  stripe_price_id_prod: string;
+  stripe_price_id_dev_yearly: string;
+  stripe_price_id_prod_yearly: string;
+  stripe_checkout_link_dev: string;
+  stripe_checkout_link_prod: string;
+  stripe_checkout_link_dev_yearly: string;
+  stripe_checkout_link_prod_yearly: string;
 }
 
 export interface UserSubscription {

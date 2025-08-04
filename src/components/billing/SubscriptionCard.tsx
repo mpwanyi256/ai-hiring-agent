@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { createCheckoutSession } from '@/store/billing/billingThunks';
+import { createPortalSession } from '@/store/billing/billingThunks';
 import {
   selectTrialDaysRemaining,
   selectIsTrialing,
   selectBillingLoading,
 } from '@/store/billing/billingSelectors';
-import { selectUser } from '@/store/auth/authSelectors';
 import { SubscriptionPlan } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { SparklesIcon, CheckIcon } from '@heroicons/react/24/outline';
@@ -32,26 +31,12 @@ export default function SubscriptionCard({
   const isLoading = useAppSelector(selectBillingLoading);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
-  const user = useAppSelector(selectUser);
 
   const handleUpgrade = async () => {
     try {
       setIsRedirecting(true);
 
-      const result = await dispatch(
-        createCheckoutSession({
-          planId: plan.name, // Use plan name instead of plan ID
-          userId: user?.id || '',
-        }),
-      ).unwrap();
-
-      // Redirect immediately using the URL from the API response
-      if (result && result.url) {
-        console.log('Redirecting to checkout:', result.url);
-        window.location.href = result.url;
-      } else {
-        console.error('No checkout URL received from API');
-      }
+      await dispatch(createPortalSession()).unwrap();
     } catch (error) {
       console.error('Failed to create checkout session:', error);
     } finally {
