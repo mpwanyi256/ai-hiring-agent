@@ -1,61 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { createClient } from '@/lib/supabase/client';
-import type { BillingNotificationPreferences } from '@/types/billing';
-
-// Fetch user's current subscription (using user_details view for consistency)
-export const fetchSubscription = createAsyncThunk<UserSubscription, void>(
-  'billing/fetchSubscription',
-  async (_, { rejectWithValue, getState }) => {
-    try {
-      const user = (getState() as RootState).auth.user;
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-      const { data, success } = await apiUtils.get<APIResponse<UserSubscription>>(
-        `/api/billing/subscription/${user.id}`,
-      );
-
-      if (!success) {
-        throw new Error('Failed to fetch subscription');
-      }
-
-      // Check if user has an active subscription
-      if (!data.subscription_id || !data) {
-        console.log('No active subscription found for user');
-        throw new Error('No active subscription found');
-      }
-      return data;
-    } catch {
-      return rejectWithValue('Failed to fetch subscription');
-    }
-  },
-);
-
-// Fetch available subscription plans from database
-export const fetchSubscriptionPlans = createAsyncThunk<SubscriptionPlan[], void>(
-  'billing/fetchSubscriptionPlans',
-  async (_, { rejectWithValue }) => {
-    try {
-      console.log('Fetching subscription plans from database...');
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('is_active', true)
-        .order('price_monthly');
-
-      if (error) {
-        console.error('Error fetching subscription plans from database:', error);
-        throw error;
-      }
-      return data as SubscriptionPlan[];
-    } catch (error: any) {
-      console.error('Failed to fetch subscription plans:', error);
-      return rejectWithValue(error.message || 'Failed to fetch subscription plans');
-    }
-  },
-);
+import type { BillingNotificationPreferences, SubscriptionPlan } from '@/types/billing';
 
 export const createCheckoutSession = createAsyncThunk(
   'billing/createCheckoutSession',
@@ -103,6 +48,31 @@ export const createPortalSession = createAsyncThunk(
       return data;
     } catch (error: unknown) {
       return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
+    }
+  },
+);
+
+// Fetch available subscription plans from database
+export const fetchSubscriptionPlans = createAsyncThunk<SubscriptionPlan[], void>(
+  'billing/fetchSubscriptionPlans',
+  async (_, { rejectWithValue }) => {
+    try {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('is_active', true)
+        .order('price_monthly');
+
+      if (error) {
+        throw error;
+      }
+      return data as SubscriptionPlan[];
+    } catch (error: unknown) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to fetch subscription plans',
+      );
     }
   },
 );

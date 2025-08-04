@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchSubscription } from '@/store/billing/billingThunks';
+import { getUserSubscription } from '@/store/billing/billingThunks';
 import {
   selectSubscription,
   selectTrialDaysRemaining,
@@ -24,7 +24,7 @@ export default function BillingTab() {
   const user = useAppSelector(selectUser);
 
   useEffect(() => {
-    dispatch(fetchSubscription());
+    dispatch(getUserSubscription());
   }, [dispatch]);
 
   return (

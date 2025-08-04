@@ -39,9 +39,7 @@ function PlansPageContent() {
       const result = await dispatch(
         createCheckoutSession({
           planId: planName,
-          billingPeriod,
-          successUrl: `${window.location.origin}/dashboard?welcome=true`,
-          cancelUrl: `${window.location.origin}/onboard/plans`,
+          userId: user.id,
         }),
       ).unwrap();
 

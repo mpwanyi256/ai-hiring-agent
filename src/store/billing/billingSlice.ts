@@ -1,10 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { BillingState, UserSubscription, SubscriptionPlan } from '@/types/billing';
 import {
-  fetchSubscription,
-  createCheckoutSession,
-  createBillingPortalSession,
   fetchSubscriptionPlans,
+  createCheckoutSession,
+  createPortalSession,
+  getUserSubscription,
   checkSubscriptionStatus,
   retryFailedPayment,
   updateBillingNotificationPreferences,
@@ -158,62 +158,6 @@ const billingSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Subscription
-      .addCase(fetchSubscription.pending, (state) => {
-        state.loadingStates.subscription = true;
-        state.error = null;
-      })
-      .addCase(fetchSubscription.fulfilled, (state, action) => {
-        state.loadingStates.subscription = false;
-        state.subscription = action.payload;
-        state.hasActiveSubscription = ['active', 'trialing'].includes(action.payload.status);
-        state.retryCount = 0;
-      })
-      .addCase(fetchSubscription.rejected, (state, action) => {
-        state.loadingStates.subscription = false;
-        state.error = action.error.message || 'Failed to fetch subscription';
-        state.hasActiveSubscription = false;
-      })
-      // Check Subscription Status
-      .addCase(checkSubscriptionStatus.pending, (state) => {
-        state.loadingStates.statusCheck = true;
-      })
-      .addCase(checkSubscriptionStatus.fulfilled, (state, action) => {
-        state.loadingStates.statusCheck = false;
-        state.hasActiveSubscription = action.payload;
-      })
-      .addCase(checkSubscriptionStatus.rejected, (state, action) => {
-        state.loadingStates.statusCheck = false;
-        state.error = action.error.message || 'Failed to check subscription status';
-        state.hasActiveSubscription = false;
-      })
-      // Create Checkout Session
-      .addCase(createCheckoutSession.pending, (state) => {
-        state.loadingStates.checkout = true;
-        state.error = null;
-      })
-      .addCase(createCheckoutSession.fulfilled, (state, action) => {
-        state.loadingStates.checkout = false;
-        state.checkoutSessionUrl = action.payload.url;
-      })
-      .addCase(createCheckoutSession.rejected, (state, action) => {
-        state.loadingStates.checkout = false;
-        state.error = action.error.message || 'Failed to create checkout session';
-      })
-      // Create Billing Portal Session
-      .addCase(createBillingPortalSession.pending, (state) => {
-        state.loadingStates.portal = true;
-        state.error = null;
-      })
-      .addCase(createBillingPortalSession.fulfilled, (state, action) => {
-        state.loadingStates.portal = false;
-        state.customerPortalUrl = action.payload.url;
-        window.open(action.payload.url, '_blank');
-      })
-      .addCase(createBillingPortalSession.rejected, (state, action) => {
-        state.loadingStates.portal = false;
-        state.error = action.error.message || 'Failed to create billing portal session';
-      })
       // Fetch Subscription Plans
       .addCase(fetchSubscriptionPlans.pending, (state) => {
         state.loadingStates.plans = true;
@@ -227,27 +171,92 @@ const billingSlice = createSlice({
         state.loadingStates.plans = false;
         state.error = action.error.message || 'Failed to fetch subscription plans';
       })
+      // Get User Subscription
+      .addCase(getUserSubscription.pending, (state) => {
+        state.loadingStates.subscription = true;
+        state.error = null;
+      })
+      .addCase(getUserSubscription.fulfilled, (state, action) => {
+        state.loadingStates.subscription = false;
+        state.subscription = action.payload;
+        state.hasActiveSubscription = action.payload
+          ? ['active', 'trialing'].includes(action.payload.status)
+          : false;
+        state.retryCount = 0;
+      })
+      .addCase(getUserSubscription.rejected, (state, action) => {
+        state.loadingStates.subscription = false;
+        state.error = action.error.message || 'Failed to fetch subscription';
+        state.hasActiveSubscription = false;
+        state.retryCount += 1;
+      })
+      // Check Subscription Status
+      .addCase(checkSubscriptionStatus.pending, (state) => {
+        state.loadingStates.statusCheck = true;
+        state.error = null;
+      })
+      .addCase(checkSubscriptionStatus.fulfilled, (state, action) => {
+        state.loadingStates.statusCheck = false;
+        state.subscription = action.payload;
+        state.hasActiveSubscription = action.payload
+          ? ['active', 'trialing'].includes(action.payload.status)
+          : false;
+      })
+      .addCase(checkSubscriptionStatus.rejected, (state, action) => {
+        state.loadingStates.statusCheck = false;
+        state.error = action.error.message || 'Failed to check subscription status';
+      })
+      // Create Checkout Session
+      .addCase(createCheckoutSession.pending, (state) => {
+        state.loadingStates.checkout = true;
+        state.error = null;
+      })
+      .addCase(createCheckoutSession.fulfilled, (state, action) => {
+        state.loadingStates.checkout = false;
+        state.checkoutSessionUrl = action.payload.url;
+        window.location.href = action.payload.url;
+      })
+      .addCase(createCheckoutSession.rejected, (state, action) => {
+        state.loadingStates.checkout = false;
+        state.error = action.error.message || 'Failed to create checkout session';
+      })
+      // Create Billing Portal Session
+      .addCase(createPortalSession.pending, (state) => {
+        state.loadingStates.portal = true;
+        state.error = null;
+      })
+      .addCase(createPortalSession.fulfilled, (state, action) => {
+        state.loadingStates.portal = false;
+        state.customerPortalUrl = action.payload.url;
+        window.open(action.payload.url, '_blank');
+      })
+      .addCase(createPortalSession.rejected, (state, action) => {
+        state.loadingStates.portal = false;
+        state.error = action.error.message || 'Failed to create billing portal session';
+      })
       // Retry Failed Payment
       .addCase(retryFailedPayment.pending, (state) => {
         state.loadingStates.paymentRetry = true;
         state.error = null;
       })
-      .addCase(retryFailedPayment.fulfilled, (state) => {
+      .addCase(retryFailedPayment.fulfilled, (state, action) => {
         state.loadingStates.paymentRetry = false;
-        state.retryCount = 0;
+        if (action.payload.subscription) {
+          state.subscription = { ...state.subscription, ...action.payload.subscription };
+        }
       })
       .addCase(retryFailedPayment.rejected, (state, action) => {
         state.loadingStates.paymentRetry = false;
         state.error = action.error.message || 'Failed to retry payment';
-        state.retryCount = Math.min(state.retryCount + 1, state.maxRetryAttempts);
       })
-      // Update Billing Notification Preferences
+      // Update Notification Preferences
       .addCase(updateBillingNotificationPreferences.pending, (state) => {
         state.loadingStates.notifications = true;
         state.error = null;
       })
-      .addCase(updateBillingNotificationPreferences.fulfilled, (state) => {
+      .addCase(updateBillingNotificationPreferences.fulfilled, (state, action) => {
         state.loadingStates.notifications = false;
+        state.notificationPreferences = action.payload;
       })
       .addCase(updateBillingNotificationPreferences.rejected, (state, action) => {
         state.loadingStates.notifications = false;

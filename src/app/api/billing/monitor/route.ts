@@ -2,7 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SubscriptionMonitor } from '@/lib/billing/subscriptionMonitor';
 import { monitoring } from '@/lib/constants';
 
-export async function POST(_request: NextRequest) {
+// Auth middleware function
+function validateApiKey(request: NextRequest): boolean {
+  const authHeader = request.headers.get('authorization');
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return false;
+  }
+
+  const providedKey = authHeader.slice(7);
+  return providedKey === monitoring.apiKey;
+}
+
+export async function POST(request: NextRequest) {
+  // Check authentication
+  if (!validateApiKey(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const monitor = new SubscriptionMonitor();
     const results = await monitor.runAllChecks();
@@ -42,24 +59,4 @@ export async function GET(_request: NextRequest) {
     description: 'Use POST with Authorization header to run monitoring checks',
     requiredHeader: 'Authorization: Bearer YOUR_MONITORING_API_KEY',
   });
-}
-
-// Auth middleware function
-function validateApiKey(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization');
-
-  if (!authHeader?.startsWith('Bearer ')) {
-    return false;
-  }
-
-  const providedKey = authHeader.slice(7);
-  return providedKey === monitoring.apiKey;
-}
-
-export async function middleware(request: NextRequest) {
-  if (request.method === 'POST' && !validateApiKey(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  return NextResponse.next();
 }

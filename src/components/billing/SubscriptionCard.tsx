@@ -8,6 +8,7 @@ import {
   selectIsTrialing,
   selectBillingLoading,
 } from '@/store/billing/billingSelectors';
+import { selectUser } from '@/store/auth/authSelectors';
 import { SubscriptionPlan } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { SparklesIcon, CheckIcon } from '@heroicons/react/24/outline';
@@ -31,6 +32,7 @@ export default function SubscriptionCard({
   const isLoading = useAppSelector(selectBillingLoading);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const user = useAppSelector(selectUser);
 
   const handleUpgrade = async () => {
     try {
@@ -39,9 +41,7 @@ export default function SubscriptionCard({
       const result = await dispatch(
         createCheckoutSession({
           planId: plan.name, // Use plan name instead of plan ID
-          billingPeriod, // Pass the billing period
-          successUrl: `${window.location.origin}/dashboard/billing?success=true`,
-          cancelUrl: `${window.location.origin}/dashboard/billing?canceled=true`,
+          userId: user?.id || '',
         }),
       ).unwrap();
 

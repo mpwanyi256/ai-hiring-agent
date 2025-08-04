@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchSubscriptionPlans, fetchSubscription } from '@/store/billing/billingThunks';
+import { fetchSubscriptionPlans, getUserSubscription } from '@/store/billing/billingThunks';
 import { selectSubscriptionPlans, selectCurrentPlan } from '@/store/billing/billingSelectors';
 import Navigation from '@/components/landing/Navigation';
 import Footer from '@/components/landing/Footer';
@@ -19,7 +19,7 @@ export default function PricingPage() {
   useEffect(() => {
     // Fetch both plans and current subscription
     dispatch(fetchSubscriptionPlans());
-    dispatch(fetchSubscription());
+    dispatch(getUserSubscription());
   }, [dispatch]);
 
   // Don't render until plans are loaded
