@@ -1,5 +1,4 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { createClient } from '@/lib/supabase/client';
 import type {
   BillingNotificationPreferences,
   SubscriptionPlan,
@@ -11,13 +10,25 @@ import { RootState } from '..';
 
 export const createCheckoutSession = createAsyncThunk(
   'billing/createCheckoutSession',
-  async ({ planId, userId }: { planId: string; userId: string }, { rejectWithValue }) => {
+  async (
+    {
+      planId,
+      userId,
+      billingPeriod = 'monthly',
+    }: {
+      planId: string;
+      userId: string;
+      billingPeriod?: 'monthly' | 'yearly';
+    },
+    { rejectWithValue },
+  ) => {
     try {
       const response = await apiUtils.post<APIResponse<{ url: string }>>(
         '/api/billing/create-checkout-session',
         {
           planId,
           userId,
+          billingPeriod,
         },
       );
 
@@ -119,29 +130,10 @@ export const checkSubscriptionStatus = createAsyncThunk(
   'billing/checkSubscriptionStatus',
   async (userId: string, { rejectWithValue }) => {
     try {
-      const supabase = createClient();
-
-      const { data: subscription, error } = await supabase
-        .from('user_subscriptions')
-        .select(
-          `
-          *,
-          subscriptions (
-            name,
-            description,
-            max_jobs,
-            max_interviews_per_month
-          )
-        `,
-        )
-        .eq('user_id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw new Error(error.message);
-      }
-
-      return subscription;
+      const response = await apiUtils.get<APIResponse<UserSubscription | null>>(
+        `/api/billing/subscription-status/${userId}`,
+      );
+      return response.data;
     } catch (error: unknown) {
       return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
     }
@@ -152,19 +144,11 @@ export const updateBillingNotificationPreferences = createAsyncThunk(
   'billing/updateNotificationPreferences',
   async (preferences: BillingNotificationPreferences, { rejectWithValue }) => {
     try {
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from('billing_notification_preferences')
-        .upsert(preferences, { onConflict: 'user_id' })
-        .select()
-        .single();
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return data;
+      const response = await apiUtils.post<APIResponse<BillingNotificationPreferences>>(
+        '/api/billing/notification-preferences',
+        preferences,
+      );
+      return response.data;
     } catch (error: unknown) {
       return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
     }

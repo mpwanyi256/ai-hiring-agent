@@ -239,11 +239,10 @@ const billingSlice = createSlice({
         state.loadingStates.paymentRetry = true;
         state.error = null;
       })
-      .addCase(retryFailedPayment.fulfilled, (state, action) => {
+      .addCase(retryFailedPayment.fulfilled, (state, _action) => {
         state.loadingStates.paymentRetry = false;
-        if (action.payload.subscription) {
-          state.subscription = { ...state.subscription, ...action.payload.subscription };
-        }
+        // retryFailedPayment returns { url: string }, no subscription property
+        // User subscription will be updated via webhook after successful payment
       })
       .addCase(retryFailedPayment.rejected, (state, action) => {
         state.loadingStates.paymentRetry = false;

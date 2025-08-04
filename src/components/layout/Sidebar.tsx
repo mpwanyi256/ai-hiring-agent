@@ -24,7 +24,7 @@ import {
   ShieldCheckIcon,
   CreditCardIcon,
 } from '@heroicons/react/24/outline';
-import BillingButton from '@/components/billing/BillingButton';
+import UpgradeButton from '@/components/billing/UpgradeButton';
 import { useSubscriptionModal } from '@/components/modals/SubscriptionModal';
 import { selectHasActiveSubscription } from '@/store/auth/authSelectors';
 import { selectCurrentPlan } from '@/store/billing/billingSelectors';
@@ -437,9 +437,9 @@ export default function Sidebar({
       {/* Billing Button */}
       {(!collapsed || isMobile) && hasActiveSubscription && (
         <div className="p-3 border-t border-gray-100">
-          <BillingButton variant="outline" size="sm" className="w-full text-xs">
+          <UpgradeButton variant="outline" size="sm" className="w-full text-xs">
             Manage Billing
-          </BillingButton>
+          </UpgradeButton>
         </div>
       )}
 

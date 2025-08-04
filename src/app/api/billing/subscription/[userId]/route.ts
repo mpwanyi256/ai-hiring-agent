@@ -57,7 +57,15 @@ export async function GET(
         trial_days: 14, // Default trial days
         interval: 'month',
         is_active: true,
-        stripe_price_id: data.stripe_price_id_dev, // Use dev price ID as default
+        stripe_product_id: data.stripe_product_id || '',
+        stripe_price_id_dev: data.stripe_price_id_dev || '',
+        stripe_price_id_prod: data.stripe_price_id_prod || '',
+        stripe_price_id_dev_yearly: data.stripe_price_id_dev_yearly || '',
+        stripe_price_id_prod_yearly: data.stripe_price_id_prod_yearly || '',
+        stripe_checkout_link_dev: data.stripe_checkout_link_dev || '',
+        stripe_checkout_link_prod: data.stripe_checkout_link_prod || '',
+        stripe_checkout_link_dev_yearly: data.stripe_checkout_link_dev_yearly || '',
+        stripe_checkout_link_prod_yearly: data.stripe_checkout_link_prod_yearly || '',
         created_at: data.company_created_at,
         updated_at: data.user_updated_at,
       },
