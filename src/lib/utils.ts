@@ -435,27 +435,6 @@ export function getNotificationIcon(type: string) {
   }
 }
 
-export function getNotificationActionUrl(notification: Notification): string | null {
-  switch (notification.type) {
-    case 'contract_offer':
-      return notification.candidate_id
-        ? `/dashboard/jobs/candidates/${notification.candidate_id}`
-        : null;
-    case 'interview':
-      return `/dashboard/interviews/${notification.entity_id}`;
-    case 'application':
-      return notification.candidate_id
-        ? `/dashboard/jobs/candidates/${notification.candidate_id}`
-        : null;
-    case 'evaluation':
-      return notification.candidate_id
-        ? `/dashboard/jobs/candidates/${notification.candidate_id}`
-        : null;
-    default:
-      return null;
-  }
-}
-
 export function getNotificationTypeLabel(type: string): string {
   const labels: Record<string, string> = {
     contract_offer: 'Contract Offer',

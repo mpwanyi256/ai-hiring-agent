@@ -113,6 +113,7 @@ export const useRealtimeNotifications = () => {
         channelRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, supabase]); // Removed handleRealtimeEvent from dependencies to prevent recreation
 
   // Cleanup processed notifications on unmount
