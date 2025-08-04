@@ -13,21 +13,15 @@ export const createCheckoutSession = createAsyncThunk(
   'billing/createCheckoutSession',
   async ({ planId, userId }: { planId: string; userId: string }, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/billing/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await apiUtils.post<APIResponse<{ url: string }>>(
+        '/api/billing/create-checkout-session',
+        {
+          planId,
+          userId,
         },
-        body: JSON.stringify({ planId, userId }),
-      });
+      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
-      }
-
-      return data;
+      return response.data;
     } catch (error: unknown) {
       return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
     }
@@ -106,21 +100,15 @@ export const retryFailedPayment = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const response = await fetch('/api/billing/retry-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await apiUtils.post<APIResponse<{ url: string }>>(
+        '/api/billing/retry-payment',
+        {
+          paymentMethodId,
+          subscriptionId,
         },
-        body: JSON.stringify({ paymentMethodId, subscriptionId }),
-      });
+      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to retry payment');
-      }
-
-      return data;
+      return response.data;
     } catch (error: unknown) {
       return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
     }
