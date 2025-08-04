@@ -28,18 +28,13 @@ import {
 import { app } from '@/lib/constants';
 import { MetricCardSkeleton } from '@/components/dashboard/MetricCard';
 import { InsightCardSkeleton } from '@/components/dashboard/InsightCard';
-import { SubscriptionModalProvider } from '@/components/modals/SubscriptionModal';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardUserPlanCard } from '@/components/dashboard/DashboardUserPlanCard';
 import { DashboardSubscriptionMessage } from '@/components/dashboard/DashboardSubscriptionMessage';
 import { selectHasActiveSubscription } from '@/store/auth/authSelectors';
 import { useAppDispatch } from '@/store';
 import { fetchDashboardMetrics } from '@/store/dashboard/dashboardThunks';
-import {
-  selectDashboardMetrics,
-  selectMetricsLoading,
-  selectMetricsError,
-} from '@/store/dashboard/dashboardSlice';
+import { selectDashboardMetrics, selectMetricsLoading } from '@/store/dashboard/dashboardSlice';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -52,7 +47,6 @@ export default function DashboardPage() {
   // Dashboard metrics state
   const metrics = useAppSelector(selectDashboardMetrics);
   const metricsLoading = useAppSelector(selectMetricsLoading);
-  const metricsError = useAppSelector(selectMetricsError);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1000);

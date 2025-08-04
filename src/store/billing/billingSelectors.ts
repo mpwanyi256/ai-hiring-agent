@@ -4,6 +4,7 @@ import { BillingState, UsageMetrics } from '@/types/billing';
 
 // Base selectors
 export const selectBillingState = (state: RootState): BillingState => state.billing;
+const selectUser = (state: RootState) => state.auth.user;
 
 export const selectSubscription = createSelector(
   [selectBillingState],
@@ -48,16 +49,21 @@ export const selectIsTrialing = createSelector([selectSubscription], (subscripti
   return subscription.status === 'trialing';
 });
 
-export const selectCurrentPlan = createSelector(
-  [selectSubscription, selectSubscriptionPlans],
-  (subscription, plans) => {
-    if (!subscription) return null;
-    // Use the joined subscription data if available, otherwise find by ID
-    if (subscription.subscriptions) {
-      return subscription.subscriptions;
-    }
-    return plans.find((plan) => plan.id === subscription.subscription_id) || null;
-  },
+export const selectCurrentPlan = createSelector([selectUser], (user) => user?.subscription);
+
+export const selectIsOnStarterPlan = createSelector(
+  [selectCurrentPlan],
+  (plan) => plan?.name === 'starter' && plan.status === 'active',
+);
+
+export const selectIsOnProPlan = createSelector(
+  [selectCurrentPlan],
+  (plan) => plan?.name === 'pro' && plan.status === 'active',
+);
+
+export const selectIsBusinessPlan = createSelector(
+  [selectCurrentPlan],
+  (plan) => plan?.name === 'enterprise' && plan.status === 'active',
 );
 
 export const selectTrialDaysRemaining = createSelector([selectSubscription], (subscription) => {

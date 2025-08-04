@@ -28,6 +28,7 @@ import ModelSelectionCard from '@/components/ai/ModelSelectionCard';
 import ProviderConfigCard from '@/components/ai/ProviderConfigCard';
 import UsageAnalyticsCard from '@/components/ai/UsageAnalyticsCard';
 import ModelTestingCard from '@/components/ai/ModelTestingCard';
+import { FeatureSubscriptionCard } from '@/components/billing/FeatureSubscriptionCard';
 
 const CAPABILITIES: { key: AICapability; label: string; description: string }[] = [
   {
@@ -120,21 +121,12 @@ export default function AIModelsPage() {
   // Render upgrade prompt for users without access
   if (!hasConfigAccess) {
     return (
-      <DashboardLayout>
-        <UpgradePrompt
-          user={user}
-          featureName="AI Model Configuration"
-          featureDescription="Configure and manage AI models for different capabilities"
-          benefits={[
-            'Choose from multiple AI providers (OpenAI, Anthropic, Google)',
-            'Configure different models for specific capabilities',
-            'Track usage analytics and optimize costs',
-            'Test model connections and performance',
-            'Advanced model selection per use case',
-            'Real-time cost monitoring and optimization',
-          ]}
-        />
-      </DashboardLayout>
+      <FeatureSubscriptionCard
+        title="Upgrade to Pro to access this feature"
+        subtitle="Sorry, your plan does not include this feature. You can upgrade to pro to start configuring AI models."
+        pageTitle="AI Model Configuration"
+        pageSubtitle="Configure AI models for different capabilities and manage provider settings"
+      />
     );
   }
 

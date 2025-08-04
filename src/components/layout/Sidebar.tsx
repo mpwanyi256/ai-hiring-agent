@@ -27,6 +27,7 @@ import {
 import BillingButton from '@/components/billing/BillingButton';
 import { useSubscriptionModal } from '@/components/modals/SubscriptionModal';
 import { selectHasActiveSubscription } from '@/store/auth/authSelectors';
+import { selectCurrentPlan } from '@/store/billing/billingSelectors';
 
 interface ChildRoute {
   name: string;
@@ -63,6 +64,8 @@ export default function Sidebar({
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const { open: openSubscriptionModal } = useSubscriptionModal() || {};
   const hasActiveSubscription = useSelector(selectHasActiveSubscription);
+  const activeSubscription = useSelector(selectCurrentPlan);
+  const isOnStarterPlan = activeSubscription?.name === 'Starter';
 
   const toggleExpanded = (itemName: string) => {
     if (collapsed && !isMobile) return; // Don't expand in collapsed desktop mode

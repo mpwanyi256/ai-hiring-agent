@@ -66,9 +66,11 @@ import {
   selectAnalyticsError,
   selectContractsPagination,
 } from '@/store/contracts/contractsSelectors';
+import { selectIsOnStarterPlan } from '@/store/billing/billingSelectors';
 
 // Types from centralized file
 import { ContractsFilters } from '@/types/contracts';
+import { FeatureSubscriptionCard } from '@/components/billing/FeatureSubscriptionCard';
 
 const CONTRACT_STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft', color: 'gray' },
@@ -89,6 +91,8 @@ const CONTRACT_CATEGORY_OPTIONS = [
 export default function ContractsPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const isOnStarterPlan = useAppSelector(selectIsOnStarterPlan);
+  console.log('On Starter plan', isOnStarterPlan);
 
   // Redux selectors
   const contracts = useAppSelector(selectContracts);
@@ -96,7 +100,6 @@ export default function ContractsPage() {
   const contractsError = useAppSelector(selectContractsError);
   const analytics = useAppSelector(selectContractAnalytics);
   const analyticsLoading = useAppSelector(selectAnalyticsLoading);
-  const analyticsError = useAppSelector(selectAnalyticsError);
   const pagination = useAppSelector(selectContractsPagination);
 
   // Local state for filters and UI
@@ -521,6 +524,16 @@ export default function ContractsPage() {
           </div>
         </div>
       </DashboardLayout>
+    );
+  }
+
+  // Starter plan check
+  if (isOnStarterPlan) {
+    return (
+      <FeatureSubscriptionCard
+        title="Upgrade to Pro to create contracts"
+        subtitle="Sorry, your plan does not include this feature. You can upgrade to pro to start creating contracts."
+      />
     );
   }
 
