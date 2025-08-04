@@ -53,6 +53,19 @@ const notificationsSlice = createSlice({
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
+    addNotification: (state, action: PayloadAction<Notification>) => {
+      state.notifications.push(action.payload);
+      state.unreadCount = state.notifications.filter((n) => !n.isRead).length;
+    },
+    updateNotification: (state, action: PayloadAction<Notification>) => {
+      const index = state.notifications.findIndex((n) => n.id === action.payload.id);
+      if (index !== -1) {
+        state.notifications[index] = action.payload;
+      }
+    },
+    removeNotification: (state, action: PayloadAction<string>) => {
+      state.notifications = state.notifications.filter((n) => n.id !== action.payload);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -104,6 +117,9 @@ export const {
   markNotificationAsUnread,
   setError,
   setLoading,
+  addNotification,
+  updateNotification,
+  removeNotification,
 } = notificationsSlice.actions;
 
 export default notificationsSlice.reducer;
