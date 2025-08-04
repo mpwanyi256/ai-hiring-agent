@@ -1,13 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useAppSelector } from '@/store';
 import {
   selectRecentActivity,
   selectRecentActivityLoading,
   selectRecentActivityError,
 } from '@/store/dashboard/dashboardSelectors';
-import { selectUser } from '@/store/auth/authSelectors';
 import {
   UserGroupIcon,
   ClockIcon,
@@ -21,7 +19,6 @@ interface RecentActivityProps {
 }
 
 export default function RecentActivity({ maxItems = 5, className = '' }: RecentActivityProps) {
-  const user = useAppSelector(selectUser);
   const activities = useAppSelector(selectRecentActivity);
   const loading = useAppSelector(selectRecentActivityLoading);
   const error = useAppSelector(selectRecentActivityError);

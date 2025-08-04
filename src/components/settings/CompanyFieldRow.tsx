@@ -7,6 +7,7 @@ interface CompanyFieldRowProps {
   onEdit: () => void;
   className?: string;
   children?: React.ReactNode;
+  disabled?: boolean;
 }
 
 const CompanyFieldRow: React.FC<CompanyFieldRowProps> = ({
@@ -15,6 +16,7 @@ const CompanyFieldRow: React.FC<CompanyFieldRowProps> = ({
   onEdit,
   className = '',
   children,
+  disabled = false,
 }) => {
   return (
     <div
@@ -23,8 +25,8 @@ const CompanyFieldRow: React.FC<CompanyFieldRowProps> = ({
       <label className="text-sm font-medium text-gray-700 w-28 shrink-0">{label}</label>
       <div className="flex-1 flex items-center gap-2 min-w-0">
         <span className="text-sm text-gray-900 truncate flex-1">{children || value}</span>
-        <Button variant="outline" size="sm" onClick={onEdit} className="ml-2">
-          Edit
+        <Button variant="outline" size="sm" onClick={onEdit} className="ml-2" disabled={disabled}>
+          {disabled ? 'Read Only' : 'Edit'}
         </Button>
       </div>
     </div>

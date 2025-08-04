@@ -14,8 +14,10 @@ import {
   selectCompanyLoading,
   selectCompanyTimezones,
 } from '@/store/company/companySelectors';
+import { selectIsCompanyOwner } from '@/store/settings/settingsSelectors';
 import { apiError } from '@/lib/notification';
 import { selectUser } from '@/store/auth/authSelectors';
+import { BuildingOffice2Icon, ClockIcon, PhotoIcon } from '@heroicons/react/24/outline';
 
 export default function GeneralTab() {
   const dispatch = useAppDispatch();
@@ -28,6 +30,7 @@ export default function GeneralTab() {
   const company = useAppSelector(selectCompany);
   const isLoading = useAppSelector(selectCompanyLoading);
   const user = useAppSelector(selectUser);
+  const isCompanyOwner = useAppSelector(selectIsCompanyOwner);
 
   useEffect(() => {
     if (!user?.companyId) return;
@@ -110,57 +113,121 @@ export default function GeneralTab() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 p-8 flex flex-col items-center">
-      {/* Logo Upload */}
-      <div className="mb-8 flex flex-col items-center w-full">
-        <CompanyLogoUpload
-          logoUrl={company?.logo_url}
-          disabled={isLoading}
-          isUploading={logoUploading}
-          onFileSelected={handleLogoFileSelected}
-        />
-        <div className="text-xs text-gray-500 mt-2">
-          Drag and drop or Click to upload a new logo
-        </div>
-        <p className="text-xs text-gray-500 mb-2 text-center">
-          Recommended size: 200x200px. Max file size: 5MB.
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold text-text mb-2">Company Branding</h2>
+        <p className="text-muted-text">
+          Customize your company&apos;s appearance and default settings for a consistent experience.
         </p>
       </div>
-      {/* Fields */}
-      <div className="w-full flex flex-col divide-y divide-gray-100">
-        <CompanyFieldRow
-          label="Name"
-          value={company?.name || <span className="text-gray-400">Not set</span>}
-          onEdit={() => setModalField('name')}
-        />
-        <CompanyFieldRow
-          label="Bio"
-          value={
-            company?.bio ? (
-              <span
-                className="text-sm text-gray-900 break-all prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: company.bio }}
-              />
-            ) : (
-              <span className="text-gray-400">Not set</span>
-            )
-          }
-          onEdit={() => setModalField('bio')}
-        />
-        {/* Timezone Field */}
-        <div className="py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-gray-900">Default Timezone</h3>
-              <p className="text-sm text-gray-500 mt-1">
-                This timezone will be used as the default for scheduling interviews
+
+      {/* Company Logo Section */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <PhotoIcon className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold text-text">Company Logo</h3>
+          </div>
+          <p className="text-sm text-muted-text mt-1">
+            Upload your company logo to personalize your hiring experience
+          </p>
+        </div>
+        <div className="px-6 py-6">
+          <div className="flex flex-col items-center space-y-4">
+            <CompanyLogoUpload
+              logoUrl={company?.logo_url}
+              disabled={isLoading}
+              isUploading={logoUploading}
+              onFileSelected={handleLogoFileSelected}
+            />
+            <div className="text-center">
+              <p className="text-sm text-muted-text">Drag and drop or click to upload a new logo</p>
+              <p className="text-xs text-muted-text mt-1">
+                Recommended: 200×200px, PNG or JPG, max 5MB
               </p>
             </div>
           </div>
-          <div className="mt-3">
-            <div className="space-y-3">
-              <div className="p-3 bg-gray-50 rounded-lg">{getCurrentTimezoneDisplay()}</div>
+        </div>
+      </div>
+
+      {/* Company Information Section */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <BuildingOffice2Icon className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold text-text">Company Information</h3>
+          </div>
+          <p className="text-sm text-muted-text mt-1">Basic information about your company</p>
+        </div>
+        <div className="px-6 py-6 space-y-6">
+          <CompanyFieldRow
+            label="Company Name"
+            value={company?.name || <span className="text-gray-400">Not set</span>}
+            onEdit={() => setModalField('name')}
+            disabled={!isCompanyOwner}
+          />
+          <CompanyFieldRow
+            label="Company Description"
+            value={
+              company?.bio ? (
+                <span
+                  className="text-sm text-gray-900 prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: company.bio }}
+                />
+              ) : (
+                <span className="text-gray-400">Add a company description</span>
+              )
+            }
+            onEdit={() => setModalField('bio')}
+            disabled={!isCompanyOwner}
+          />
+        </div>
+      </div>
+
+      {/* Default Settings Section */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <ClockIcon className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold text-text">Default Settings</h3>
+          </div>
+          <p className="text-sm text-muted-text mt-1">
+            Configure default settings for your organization
+          </p>
+        </div>
+        <div className="px-6 py-6">
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-text mb-2">Default Timezone</label>
+              <p className="text-sm text-muted-text mb-4">
+                This timezone will be used as the default for scheduling interviews and
+                notifications
+              </p>
+
+              {/* Current Timezone Display */}
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Current Timezone</p>
+                    <div className="mt-1">{getCurrentTimezoneDisplay()}</div>
+                  </div>
+                  {updatingTimezone && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  )}
+                </div>
+              </div>
+
+              {/* Timezone Picker */}
               <TimezonePicker
                 value={company?.timezoneId || ''}
                 onChange={handleTimezoneUpdate}
@@ -169,18 +236,16 @@ export default function GeneralTab() {
                 label="Change Timezone"
                 placeholder="Select a new timezone"
               />
-              {updatingTimezone && (
-                <div className="text-sm text-gray-500">Updating timezone...</div>
-              )}
             </div>
           </div>
         </div>
       </div>
+
       {/* Edit Modal */}
       <EditFieldModal
         open={!!modalField}
         onClose={() => setModalField(null)}
-        label={modalField === 'name' ? 'Name' : 'Bio'}
+        label={modalField === 'name' ? 'Company Name' : 'Company Description'}
         value={modalField ? company?.[modalField] || '' : ''}
         onSave={handleModalSave}
         inputType={modalField === 'bio' ? 'textarea' : 'text'}

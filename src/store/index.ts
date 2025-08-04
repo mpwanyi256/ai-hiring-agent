@@ -28,6 +28,7 @@ import contractsSlice from './contracts/contractsSlice';
 import aiSlice from './ai/aiSlice';
 import notificationsSlice from './notifications/notificationsSlice';
 import currenciesSlice from './currencies/currenciesSlice';
+import settingsSlice from './settings/settingsSlice';
 
 const rootReducer = combineReducers({
   auth: authSlice,
@@ -53,6 +54,7 @@ const rootReducer = combineReducers({
   notifications: notificationsSlice,
   ai: aiSlice,
   currencies: currenciesSlice,
+  settings: settingsSlice,
 });
 
 const persistConfig = {
