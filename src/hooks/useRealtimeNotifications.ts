@@ -57,6 +57,15 @@ export const useRealtimeNotifications = () => {
         companyId: newRecord.company_id,
         relatedEntityId: newRecord.related_entity_id,
         relatedEntityType: newRecord.related_entity_type,
+        timestamp: newRecord.timestamp,
+        created_at: newRecord.created_at,
+        status: newRecord.status,
+        priority: newRecord.priority,
+        read: newRecord.read,
+        is_read: newRecord.is_read,
+        company_id: newRecord.company_id,
+        entity_type: newRecord.entity_type,
+        entity_id: newRecord.entity_id,
       };
 
       // Add to Redux store
@@ -104,6 +113,7 @@ export const useRealtimeNotifications = () => {
         channelRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, supabase]); // Removed handleRealtimeEvent from dependencies to prevent recreation
 
   // Cleanup processed notifications on unmount

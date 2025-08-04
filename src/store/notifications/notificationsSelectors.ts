@@ -1,20 +1,13 @@
 import { createSelector } from '@reduxjs/toolkit';
-import { RootState } from '@/store';
+import { RootState } from '../index';
+import { Notification } from '@/types/notifications';
 
-const selectNotificationsState = (state: RootState) => state.notifications;
+// Base selectors
+export const selectNotificationsState = (state: RootState) => state.notifications;
 
 export const selectNotifications = createSelector(
   [selectNotificationsState],
   (notificationsState) => notificationsState.notifications,
-);
-
-export const selectUnreadNotifications = createSelector([selectNotifications], (notifications) =>
-  notifications.filter((notification) => !notification.isRead),
-);
-
-export const selectUnreadCount = createSelector(
-  [selectNotificationsState],
-  (notificationsState) => notificationsState.unreadCount,
 );
 
 export const selectNotificationsLoading = createSelector(
@@ -27,22 +20,67 @@ export const selectNotificationsError = createSelector(
   (notificationsState) => notificationsState.error,
 );
 
-export const selectRecentNotifications = createSelector([selectNotifications], (notifications) =>
-  notifications.slice(0, 10),
+export const selectUnreadCount = createSelector(
+  [selectNotificationsState],
+  (notificationsState) => notificationsState.unreadCount,
 );
 
-export const selectNotificationsByCategory = createSelector(
-  [selectNotifications],
-  (notifications) => {
-    return notifications.reduce(
-      (acc: Record<string, typeof notifications>, notification) => {
-        if (!acc[notification.category]) {
-          acc[notification.category] = [];
-        }
-        acc[notification.category].push(notification);
+export const selectNotificationsPagination = createSelector(
+  [selectNotificationsState],
+  (notificationsState) => notificationsState.pagination,
+);
+
+// Derived selectors
+export const selectUnreadNotifications = createSelector([selectNotifications], (notifications) =>
+  notifications.filter((notification) => !notification.read),
+);
+
+export const selectReadNotifications = createSelector([selectNotifications], (notifications) =>
+  notifications.filter((notification) => notification.read),
+);
+
+export const selectRecentNotifications = createSelector([selectNotifications], (notifications) =>
+  notifications.slice(0, 5),
+);
+
+export const selectNotificationsByType = createSelector([selectNotifications], (notifications) => {
+  return notifications.reduce(
+    (acc, notification) => {
+      const type = notification.type;
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(notification);
+      return acc;
+    },
+    {} as Record<string, Notification[]>,
+  );
+});
+
+export const selectNotificationById = createSelector(
+  [selectNotifications, (state: RootState, notificationId: string) => notificationId],
+  (notifications, notificationId) =>
+    notifications.find((notification) => notification.id === notificationId),
+);
+
+export const selectHasUnreadNotifications = createSelector(
+  [selectUnreadCount],
+  (unreadCount) => unreadCount > 0,
+);
+
+export const selectNotificationsStats = createSelector(
+  [selectNotifications, selectUnreadCount],
+  (notifications, unreadCount) => ({
+    total: notifications.length,
+    unread: unreadCount,
+    read: notifications.length - unreadCount,
+    byType: notifications.reduce(
+      (acc, notification) => {
+        const type = notification.type;
+        acc[type] = (acc[type] || 0) + 1;
         return acc;
       },
-      {} as Record<string, typeof notifications>,
-    );
-  },
+      {} as Record<string, number>,
+    ),
+  }),
 );

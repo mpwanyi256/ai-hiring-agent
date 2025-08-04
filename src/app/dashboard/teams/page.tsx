@@ -19,6 +19,9 @@ import {
 } from '@/store/teams/teamSelectors';
 import { selectInvites } from '@/store/teams/teamSelectors';
 import { resetInvites, resetMembers } from '@/store/teams/teamsSlice';
+import { selectIsOnStarterPlan } from '@/store/billing/billingSelectors';
+import Link from 'next/link';
+import { Crown } from 'lucide-react';
 
 const TeamsPage = () => {
   const dispatch = useAppDispatch();
@@ -35,6 +38,7 @@ const TeamsPage = () => {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const companyId = useAppSelector((state: RootState) => state.auth.user?.companyId);
   const user = useAppSelector((state: RootState) => state.auth.user);
+  const isOnStarterPlan = useAppSelector(selectIsOnStarterPlan);
 
   // Initial load and search
   useEffect(() => {
@@ -81,13 +85,22 @@ const TeamsPage = () => {
         {/* Top bar actions */}
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           <div className="text-xl font-semibold">Team</div>
-          <Button
-            size="sm"
-            className="bg-primary text-white flex items-center gap-2"
-            onClick={() => setInviteOpen(true)}
-          >
-            <PlusIcon className="w-4 h-4" /> Invite Member
-          </Button>
+          {!isOnStarterPlan ? (
+            <Button
+              size="sm"
+              className="bg-primary text-white flex items-center gap-2"
+              onClick={() => setInviteOpen(true)}
+              disabled={isOnStarterPlan}
+            >
+              <PlusIcon className="w-4 h-4" /> Invite Member
+            </Button>
+          ) : (
+            <Link href="/pricing">
+              <Button size="sm" className="bg-primary text-white flex items-center gap-2">
+                <Crown className="w-4 h-4" /> Upgrade to Pro to invite members
+              </Button>
+            </Link>
+          )}
         </div>
         <TeamTabs
           activeTab={activeTab}

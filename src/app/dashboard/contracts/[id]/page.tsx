@@ -173,7 +173,7 @@ export default function ContractDetailPage() {
               <CardContent>
                 <div
                   className="prose max-w-none"
-                  dangerouslySetInnerHTML={{ __html: contract.body }}
+                  dangerouslySetInnerHTML={{ __html: contract.content }}
                 />
               </CardContent>
             </Card>
@@ -229,7 +229,7 @@ export default function ContractDetailPage() {
                   <User className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="font-medium">
-                      {contract.createdByProfile?.firstName} {contract.createdByProfile?.lastName}
+                      {contract.creator?.firstName} {contract.creator?.lastName}
                     </p>
                     <p className="text-sm text-muted-foreground">Created By</p>
                   </div>

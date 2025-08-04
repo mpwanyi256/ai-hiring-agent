@@ -188,9 +188,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             '{{ employment_type }}': data.employment_type_name || 'Full-time',
             '{{ company_name }}': data.company_name || 'Company',
             '{{ salary_amount }}': data.salary_amount
-              ? `$${Number(data.salary_amount).toLocaleString()}`
-              : '$0',
-            '{{ salary_currency }}': data.salary_currency || 'USD',
+              ? `${Number(data.salary_amount).toLocaleString()}`
+              : '',
+            '{{ salary_currency }}': data.salary_currency || '',
             '{{ start_date }}': data.start_date
               ? new Date(data.start_date).toLocaleDateString()
               : 'TBD',
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
           let filledBody = contractBody;
           Object.entries(placeholders).forEach(([placeholder, value]) => {
-            const regex = new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'gi');
+            const regex = new RegExp(placeholder.replace(/[{}]/g, '\\&'), 'gi');
             filledBody = filledBody.replace(regex, value);
           });
 

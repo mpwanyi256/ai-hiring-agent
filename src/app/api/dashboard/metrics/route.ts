@@ -2,15 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const { searchParams } = new URL(request.url);
-  const companyId = searchParams.get('companyId');
-
-  if (!companyId) {
-    return NextResponse.json({ success: false, error: 'companyId is required' }, { status: 400 });
-  }
-
   try {
+    const supabase = await createClient();
+
+    // Check authentication
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user profile to get company_id
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.company_id) {
+      return NextResponse.json(
+        { success: false, error: 'User profile not found' },
+        { status: 404 },
+      );
+    }
+
+    const companyId = profile.company_id;
+
     // Get candidates count metrics
     const candidatesMetrics = await getCandidatesMetrics(supabase, companyId);
 

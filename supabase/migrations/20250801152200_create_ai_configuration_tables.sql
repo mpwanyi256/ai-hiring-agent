@@ -22,13 +22,13 @@ CREATE TABLE IF NOT EXISTS ai_model_usage (
   tokens_used INTEGER NOT NULL DEFAULT 0,
   cost DECIMAL(10, 6) NOT NULL DEFAULT 0,
   request_count INTEGER NOT NULL DEFAULT 1,
-  timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
-  -- Add indexes for performance
-  INDEX idx_ai_usage_company_timestamp (company_id, timestamp),
-  INDEX idx_ai_usage_user_timestamp (user_id, timestamp),
-  INDEX idx_ai_usage_model_capability (model_id, capability)
+  timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Create indexes for ai_model_usage table
+CREATE INDEX IF NOT EXISTS idx_ai_usage_company_timestamp ON ai_model_usage (company_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_user_timestamp ON ai_model_usage (user_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_model_capability ON ai_model_usage (model_id, capability);
 
 -- Create RLS policies for ai_preferences
 ALTER TABLE ai_preferences ENABLE ROW LEVEL SECURITY;

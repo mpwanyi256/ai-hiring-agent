@@ -25,19 +25,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user belongs to the company
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile || profile.company_id !== companyId) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-    }
-
     // Build query
-    let query = supabase.from('team_activities').select('*').eq('company_id', companyId);
+    let query = supabase
+      .from('notifications_details')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('entity_type', 'team');
 
     // Filter by event types if provided
     if (eventTypes.length > 0) {
@@ -46,19 +39,22 @@ export async function GET(request: NextRequest) {
 
     // Add pagination
     const offset = (page - 1) * limit;
-    query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+    query = query.order('timestamp', { ascending: false }).range(offset, offset + limit - 1);
 
     const { data: activities, error: activitiesError } = await query;
 
     if (activitiesError) {
+      console.log('Error fetching team activities:', activitiesError);
       return NextResponse.json({ error: 'Failed to fetch activities' }, { status: 500 });
     }
 
     // Get total count for pagination
     let countQuery = supabase
-      .from('team_activities')
+      .from('notifications_details')
       .select('*', { count: 'exact', head: true })
-      .eq('company_id', companyId);
+      .eq('user_id', user.id)
+      .eq('entity_type', 'team')
+      .order('timestamp', { ascending: false });
 
     if (eventTypes.length > 0) {
       countQuery = countQuery.in('event_type', eventTypes);
@@ -67,6 +63,7 @@ export async function GET(request: NextRequest) {
     const { count, error: countError } = await countQuery;
 
     if (countError) {
+      console.error('Error fetching team activities:', countError);
       return NextResponse.json({ error: 'Failed to get activities count' }, { status: 500 });
     }
 

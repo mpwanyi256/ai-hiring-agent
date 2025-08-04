@@ -27,8 +27,6 @@ export async function checkJobPermission(
       return false;
     }
 
-    console.log('found user profile', profile);
-
     // Get job details with company info through profiles
     const { data: jobWithCompany, error: jobError } = await supabase
       .from('jobs')
@@ -45,13 +43,9 @@ export async function checkJobPermission(
     if (jobError || !jobWithCompany) {
       return false;
     }
-    console.log('Found Job', jobWithCompany);
 
     // Check if user and job are in the same company
     if (jobWithCompany.profiles.company_id !== profile.company_id) {
-      console.log(
-        'User does not have permission to access this job since they are not in the same company',
-      );
       return false;
     }
 
@@ -70,24 +64,15 @@ export async function checkJobPermission(
       .maybeSingle();
 
     if (permissionError) {
-      console.log('Error checking job permission', permissionError);
       return false;
     }
 
     if (!permission) {
-      console.log(
-        'User does not have permission to access this job since they are not in the job permissions table',
-      );
       return false;
     }
 
     // If a required level is specified, check if user's permission meets the requirement
     if (requiredLevel) {
-      console.log(
-        'Checking if user has required permission level',
-        permission.permission_level,
-        requiredLevel,
-      );
       return hasRequiredPermissionLevel(permission.permission_level, requiredLevel);
     }
 

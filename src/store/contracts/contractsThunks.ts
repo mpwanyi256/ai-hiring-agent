@@ -464,7 +464,7 @@ export const extractPDFContract = createAsyncThunk<
 >('contracts/extractPDFContract', async ({ file, useAiEnhancement }) => {
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('useAiEnhancement', useAiEnhancement.toString());
+  formData.append('useAiEnhancement', (useAiEnhancement || false).toString());
 
   const response = await fetch('/api/contracts/extract-pdf', {
     method: 'POST',
@@ -555,6 +555,27 @@ export const sendContractOffer = createAsyncThunk<
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.error || 'Failed to send contract');
+  }
+
+  const data = await response.json();
+  return data;
+});
+
+// Cancel Contract Offer
+export const cancelContractOffer = createAsyncThunk<
+  { success: boolean; message: string; contractOffer: any },
+  string
+>('contracts/cancelContractOffer', async (contractOfferId) => {
+  const response = await fetch(`/api/contracts/${contractOfferId}/cancel`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to cancel contract offer');
   }
 
   const data = await response.json();

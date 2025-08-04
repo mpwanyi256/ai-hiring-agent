@@ -11,6 +11,9 @@ export const selectInterviewsLoading = (state: RootState) => state.interviews.is
 export const selectInterviewsError = (state: RootState) => state.interviews.error;
 export const selectInterviewsPagination = (state: RootState) => state.interviews.pagination;
 export const selectApplicationEvents = (state: RootState) => state.interviews.applicationEvents;
+export const selectTimelineEvents = (state: RootState) => state.interviews.timelineEvents;
+export const selectTimelineLoading = (state: RootState) => state.interviews.timelineLoading;
+export const selectTimelineError = (state: RootState) => state.interviews.timelineError;
 
 // Scheduling state selectors
 export const selectSchedulingState = (state: RootState) => state.interviews.scheduling;

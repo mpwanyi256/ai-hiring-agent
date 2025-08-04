@@ -13,6 +13,7 @@ import UserDropdown from './UserDropdown';
 import MobileMenu from './MobileMenu';
 import DashboardNavigation from './DashboardNavigation';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
+import { fetchSubscriptionPlans } from '@/store/billing/billingThunks';
 
 interface TopNavigationProps {
   showAuthButtons?: boolean;
@@ -36,6 +37,7 @@ export default function TopNavigation({
       // Load company data and timezones
       dispatch(fetchCompanyData());
       dispatch(fetchTimezones());
+      dispatch(fetchSubscriptionPlans());
     }
   }, [isAuthenticated, user, dispatch]);
 

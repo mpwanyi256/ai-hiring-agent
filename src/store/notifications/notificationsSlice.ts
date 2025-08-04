@@ -1,59 +1,70 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Notification, NotificationState } from '@/types/notifications';
-import {
-  fetchNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
-} from './notificationsThunks';
+import { fetchNotifications, markNotificationsAsRead } from './notificationsThunks';
 
 const initialState: NotificationState = {
   notifications: [],
-  unreadCount: 0,
   isLoading: false,
   error: null,
-  lastFetched: undefined,
+  unreadCount: 0,
+  pagination: {
+    page: 1,
+    limit: 20,
+    total: 0,
+    hasMore: false,
+  },
 };
 
 const notificationsSlice = createSlice({
   name: 'notifications',
   initialState,
   reducers: {
-    addNotification: (state, action: PayloadAction<Notification>) => {
-      // Add new notification to the beginning of the array
-      state.notifications.unshift(action.payload);
-      if (!action.payload.isRead) {
+    clearNotifications: (state) => {
+      state.notifications = [];
+      state.unreadCount = 0;
+      state.pagination = {
+        ...state.pagination,
+        page: 1,
+        total: 0,
+        hasMore: false,
+      };
+    },
+    setNotifications: (state, action: PayloadAction<Notification[]>) => {
+      state.notifications = action.payload;
+      state.unreadCount = action.payload.filter((n) => !n.read).length;
+    },
+    markNotificationAsRead: (state, action: PayloadAction<string>) => {
+      const notification = state.notifications.find((n) => n.id === action.payload);
+      if (notification && !notification.read) {
+        notification.read = true;
+        state.unreadCount = Math.max(0, state.unreadCount - 1);
+      }
+    },
+    markNotificationAsUnread: (state, action: PayloadAction<string>) => {
+      const notification = state.notifications.find((n) => n.id === action.payload);
+      if (notification && notification.read) {
+        notification.read = false;
         state.unreadCount += 1;
       }
+    },
+    setError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload;
+    },
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.isLoading = action.payload;
+    },
+    addNotification: (state, action: PayloadAction<Notification>) => {
+      state.notifications.push(action.payload);
+      state.unreadCount = state.notifications.filter((n) => !n.isRead).length;
     },
     updateNotification: (state, action: PayloadAction<Notification>) => {
       const index = state.notifications.findIndex((n) => n.id === action.payload.id);
       if (index !== -1) {
-        const wasUnread = !state.notifications[index].isRead;
-        const isNowRead = action.payload.isRead;
-
         state.notifications[index] = action.payload;
-
-        // Update unread count if read status changed
-        if (wasUnread && isNowRead) {
-          state.unreadCount = Math.max(0, state.unreadCount - 1);
-        } else if (!wasUnread && !isNowRead) {
-          state.unreadCount += 1;
-        }
       }
     },
     removeNotification: (state, action: PayloadAction<string>) => {
-      const notification = state.notifications.find((n) => n.id === action.payload);
-      if (notification && !notification.isRead) {
-        state.unreadCount = Math.max(0, state.unreadCount - 1);
-      }
       state.notifications = state.notifications.filter((n) => n.id !== action.payload);
-    },
-    clearNotifications: (state) => {
-      state.notifications = [];
-      state.unreadCount = 0;
-    },
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -67,44 +78,48 @@ const notificationsSlice = createSlice({
         state.isLoading = false;
         state.notifications = action.payload.notifications;
         state.unreadCount = action.payload.unreadCount;
-        state.lastFetched = new Date().toISOString();
+        state.pagination = {
+          ...state.pagination,
+          total: action.payload.total,
+          hasMore: action.payload.notifications.length === state.pagination.limit,
+        };
       })
       .addCase(fetchNotifications.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.error.message || 'Failed to fetch notifications';
       })
-
-      // Mark notification as read
-      .addCase(markNotificationAsRead.fulfilled, (state, action) => {
-        const notification = state.notifications.find(
-          (n) => n.id === action.payload.notificationId,
-        );
-        if (notification && !notification.isRead) {
-          notification.isRead = true;
-          notification.readAt = new Date().toISOString();
-          state.unreadCount = Math.max(0, state.unreadCount - 1);
-        }
+      // Mark notifications as read
+      .addCase(markNotificationsAsRead.pending, () => {
+        // Optimistic update is handled in the component
       })
-
-      // Mark all notifications as read
-      .addCase(markAllNotificationsAsRead.fulfilled, (state) => {
+      .addCase(markNotificationsAsRead.fulfilled, (state, { payload }) => {
+        const { notificationIds, markAsRead } = payload;
         state.notifications.forEach((notification) => {
-          if (!notification.isRead) {
-            notification.isRead = true;
-            notification.readAt = new Date().toISOString();
+          if (notificationIds.includes(notification.id)) {
+            notification.is_read = markAsRead;
+            notification.read = markAsRead; // Update both fields for compatibility
           }
         });
-        state.unreadCount = 0;
+        state.unreadCount = state.notifications.filter((n) => !n.is_read).length;
+        state.isLoading = false;
+      })
+      .addCase(markNotificationsAsRead.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to mark notifications as read';
+        // Revert optimistic update is handled in the component
       });
   },
 });
 
 export const {
+  clearNotifications,
+  setNotifications,
+  markNotificationAsRead,
+  markNotificationAsUnread,
+  setError,
+  setLoading,
   addNotification,
   updateNotification,
   removeNotification,
-  clearNotifications,
-  setError,
 } = notificationsSlice.actions;
 
 export default notificationsSlice.reducer;

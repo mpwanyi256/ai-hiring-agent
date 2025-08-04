@@ -3,10 +3,13 @@ import SidePanel from '../ui/SidePanel';
 import { CandidateWithEvaluation } from '@/types/candidates';
 import { Tab } from '@headlessui/react';
 import GeneralTab from './GeneralTab';
+import OffersTab from './OffersTab';
+import EventsTab from './EventsTab';
 import EvaluationsTab from './EvaluationsTab';
 import TimelineTab from './TimelineTab';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
 import SendContractModal from '../contracts/SendContractModal';
+import { cn } from '@/lib/utils';
 
 // --- Main Panel ---
 interface CandidateDetailsPanelProps {
@@ -15,12 +18,10 @@ interface CandidateDetailsPanelProps {
   onClose: () => void;
 }
 
-function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(' ');
-}
-
 const tabs = [
   { name: 'General', Component: GeneralTab },
+  { name: 'Offers', Component: OffersTab },
+  { name: 'Events', Component: EventsTab },
   { name: 'Timeline', Component: TimelineTab },
   { name: 'Evaluations', Component: EvaluationsTab },
   // { name: 'Experience', Component: ExperienceTab },
@@ -54,7 +55,7 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
               <Tab
                 key={tab.name}
                 className={({ selected }: { selected: boolean }) =>
-                  classNames(
+                  cn(
                     'px-4 py-2 text-sm font-medium rounded-t',
                     selected
                       ? 'bg-white border-b-2 border-primary-600 text-primary-700'
@@ -75,8 +76,16 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
                     onScheduleEvent={handleScheduleEvent}
                     onSendContract={handleSendContract}
                   />
+                ) : tab.name === 'Offers' ? (
+                  <tab.Component candidate={candidate} onSendContract={handleSendContract} />
+                ) : tab.name === 'Events' ? (
+                  <tab.Component
+                    candidate={candidate}
+                    onScheduleEvent={handleScheduleEvent}
+                    onSendContract={handleSendContract}
+                  />
                 ) : (
-                  <tab.Component candidate={candidate} />
+                  <tab.Component candidate={candidate} onSendContract={handleSendContract} />
                 )}
               </Tab.Panel>
             ))}

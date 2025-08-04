@@ -1,59 +1,73 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import {
-  Notification,
-  MarkNotificationReadPayload,
-  MarkAllNotificationsReadPayload,
-} from '@/types/notifications';
+import { NotificationsResponse } from '@/types/notifications';
 import { apiUtils } from '../api';
 
-interface FetchNotificationsResponse {
-  notifications: Notification[];
-  unreadCount: number;
-}
+// Fetch notifications
+export const fetchNotifications = createAsyncThunk(
+  'notifications/fetchNotifications',
+  async (params: { limit?: number; offset?: number } = {}) => {
+    const { limit = 20, offset = 0 } = params;
 
-export const fetchNotifications = createAsyncThunk<
-  FetchNotificationsResponse,
-  { limit?: number },
-  { rejectValue: string }
->('notifications/fetchNotifications', async ({ limit = 20 }, { rejectWithValue }) => {
-  try {
-    const response = await apiUtils.get<FetchNotificationsResponse>(
-      `/api/notifications?limit=${limit}`,
-    );
-    return response;
-  } catch (error: any) {
-    return rejectWithValue(error.response?.data?.error || 'Failed to fetch notifications');
-  }
-});
+    try {
+      const response = await apiUtils.get(`/api/notifications?limit=${limit}&offset=${offset}`);
+      return response as NotificationsResponse;
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+      throw error;
+    }
+  },
+);
 
-export const markNotificationAsRead = createAsyncThunk<
-  { notificationId: string },
-  MarkNotificationReadPayload,
-  { rejectValue: string }
->('notifications/markAsRead', async ({ notificationId, userId }, { rejectWithValue }) => {
+// Mark notifications as read
+export const markNotificationsAsRead = createAsyncThunk<
+  { notificationIds: string[]; markAsRead: boolean },
+  { notificationIds: string[]; markAsRead: boolean }
+>('notifications/markAsRead', async ({ notificationIds, markAsRead }, { rejectWithValue }) => {
   try {
-    await apiUtils.patch(`/api/notifications/${notificationId}`, {
-      isRead: true,
-      userId,
+    await apiUtils.patch('/api/notifications', {
+      notificationIds,
+      markAsRead,
     });
-    return { notificationId };
-  } catch (error: any) {
-    return rejectWithValue(error.response?.data?.error || 'Failed to mark notification as read');
-  }
-});
 
-export const markAllNotificationsAsRead = createAsyncThunk<
-  void,
-  MarkAllNotificationsReadPayload,
-  { rejectValue: string }
->('notifications/markAllAsRead', async ({ userId }, { rejectWithValue }) => {
-  try {
-    await apiUtils.patch('/api/notifications/mark-all-read', {
-      userId,
-    });
-  } catch (error: any) {
+    // Return the original parameters for state updates
+    return { notificationIds, markAsRead };
+  } catch (error) {
+    console.error('Failed to mark notifications as read:', error);
     return rejectWithValue(
-      error.response?.data?.error || 'Failed to mark all notifications as read',
+      error instanceof Error ? error.message : 'Failed to mark notifications as read',
     );
   }
 });
+
+// Mark notifications as unread
+export const markNotificationsAsUnread = createAsyncThunk(
+  'notifications/markAsUnread',
+  async (notificationIds: string[]) => {
+    try {
+      await apiUtils.patch('/api/notifications', {
+        notificationIds,
+        markAsRead: false,
+      });
+      return { notificationIds, markAsRead: false };
+    } catch (error) {
+      console.error('Failed to mark notifications as unread:', error);
+      throw error;
+    }
+  },
+);
+
+// Refresh notifications (alias for fetchNotifications with current params)
+export const refreshNotifications = createAsyncThunk(
+  'notifications/refresh',
+  async (_, { getState, dispatch }) => {
+    const state = getState() as { notifications: { pagination: { limit: number } } };
+    const { pagination } = state.notifications;
+
+    return dispatch(
+      fetchNotifications({
+        limit: pagination.limit,
+        offset: 0,
+      }),
+    ).unwrap();
+  },
+);

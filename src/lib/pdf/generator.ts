@@ -18,6 +18,7 @@ function replaceContractPlaceholders(htmlContent: string, data: Record<string, a
     contract_duration: data.contractDuration || '',
     employment_type: data.employmentType || '',
     signing_date: new Date().toLocaleDateString(),
+    candidate_signature: data.candidateSignature || '',
     ...data.additionalTerms, // Allow custom placeholders
   };
 
@@ -42,6 +43,7 @@ export async function generateContractPDF(data: {
   salaryAmount?: number;
   salaryCurrency?: string;
   contractDuration?: string;
+  candidateSignature?: string;
   additionalTerms?: Record<string, any>;
 }): Promise<{
   success: boolean;

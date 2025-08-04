@@ -1,125 +1,168 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { selectUser } from '@/store/auth/authSelectors';
+import React, { useEffect, useState } from 'react';
+import { Bell, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
-  selectUnreadCount,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { useAppDispatch, useAppSelector } from '@/store';
+import {
+  selectNotifications,
   selectNotificationsLoading,
-  selectRecentNotifications,
+  selectUnreadCount,
 } from '@/store/notifications/notificationsSelectors';
 import {
   fetchNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
+  markNotificationsAsRead,
 } from '@/store/notifications/notificationsThunks';
-import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
-import { Notification } from '@/types/notifications';
-import { NotificationBell } from './NotificationBell';
-import { NotificationHeader } from './NotificationHeader';
-import { NotificationList } from './NotificationList';
-import { apiSuccess } from '@/lib/notification';
-// import { NotificationFooter } from './NotificationFooter';
+import { getNotificationIcon, getNotificationPriorityColor } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
+import { apiError, apiSuccess } from '@/lib/notification';
 
-interface NotificationDropdownProps {
-  className?: string;
-}
-
-const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className = '' }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
+export default function NotificationDropdown() {
   const dispatch = useAppDispatch();
-  const user = useAppSelector(selectUser);
-  const notifications = useAppSelector(selectRecentNotifications);
+  const notifications = useAppSelector(selectNotifications);
+  const loading = useAppSelector(selectNotificationsLoading);
   const unreadCount = useAppSelector(selectUnreadCount);
-  const isLoading = useAppSelector(selectNotificationsLoading);
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Initialize real-time notifications
-  useRealtimeNotifications();
-
-  // Fetch notifications on mount
   useEffect(() => {
-    if (user?.id) {
-      dispatch(fetchNotifications({ limit: 10 }));
-    }
-  }, [dispatch, user?.id]);
+    dispatch(fetchNotifications({}));
+  }, [dispatch]);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+  const handleNotificationClick = async (notificationId: string, isRead: boolean) => {
+    if (!isRead) {
+      try {
+        await dispatch(
+          markNotificationsAsRead({ notificationIds: [notificationId], markAsRead: true }),
+        ).unwrap();
+        apiSuccess('Notification marked as read');
+      } catch {
+        apiError('Failed to mark notification as read');
       }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
     }
+  };
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
+  const handleMarkAllAsRead = async () => {
+    const unreadNotifications = notifications.filter((n) => !n.is_read && !n.read);
+    if (unreadNotifications.length === 0) return;
 
-  const handleNotificationClick = async (notification: Notification) => {
-    if (!notification.isRead && user?.id) {
+    try {
       await dispatch(
-        markNotificationAsRead({
-          notificationId: notification.id,
-          userId: user.id,
+        markNotificationsAsRead({
+          notificationIds: unreadNotifications.map((n) => n.id),
+          markAsRead: true,
         }),
       ).unwrap();
-
-      apiSuccess('Notification marked as read');
+      apiSuccess(`${unreadNotifications.length} notifications marked as read`);
+    } catch {
+      apiError('Failed to mark all notifications as read');
     }
-  };
-
-  const handleMarkAllAsRead = () => {
-    if (user?.id) {
-      dispatch(markAllNotificationsAsRead({ userId: user.id }));
-    }
-  };
-
-  const handleToggleDropdown = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const handleCloseDropdown = () => {
-    setIsOpen(false);
   };
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
-      {/* Bell Icon Button */}
-      <NotificationBell unreadCount={unreadCount} onClick={handleToggleDropdown} />
-
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden">
-          {/* Header */}
-          <NotificationHeader
-            unreadCount={unreadCount}
-            onClose={handleCloseDropdown}
-            onMarkAllAsRead={unreadCount > 0 ? handleMarkAllAsRead : undefined}
-          />
-
-          {/* Notifications List */}
-          <NotificationList
-            notifications={notifications}
-            onNotificationClick={handleNotificationClick}
-            isLoading={isLoading}
-          />
-
-          {/* Footer */}
-          {/* <NotificationFooter
-            hasNotifications={notifications.length > 0}
-            onClose={handleCloseDropdown}
-          /> */}
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="relative">
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <Badge
+              variant="secondary"
+              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 p-0">
+        <div className="p-4 border-b">
+          <h3 className="font-semibold">Notifications</h3>
+          {unreadCount > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
+            </p>
+          )}
         </div>
-      )}
-    </div>
-  );
-};
 
-export default NotificationDropdown;
+        <div className="max-h-96 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading notifications...</span>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="p-8 text-center">
+              <Bell className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <p className="text-sm text-muted-foreground">No notifications yet</p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {notifications.map((notification) => {
+                const Icon = getNotificationIcon(notification.type);
+                const priorityColor = getNotificationPriorityColor(notification.priority);
+
+                return (
+                  <div
+                    key={notification.id}
+                    className={`p-4 hover:bg-muted/50 transition-colors hover:cursor-pointer ${
+                      !notification.is_read ? 'bg-blue-50/50' : ''
+                    }`}
+                  >
+                    <div
+                      onClick={() => handleNotificationClick(notification.id, notification.is_read)}
+                      className="block"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className={`p-2 rounded-full ${priorityColor}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm ${!notification.is_read ? 'font-medium' : ''}`}>
+                            {notification.title}
+                          </p>
+                          {notification.message && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {notification.message}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {notification.timestamp &&
+                            !isNaN(new Date(notification.timestamp).getTime())
+                              ? formatDistanceToNow(new Date(notification.timestamp), {
+                                  addSuffix: true,
+                                })
+                              : 'Unknown time'}
+                          </p>
+                        </div>
+                        {!notification.is_read && (
+                          <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {notifications.length > 0 && (
+          <div className="p-4 border-t">
+            <button
+              onClick={handleMarkAllAsRead}
+              disabled={loading || notifications.filter((n) => !n.is_read && !n.read).length === 0}
+              className="text-sm text-primary hover:underline disabled:text-muted-foreground disabled:cursor-not-allowed"
+            >
+              {loading ? 'Marking as read...' : 'Mark all as read'}
+            </button>
+          </div>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

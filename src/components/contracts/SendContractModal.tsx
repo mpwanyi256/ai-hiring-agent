@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch } from '@/store';
+import { AppDispatch, useAppDispatch, useAppSelector } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,9 +44,9 @@ const SendContractModal: React.FC<SendContractModalProps> = ({
   candidate,
   jobTitle,
 }) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const contracts = useSelector(selectContracts);
-  const contractsLoading = useSelector(selectContractsLoading);
+  const dispatch = useAppDispatch();
+  const contracts = useAppSelector(selectContracts);
+  const contractsLoading = useAppSelector(selectContractsLoading);
 
   const [selectedContractId, setSelectedContractId] = useState<string>('');
   const [salary, setSalary] = useState<string>('');

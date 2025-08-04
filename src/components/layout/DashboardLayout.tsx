@@ -59,7 +59,7 @@ export default function DashboardLayout({
 
   // Create dashboard content
   const dashboardContent = (
-    <div className={`h-screen bg-background flex flex-col overflow-hidden ${className}`}>
+    <div className={`h-screen bg-background flex flex-col overflow-hidden ${className || ''}`}>
       {/* Centralized Top Navigation */}
       <TopNavigation
         showAuthButtons={true}

@@ -3,20 +3,20 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchSubscription } from '@/store/billing/billingThunks';
 import {
   selectSubscription,
-  selectCurrentPlan,
   selectTrialDaysRemaining,
   selectIsTrialing,
   selectHasActiveSubscription,
   selectBillingLoading,
+  selectPlanDetails,
 } from '@/store/billing/billingSelectors';
 import { selectUser } from '@/store/auth/authSelectors';
 import BillingButton from '@/components/billing/BillingButton';
-import { CreditCardIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { CreditCardIcon } from '@heroicons/react/24/outline';
 
 export default function BillingTab() {
   const dispatch = useAppDispatch();
   const subscription = useAppSelector(selectSubscription);
-  const currentPlan = useAppSelector(selectCurrentPlan);
+  const currentPlan = useAppSelector(selectPlanDetails);
   const trialDaysRemaining = useAppSelector(selectTrialDaysRemaining);
   const isTrialing = useAppSelector(selectIsTrialing);
   const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
