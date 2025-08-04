@@ -1,16 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { createClient } from '@/lib/supabase/client';
-import {
-  UserSubscription,
-  SubscriptionPlan,
-  CreateCheckoutSessionData,
-  BillingPortalData,
-} from '@/types/billing';
-import { APIResponse } from '@/types';
-import { RootState } from '..';
-import { isDev } from '@/lib/constants';
-import { apiUtils } from '../api';
-import { apiError } from '@/lib/notification';
+import type { BillingNotificationPreferences } from '@/types/billing';
 
 // Fetch user's current subscription (using user_details view for consistency)
 export const fetchSubscription = createAsyncThunk<UserSubscription, void>(
@@ -67,140 +57,176 @@ export const fetchSubscriptionPlans = createAsyncThunk<SubscriptionPlan[], void>
   },
 );
 
-// Create Stripe checkout session using database
-export const createCheckoutSession = createAsyncThunk<{ url: string }, CreateCheckoutSessionData>(
+export const createCheckoutSession = createAsyncThunk(
   'billing/createCheckoutSession',
-  async (checkoutData, { rejectWithValue, getState }) => {
+  async ({ planId, userId }: { planId: string; userId: string }, { rejectWithValue }) => {
     try {
-      const state = getState() as RootState;
-      const user = state.auth.user;
-
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      console.log('Creating checkout session for plan:', checkoutData.planId);
-
-      // Get the plan from database to get the correct price ID
-      const supabase = createClient();
-      const { data: plan, error: planError } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('name', checkoutData.planId.toLowerCase())
-        .eq('is_active', true)
-        .single();
-
-      if (planError || !plan) {
-        throw new Error(`Plan ${checkoutData.planId} not found in database`);
-      }
-
-      // Determine billing period and get appropriate price ID
-      const billingPeriod = checkoutData.billingPeriod || 'monthly';
-
-      // Use the database helper function to get the correct price ID
-      const { data: priceIdResult, error: priceIdError } = await supabase.rpc(
-        'get_stripe_price_id',
-        {
-          subscription_name: plan.name,
-          environment: isDev ? 'development' : 'production',
-          billing_period: billingPeriod,
-        },
-      );
-
-      if (priceIdError || !priceIdResult) {
-        throw new Error(`Failed to get price ID for plan ${plan.name}`);
-      }
-
-      const priceId = priceIdResult;
-      const price = billingPeriod === 'monthly' ? plan.price_monthly : plan.price_yearly;
-
       const response = await fetch('/api/billing/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...checkoutData,
-          userId: user.id,
-          userEmail: user.email,
-          priceId, // Pass the price ID from database
-          price, // Pass the price from database
-          planName: plan.name, // Pass plan name for metadata
-        }),
+        body: JSON.stringify({ planId, userId }),
       });
 
-      const result: APIResponse<{ url: string }> = await response.json();
+      const data = await response.json();
 
-      if (!result.success) {
-        console.error('Checkout session creation failed:', result.error);
-        throw new Error(result.error || 'Failed to create checkout session');
-      }
-
-      console.log('Checkout session created successfully');
-      return result.data;
-    } catch (error: any) {
-      console.error('Failed to create checkout session:', error);
-      return rejectWithValue(error.message || 'Failed to create checkout session');
-    }
-  },
-);
-
-// Create Stripe billing portal session
-export const createBillingPortalSession = createAsyncThunk<{ url: string }, BillingPortalData>(
-  'billing/createBillingPortalSession',
-  async (portalData, { rejectWithValue }) => {
-    try {
-      const { data, success } = await apiUtils.post<APIResponse<{ url: string }>>(
-        '/api/billing/create-portal-session',
-        portalData,
-      );
-
-      if (!success) {
-        throw new Error('Failed to create billing portal session');
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session');
       }
 
       return data;
-    } catch {
-      apiError('Something went wrong. Please try again later.');
-      return rejectWithValue('Something went wrong. Please try again later.');
+    } catch (error: unknown) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
     }
   },
 );
 
-// Check if user has an active subscription
-export const checkSubscriptionStatus = createAsyncThunk<boolean, void>(
-  'billing/checkSubscriptionStatus',
+export const createPortalSession = createAsyncThunk(
+  'billing/createPortalSession',
+  async ({ customerId }: { customerId: string }, { rejectWithValue }) => {
+    try {
+      const response = await fetch('/api/billing/create-portal-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ customerId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create portal session');
+      }
+
+      return data;
+    } catch (error: unknown) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
+    }
+  },
+);
+
+export const getUserSubscription = createAsyncThunk(
+  'billing/getUserSubscription',
   async (_, { rejectWithValue }) => {
     try {
       const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
       if (!user) {
-        return false;
+        throw new Error('User not authenticated');
       }
 
-      console.log('Checking subscription status for user:', user.id);
-
-      const { data, error } = await supabase
+      const { data: subscription, error } = await supabase
         .from('user_subscriptions')
-        .select('status')
+        .select(
+          `
+          *,
+          subscriptions (
+            name,
+            description,
+            max_jobs,
+            max_interviews_per_month
+          )
+        `,
+        )
         .eq('user_id', user.id)
-        .in('status', ['active', 'trialing'])
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        // PGRST116 = no rows returned
-        console.error('Error checking subscription status:', error);
-        throw error;
+        throw new Error(error.message);
       }
 
-      const hasActiveSubscription = !!data;
-      console.log('User has active subscription:', hasActiveSubscription);
-      return hasActiveSubscription;
-    } catch (error: any) {
-      console.error('Failed to check subscription status:', error);
-      return rejectWithValue(error.message || 'Failed to check subscription status');
+      return subscription;
+    } catch (error: unknown) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
+    }
+  },
+);
+
+export const retryFailedPayment = createAsyncThunk(
+  'billing/retryFailedPayment',
+  async (
+    { paymentMethodId, subscriptionId }: { paymentMethodId: string; subscriptionId: string },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await fetch('/api/billing/retry-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ paymentMethodId, subscriptionId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to retry payment');
+      }
+
+      return data;
+    } catch (error: unknown) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
+    }
+  },
+);
+
+export const checkSubscriptionStatus = createAsyncThunk(
+  'billing/checkSubscriptionStatus',
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      const supabase = createClient();
+
+      const { data: subscription, error } = await supabase
+        .from('user_subscriptions')
+        .select(
+          `
+          *,
+          subscriptions (
+            name,
+            description,
+            max_jobs,
+            max_interviews_per_month
+          )
+        `,
+        )
+        .eq('user_id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw new Error(error.message);
+      }
+
+      return subscription;
+    } catch (error: unknown) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
+    }
+  },
+);
+
+export const updateBillingNotificationPreferences = createAsyncThunk(
+  'billing/updateNotificationPreferences',
+  async (preferences: BillingNotificationPreferences, { rejectWithValue }) => {
+    try {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('billing_notification_preferences')
+        .upsert(preferences, { onConflict: 'user_id' })
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data;
+    } catch (error: unknown) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
     }
   },
 );

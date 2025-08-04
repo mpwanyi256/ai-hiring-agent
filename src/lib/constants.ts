@@ -64,6 +64,10 @@ export const integrations = {
   },
 };
 
+export const monitoring = {
+  apiKey: process.env.NEXT_PUBLIC_MONITORING_API_KEY,
+};
+
 export const mail = {
   host: process.env.NEXT_PUBLIC_EMAIL_HOST,
   port: process.env.NEXT_PUBLIC_EMAIL_PORT,
