@@ -51,6 +51,18 @@ export const selectIsTrialing = createSelector([selectSubscription], (subscripti
 
 export const selectCurrentPlan = createSelector([selectUser], (user) => user?.subscription);
 
+export const selectPlanDetails = createSelector(
+  [selectSubscription, selectSubscriptionPlans],
+  (subscription, plans) => {
+    if (!subscription) return null;
+    // Use the joined subscription data if available, otherwise find by ID
+    if (subscription.subscriptions) {
+      return subscription.subscriptions;
+    }
+    return plans.find((plan) => plan.id === subscription.subscription_id) || null;
+  },
+);
+
 export const selectIsOnStarterPlan = createSelector(
   [selectCurrentPlan],
   (plan) => plan?.name === 'starter' && plan.status === 'active',
