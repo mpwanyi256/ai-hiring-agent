@@ -12,12 +12,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { planId, billingPeriod = 'monthly', userId } = body;
 
-    console.log('Creating checkout session:', {
-      planId,
-      billingPeriod,
-      userId,
-    });
-
     if (!userId || !planId) {
       return NextResponse.json(
         { error: 'Missing required fields: userId and planId' },
@@ -83,14 +77,6 @@ export async function POST(request: NextRequest) {
     const userEmail = userProfile.email;
     const planName = planDetails.name;
 
-    console.log('Resolved checkout session data:', {
-      userEmail,
-      priceId,
-      planName,
-      billingPeriod,
-      environment: isDev ? 'development' : 'production',
-    });
-
     // Get or create Stripe customer
     let stripeCustomerId: string;
 
@@ -103,7 +89,6 @@ export async function POST(request: NextRequest) {
 
     if (existingSubscription?.stripe_customer_id) {
       stripeCustomerId = existingSubscription.stripe_customer_id;
-      console.log('Using existing Stripe customer:', stripeCustomerId);
     } else {
       // Create new Stripe customer
       const customer = await stripe.customers.create({
@@ -113,7 +98,6 @@ export async function POST(request: NextRequest) {
         },
       });
       stripeCustomerId = customer.id;
-      console.log('Created new Stripe customer:', stripeCustomerId);
     }
 
     // Create checkout session
@@ -142,8 +126,6 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-
-    console.log('Checkout session created:', session.id);
 
     return NextResponse.json({
       success: true,

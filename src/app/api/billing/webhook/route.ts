@@ -15,14 +15,12 @@ function getWebhookSecret(request: NextRequest): string | null {
   const keyFromQuery = url.searchParams.get('key');
 
   if (keyFromQuery) {
-    console.log('🔑 Using webhook signing key from query parameter');
     return keyFromQuery;
   }
 
   // Fallback to environment variable for backward compatibility
   const webhookSecret = integrations.stripe.webhookSecret;
   if (webhookSecret) {
-    console.log('🔑 Using webhook signing key from environment variable');
     return webhookSecret;
   }
 
@@ -204,7 +202,6 @@ export async function POST(request: NextRequest) {
           const userId = session.metadata?.userId;
 
           if (!planName) {
-            console.error('No plan name found in metadata');
             await logWebhookEvent(
               supabase,
               event.type,
@@ -216,7 +213,6 @@ export async function POST(request: NextRequest) {
           }
 
           if (!userId) {
-            console.error('No user ID found in metadata');
             await logWebhookEvent(supabase, event.type, session, 'error', 'No user ID in metadata');
             return NextResponse.json({ error: 'No user ID in metadata' }, { status: 400 });
           }
@@ -225,7 +221,6 @@ export async function POST(request: NextRequest) {
           const subscriptionId = await getSubscriptionIdFromPlanName(planName, supabase);
 
           if (!subscriptionId) {
-            console.error(`No subscription found in database for plan: ${planName}`);
             await logWebhookEvent(
               supabase,
               event.type,
@@ -242,14 +237,30 @@ export async function POST(request: NextRequest) {
           // Check if user already has a subscription
           const { data: existingSubscription, error: checkError } = await supabase
             .from('user_subscriptions')
-            .select('id, status')
+            .select('id, status, stripe_subscription_id, subscription_id, subscriptions(name)')
             .eq('user_id', userId)
             .single();
 
           if (checkError && checkError.code !== 'PGRST116') {
-            console.error('Error checking existing subscription:', checkError);
             await logWebhookEvent(supabase, event.type, session, 'error', 'Database check failed');
             return NextResponse.json({ error: 'Database check failed' }, { status: 500 });
+          }
+
+          // If user has an existing active subscription, cancel it to ensure single subscription
+          let isUpgrade = false;
+          let oldPlanName = null;
+          if (existingSubscription && existingSubscription.stripe_subscription_id) {
+            try {
+              // Cancel the old subscription in Stripe
+              await stripe.subscriptions.cancel(existingSubscription.stripe_subscription_id);
+
+              // Get old plan name for email notification
+              oldPlanName = existingSubscription.subscriptions?.[0]?.name;
+              isUpgrade = true; // Any plan change from existing subscription
+            } catch (stripeError) {
+              console.error('Failed to cancel existing subscription:', stripeError);
+              // Continue with new subscription creation even if old cancellation fails
+            }
           }
 
           const subscriptionData = {
@@ -271,7 +282,6 @@ export async function POST(request: NextRequest) {
             cancel_at_period_end: subscription.cancel_at_period_end,
             stripe_customer_id: subscription.customer as string,
             stripe_subscription_id: subscription.id,
-            started_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
 
@@ -294,44 +304,53 @@ export async function POST(request: NextRequest) {
           }
 
           if (error) {
-            console.error('Error updating subscription:', error);
             await logWebhookEvent(supabase, event.type, session, 'error', 'Database update failed');
             return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
           }
 
-          // Send welcome email for new subscriptions
-          if (!existingSubscription) {
-            const userProfile = await getUserProfile(userId, supabase);
-            if (userProfile) {
+          // Send appropriate email notification
+          try {
+            const customerEmail = session.customer_details?.email || session.customer_email;
+            if (customerEmail) {
+              const emailType = isUpgrade ? 'plan_changed' : 'subscription_created';
               await sendBillingEmail({
-                type: 'subscription_created',
-                to: userProfile.email,
+                type: emailType,
+                to: customerEmail,
                 data: {
-                  customerName: `${userProfile.first_name} ${userProfile.last_name}`,
+                  customerName: session.customer_details?.name || customerEmail,
                   planName: planName,
-                  companyName: userProfile.companies?.name || 'Your Company',
-                  subscriptionId: subscription.id,
-                  nextBillingDate: subscriptionData.current_period_end,
+                  oldPlanName: oldPlanName,
+                  isUpgrade: isUpgrade,
+                  amount: (session.amount_total || 0) / 100,
+                  nextBillingDate: new Date(periods.current_period_end * 1000).toLocaleDateString(),
                 },
               });
-
-              // Create in-app notification
-              await createBillingNotification(
-                supabase,
-                userId,
-                'success',
-                'Subscription Activated',
-                `Welcome! Your ${planName} subscription is now active.`,
-                {
-                  subscription_id: subscription.id,
-                  plan_name: planName,
-                  event_type: 'subscription_created',
-                },
-                '/billing',
-                'View Billing',
-              );
             }
+          } catch (emailError) {
+            console.error('Failed to send subscription email:', emailError);
+            // Don't fail the webhook if email fails
           }
+
+          // Create in-app notification
+          await createBillingNotification(
+            supabase,
+            userId,
+            'success',
+            isUpgrade
+              ? `Plan changed from ${oldPlanName} to ${planName}`
+              : `Welcome to ${planName}!`,
+            isUpgrade
+              ? `Your subscription has been updated to the ${planName} plan.`
+              : `Your ${planName} subscription is now active. Welcome aboard!`,
+            {
+              subscription_id: subscription.id,
+              plan_name: planName,
+              old_plan_name: oldPlanName,
+              event_type: isUpgrade ? 'plan_changed' : 'subscription_created',
+            },
+            '/billing',
+            'View Billing',
+          );
 
           await logWebhookEvent(supabase, event.type, session, 'success');
         }
@@ -421,8 +440,6 @@ export async function POST(request: NextRequest) {
 
           if (userProfile && hasImportantChange) {
             if (subscription.status === 'canceled' || subscription.cancel_at_period_end) {
-              console.log('Sending cancellation email to:', userProfile.email);
-
               await sendBillingEmail({
                 type: 'subscription_cancelled',
                 to: userProfile.email,
@@ -834,7 +851,6 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
         await logWebhookEvent(
           supabase,
           event.type,

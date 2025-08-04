@@ -11,7 +11,8 @@ export interface BillingEmailData {
     | 'payment_failed'
     | 'payment_receipt'
     | 'payment_reminder'
-    | 'trial_ending';
+    | 'trial_ending'
+    | 'plan_changed';
   to: string;
   data: Record<string, any>;
 }
@@ -514,6 +515,85 @@ const emailTemplates = {
       
       Best regards,
       The Intavia Team
+    `,
+  },
+
+  plan_changed: {
+    subject: 'Your subscription plan has been updated',
+    generateHtml: (data: any) => `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Plan Changed</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #059669; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+            .plan-box { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 20px; margin: 20px 0; }
+            .button { display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>${data.isUpgrade ? 'Plan Upgraded!' : 'Plan Updated'}</h1>
+          </div>
+          <div class="content">
+            <p>Hi ${data.customerName},</p>
+            <p>Your subscription plan has been successfully ${data.isUpgrade ? 'upgraded' : 'changed'}!</p>
+            
+            <div class="plan-box">
+              <h3>Plan Change Details:</h3>
+              <ul>
+                ${data.oldPlanName ? `<li><strong>Previous Plan:</strong> ${data.oldPlanName}</li>` : ''}
+                <li><strong>New Plan:</strong> ${data.planName}</li>
+                <li><strong>Amount:</strong> $${data.amount}</li>
+                <li><strong>Next Billing Date:</strong> ${data.nextBillingDate}</li>
+              </ul>
+            </div>
+            
+            <p>${data.isUpgrade ? 'Welcome to your enhanced plan! You now have access to additional features and capabilities.' : 'Your plan has been updated as requested.'}</p>
+            
+            <a href="${app.baseUrl}/billing" class="button">Manage Subscription</a>
+            <a href="${app.baseUrl}/dashboard" class="button">Go to Dashboard</a>
+            
+            <p>If you have any questions about your new plan or need assistance, don't hesitate to reach out to our support team.</p>
+            
+            <p>Thank you for choosing Intavia!</p>
+            <p>Best regards,<br>The Intavia Team</p>
+          </div>
+          <div class="footer">
+            <p>This notification was sent to ${data.customerName}.</p>
+          </div>
+        </body>
+      </html>
+    `,
+    generateText: (data: any) => `
+      ${data.isUpgrade ? 'Plan Upgraded!' : 'Plan Updated'}
+      
+      Hi ${data.customerName},
+      
+      Your subscription plan has been successfully ${data.isUpgrade ? 'upgraded' : 'changed'}!
+      
+      Plan Change Details:
+      ${data.oldPlanName ? `Previous Plan: ${data.oldPlanName}` : ''}
+      New Plan: ${data.planName}
+      Amount: $${data.amount}
+      Next Billing Date: ${data.nextBillingDate}
+      
+      ${data.isUpgrade ? 'Welcome to your enhanced plan! You now have access to additional features and capabilities.' : 'Your plan has been updated as requested.'}
+      
+      Manage Subscription: ${app.baseUrl}/billing
+      Go to Dashboard: ${app.baseUrl}/dashboard
+      
+      If you have any questions about your new plan or need assistance, don't hesitate to reach out to our support team.
+      
+      Thank you for choosing Intavia!
+      Best regards,
+      The Intavia Team
+      
+      This notification was sent to ${data.customerName}.
     `,
   },
 };
