@@ -5,10 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { Button } from '@/components/ui/button';
 import Container from '@/components/ui/Container';
-import { createCheckoutSession, fetchSubscriptionPlans } from '@/store/billing/billingThunks';
+import { fetchSubscriptionPlans } from '@/store/billing/billingThunks';
 import { useAppDispatch } from '@/store';
 import { RootState } from '@/store';
 import { CheckIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import UpgradeButton from '@/components/billing/UpgradeButton';
 
 function PlansPageContent() {
   const router = useRouter();
@@ -19,85 +20,17 @@ function PlansPageContent() {
   const { plans } = useSelector((state: RootState) => state.billing);
   const { user } = useSelector((state: RootState) => state.auth);
 
-  const [selectedPlan, setSelectedPlan] = useState<string>('pro');
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
-  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     dispatch(fetchSubscriptionPlans());
   }, [dispatch]);
 
-  const handlePlanSelect = async (planName: string) => {
-    if (!user) {
-      router.push(`/signin?redirect=${encodeURIComponent('/onboard/plans')}`);
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      const result = await dispatch(
-        createCheckoutSession({
-          planId: planName,
-          billingPeriod,
-          successUrl: `${window.location.origin}/dashboard?welcome=true`,
-          cancelUrl: `${window.location.origin}/onboard/plans`,
-        }),
-      ).unwrap();
-
-      if (result.url) {
-        window.location.href = result.url;
-      }
-    } catch (error) {
-      console.error('Error creating checkout session:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   const skipToFreePlan = () => {
-    // For now, just redirect to dashboard
-    // In the future, this could set the user to a free plan
     router.push('/dashboard?welcome=true');
   };
 
   const activePlans = plans.filter((plan) => plan.is_active && plan.name !== 'free');
-
-  const getPlanFeatures = (planName: string) => {
-    switch (planName) {
-      case 'starter':
-        return [
-          'Up to 5 active jobs',
-          '25 AI interviews per month',
-          'Basic candidate analytics',
-          'Email support',
-          'Standard templates',
-        ];
-      case 'pro':
-        return [
-          'Up to 25 active jobs',
-          '100 AI interviews per month',
-          'Advanced candidate analytics',
-          'Priority email & chat support',
-          'Custom branding',
-          'Team collaboration tools',
-          'Advanced reporting',
-        ];
-      case 'business':
-        return [
-          'Unlimited active jobs',
-          '500 AI interviews per month',
-          'Complete analytics suite',
-          'ATS integrations',
-          'Custom branding & themes',
-          'Advanced team management',
-          'API access',
-          'Dedicated account manager',
-        ];
-      default:
-        return [];
-    }
-  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -204,22 +137,13 @@ function PlansPageContent() {
                         </div>
                       )}
                     </div>
-                    <p className="text-sm text-muted-text">
-                      {plan.description ||
-                        `Perfect for ${
-                          plan.name === 'starter'
-                            ? 'small teams'
-                            : plan.name === 'pro'
-                              ? 'growing companies'
-                              : 'large enterprises'
-                        }`}
-                    </p>
+                    <p className="text-sm text-muted-text">{plan.description}</p>
                   </div>
 
                   <div className="mb-8">
                     <div className="text-sm font-medium text-text mb-4">What&apos;s included:</div>
                     <ul className="space-y-3">
-                      {getPlanFeatures(plan.name).map((feature, index) => (
+                      {plan.features.map((feature, index) => (
                         <li key={index} className="flex items-start">
                           <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
                           <span className="text-sm text-muted-text">{feature}</span>
@@ -229,43 +153,27 @@ function PlansPageContent() {
                   </div>
 
                   <div className="space-y-3">
-                    <Button
-                      onClick={() => handlePlanSelect(plan.name)}
-                      className={`w-full ${isPopular ? 'bg-primary hover:bg-primary-dark' : ''}`}
-                      variant={isPopular ? 'default' : 'secondary'}
-                      disabled={isProcessing}
-                    >
-                      {isProcessing && selectedPlan === plan.name ? (
-                        <>
-                          <svg
-                            className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          Start 14-Day Free Trial
-                          <ArrowRightIcon className="w-4 h-4 ml-2" />
-                        </>
-                      )}
-                    </Button>
+                    {user ? (
+                      <UpgradeButton
+                        targetPlan={plan}
+                        variant={isPopular ? 'default' : 'secondary'}
+                        className="w-full"
+                      >
+                        Start 14-Day Free Trial
+                        <ArrowRightIcon className="w-4 h-4 ml-2" />
+                      </UpgradeButton>
+                    ) : (
+                      <Button
+                        onClick={() =>
+                          router.push(`/signin?redirect=${encodeURIComponent('/onboard/plans')}`)
+                        }
+                        className={`w-full ${isPopular ? 'bg-primary hover:bg-primary-dark' : ''}`}
+                        variant={isPopular ? 'default' : 'secondary'}
+                      >
+                        Start 14-Day Free Trial
+                        <ArrowRightIcon className="w-4 h-4 ml-2" />
+                      </Button>
+                    )}
                     <div className="text-xs text-center text-muted-text">
                       No credit card required
                     </div>

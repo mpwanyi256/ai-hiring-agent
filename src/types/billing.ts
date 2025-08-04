@@ -1,18 +1,26 @@
 export interface SubscriptionPlan {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   price_monthly: number;
   price_yearly: number;
-  interval: 'month' | 'year';
-  features: string[];
   max_jobs: number;
   max_interviews_per_month: number;
-  stripe_price_id: string;
-  trial_days: number;
+  features: string[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  trial_days: number;
+  interval: 'month' | 'year';
+  stripe_product_id: string;
+  stripe_price_id_dev: string;
+  stripe_price_id_prod: string;
+  stripe_price_id_dev_yearly: string;
+  stripe_price_id_prod_yearly: string;
+  stripe_checkout_link_dev: string;
+  stripe_checkout_link_prod: string;
+  stripe_checkout_link_dev_yearly: string;
+  stripe_checkout_link_prod_yearly: string;
 }
 
 export interface UserSubscription {
@@ -52,6 +60,30 @@ export interface BillingState {
   checkoutSessionUrl: string | null;
 }
 
+export interface ExtendedBillingState extends BillingState {
+  loadingStates: {
+    subscription: boolean;
+    plans: boolean;
+    checkout: boolean;
+    portal: boolean;
+    statusCheck: boolean;
+    paymentRetry: boolean;
+    notifications: boolean;
+  };
+  hasActiveSubscription: boolean;
+  lastWebhookUpdate: string | null;
+  notificationPreferences: BillingNotificationPreferences;
+  retryCount: number;
+  maxRetryAttempts: number;
+}
+
+export interface BillingNotificationPreferences {
+  emailReceipts: boolean;
+  emailReminders: boolean;
+  emailFailures: boolean;
+  emailCancellations: boolean;
+}
+
 export interface CreateCheckoutSessionData {
   planId: string;
   successUrl: string;
@@ -81,6 +113,61 @@ export interface UsageMetrics {
   interviewsUsagePercentage: number;
 }
 
+export interface PaymentFailure {
+  invoiceId: string;
+  subscriptionId: string;
+  amount: number;
+  currency: string;
+  dueDate: string;
+  attempts: number;
+  lastAttempt: string;
+  paymentUrl?: string;
+}
+
+export interface BillingAlert {
+  id: string;
+  type: 'trial_ending' | 'payment_failed' | 'subscription_cancelled' | 'payment_reminder';
+  title: string;
+  message: string;
+  severity: 'info' | 'warning' | 'error';
+  actionUrl?: string;
+  actionText?: string;
+  dismissible: boolean;
+  createdAt: string;
+  expiresAt?: string;
+}
+
+export interface WebhookLog {
+  id: string;
+  eventType: string;
+  eventData: Record<string, any>;
+  status: 'success' | 'error';
+  errorMessage?: string;
+  createdAt: string;
+}
+
+export interface BillingEmailData {
+  type:
+    | 'subscription_created'
+    | 'subscription_cancelled'
+    | 'subscription_ended'
+    | 'payment_failed'
+    | 'payment_receipt'
+    | 'payment_reminder'
+    | 'trial_ending';
+  to: string;
+  data: Record<string, any>;
+}
+
+export interface SubscriptionUpdate {
+  subscriptionId: string;
+  status: UserSubscription['status'];
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  cancelAtPeriodEnd?: boolean;
+  updatedAt?: string;
+}
+
 export type PlanInterval = 'month' | 'year';
 
 export interface Plan {
@@ -99,3 +186,26 @@ export enum SubscriptionNames {
 }
 
 export type SubscriptionPlans = Record<SubscriptionNames, Plan>;
+
+// Enhanced billing analytics
+export interface BillingAnalytics {
+  revenue: {
+    monthly: number;
+    yearly: number;
+    total: number;
+  };
+  subscriptions: {
+    active: number;
+    trialing: number;
+    cancelled: number;
+    pastDue: number;
+  };
+  churn: {
+    rate: number;
+    trend: 'increasing' | 'decreasing' | 'stable';
+  };
+  paymentFailures: {
+    count: number;
+    recoveryRate: number;
+  };
+}

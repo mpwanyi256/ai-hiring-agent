@@ -15,7 +15,7 @@ export interface PlatformStats {
 // Subscription Types
 export type Subscription = Tables<'subscriptions'>;
 export type SubscriptionInsert = TablesInsert<'subscriptions'>;
-export type SubscriptionUpdate = TablesUpdate<'subscriptions'>;
+export type AdminSubscriptionUpdate = TablesUpdate<'subscriptions'>;
 
 // Simplified subscription type for Redux state to avoid TypeScript depth issues
 export interface SimpleSubscription {

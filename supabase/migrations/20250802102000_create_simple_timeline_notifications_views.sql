@@ -81,8 +81,11 @@ FROM contract_offers co
 LEFT JOIN contracts c ON co.contract_id = c.id
 LEFT JOIN profiles p ON co.sent_by = p.id;
 
--- Create notifications_details view for notifications
-CREATE OR REPLACE VIEW notifications_details AS
+-- Drop the existing notifications_details view if it exists
+DROP VIEW IF EXISTS notifications_details;
+
+-- Create notifications_details view for legacy contract/interview notifications
+CREATE VIEW notifications_details AS
 SELECT 
   -- Contract offer notifications
   'contract-' || co.id AS id,
@@ -112,7 +115,7 @@ SELECT
     ELSE 'warning'
   END AS status,
   false AS read,
-  co.candidate_id,
+  co.candidate_id AS user_id,
   -- Get company_id from the contract
   c.company_id,
   jsonb_build_object(
@@ -124,7 +127,12 @@ SELECT
     'rejection_reason', co.rejection_reason
   ) AS metadata,
   'contract_offer' AS entity_type,
-  co.id::text AS entity_id
+  co.id::text AS entity_id,
+  NULL::VARCHAR(500) AS action_url,
+  NULL::VARCHAR(100) AS action_text,
+  NULL::TIMESTAMP WITH TIME ZONE AS read_at,
+  NULL::TIMESTAMP WITH TIME ZONE AS expires_at,
+  gen_random_uuid() AS notification_id
 FROM contract_offers co
 LEFT JOIN contracts c ON co.contract_id = c.id
 
@@ -158,7 +166,7 @@ SELECT
     ELSE 'warning'
   END AS status,
   false AS read,
-  i.application_id AS candidate_id,
+  i.application_id AS user_id,
   p.company_id,
   jsonb_build_object(
     'interview_id', i.id,
@@ -168,7 +176,12 @@ SELECT
     'job_id', i.job_id
   ) AS metadata,
   'interview' AS entity_type,
-  i.id::text AS entity_id
+  i.id::text AS entity_id,
+  NULL::VARCHAR(500) AS action_url,
+  NULL::VARCHAR(100) AS action_text,
+  NULL::TIMESTAMP WITH TIME ZONE AS read_at,
+  NULL::TIMESTAMP WITH TIME ZONE AS expires_at,
+  gen_random_uuid() AS notification_id
 FROM interviews i
 LEFT JOIN jobs j ON i.job_id = j.id
 LEFT JOIN profiles p ON j.profile_id = p.id;

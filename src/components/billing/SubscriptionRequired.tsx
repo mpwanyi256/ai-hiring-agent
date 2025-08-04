@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchSubscription } from '@/store/billing/billingThunks';
+import { getUserSubscription } from '@/store/billing/billingThunks';
 import {
   selectHasActiveSubscription,
   selectBillingLoading,
@@ -27,7 +27,7 @@ export default function SubscriptionRequired({ children, fallback }: Subscriptio
   // (keep the webhook delay logic if needed for other flows)
 
   useEffect(() => {
-    dispatch(fetchSubscription());
+    dispatch(getUserSubscription());
   }, [dispatch]);
 
   // If we have an active subscription, show the children

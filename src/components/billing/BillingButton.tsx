@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { createBillingPortalSession } from '@/store/billing/billingThunks';
-import { selectCustomerPortalUrl, selectBillingLoading } from '@/store/billing/billingSelectors';
+import { createPortalSession } from '@/store/billing/billingThunks';
+import { selectBillingLoading, selectSubscription } from '@/store/billing/billingSelectors';
 import { Button } from '@/components/ui/button';
 import { CreditCardIcon } from '@heroicons/react/24/outline';
 
@@ -21,7 +21,7 @@ export default function BillingButton({
   children,
 }: BillingButtonProps) {
   const dispatch = useAppDispatch();
-  const customerPortalUrl = useAppSelector(selectCustomerPortalUrl);
+  const subscription = useAppSelector(selectSubscription);
   const isLoading = useAppSelector(selectBillingLoading);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,25 +31,22 @@ export default function BillingButton({
       setIsRedirecting(true);
       setError(null);
 
-      await dispatch(
-        createBillingPortalSession({
-          returnUrl: `${window.location.origin}/dashboard/billing`,
-        }),
-      ).unwrap();
-
-      // Redirect to Stripe billing portal
-      if (customerPortalUrl) {
-        window.location.href = customerPortalUrl;
+      if (!subscription?.stripe_customer_id) {
+        setError('No customer ID found. Please contact support.');
+        return;
       }
-    } catch (error: any) {
+
+      await dispatch(createPortalSession());
+    } catch (error: unknown) {
       console.error('Failed to open billing portal:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
 
       // Handle specific error cases
-      if (error?.includes('not configured') || error?.includes('configuration')) {
+      if (errorMessage.includes('not configured') || errorMessage.includes('configuration')) {
         setError(
           'Billing portal is not configured yet. Please contact support to manage your subscription.',
         );
-      } else if (error?.includes('not available')) {
+      } else if (errorMessage.includes('not available')) {
         setError('Billing portal is not available. Please contact support.');
       } else {
         setError('Unable to access billing portal at this time. Please try again later.');
@@ -66,7 +63,7 @@ export default function BillingButton({
         size={size}
         className={className}
         onClick={handleBillingPortal}
-        disabled={isLoading || isRedirecting}
+        disabled={isLoading || isRedirecting || !subscription?.stripe_customer_id}
       >
         {isLoading || isRedirecting ? (
           <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />

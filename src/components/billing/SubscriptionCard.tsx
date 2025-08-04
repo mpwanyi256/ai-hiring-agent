@@ -1,16 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { createCheckoutSession } from '@/store/billing/billingThunks';
+import { useAppSelector } from '@/store';
 import {
   selectTrialDaysRemaining,
   selectIsTrialing,
-  selectBillingLoading,
+  selectSubscription,
 } from '@/store/billing/billingSelectors';
 import { SubscriptionPlan } from '@/types/billing';
-import { Button } from '@/components/ui/button';
 import { SparklesIcon, CheckIcon } from '@heroicons/react/24/outline';
+import UpgradeButton from './UpgradeButton';
 
 interface SubscriptionCardProps {
   plan: SubscriptionPlan;
@@ -25,39 +23,10 @@ export default function SubscriptionCard({
   isRecommended = false,
   isCurrentPlan = false,
 }: SubscriptionCardProps) {
-  const dispatch = useAppDispatch();
   const trialDaysRemaining = useAppSelector(selectTrialDaysRemaining);
   const isTrialing = useAppSelector(selectIsTrialing);
-  const isLoading = useAppSelector(selectBillingLoading);
-  const [isRedirecting, setIsRedirecting] = useState(false);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
-
-  const handleUpgrade = async () => {
-    try {
-      setIsRedirecting(true);
-
-      const result = await dispatch(
-        createCheckoutSession({
-          planId: plan.name, // Use plan name instead of plan ID
-          billingPeriod, // Pass the billing period
-          successUrl: `${window.location.origin}/dashboard/billing?success=true`,
-          cancelUrl: `${window.location.origin}/dashboard/billing?canceled=true`,
-        }),
-      ).unwrap();
-
-      // Redirect immediately using the URL from the API response
-      if (result && result.url) {
-        console.log('Redirecting to checkout:', result.url);
-        window.location.href = result.url;
-      } else {
-        console.error('No checkout URL received from API');
-      }
-    } catch (error) {
-      console.error('Failed to create checkout session:', error);
-    } finally {
-      setIsRedirecting(false);
-    }
-  };
+  const subscription = useAppSelector(selectSubscription);
 
   const getPriceDisplay = () => {
     if (plan.name.toLowerCase() === 'enterprise') {
@@ -68,7 +37,6 @@ export default function SubscriptionCard({
     if (price === 0) return 'Free';
 
     const interval = billingPeriod === 'monthly' ? 'month' : 'year';
-    // Format price with thousands separator
     const formattedPrice = price.toLocaleString(undefined, { minimumFractionDigits: 0 });
     return `$${formattedPrice}/${interval}`;
   };
@@ -76,13 +44,16 @@ export default function SubscriptionCard({
   const getButtonText = () => {
     if (isCurrentPlan) return 'Current Plan';
     if (plan.price_monthly === 0) return 'Get Started';
-    return 'Subscribe';
-  };
 
-  const getButtonVariant = () => {
-    if (isCurrentPlan) return 'ghost';
-    if (isRecommended) return 'default';
-    return 'outline';
+    // Check if user has an active subscription to determine upgrade/downgrade
+    const currentPlan = subscription?.subscriptions;
+    if (currentPlan && plan.price_monthly > currentPlan.price_monthly) {
+      return 'Upgrade';
+    } else if (currentPlan && plan.price_monthly < currentPlan.price_monthly) {
+      return 'Downgrade';
+    }
+
+    return 'Subscribe';
   };
 
   return (
@@ -153,20 +124,16 @@ export default function SubscriptionCard({
 
       {/* Subscribe/Upgrade Button - Only if authenticated */}
       {isAuthenticated ? (
-        <Button
-          variant={getButtonVariant()}
+        <UpgradeButton
+          targetPlan={plan}
+          billingPeriod={billingPeriod}
+          variant={isCurrentPlan ? 'ghost' : isRecommended ? 'default' : 'outline'}
           size="lg"
           className="w-full"
-          onClick={handleUpgrade}
-          disabled={isCurrentPlan || isLoading || isRedirecting}
         >
-          {isLoading || isRedirecting ? (
-            <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-          ) : (
-            <SparklesIcon className="w-4 h-4" />
-          )}
+          <SparklesIcon className="w-4 h-4" />
           {getButtonText()}
-        </Button>
+        </UpgradeButton>
       ) : null}
     </div>
   );

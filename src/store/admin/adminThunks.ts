@@ -8,7 +8,7 @@ import {
   SubscriptionResponse,
   DeleteSubscriptionResponse,
   SubscriptionInsert,
-  SubscriptionUpdate,
+  AdminSubscriptionUpdate,
 } from '@/types/admin';
 
 export const fetchPlatformStats = createAsyncThunk<PlatformStats>(
@@ -70,7 +70,7 @@ export const createSubscription = createAsyncThunk<Subscription, SubscriptionIns
 
 export const updateSubscription = createAsyncThunk<
   Subscription,
-  { id: string; updates: SubscriptionUpdate }
+  { id: string; updates: AdminSubscriptionUpdate }
 >('admin/updateSubscription', async ({ id, updates }, { rejectWithValue }) => {
   try {
     const response = await apiUtils.put<SubscriptionResponse>(
