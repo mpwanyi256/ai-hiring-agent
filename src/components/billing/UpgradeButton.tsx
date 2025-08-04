@@ -92,9 +92,13 @@ export default function UpgradeButton({
 
   const getIcon = () => {
     if (!showIcon) return null;
-    if (isCurrentPlan) return <CreditCardIcon className="w-4 h-4" />;
-    if (!targetPlan) return <CreditCardIcon className="w-4 h-4" />;
-    return isUpgrade ? <ArrowUpIcon className="w-4 h-4" /> : <ArrowDownIcon className="w-4 h-4" />;
+    if (isCurrentPlan) return <CreditCardIcon className="w-4 h-4 mr-1" />;
+    if (!targetPlan) return <CreditCardIcon className="w-4 h-4 mr-1" />;
+    return isUpgrade ? (
+      <ArrowUpIcon className="w-4 h-4 mr-1" />
+    ) : (
+      <ArrowDownIcon className="w-4 h-4 mr-1" />
+    );
   };
 
   return (

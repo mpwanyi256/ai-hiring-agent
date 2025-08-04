@@ -438,7 +438,7 @@ export default function Sidebar({
       {(!collapsed || isMobile) && hasActiveSubscription && (
         <div className="p-3 border-t border-gray-100">
           <UpgradeButton variant="outline" size="sm" className="w-full text-xs">
-            Manage Billing
+            Change Plan
           </UpgradeButton>
         </div>
       )}
