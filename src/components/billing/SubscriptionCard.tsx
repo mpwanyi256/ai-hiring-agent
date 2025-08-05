@@ -53,6 +53,11 @@ export default function SubscriptionCard({
       return 'Downgrade';
     }
 
+    // Show trial text for new subscriptions with trial periods
+    if (plan.trial_days > 0 && !subscription) {
+      return 'Start Free Trial';
+    }
+
     return 'Subscribe';
   };
 
@@ -89,6 +94,16 @@ export default function SubscriptionCard({
           {plan.description}
         </h3>
         <div className="text-3xl font-bold mb-2">{getPriceDisplay()}</div>
+
+        {/* Show trial period for paid plans */}
+        {plan.trial_days > 0 && plan.price_monthly > 0 && (
+          <div className="inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mb-2">
+            <SparklesIcon className="w-4 h-4 mr-1" />
+            {plan.trial_days}-day free trial
+          </div>
+        )}
+
+        {/* Show current trial status if user is trialing */}
         {isTrialing && trialDaysRemaining > 0 && (
           <div className="text-sm text-amber-600 font-medium">
             {trialDaysRemaining} days left in trial

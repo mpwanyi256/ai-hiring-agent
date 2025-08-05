@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const { data: planDetails, error: planError } = await supabase
       .from('subscriptions')
       .select(
-        'name, stripe_price_id_dev, stripe_price_id_prod, stripe_price_id_dev_yearly, stripe_price_id_prod_yearly',
+        'name, trial_days, stripe_price_id_dev, stripe_price_id_prod, stripe_price_id_dev_yearly, stripe_price_id_prod_yearly',
       )
       .eq('name', planId)
       .eq('is_active', true)
@@ -119,6 +119,7 @@ export async function POST(request: NextRequest) {
         billingPeriod: billingPeriod,
       },
       subscription_data: {
+        trial_period_days: planDetails.trial_days || undefined, // Apply trial period from database
         metadata: {
           userId: userId,
           planId: planName, // Use plan name from database
