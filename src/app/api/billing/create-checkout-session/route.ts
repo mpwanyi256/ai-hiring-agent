@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import Stripe from 'stripe';
-import { integrations, isDev } from '@/lib/constants';
+import { app, integrations, isDev } from '@/lib/constants';
 
 const stripe = new Stripe(integrations.stripe.secretKey!, {
   apiVersion: '2025-06-30.basil',
@@ -111,8 +111,8 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'subscription',
-      success_url: `${request.nextUrl.origin}/dashboard?success=true`,
-      cancel_url: `${request.nextUrl.origin}/pricing?canceled=true`,
+      success_url: `${app.baseUrl}/dashboard?success=true`,
+      cancel_url: `${app.baseUrl}/pricing?canceled=true`,
       metadata: {
         userId: userId,
         planId: planName, // Use plan name from database

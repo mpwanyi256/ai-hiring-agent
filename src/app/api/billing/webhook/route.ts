@@ -20,6 +20,7 @@ function getWebhookSecret(request: NextRequest): string | null {
 
   // Fallback to environment variable for backward compatibility
   const webhookSecret = integrations.stripe.webhookSecret;
+  console.log('webhookSecret from constants', webhookSecret);
   if (webhookSecret) {
     return webhookSecret;
   }
@@ -166,6 +167,7 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
     const headersList = await headers();
     const signature = headersList.get('stripe-signature');
+    console.log('Stripe signature', signature);
 
     if (!signature) {
       console.error('Missing stripe signature');
