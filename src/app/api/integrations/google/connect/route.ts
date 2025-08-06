@@ -4,10 +4,9 @@ import { integrations } from '@/lib/constants';
 const GOOGLE_CLIENT_ID = integrations.google.clientId!;
 const GOOGLE_REDIRECT_URI = integrations.google.redirectUri!;
 const SCOPE =
-  'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
+  'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email openid';
 
 export async function GET() {
-  // Optionally generate a state param for CSRF protection
   const state = Math.random().toString(36).substring(2);
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
@@ -17,6 +16,7 @@ export async function GET() {
     prompt: 'consent',
     scope: SCOPE,
     state,
+    include_granted_scopes: 'false',
   });
   const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   return NextResponse.redirect(googleAuthUrl);

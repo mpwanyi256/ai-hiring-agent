@@ -74,8 +74,10 @@ export async function PUT(request: NextRequest, { params }: AppRequestParams<{ i
           );
         } else {
           const eventInput = {
-            summary: `Interview with ${candidate.first_name} ${candidate.last_name} for ${candidate.job_title}`,
-            description: 'Automated interview invite from AI Hiring Agent.',
+            summary:
+              body.eventSummary ||
+              `Interview with ${candidate.first_name} ${candidate.last_name} for ${candidate.job_title}`,
+            description: body.notes || 'Automated interview invite from AI Hiring Agent.',
             start: {
               dateTime: `${body.date || interview.date}T${body.time || interview.time}:00`,
               timeZone: timezone.name,
@@ -100,6 +102,7 @@ export async function PUT(request: NextRequest, { params }: AppRequestParams<{ i
 
     // Prepare update fields
     const updateFields: {
+      title?: string;
       date?: string;
       time?: string;
       timezone_id?: string;
@@ -109,6 +112,7 @@ export async function PUT(request: NextRequest, { params }: AppRequestParams<{ i
       meet_link?: string | null;
       updated_at?: string;
     } = {};
+    if (body.eventSummary) updateFields.title = body.eventSummary;
     if (body.date) updateFields.date = body.date;
     if (body.time) updateFields.time = body.time;
     if (body.timezoneId) updateFields.timezone_id = body.timezoneId;

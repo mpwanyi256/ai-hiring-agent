@@ -98,8 +98,8 @@ export async function POST(request: NextRequest) {
     if (accessToken) {
       try {
         const eventInput = {
-          summary: `Interview with ${candidate.first_name} ${candidate.last_name} for ${candidate.job_title}`,
-          description: 'Automated interview invite from AI Hiring Agent.',
+          summary: body.eventSummary,
+          description: body.notes || 'Automated interview invite from AI Hiring Agent.',
           start: {
             dateTime: `${body.date}T${body.time}:00`,
             timeZone: timezone.name,
@@ -142,6 +142,26 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Error creating interview:', insertError);
+
+      // Handle specific database trigger errors related to notification system
+      if (
+        insertError.code === '42703' ||
+        insertError.message?.includes('candidate_id does not exist')
+      ) {
+        console.warn(
+          'Database notification trigger has an outdated column reference. Interview creation failed due to notification system issue.',
+        );
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'Interview creation failed due to a database configuration issue. The notification system needs to be updated. Please contact support.',
+            details: 'Database trigger error: column reference issue',
+          },
+          { status: 500 },
+        );
+      }
+
       return NextResponse.json(
         { success: false, error: 'Failed to create interview' },
         { status: 500 },
