@@ -93,7 +93,7 @@ export function useMessagesRedux({
   // Combine real messages with optimistic messages
   const allMessages = [
     ...Array.from(optimisticMessages.values()),
-    ...messages.filter((m) => !optimisticMessages.has(m.id)),
+    ...messages.filter((m: Message) => !optimisticMessages.has(m.id)),
   ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()); // Oldest first (newest at bottom)
 
   // Set current conversation on mount and cleanup on unmount
@@ -215,9 +215,9 @@ export function useMessagesRedux({
           schema: 'public',
           table: 'message_reactions',
         },
-        (payload: any) => {
+        (payload: { new?: { message_id?: string }; old?: { message_id?: string } }) => {
           // Refresh the specific message to get updated reactions
-          const messageId = payload.new.message_id || payload.old.message_id;
+          const messageId = payload.new?.message_id || payload.old?.message_id;
           if (messageId) {
             dispatch(
               fetchMessageById({

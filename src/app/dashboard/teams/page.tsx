@@ -22,6 +22,7 @@ import { resetInvites, resetMembers } from '@/store/teams/teamsSlice';
 import { selectIsOnStarterPlan } from '@/store/billing/billingSelectors';
 import Link from 'next/link';
 import { Crown } from 'lucide-react';
+import { useSubscriptionGuard } from '@/hooks/useSubscriptionGuard';
 
 const TeamsPage = () => {
   const dispatch = useAppDispatch();
@@ -40,7 +41,19 @@ const TeamsPage = () => {
   const user = useAppSelector((state: RootState) => state.auth.user);
   const isOnStarterPlan = useAppSelector(selectIsOnStarterPlan);
 
-  // Initial load and search
+  // Subscription guard - redirect to pricing if no active subscription
+  const { isSubscriptionValid } = useSubscriptionGuard({
+    allowTrialing: true,
+    bypassFor: ['admin', 'hr'],
+  });
+
+  // Infinite scroll observer - moved before conditional returns
+  const loadMore = useCallback(() => {
+    if (!companyId || membersLoading || !membersHasMore) return;
+    dispatch(fetchTeamMembers({ companyId, page: membersPage, search }));
+  }, [companyId, membersLoading, membersHasMore, membersPage, search, dispatch]);
+
+  // Initial load and search - moved before conditional returns
   useEffect(() => {
     if (!companyId) return;
     dispatch(fetchTeamMembers({ companyId, page: 1, search }));
@@ -51,12 +64,6 @@ const TeamsPage = () => {
     };
   }, [companyId, search, dispatch]);
 
-  // Infinite scroll observer
-  const loadMore = useCallback(() => {
-    if (!companyId || membersLoading || !membersHasMore) return;
-    dispatch(fetchTeamMembers({ companyId, page: membersPage, search }));
-  }, [companyId, membersLoading, membersHasMore, membersPage, search, dispatch]);
-
   useEffect(() => {
     if (!sentinelRef.current || !membersHasMore) return;
     if (observer.current) observer.current.disconnect();
@@ -66,10 +73,17 @@ const TeamsPage = () => {
       }
     });
     observer.current.observe(sentinelRef.current);
-    return () => {
-      if (observer.current) observer.current.disconnect();
-    };
+    return () => observer.current?.disconnect();
   }, [loadMore, membersHasMore]);
+
+  // Don't render content if subscription is invalid (guard will redirect)
+  if (!isSubscriptionValid) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   // Search handler
   const handleSearch = (val: string) => {

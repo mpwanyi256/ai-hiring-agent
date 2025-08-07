@@ -14,13 +14,24 @@ function getWebhookSecret(request: NextRequest): string | null {
   const url = new URL(request.url);
   const keyFromQuery = url.searchParams.get('key');
 
+  console.log('🔍 Webhook Secret Debug:');
+  console.log('  - URL:', url.toString());
+  console.log(
+    '  - Key from query:',
+    keyFromQuery ? 'Present (length: ' + keyFromQuery.length + ')' : 'Not found',
+  );
+
   if (keyFromQuery) {
     return keyFromQuery;
   }
 
   // Fallback to environment variable for backward compatibility
   const webhookSecret = integrations.stripe.webhookSecret;
-  console.log('webhookSecret from constants', webhookSecret);
+  console.log(
+    '  - Webhook secret from env:',
+    webhookSecret ? 'Present (length: ' + webhookSecret.length + ')' : 'Not found',
+  );
+
   if (webhookSecret) {
     return webhookSecret;
   }
@@ -167,25 +178,41 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
     const headersList = await headers();
     const signature = headersList.get('stripe-signature');
-    console.log('Stripe signature', signature);
+
+    console.log('🔍 Webhook Request Debug:');
+    console.log('  - Body length:', body.length);
+    console.log(
+      '  - Signature present:',
+      signature ? 'Yes (length: ' + signature.length + ')' : 'No',
+    );
+    console.log('  - Content-Type:', headersList.get('content-type'));
+    console.log('  - User-Agent:', headersList.get('user-agent'));
 
     if (!signature) {
-      console.error('Missing stripe signature');
+      console.error('❌ Missing stripe signature');
       return NextResponse.json({ error: 'Missing stripe signature' }, { status: 400 });
     }
 
     const webhookSecret = getWebhookSecret(request);
+    console.log('  - Webhook secret retrieved:', webhookSecret ? 'Yes' : 'No');
+
     if (!webhookSecret) {
-      console.error('Missing webhook signing key');
+      console.error('❌ Missing webhook signing key');
       return NextResponse.json({ error: 'Missing webhook signing key' }, { status: 400 });
     }
 
     let event: Stripe.Event;
 
     try {
+      console.log('🔍 Attempting to construct event...');
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      console.log('✅ Event constructed successfully:', event.type);
     } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message);
+      console.error('❌ Webhook signature verification failed:');
+      console.error('  - Error message:', err.message);
+      console.error('  - Error type:', err.type);
+      console.error('  - Signature used:', signature?.substring(0, 20) + '...');
+      console.error('  - Secret prefix:', webhookSecret?.substring(0, 10) + '...');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
@@ -240,7 +267,7 @@ export async function POST(request: NextRequest) {
           const { data: existingSubscription, error: checkError } = await supabase
             .from('user_subscriptions')
             .select('id, status, stripe_subscription_id, subscription_id, subscriptions(name)')
-            .eq('user_id', userId)
+            .eq('profile_id', userId)
             .single();
 
           if (checkError && checkError.code !== 'PGRST116') {
@@ -266,7 +293,7 @@ export async function POST(request: NextRequest) {
           }
 
           const subscriptionData = {
-            user_id: userId,
+            profile_id: userId,
             subscription_id: subscriptionId,
             status: subscription.status,
             current_period_start: periods.current_period_start
@@ -366,7 +393,7 @@ export async function POST(request: NextRequest) {
         // Find the user subscription by stripe_subscription_id
         const { data: userSubscription, error: findError } = await supabase
           .from('user_subscriptions')
-          .select('id, user_id, status')
+          .select('id, profile_id, status')
           .eq('stripe_subscription_id', subscription.id)
           .single();
 
@@ -429,7 +456,7 @@ export async function POST(request: NextRequest) {
           );
         } else {
           // Send email notifications for status changes OR cancellation flags
-          const userProfile = await getUserProfile(userSubscription.user_id, supabase);
+          const userProfile = await getUserProfile(userSubscription.profile_id, supabase);
 
           // Check if subscription was cancelled (either status change or cancel_at_period_end flag)
           const wasCancelled =
@@ -458,7 +485,7 @@ export async function POST(request: NextRequest) {
               // Create in-app notification for cancellation
               await createBillingNotification(
                 supabase,
-                userSubscription.user_id,
+                userSubscription.profile_id,
                 'info',
                 'Subscription Cancelled',
                 'Your subscription has been cancelled. You will continue to have access until your current billing period ends.',
@@ -476,7 +503,7 @@ export async function POST(request: NextRequest) {
               // Payment succeeded after being past due
               await createBillingNotification(
                 supabase,
-                userSubscription.user_id,
+                userSubscription.profile_id,
                 'success',
                 'Payment Successful',
                 'Your payment has been processed successfully. Your subscription is now active.',
@@ -500,7 +527,7 @@ export async function POST(request: NextRequest) {
         // Find the user subscription by stripe_subscription_id
         const { data: userSubscription, error: findError } = await supabase
           .from('user_subscriptions')
-          .select('id, user_id')
+          .select('id, profile_id')
           .eq('stripe_subscription_id', subscription.id)
           .single();
 
@@ -548,7 +575,7 @@ export async function POST(request: NextRequest) {
           );
         } else {
           // Send cancellation confirmation email
-          const userProfile = await getUserProfile(userSubscription.user_id, supabase);
+          const userProfile = await getUserProfile(userSubscription.profile_id, supabase);
           if (userProfile) {
             await sendBillingEmail({
               type: 'subscription_ended',
@@ -563,7 +590,7 @@ export async function POST(request: NextRequest) {
             // Create in-app notification for subscription ended
             await createBillingNotification(
               supabase,
-              userSubscription.user_id,
+              userSubscription.profile_id,
               'info',
               'Subscription Ended',
               'Your subscription has ended. You can reactivate at any time to continue using our services.',
@@ -591,7 +618,7 @@ export async function POST(request: NextRequest) {
           // Find the user subscription by stripe_subscription_id
           const { data: userSubscription, error: findError } = await supabase
             .from('user_subscriptions')
-            .select('id, user_id')
+            .select('id, profile_id')
             .eq('stripe_subscription_id', subscriptionId)
             .single();
 
@@ -627,7 +654,7 @@ export async function POST(request: NextRequest) {
             await logWebhookEvent(supabase, event.type, invoice, 'error', 'Database update failed');
           } else {
             // Send payment failure notification
-            const userProfile = await getUserProfile(userSubscription.user_id, supabase);
+            const userProfile = await getUserProfile(userSubscription.profile_id, supabase);
             if (userProfile) {
               await sendBillingEmail({
                 type: 'payment_failed',
@@ -649,7 +676,7 @@ export async function POST(request: NextRequest) {
               // Create in-app notification for payment failure
               await createBillingNotification(
                 supabase,
-                userSubscription.user_id,
+                userSubscription.profile_id,
                 'warning',
                 'Payment Failed',
                 `We were unable to process your payment of ${invoice.currency.toUpperCase()} ${(invoice.amount_due / 100).toFixed(2)}. Please update your payment method.`,
@@ -681,7 +708,7 @@ export async function POST(request: NextRequest) {
           // Find the user subscription by stripe_subscription_id
           const { data: userSubscription, error: findError } = await supabase
             .from('user_subscriptions')
-            .select('id, user_id')
+            .select('id, profile_id')
             .eq('stripe_subscription_id', subscriptionId)
             .single();
 
@@ -717,7 +744,7 @@ export async function POST(request: NextRequest) {
             await logWebhookEvent(supabase, event.type, invoice, 'error', 'Database update failed');
           } else {
             // Send payment receipt email
-            const userProfile = await getUserProfile(userSubscription.user_id, supabase);
+            const userProfile = await getUserProfile(userSubscription.profile_id, supabase);
             if (userProfile) {
               await sendBillingEmail({
                 type: 'payment_receipt',
@@ -742,7 +769,7 @@ export async function POST(request: NextRequest) {
               // Create in-app notification for successful payment
               await createBillingNotification(
                 supabase,
-                userSubscription.user_id,
+                userSubscription.profile_id,
                 'success',
                 'Payment Received',
                 `Thank you! Your payment of ${invoice.currency.toUpperCase()} ${(invoice.amount_paid / 100).toFixed(2)} has been processed successfully.`,
@@ -777,7 +804,7 @@ export async function POST(request: NextRequest) {
           // Find the user subscription by stripe_subscription_id
           const { data: userSubscription, error: findError } = await supabase
             .from('user_subscriptions')
-            .select('id, user_id')
+            .select('id, profile_id')
             .eq('stripe_subscription_id', subscriptionId)
             .single();
 
@@ -788,7 +815,7 @@ export async function POST(request: NextRequest) {
           }
 
           // Send upcoming payment reminder
-          const userProfile = await getUserProfile(userSubscription.user_id, supabase);
+          const userProfile = await getUserProfile(userSubscription.profile_id, supabase);
           if (userProfile) {
             await sendBillingEmail({
               type: 'payment_reminder',
@@ -816,7 +843,7 @@ export async function POST(request: NextRequest) {
         // Find the user subscription by stripe_subscription_id
         const { data: userSubscription, error: findError } = await supabase
           .from('user_subscriptions')
-          .select('id, user_id')
+          .select('id, profile_id')
           .eq('stripe_subscription_id', subscription.id)
           .single();
 
@@ -833,7 +860,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Send trial ending notification
-        const userProfile = await getUserProfile(userSubscription.user_id, supabase);
+        const userProfile = await getUserProfile(userSubscription.profile_id, supabase);
         if (userProfile) {
           await sendBillingEmail({
             type: 'trial_ending',

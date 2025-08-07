@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -56,14 +56,18 @@ import {
 
 // Redux imports
 import { useAppSelector, useAppDispatch } from '@/store';
-import { fetchContracts, fetchContractAnalytics } from '@/store/contracts/contractsThunks';
+import {
+  fetchContracts,
+  fetchContractAnalytics,
+  deleteContract,
+  updateContract,
+} from '@/store/contracts/contractsThunks';
 import {
   selectContracts,
   selectContractsLoading,
   selectContractsError,
   selectContractAnalytics,
   selectAnalyticsLoading,
-  selectAnalyticsError,
   selectContractsPagination,
 } from '@/store/contracts/contractsSelectors';
 import { selectIsOnStarterPlan } from '@/store/billing/billingSelectors';
@@ -71,6 +75,7 @@ import { selectIsOnStarterPlan } from '@/store/billing/billingSelectors';
 // Types from centralized file
 import { ContractsFilters } from '@/types/contracts';
 import { FeatureSubscriptionCard } from '@/components/billing/FeatureSubscriptionCard';
+import { useSubscriptionGuard } from '@/hooks/useSubscriptionGuard';
 
 const CONTRACT_STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft', color: 'gray' },
@@ -91,10 +96,8 @@ const CONTRACT_CATEGORY_OPTIONS = [
 export default function ContractsPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const isOnStarterPlan = useAppSelector(selectIsOnStarterPlan);
-  console.log('On Starter plan', isOnStarterPlan);
 
-  // Redux selectors
+  // Redux selectors - moved before conditional returns
   const contracts = useAppSelector(selectContracts);
   const contractsLoading = useAppSelector(selectContractsLoading);
   const contractsError = useAppSelector(selectContractsError);
@@ -102,7 +105,7 @@ export default function ContractsPage() {
   const analyticsLoading = useAppSelector(selectAnalyticsLoading);
   const pagination = useAppSelector(selectContractsPagination);
 
-  // Local state for filters and UI
+  // Local state for filters and UI - moved before conditional returns
   const [filters, setFilters] = useState<ContractsFilters>({
     search: '',
     status: undefined,
@@ -114,6 +117,15 @@ export default function ContractsPage() {
   });
   const [selectedContracts, setSelectedContracts] = useState<string[]>([]);
 
+  // Billing selectors - moved before conditional returns
+  const isOnStarterPlan = useAppSelector(selectIsOnStarterPlan);
+
+  // Subscription guard - redirect to pricing if no active subscription
+  const { isSubscriptionValid } = useSubscriptionGuard({
+    allowTrialing: true,
+    bypassFor: ['admin', 'hr'],
+  });
+
   // Fetch data on component mount and when filters change
   useEffect(() => {
     dispatch(fetchContracts(filters));
@@ -121,57 +133,64 @@ export default function ContractsPage() {
   }, [dispatch, filters]);
 
   // Handle filter changes
-  const handleFilterChange = (key: keyof ContractsFilters, value: any) => {
+  const handleFilterChange = useCallback((key: keyof ContractsFilters, value: any) => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
-      page: key !== 'page' ? 1 : value, // Reset to page 1 when other filters change
+      page: key !== 'page' ? 1 : value, // Reset page when other filters change
     }));
-  };
+  }, []);
+
+  // Handle bulk actions
+  const handleBulkAction = useCallback(
+    async (action: string) => {
+      if (selectedContracts.length === 0) return;
+
+      try {
+        switch (action) {
+          case 'delete':
+            await Promise.all(selectedContracts.map((id) => dispatch(deleteContract(id)).unwrap()));
+            break;
+          case 'archive':
+            await Promise.all(
+              selectedContracts.map((id) =>
+                dispatch(updateContract({ id, status: 'archived' })).unwrap(),
+              ),
+            );
+            break;
+          default:
+            break;
+        }
+        setSelectedContracts([]);
+        dispatch(fetchContracts(filters));
+      } catch (error) {
+        console.error('Bulk action failed:', error);
+      }
+    },
+    [selectedContracts, dispatch, filters],
+  );
 
   // Handle contract selection
-  const handleSelectContract = (contractId: string) => {
+  const handleContractSelect = useCallback((contractId: string, checked: boolean) => {
     setSelectedContracts((prev) =>
-      prev.includes(contractId) ? prev.filter((id) => id !== contractId) : [...prev, contractId],
+      checked ? [...prev, contractId] : prev.filter((id) => id !== contractId),
     );
-  };
+  }, []);
+
+  // Don't render content if subscription is invalid (guard will redirect)
+  if (!isSubscriptionValid) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   const handleSelectAll = () => {
     if (selectedContracts.length === contracts.length) {
       setSelectedContracts([]);
     } else {
       setSelectedContracts(contracts.map((contract) => contract.id));
-    }
-  };
-
-  // Handle bulk actions
-  const handleBulkAction = async (action: string) => {
-    if (selectedContracts.length === 0) {
-      toast.error('Please select contracts first');
-      return;
-    }
-
-    try {
-      switch (action) {
-        case 'delete':
-          // TODO: Implement bulk delete
-          toast.success(`Deleted ${selectedContracts.length} contracts`);
-          break;
-        case 'archive':
-          // TODO: Implement bulk archive
-          toast.success(`Archived ${selectedContracts.length} contracts`);
-          break;
-        case 'activate':
-          // TODO: Implement bulk activate
-          toast.success(`Activated ${selectedContracts.length} contracts`);
-          break;
-        default:
-          break;
-      }
-      setSelectedContracts([]);
-      dispatch(fetchContracts(filters));
-    } catch (error) {
-      toast.error('Failed to perform bulk action');
     }
   };
 
@@ -372,7 +391,9 @@ export default function ContractsPage() {
                 <TableCell>
                   <Checkbox
                     checked={selectedContracts.includes(contract.id)}
-                    onCheckedChange={() => handleSelectContract(contract.id)}
+                    onCheckedChange={() =>
+                      handleContractSelect(contract.id, !selectedContracts.includes(contract.id))
+                    }
                   />
                 </TableCell>
                 <TableCell>
