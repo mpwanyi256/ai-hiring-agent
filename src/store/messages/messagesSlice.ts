@@ -39,10 +39,7 @@ const messagesSlice = createSlice({
   initialState,
   reducers: {
     // Conversation management
-    setCurrentConversation: (
-      state,
-      action: PayloadAction<{ candidateId: string; jobId: string }>,
-    ) => {
+    setCurrentConversation: (state, action: PayloadAction<{ jobId: string }>) => {
       const { jobId } = action.payload;
       state.currentConversation = jobId;
     },
