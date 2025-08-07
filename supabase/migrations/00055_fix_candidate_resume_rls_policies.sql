@@ -97,8 +97,8 @@ FOR ALL
 USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
--- Allow anonymous users to read their own resumes (by email matching)
-CREATE POLICY "Anonymous users can read resumes by email" ON candidate_resumes
+-- Allow anonymous users to read resumes (for interview flow)
+CREATE POLICY "Anonymous users can read resumes" ON candidate_resumes
 FOR SELECT 
 USING (auth.role() = 'anon' OR auth.role() IS NULL);
 

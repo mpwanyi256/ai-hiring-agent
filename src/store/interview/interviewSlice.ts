@@ -1,14 +1,24 @@
 import { JobData } from '@/lib/services/jobsService';
 import { InterviewState } from '@/types/interview';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { checkInterviewConflicts, fetchInterview, getCandidateDetails } from './interviewThunks';
+import {
+  checkInterviewConflicts,
+  fetchInterview,
+  fetchInterviewQuestions,
+  getCandidateDetails,
+  saveInterviewResponse,
+} from './interviewThunks';
 import { fetchCompanyBySlug } from '../company/companyThunks';
 import { apiError } from '@/lib/notification';
 
 const initialState: InterviewState = {
   interview: null,
+  interviewQuestions: [],
+  interviewQuestionResponses: [],
+  savingResponse: false,
   interviewStep: 1,
   isLoading: false,
+  isQuestionsLoading: false,
   error: null,
   candidate: null,
   company: null,
@@ -34,6 +44,37 @@ const interviewSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(saveInterviewResponse.pending, (state) => {
+        state.savingResponse = true;
+      })
+      .addCase(saveInterviewResponse.fulfilled, (state, action) => {
+        const foundResponse = state.interviewQuestionResponses.find(
+          (response) => response.id === action.payload.id,
+        );
+        if (foundResponse) {
+          foundResponse.answer = action.payload.answer;
+          foundResponse.responseTime = action.payload.responseTime;
+        } else {
+          state.interviewQuestionResponses.push(action.payload);
+        }
+        state.savingResponse = false;
+      })
+      .addCase(saveInterviewResponse.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to save interview response';
+        state.savingResponse = false;
+      })
+      .addCase(fetchInterviewQuestions.pending, (state) => {
+        state.isQuestionsLoading = true;
+      })
+      .addCase(fetchInterviewQuestions.fulfilled, (state, action) => {
+        state.interviewQuestions = action.payload;
+        state.isQuestionsLoading = false;
+      })
+      .addCase(fetchInterviewQuestions.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to fetch interview questions';
+        state.isQuestionsLoading = false;
+        state.interviewQuestions = [];
+      })
       .addCase(checkInterviewConflicts.pending, (state) => {
         state.isLoading = true;
         state.conflicts = [];

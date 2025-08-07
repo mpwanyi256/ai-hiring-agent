@@ -2,8 +2,15 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { apiUtils } from '../api';
 import { JobData } from '@/lib/services/jobsService';
 import { APIResponse, CandidateBasic } from '@/types';
-import { createCandidateAccountPayload } from '@/types/interview';
+import {
+  createCandidateAccountPayload,
+  InterviewResponse,
+  InterviewResponsePayload,
+  JobQuestion,
+  JobQuestionResponse,
+} from '@/types/interview';
 import { CheckConflictsPayload, InterviewConflict } from '@/types/interviews';
+import { RootState } from '@/store';
 
 export const checkInterviewConflicts = createAsyncThunk<
   InterviewConflict[],
@@ -94,5 +101,43 @@ export const cancelInterview = createAsyncThunk(
       throw new Error(data.error || 'Failed to cancel interview');
     }
     return data;
+  },
+);
+
+export const fetchInterviewQuestions = createAsyncThunk<
+  JobQuestion[],
+  string,
+  { rejectValue: string; state: RootState }
+>('interview/fetchInterviewQuestions', async (jobToken: string, { rejectWithValue }) => {
+  try {
+    const { questions } = await apiUtils.get<JobQuestionResponse>(
+      `/api/interview/questions?jobToken=${jobToken}`,
+    );
+    return questions;
+  } catch (error) {
+    return rejectWithValue(
+      error instanceof Error ? error.message : 'Failed to fetch interview questions',
+    );
+  }
+});
+
+export const saveInterviewResponse = createAsyncThunk<
+  InterviewResponse,
+  InterviewResponsePayload,
+  { rejectValue: string }
+>(
+  'interview/saveInterviewResponse',
+  async (response: InterviewResponsePayload, { rejectWithValue }) => {
+    try {
+      const { data } = await apiUtils.post<APIResponse<InterviewResponse>>(
+        `/api/interview/response`,
+        response,
+      );
+      return data;
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to save interview response',
+      );
+    }
   },
 );

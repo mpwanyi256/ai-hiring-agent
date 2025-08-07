@@ -9,56 +9,44 @@ export async function GET(request: Request) {
     const jobToken = searchParams.get('jobToken');
 
     if (!jobToken) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Job token is required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Job token is required',
+        },
+        { status: 400 },
+      );
     }
 
     // Get job by interview token
     const job = await jobsService.getJobByInterviewToken(jobToken);
     if (!job) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Invalid interview link' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid interview link',
+        },
+        { status: 404 },
+      );
     }
 
     // Get questions for the job
     const questions = await questionService.getQuestionsForJob(job.id);
-    
+
     if (!questions || questions.length === 0) {
-      // If no questions exist, generate them automatically
-      console.log(`No questions found for job ${job.id}, generating default questions...`);
-      
-      const generationResponse = await questionService.generateQuestionsForJob({
-        jobId: job.id,
-        jobTitle: job.title,
-        jobDescription: job.fields?.jobDescription,
-        skills: job.fields?.skills,
-        experienceLevel: job.fields?.experienceLevel,
-        traits: job.fields?.traits,
-        customFields: job.fields?.customFields,
-        questionCount: 6, // Default count for interviews
-        includeCustom: true,
-      });
+      // For candidates accessing via interview token, don't auto-generate questions
+      // Questions should be created by job creators in the dashboard first
+      console.log(`No questions found for job ${job.id} - interview not ready for candidates`);
 
-      // Save generated questions
-      const savedQuestions = await questionService.saveQuestionsForJob(
-        job.id, 
-        generationResponse.questions
-      );
-
-      return NextResponse.json({
-        success: true,
-        questions: savedQuestions,
-        job: {
-          id: job.id,
-          title: job.title,
-          interviewFormat: job.interviewFormat
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'This interview is not ready yet. The employer needs to set up interview questions first.',
+          code: 'INTERVIEW_NOT_READY',
         },
-        generated: true
-      });
+        { status: 404 },
+      );
     }
 
     // Sort questions by order index
@@ -70,15 +58,18 @@ export async function GET(request: Request) {
       job: {
         id: job.id,
         title: job.title,
-        interviewFormat: job.interviewFormat
+        interviewFormat: job.interviewFormat,
       },
-      generated: false
+      generated: false,
     });
   } catch (error) {
     console.error('Error fetching interview questions:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to fetch interview questions' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch interview questions',
+      },
+      { status: 500 },
+    );
   }
-} 
+}

@@ -34,3 +34,23 @@ export const selectInterviewConflicts = createSelector(
   [selectInterview],
   (interview) => interview.conflicts,
 );
+
+export const selectInterviewQuestions = createSelector(
+  [selectInterview],
+  (interview) => interview.interviewQuestions,
+);
+
+export const selectIsQuestionsLoading = createSelector(
+  [selectInterview],
+  (interview) => interview.isQuestionsLoading,
+);
+
+export const selectInterviewQuestionResponses = createSelector(
+  [selectInterview],
+  (interview) => interview.interviewQuestionResponses,
+);
+
+export const selectSavingResponse = createSelector(
+  [selectInterview],
+  (interview) => interview.savingResponse,
+);

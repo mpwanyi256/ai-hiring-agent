@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { evaluateResume, getResumeEvaluation } from '@/store/evaluation/evaluationThunks';
 import { clearResumeError } from '@/store/evaluation/evaluationSlice';
-import { setInterviewStep } from '@/store/interview/interviewSlice';
 import {
   selectCurrentResumeEvaluation,
   selectResumeEvaluationLoading,
@@ -117,16 +116,18 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
   };
 
   const proceedToInterview = () => {
-    // Move to step 4 (interview questions)
-    dispatch(setInterviewStep(4));
+    // With centralized step management, we don't need to manually set the step
+    // The JobApplicationTab will automatically detect the passing evaluation
+    // and transition to the correct step.
+    // This function can be used to trigger a refresh if needed
+    console.log('Proceeding to interview - step will be managed centrally');
   };
 
   const handleEvaluationComplete = (evaluation: any) => {
-    // If evaluation passes threshold, automatically proceed to interview
-    if (evaluation?.passesThreshold) {
-      dispatch(setInterviewStep(4));
-    }
-    // If evaluation fails, stay on current step to show results
+    // Evaluation completion is now handled by centralized step management
+    // The JobApplicationTab will automatically detect the evaluation result
+    // and transition to the appropriate step
+    console.log('Evaluation complete - step will be managed centrally', evaluation);
   };
 
   return {

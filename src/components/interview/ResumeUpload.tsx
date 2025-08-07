@@ -8,18 +8,17 @@ import ErrorDisplay from './ErrorDisplay';
 import UploadProgress from './UploadProgress';
 import ExistingEvaluationDisplay from './ExistingEvaluationDisplay';
 import { loadedInterview, selectCandidate } from '@/store/interview/interviewSelectors';
-import { useAppSelector, useAppDispatch } from '@/store';
-import { setInterviewStep } from '@/store/interview/interviewSlice';
+import { useAppSelector } from '@/store';
 import { useEffect } from 'react';
 
 interface ResumeUploadProps {
   jobToken: string;
+  onEvaluationCompleted?: () => void;
 }
 
-export default function ResumeUpload({ jobToken }: ResumeUploadProps) {
+export default function ResumeUpload({ jobToken, onEvaluationCompleted }: ResumeUploadProps) {
   const job = useAppSelector(loadedInterview);
   const candidateInfo = useAppSelector(selectCandidate);
-  const dispatch = useAppDispatch();
 
   const {
     selectedFile,
@@ -50,45 +49,23 @@ export default function ResumeUpload({ jobToken }: ResumeUploadProps) {
     jobId: job?.id || '',
   });
 
-  // Handle evaluation completion
+  // Handle evaluation completion and step transition
   useEffect(() => {
-    if (evaluation) {
-      handleEvaluationComplete(evaluation);
-    }
-  }, [evaluation, handleEvaluationComplete]);
-
-  // Handle evaluation result and step transition
-  useEffect(() => {
-    const displayEvaluation = evaluation || (existingEvaluation ? existingEvaluation : undefined);
-    if (displayEvaluation && typeof displayEvaluation === 'object') {
-      const score =
-        typeof displayEvaluation.resumeScore === 'number'
-          ? displayEvaluation.resumeScore
-          : displayEvaluation.score;
-      if (typeof score === 'number') {
-        if (score >= 50) {
-          dispatch(setInterviewStep(4)); // Interview step
-        } else {
-          // For low scores, stay on resume step to allow re-upload
-          // dispatch(setInterviewStep(5)); // Results/failure step
-        }
+    // When a new evaluation is completed, notify parent to re-check
+    if (evaluation && !existingEvaluation) {
+      // Handle different evaluation types - some have resumeScore, others have score
+      const score = (evaluation as any)?.resumeScore ?? (evaluation as any)?.score;
+      if (score !== undefined && score >= 50) {
+        // Notify parent component to re-check evaluation status
+        setTimeout(() => {
+          onEvaluationCompleted?.();
+        }, 2000); // Give user time to see the result
       }
     }
-  }, [evaluation, existingEvaluation, dispatch]);
+  }, [evaluation, existingEvaluation, onEvaluationCompleted]);
 
-  // Debug logging
-  useEffect(() => {
-    // The old proceedToInterview/canProceed logic is now handled by the new useEffect
-  }, [
-    candidateInfo,
-    job,
-    isCheckingExisting,
-    existingEvaluation,
-    evaluation,
-    hasExistingEvaluation,
-    canProceed,
-    proceedToInterview,
-  ]);
+  // Remove the old useEffects that were causing recursion
+  // The evaluation completion is now handled by the single useEffect above
 
   if (!job) {
     return (
@@ -118,7 +95,8 @@ export default function ResumeUpload({ jobToken }: ResumeUploadProps) {
   if (evaluation || existingEvaluation) {
     const displayEvaluation = evaluation || (existingEvaluation ? existingEvaluation : undefined);
     if (displayEvaluation) {
-      const resumeScore = displayEvaluation.resumeScore || displayEvaluation.score || 0;
+      const resumeScore =
+        (displayEvaluation as any)?.resumeScore || (displayEvaluation as any)?.score || 0;
       const passesThreshold = resumeScore >= 50;
 
       // If evaluation failed, show the upload interface instead of the evaluation display
@@ -173,43 +151,58 @@ export default function ResumeUpload({ jobToken }: ResumeUploadProps) {
               <DocumentTextIcon className="w-8 h-8 text-blue-600" />
             </div>
             <h1 className="text-2xl font-bold text-text mb-2">
-              {existingEvaluation && existingEvaluation.resumeScore < 50
+              {existingEvaluation &&
+              ((existingEvaluation as any)?.resumeScore ||
+                (existingEvaluation as any)?.score ||
+                0) < 50
                 ? 'Upload a New Resume'
                 : 'Upload Your Resume'}
             </h1>
             <p className="text-muted-text">
-              {existingEvaluation && existingEvaluation.resumeScore < 50
-                ? `Your previous resume scored ${Math.round(existingEvaluation.resumeScore)}%. Upload an updated resume to try again.`
+              {existingEvaluation &&
+              ((existingEvaluation as any)?.resumeScore ||
+                (existingEvaluation as any)?.score ||
+                0) < 50
+                ? `Your previous resume scored ${Math.round((existingEvaluation as any)?.resumeScore || (existingEvaluation as any)?.score || 0)}%. Upload an updated resume to try again.`
                 : `Upload your resume for evaluation against the ${job.title} position requirements.`}
             </p>
           </div>
 
           {/* Show previous evaluation info if it failed */}
-          {existingEvaluation && existingEvaluation.resumeScore < 50 && (
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <h3 className="font-semibold text-yellow-800 mb-2">Previous Evaluation</h3>
-              <div className="text-sm text-yellow-700 space-y-1">
-                <div className="flex justify-between">
-                  <span>Score:</span>
-                  <span className="font-medium">{Math.round(existingEvaluation.resumeScore)}%</span>
+          {existingEvaluation &&
+            ((existingEvaluation as any)?.resumeScore || (existingEvaluation as any)?.score || 0) <
+              50 && (
+              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h3 className="font-semibold text-yellow-800 mb-2">Previous Evaluation</h3>
+                <div className="text-sm text-yellow-700 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Score:</span>
+                    <span className="font-medium">
+                      {Math.round(
+                        (existingEvaluation as any)?.resumeScore ||
+                          (existingEvaluation as any)?.score ||
+                          0,
+                      )}
+                      %
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Required:</span>
+                    <span className="font-medium">50%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>File:</span>
+                    <span className="font-medium">
+                      {(existingEvaluation as any)?.resumeFilename || 'Resume.pdf'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span>Required:</span>
-                  <span className="font-medium">50%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>File:</span>
-                  <span className="font-medium">
-                    {existingEvaluation.resumeFilename || 'Resume.pdf'}
-                  </span>
-                </div>
+                <p className="text-xs text-yellow-600 mt-2">
+                  Consider updating your resume with more relevant experience and skills before
+                  re-uploading.
+                </p>
               </div>
-              <p className="text-xs text-yellow-600 mt-2">
-                Consider updating your resume with more relevant experience and skills before
-                re-uploading.
-              </p>
-            </div>
-          )}
+            )}
 
           {/* Error Display */}
           <ErrorDisplay

@@ -4,43 +4,29 @@ import { apiError } from '@/lib/notification';
 
 export async function POST(request: Request) {
   try {
-    const { candidateId, questionId, question, answer, responseTime } = await request.json();
+    const { candidateId, questionId, question, answer, responseTime, jobId } = await request.json();
 
     if (!candidateId || !questionId || !question || !answer) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Missing required fields' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Missing required fields',
+        },
+        { status: 400 },
+      );
     }
 
     const supabase = await createClient();
 
-    // For now, we'll use candidateId as profile_id since we're creating temp candidate records
-    // In a full implementation, you'd want to create proper candidate profiles
-    
-    // Get job ID from question
-    const { data: questionData, error: questionError } = await supabase
-      .from('job_questions')
-      .select('job_id')
-      .eq('id', questionId)
-      .single();
-
-    if (questionError || !questionData) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Invalid question ID' 
-      }, { status: 400 });
-    }
-
     // Save response to the responses table
     const responseData = {
       candidate_id: candidateId,
-      job_id: questionData.job_id,
+      job_id: jobId,
       job_question_id: questionId,
       question: question,
       answer: answer,
       response_time: responseTime || 0,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
 
     const { data: savedResponse, error: saveError } = await supabase
@@ -52,10 +38,13 @@ export async function POST(request: Request) {
     if (saveError) {
       console.error('Error saving response:', saveError);
       apiError(saveError.message);
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Failed to save response' 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to save response',
+        },
+        { status: 500 },
+      );
     }
 
     // Update candidate progress
@@ -64,7 +53,7 @@ export async function POST(request: Request) {
       const { data: questionsCount, error: countError } = await supabase
         .from('job_questions')
         .select('id', { count: 'exact' })
-        .eq('job_id', questionData.job_id);
+        .eq('job_id', jobId);
 
       if (countError) {
         console.warn('Failed to get questions count:', countError);
@@ -75,7 +64,7 @@ export async function POST(request: Request) {
         .from('responses')
         .select('id', { count: 'exact' })
         .eq('candidate_id', candidateId)
-        .eq('job_id', questionData.job_id);
+        .eq('job_id', jobId);
 
       if (responsesError) {
         console.warn('Failed to get responses count:', responsesError);
@@ -91,7 +80,7 @@ export async function POST(request: Request) {
         .update({
           current_step: currentStep,
           total_steps: totalQuestions,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', candidateId);
 
@@ -105,7 +94,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      response: {
+      data: {
         id: savedResponse.id,
         candidateId: savedResponse.candidate_id,
         jobId: savedResponse.job_id,
@@ -113,14 +102,17 @@ export async function POST(request: Request) {
         question: savedResponse.question,
         answer: savedResponse.answer,
         responseTime: savedResponse.response_time,
-        createdAt: savedResponse.created_at
-      }
+        createdAt: savedResponse.created_at,
+      },
     });
   } catch (error) {
     console.error('Error submitting response:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to submit response' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to submit response',
+      },
+      { status: 500 },
+    );
   }
-} 
+}

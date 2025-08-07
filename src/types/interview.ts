@@ -18,6 +18,17 @@ export interface JobQuestion {
   updatedAt: string;
 }
 
+export interface JobQuestionResponse {
+  success: boolean;
+  questions: JobQuestion[];
+  job: {
+    id: string;
+    title: string;
+    interviewFormat: string;
+  };
+  generated: boolean;
+}
+
 // Legacy aliases for backward compatibility
 export type InterviewQuestion = JobQuestion;
 
@@ -154,12 +165,16 @@ export interface QuestionGenerationResponse {
 
 export interface InterviewState {
   interview: JobData | null;
+  interviewQuestions: JobQuestion[];
   interviewStep: number;
   candidate: CandidateBasic | null;
   isLoading: boolean;
+  isQuestionsLoading: boolean;
   error: string | null;
   company: Omit<ClientCompany, 'id'> | null;
   conflicts: InterviewConflict[];
+  interviewQuestionResponses: InterviewResponse[];
+  savingResponse: boolean;
 }
 
 export interface createCandidateAccountPayload {
@@ -196,3 +211,23 @@ export interface CreateInterviewScheduleRequest {
 }
 
 export type InterviewType = 'video' | 'phone' | 'in_person';
+
+export interface InterviewResponsePayload {
+  candidateId: string;
+  questionId: string;
+  question: string;
+  answer: string;
+  responseTime: number;
+  jobId: string;
+}
+
+export interface InterviewResponse {
+  id: string;
+  candidateId: string;
+  jobId: string;
+  jobQuestionId: string;
+  question: string;
+  answer: string;
+  responseTime: number;
+  createdAt: string;
+}
