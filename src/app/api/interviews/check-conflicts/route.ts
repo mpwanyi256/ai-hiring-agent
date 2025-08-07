@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { Database } from '@/lib/supabase';
+import { Database } from '@/lib/supabase/types';
 
-type InterviewDetails = Database['public']['Views']['interview_details']['Row'] & {
-  duration: number;
-};
+type InterviewDetails = Database['public']['Views']['interview_details']['Row'];
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();

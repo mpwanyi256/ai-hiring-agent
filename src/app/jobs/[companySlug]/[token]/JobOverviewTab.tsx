@@ -1,6 +1,6 @@
 import { useAppSelector } from '@/store';
 import { loadedInterview } from '@/store/interview/interviewSelectors';
-import { SparklesIcon } from '@heroicons/react/24/outline';
+import { SparklesIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 
 export default function JobOverviewTab() {
   const job = useAppSelector(loadedInterview);
@@ -10,16 +10,36 @@ export default function JobOverviewTab() {
     <div className="space-y-8">
       {/* Job Description */}
       <div className="bg-white rounded-lg shadow-lg p-6">
-        {job.fields?.jobDescription && (
+        {(job.fields?.jobDescription || job.description) && (
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">About this role</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+              <DocumentTextIcon className="w-5 h-5 mr-2 text-blue-600" />
+              About this role
+            </h3>
             <div
               className="prose prose-sm max-w-none text-gray-700"
-              dangerouslySetInnerHTML={{ __html: job.fields.jobDescription }}
+              dangerouslySetInnerHTML={{
+                __html: job.fields?.jobDescription || job.description || '',
+              }}
+            />
+          </div>
+        )}
+
+        {/* Job Requirements */}
+        {job.requirements && (
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+              <DocumentTextIcon className="w-5 h-5 mr-2 text-green-600" />
+              Requirements
+            </h3>
+            <div
+              className="prose prose-sm max-w-none text-gray-700"
+              dangerouslySetInnerHTML={{ __html: job.requirements }}
             />
           </div>
         )}
       </div>
+
       {/* Application Process */}
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
@@ -63,6 +83,7 @@ export default function JobOverviewTab() {
           </div>
         </div>
       </div>
+
       {/* Application Guidelines */}
       <div className="bg-gray-50 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Application Guidelines</h3>

@@ -1,4 +1,4 @@
-import { Database } from '@/lib/supabase';
+import { Database } from '@/lib/supabase/types';
 import { JobQuestion } from './interview';
 import z from 'zod';
 
