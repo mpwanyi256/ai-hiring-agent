@@ -21,7 +21,11 @@ import {
   selectIsQuestionsLoading,
 } from '@/store/interview/interviewSelectors';
 import Image from 'next/image';
-import { fetchInterviewQuestions, saveInterviewResponse } from '@/store/interview/interviewThunks';
+import {
+  completeInterview,
+  fetchInterviewQuestions,
+  saveInterviewResponse,
+} from '@/store/interview/interviewThunks';
 import { apiError } from '@/lib/notification';
 
 interface InterviewFlowProps {
@@ -30,12 +34,6 @@ interface InterviewFlowProps {
   resumeEvaluation?: ResumeEvaluation | null;
   resumeContent: string;
   onComplete: () => void;
-}
-
-interface Response {
-  questionId: string;
-  answer: string;
-  timeSpent: number; // in seconds
 }
 
 export default function InterviewFlow({
@@ -61,6 +59,7 @@ export default function InterviewFlow({
   // Fetch questions from the API
   useEffect(() => {
     dispatch(fetchInterviewQuestions(jobToken));
+    setStartTime(new Date());
   }, [jobToken, dispatch]);
 
   // Don't return null immediately if there's no candidate - give it time to load
@@ -154,12 +153,8 @@ export default function InterviewFlow({
       }
 
       // Complete the interview session
-      const completeResponse = await fetch('/api/interview/complete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const completeResponse = await dispatch(
+        completeInterview({
           candidateId: candidate.id,
           jobToken,
           candidateInfo: {
@@ -169,15 +164,23 @@ export default function InterviewFlow({
             lastName: candidate.lastName,
             email: candidate.email,
           },
-          resumeEvaluation: resumeEvaluation || null,
+          resumeEvaluation: resumeEvaluation || {
+            score: 0,
+            summary: '',
+            matchingSkills: [],
+            missingSkills: [],
+            experienceMatch: 'under',
+            recommendation: 'proceed',
+            feedback: '',
+            passesThreshold: false,
+          },
           resumeContent,
           totalTimeSpent: Math.round((new Date().getTime() - (startTime?.getTime() || 0)) / 1000),
         }),
-      });
+      ).unwrap();
 
-      const completeData = await completeResponse.json();
-      if (!completeData.success) {
-        console.warn('Failed to complete interview:', completeData.error);
+      if (!completeResponse.success) {
+        apiError(completeResponse.message);
       }
 
       // Navigate to completion step

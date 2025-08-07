@@ -231,3 +231,29 @@ export interface InterviewResponse {
   responseTime: number;
   createdAt: string;
 }
+
+export interface InterviewCompletePayload {
+  candidateId: string;
+  jobToken: string;
+  candidateInfo: {
+    id: string;
+    jobId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  resumeEvaluation: ResumeEvaluation;
+  resumeContent: string;
+  totalTimeSpent: number;
+}
+
+export interface InterviewCompleteResponse {
+  success: boolean;
+  message: string;
+  summary: {
+    candidateId: string;
+    responsesCount: number;
+    totalTimeSpent: number;
+    completedAt: string;
+  };
+}

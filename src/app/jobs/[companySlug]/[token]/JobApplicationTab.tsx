@@ -1,5 +1,6 @@
 import { useAppSelector, useAppDispatch } from '@/store';
 import { loadedInterview, selectCandidate } from '@/store/interview/interviewSelectors';
+import { setCandidateIsCompleted } from '@/store/interview/interviewSlice';
 import CandidateInfoForm from '@/components/interview/CandidateInfoForm';
 import ResumeUpload from '@/components/interview/ResumeUpload';
 import InterviewFlow from '@/components/interview/InterviewFlow';
@@ -99,6 +100,7 @@ export default function JobApplicationTab() {
             resumeContent=""
             onComplete={() => {
               // Handle completion - could update candidate status
+              dispatch(setCandidateIsCompleted(true));
               console.log('Interview completed');
             }}
           />

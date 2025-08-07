@@ -4,6 +4,8 @@ import { JobData } from '@/lib/services/jobsService';
 import { APIResponse, CandidateBasic } from '@/types';
 import {
   createCandidateAccountPayload,
+  InterviewCompletePayload,
+  InterviewCompleteResponse,
   InterviewResponse,
   InterviewResponsePayload,
   JobQuestion,
@@ -141,3 +143,19 @@ export const saveInterviewResponse = createAsyncThunk<
     }
   },
 );
+
+export const completeInterview = createAsyncThunk<
+  InterviewCompleteResponse,
+  InterviewCompletePayload,
+  { rejectValue: string; state: RootState }
+>('interview/completeInterview', async (payload, { rejectWithValue }) => {
+  try {
+    const response = await apiUtils.post<InterviewCompleteResponse>(
+      `/api/interview/complete`,
+      payload,
+    );
+    return response;
+  } catch (error) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Failed to complete interview');
+  }
+});

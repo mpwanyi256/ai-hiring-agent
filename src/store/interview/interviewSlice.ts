@@ -3,6 +3,7 @@ import { InterviewState } from '@/types/interview';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import {
   checkInterviewConflicts,
+  completeInterview,
   fetchInterview,
   fetchInterviewQuestions,
   getCandidateDetails,
@@ -41,9 +42,27 @@ const interviewSlice = createSlice({
     clearInterviewData: () => {
       return initialState;
     },
+    setCandidateIsCompleted: (state, action: PayloadAction<boolean>) => {
+      if (state.candidate) {
+        state.candidate.isCompleted = action.payload;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
+      .addCase(completeInterview.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(completeInterview.fulfilled, (state) => {
+        state.isLoading = false;
+        if (state.candidate) {
+          state.candidate.isCompleted = true;
+        }
+      })
+      .addCase(completeInterview.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to complete interview';
+        state.isLoading = false;
+      })
       .addCase(saveInterviewResponse.pending, (state) => {
         state.savingResponse = true;
       })
@@ -129,7 +148,12 @@ const interviewSlice = createSlice({
   },
 });
 
-export const { setInterview, setInterviewStep, resetInterviewConflicts, clearInterviewData } =
-  interviewSlice.actions;
+export const {
+  setInterview,
+  setInterviewStep,
+  resetInterviewConflicts,
+  clearInterviewData,
+  setCandidateIsCompleted,
+} = interviewSlice.actions;
 
 export default interviewSlice.reducer;
