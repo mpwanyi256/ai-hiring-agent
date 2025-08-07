@@ -1280,6 +1280,10 @@ export type Database = {
           company_id: string | null;
           company_name: string | null;
           company_slug: string | null;
+          company_logo_url: string | null;
+          company_website: string | null;
+          company_industry: string | null;
+          company_size: string | null;
           department_name: string | null;
           job_title_name: string | null;
           employment_type_name: string | null;
@@ -1471,7 +1475,58 @@ export type Database = {
       [_ in never]: never;
     };
     Enums: {
-      [_ in never]: never;
+      aal_level: 'aal1' | 'aal2' | 'aal3';
+      action: 'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE' | 'ERROR';
+      candidate_status:
+        | 'under_review'
+        | 'interview_scheduled'
+        | 'shortlisted'
+        | 'reference_check'
+        | 'offer_extended'
+        | 'offer_accepted'
+        | 'hired'
+        | 'rejected'
+        | 'withdrawn'
+        | 'active';
+      code_challenge_method: 'plain' | 's256';
+      contract_category: 'employment' | 'freelance' | 'consulting' | 'other';
+      contract_status:
+        | 'draft'
+        | 'pending'
+        | 'signed'
+        | 'active'
+        | 'completed'
+        | 'terminated'
+        | 'cancelled';
+      equality_op: 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte' | 'in';
+      factor_status: 'unverified' | 'verified';
+      factor_type: 'totp' | 'webauthn' | 'phone';
+      interview_schedule_status:
+        | 'scheduled'
+        | 'completed'
+        | 'cancelled'
+        | 'rescheduled'
+        | 'no_show'
+        | 'pending';
+      interview_type: 'video' | 'phone' | 'in_person';
+      job_status: 'draft' | 'active' | 'interviewing' | 'paused' | 'closed';
+      job_type: 'full_time' | 'part_time' | 'contract' | 'internship' | 'temporary';
+      one_time_token_type:
+        | 'confirmation_token'
+        | 'reauthentication_token'
+        | 'recovery_token'
+        | 'email_change_token_new'
+        | 'email_change_token_current'
+        | 'phone_change_token';
+      request_status: 'PENDING' | 'SUCCESS' | 'ERROR';
+      user_role:
+        | 'admin'
+        | 'recruiter'
+        | 'hiring_manager'
+        | 'interviewer'
+        | 'candidate'
+        | 'developer';
+      workplace_type: 'remote' | 'onsite' | 'hybrid';
     };
     CompositeTypes: {
       [_ in never]: never;

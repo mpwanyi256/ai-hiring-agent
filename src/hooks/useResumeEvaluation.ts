@@ -69,8 +69,12 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
   }, [candidateInfo?.id, jobId, dispatch]);
 
   const handleFileSelect = (file: File) => {
-    // Don't allow file selection if there's already an evaluation
-    if (existingEvaluation) {
+    // Allow file selection even if there's an existing evaluation (for re-upload)
+    // Only prevent if the existing evaluation passed the threshold
+    if (existingEvaluation && existingEvaluation.resumeScore >= 50) {
+      setValidationError(
+        'You already have a passing resume evaluation. You can proceed to the interview.',
+      );
       return;
     }
 
@@ -81,13 +85,16 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
   const uploadAndEvaluateResume = async () => {
     if (!selectedFile || !candidateInfo) return;
 
-    // Don't allow upload if there's already an evaluation
-    if (existingEvaluation) {
+    // Allow re-upload if existing evaluation didn't pass threshold
+    if (existingEvaluation && existingEvaluation.resumeScore >= 50) {
+      setValidationError(
+        'You already have a passing resume evaluation. You can proceed to the interview.',
+      );
       return;
     }
 
     try {
-      dispatch(
+      await dispatch(
         evaluateResume({
           resumeFile: selectedFile,
           jobToken,
@@ -140,6 +147,7 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
     clearError,
     proceedToInterview,
     handleEvaluationComplete,
+    setSelectedFile, // Expose setSelectedFile for resetting
 
     // Computed
     hasExistingEvaluation: !!existingEvaluation,

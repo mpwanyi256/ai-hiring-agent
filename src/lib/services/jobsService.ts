@@ -232,7 +232,7 @@ function transformJobFromDB(dbJob: JobComprehensiveRow): JobData {
     jobType: dbJob.job_type || '',
     companyId: dbJob.company_id || '',
     companyName: dbJob.company_name || '',
-    companyLogo: '', // Company logo not available in jobs_comprehensive view
+    companyLogo: dbJob.company_logo_url || '', // Now using the actual company_logo_url field
     companySlug: dbJob.company_slug || '',
     salaryMin: dbJob.salary_min ?? undefined,
     salaryMax: dbJob.salary_max ?? undefined,
