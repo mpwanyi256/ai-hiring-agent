@@ -42,6 +42,7 @@ export async function PATCH(request: NextRequest, { params }: AppRequestParams<{
       .single();
 
     if (error || !candidate) {
+      console.log('Error updating candidate status:', error);
       return NextResponse.json(
         { success: false, error: 'Failed to update candidate status' },
         { status: 500 },
