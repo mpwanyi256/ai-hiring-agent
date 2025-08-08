@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { edgeFunctionsService } from '@/lib/services/edgeFunctionsService';
+// import { edgeFunctionsService } from '@/lib/services/edgeFunctionsService';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -9,7 +9,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Await params before accessing properties (Next.js 15 requirement)
     const { id: candidateId } = await params;
 
-    const { isCompleted, currentStep, totalSteps, candidateInfo } = await request.json();
+    const { isCompleted, currentStep, totalSteps } = await request.json();
 
     // Update candidate progress
     const { data: candidate, error: updateError } = await supabase
@@ -37,12 +37,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Trigger the ai-candidate-evaluation background function
-    const response = await edgeFunctionsService.triggerAiCandidateEvaluation({
-      candidateId: candidateInfo.id,
-      jobId: candidateInfo.jobId,
-    });
+    // const response = await edgeFunctionsService.triggerAiCandidateEvaluation({
+    //   candidateId: candidateInfo.id,
+    //   jobId: candidateInfo.jobId,
+    // });
 
-    console.log('Ai evaluation response', response);
+    // console.log('Ai evaluation response', response);
 
     return NextResponse.json({
       success: true,
