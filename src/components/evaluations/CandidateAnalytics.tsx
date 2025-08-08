@@ -6,8 +6,6 @@ import {
   ChartBarIcon,
   UserGroupIcon,
   TrophyIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
   DocumentTextIcon,
@@ -23,6 +21,10 @@ import {
 import { getInterviewScoreColor, getResumeScoreColor } from '@/lib/utils';
 import { fetchSelectedCandidateAnalytics } from '@/store/selectedCandidate/selectedCandidateThunks';
 import { useAppDispatch, useAppSelector } from '@/store';
+import { MetricCard } from './analytics/MetricCard';
+import { ComparisonRow } from './analytics/ComparisonRow';
+import { TeamSummary } from './analytics/TeamSummary';
+import { AIAssessment } from './analytics/AIAssessment';
 
 interface CandidateAnalyticsProps {
   className?: string;
@@ -54,13 +56,7 @@ export default function CandidateAnalytics({ className = '' }: CandidateAnalytic
     return <Loading message="Loading analytics..." />;
   }
 
-  if (
-    !analyticsData ||
-    !analyticsData.analytics ||
-    !analyticsData.comparative_data ||
-    Object.keys(analyticsData.analytics).length === 0 ||
-    Object.keys(analyticsData.comparative_data).length === 0
-  ) {
+  if (!analyticsData || !analyticsData.analytics || !analyticsData.comparative_data) {
     return (
       <div className={`space-y-6 ${className}`}>
         <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -68,8 +64,7 @@ export default function CandidateAnalytics({ className = '' }: CandidateAnalytic
             <ExclamationTriangleIcon className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Analytics Available</h3>
             <p className="text-gray-500">
-              Analytics for this candidate have not been generated yet. Once the candidate completes
-              their interview and is evaluated, analytics will appear here.
+              Analytics will appear once interview and evaluation are completed.
             </p>
           </div>
         </div>
@@ -77,7 +72,8 @@ export default function CandidateAnalytics({ className = '' }: CandidateAnalytic
     );
   }
 
-  const { analytics, response_analytics, comparative_data } = analyticsData;
+  const { analytics, response_analytics, comparative_data, ai_assessment, team_summary } =
+    analyticsData as any;
 
   const getEngagementColor = (level: string) => {
     switch (level) {
@@ -108,109 +104,56 @@ export default function CandidateAnalytics({ className = '' }: CandidateAnalytic
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
       <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900">Detailed Analytics</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg md:text-xl font-bold text-gray-900">Candidate Insights</h2>
           <div className="flex items-center space-x-2">
             <ChartBarIcon className="w-4 md:w-5 h-4 md:h-5 text-primary" />
-            <span className="text-xs md:text-sm text-gray-500">Real-time insights</span>
+            <span className="text-xs md:text-sm text-gray-500">Decision support</span>
           </div>
         </div>
         <p className="text-xs md:text-sm text-gray-600">
-          Comprehensive analysis of {candidate?.firstName}&apos;s performance and engagement metrics
+          Evidence-based overview for {candidate?.firstName}
         </p>
       </div>
 
-      {/* Performance Overview */}
+      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        {/* Overall Score */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs md:text-sm font-medium text-gray-500">Overall Score</h3>
-            <TrophyIcon className="w-4 md:w-5 h-4 md:h-5 text-yellow-500" />
-          </div>
-          <div className="flex items-baseline">
-            <span
-              className={`text-2xl md:text-xl font-bold ${getScoreColor(analytics.overall_score)}`}
-            >
-              {analytics.overall_score}%
-            </span>
-          </div>
-          <div className="mt-2">
-            <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
-              <div
-                className="bg-primary h-1.5 md:h-2 rounded-full transition-all"
-                style={{ width: `${analytics.overall_score}%` }}
-              />
-            </div>
-          </div>
-          <p className="text-[10px] md:text-xs text-gray-500 mt-2">
-            Rank #{analytics.rank_in_job} of {analytics.total_candidates_in_job} candidates
-          </p>
-        </div>
-
-        {/* Completion Rate */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs md:text-sm font-medium text-gray-500">Completion Rate</h3>
-            <CheckCircleIcon className="w-4 md:w-5 h-4 md:h-5 text-green-500" />
-          </div>
-          <div className="flex items-baseline">
-            <span
-              className={`text-2xl md:text-xl font-bold ${getScoreColor(analytics.completion_percentage)}`}
-            >
-              {analytics.completion_percentage}%
-            </span>
-          </div>
-          <p className="text-[10px] md:text-xs text-gray-500 mt-2">
-            {analytics.total_responses} of {analytics.total_questions}
-          </p>
-        </div>
-
-        {/* Engagement Level */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs md:text-sm font-medium text-gray-500">Engagement</h3>
-            <UserGroupIcon className="w-4 md:w-5 h-4 md:h-5 text-blue-500" />
-          </div>
-          <div className="flex items-baseline">
-            <span
-              className={`text-2xl md:text-xl font-bold capitalize ${getEngagementColor(analytics.engagement_level).split(' ')[0]}`}
-            >
-              {analytics.engagement_level}
-            </span>
-          </div>
-          <div
-            className={`mt-2 inline-flex px-2 md:px-4 md:text-xs py-1 rounded-full text-xs font-medium ${getEngagementColor(analytics.engagement_level)}`}
-          >
-            {analytics.time_spent_minutes} minutes spent
-          </div>
-        </div>
-
-        {/* Percentile Rank */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs md:text-sm font-medium text-gray-500">Percentile</h3>
-            <TagIcon className="w-4 md:w-5 h-4 md:h-5 text-purple-500" />
-          </div>
-          <div className="flex items-baseline">
-            <span
-              className={`text-2xl md:text-xl font-bold ${getScoreColor(analytics.percentile_rank)}`}
-            >
-              {analytics.percentile_rank}
-            </span>
-            <span className="ml-1 text-xs md:text-sm text-gray-500">th</span>
-          </div>
-          <p className="text-[10px] md:text-xs text-gray-500 mt-2">
-            Top {100 - analytics.percentile_rank}% of candidates
-          </p>
-        </div>
+        <MetricCard
+          title="Overall Score"
+          value={`${analytics.overall_score}%`}
+          icon={<TrophyIcon className="w-4 md:w-5 h-4 md:h-5 text-yellow-500" />}
+          progressPercent={analytics.overall_score}
+          valueClassName={getScoreColor(analytics.overall_score)}
+          subtitle={`Rank #${analytics.rank_in_job} of ${analytics.total_candidates_in_job}`}
+        />
+        <MetricCard
+          title="Completion Rate"
+          value={`${analytics.completion_percentage}%`}
+          icon={<CheckCircleIcon className="w-4 md:w-5 h-4 md:h-5 text-green-500" />}
+          progressPercent={analytics.completion_percentage}
+          valueClassName={getScoreColor(analytics.completion_percentage)}
+          subtitle={`${analytics.total_responses} of ${analytics.total_questions}`}
+        />
+        <MetricCard
+          title="Engagement"
+          value={analytics.engagement_level}
+          icon={<UserGroupIcon className="w-4 md:w-5 h-4 md:h-5 text-blue-500" />}
+          valueClassName={`capitalize ${getEngagementColor(analytics.engagement_level).split(' ')[0]}`}
+          subtitle={`${analytics.time_spent_minutes} minutes spent`}
+        />
+        <MetricCard
+          title="Percentile"
+          value={analytics.percentile_rank}
+          icon={<TagIcon className="w-4 md:w-5 h-4 md:h-5 text-purple-500" />}
+          valueClassName={getScoreColor(analytics.percentile_rank)}
+          subtitle={`Top ${Math.max(0, 100 - (analytics.percentile_rank || 0))}% of candidates`}
+        />
       </div>
 
-      {/* Detailed Scores */}
+      {/* Score Breakdown */}
       <div className="flex flex-col gap-4 bg-white rounded-lg border border-gray-200 p-4 md:p-2">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Score Breakdown</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Score Breakdown</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          {/* Resume Score */}
           <div className="text-center">
             <div className="flex items-center justify-center mb-2">
               <CpuChipIcon className="w-4 md:w-5 h-4 md:h-5 text-blue-500 mr-2" />
@@ -229,23 +172,20 @@ export default function CandidateAnalytics({ className = '' }: CandidateAnalytic
             </div>
           </div>
 
-          {/* Interview Score */}
           <div className="text-center">
             <div className="flex items-center justify-center mb-2">
               <DocumentTextIcon className="w-4 md:w-5 h-4 md:h-5 text-green-500 mr-2" />
-              <span className="text-xs md:text-sm font-medium text-gray-700">
-                Resume Match Score
-              </span>
+              <span className="text-xs md:text-sm font-medium text-gray-700">Resume Match</span>
             </div>
             <div
-              className={`text-2xl md:text-3xl font-bold ${getScoreColor(analytics.resume_score)}`}
+              className={`text-2xl md:text-3xl font-bold ${getScoreColor(analytics.resume_score || 0)}`}
             >
               {analytics.resume_score}%
             </div>
             <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2 mt-2">
               <div
                 className="bg-green-500 h-1.5 md:h-2 rounded-full"
-                style={{ width: `${candidateEvaluation?.resumeScore || 0}%` }}
+                style={{ width: `${analytics.resume_score || 0}%` }}
               />
             </div>
           </div>
@@ -253,21 +193,20 @@ export default function CandidateAnalytics({ className = '' }: CandidateAnalytic
       </div>
 
       {/* Response Analytics */}
-      {response_analytics.length > 0 && (
+      {response_analytics && response_analytics.length > 0 && (
         <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
           <div className="flex flex-col mb-1">
             <h3 className="text-lg font-semibold text-gray-900 mr-2">Response Analytics</h3>
             <span className="flex bg-primary/10 rounded-lg p-2">
               <ExclamationTriangleIcon className="w-4 h-4 text-blue-400 mr-1" />
               <span className="text-xs text-gray-700">
-                Each response&apos;s quality % reflects how well the answer meets the
-                question&apos;s requirements, based on the question estimated response time versus
-                the actual response time.
+                Quality % reflects how well the answer meets the question requirements considering
+                estimated vs actual response time.
               </span>
             </span>
           </div>
           <div className="space-y-4 mt-2">
-            {response_analytics.map((response, index) => (
+            {response_analytics.map((response: any, index: number) => (
               <div key={response.response_id} className="border border-gray-100 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs md:text-sm font-medium text-gray-700">
@@ -342,88 +281,32 @@ export default function CandidateAnalytics({ className = '' }: CandidateAnalytic
       <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
         <div className="flex flex-col mb-1">
           <h3 className="text-lg font-semibold text-gray-900 mr-2">Performance Insights</h3>
-          <span className="flex bg-primary/10 rounded-lg p-2">
-            <ExclamationTriangleIcon className="w-4 h-4 text-blue-400 mr-1" />
-            <span className="text-xs text-gray-700">
-              These figures compare the candidate&apos;s performance to the average of all
-              candidates for this job. Positive values mean above average; negative means below
-              average.
-            </span>
-          </span>
         </div>
         <div className="space-y-4 mt-2">
-          {/* Score Comparison */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center">
-              {analytics.overall_score > comparative_data.average_score ? (
-                <ArrowTrendingUpIcon className="w-4 md:w-5 h-4 md:h-5 text-green-500 mr-2" />
-              ) : (
-                <ArrowTrendingDownIcon className="w-4 md:w-5 h-4 md:h-5 text-red-500 mr-2" />
-              )}
-              <span className="text-xs md:text-sm font-medium text-gray-700">Score vs Average</span>
-            </div>
-            <div className="text-xs md:text-sm">
-              <span
-                className={`font-medium ${analytics.overall_score > comparative_data.average_score ? 'text-green-600' : 'text-red-600'}`}
-              >
-                {analytics.overall_score > comparative_data.average_score ? '+' : ''}
-                {(analytics.overall_score - comparative_data.average_score).toFixed(1)}%
-              </span>
-              <span className="text-gray-500 ml-1">
-                vs {comparative_data.average_score.toFixed(1)}% average
-              </span>
-            </div>
-          </div>
-          {/* Completion Comparison */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center">
-              {analytics.completion_percentage > comparative_data.completion_rate ? (
-                <ArrowTrendingUpIcon className="w-4 md:w-5 h-4 md:h-5 text-green-500 mr-2" />
-              ) : (
-                <ArrowTrendingDownIcon className="w-4 md:w-5 h-4 md:h-5 text-red-500 mr-2" />
-              )}
-              <span className="text-xs md:text-sm font-medium text-gray-700">
-                Completion vs Average
-              </span>
-            </div>
-            <div className="text-xs md:text-sm">
-              <span
-                className={`font-medium ${analytics.completion_percentage > comparative_data.completion_rate ? 'text-green-600' : 'text-red-600'}`}
-              >
-                {analytics.completion_percentage > comparative_data.completion_rate ? '+' : ''}
-                {(analytics.completion_percentage - comparative_data.completion_rate).toFixed(1)}%
-              </span>
-              <span className="text-gray-500 ml-1">
-                vs {comparative_data.completion_rate.toFixed(1)}% average
-              </span>
-            </div>
-          </div>
-          {/* Time Spent Comparison */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center">
-              {analytics.time_spent_minutes > comparative_data.average_time_spent ? (
-                <ArrowTrendingUpIcon className="w-4 md:w-5 h-4 md:h-5 text-green-500 mr-2" />
-              ) : (
-                <ArrowTrendingDownIcon className="w-4 md:w-5 h-4 md:h-5 text-red-500 mr-2" />
-              )}
-              <span className="text-xs md:text-sm font-medium text-gray-700">
-                Time Spent vs Average
-              </span>
-            </div>
-            <div className="text-xs md:text-sm">
-              <span
-                className={`font-medium ${analytics.time_spent_minutes > comparative_data.average_time_spent ? 'text-green-600' : 'text-red-600'}`}
-              >
-                {analytics.time_spent_minutes > comparative_data.average_time_spent ? '+' : ''}
-                {(analytics.time_spent_minutes - comparative_data.average_time_spent).toFixed(0)}m
-              </span>
-              <span className="text-gray-500 ml-1">
-                vs {comparative_data.average_time_spent.toFixed(0)}m average
-              </span>
-            </div>
-          </div>
+          <ComparisonRow
+            label="Score vs Average"
+            value={analytics.overall_score}
+            baseline={comparative_data.average_score}
+          />
+          <ComparisonRow
+            label="Completion vs Average"
+            value={analytics.completion_percentage}
+            baseline={comparative_data.completion_rate}
+          />
+          <ComparisonRow
+            label="Time Spent vs Average"
+            value={analytics.time_spent_minutes}
+            baseline={comparative_data.average_time_spent}
+            unit="m"
+          />
         </div>
       </div>
+
+      {/* Team Summary */}
+      <TeamSummary teamSummary={team_summary} />
+
+      {/* AI Assessment */}
+      <AIAssessment ai={ai_assessment || null} />
     </div>
   );
 }

@@ -35,16 +35,12 @@ interface EvaluationResult {
   };
   category_scores: Record<
     string,
-    {
-      score: number;
-      explanation: string;
-      strengths: string[];
-      areas_for_improvement: string[];
-    }
+    { score: number; explanation: string; strengths: string[]; areas_for_improvement: string[] }
   >;
   key_strengths: string[];
   areas_for_improvement: string[];
   red_flags: string[];
+  resume_score?: number; // explicit resume score
 }
 
 // Direct OpenAI API call
@@ -61,15 +57,12 @@ async function callOpenAI(prompt: string): Promise<string> {
         {
           role: 'system',
           content:
-            'You are an expert HR professional and hiring manager. You evaluate candidates based on their resume, interview responses, and job requirements to provide comprehensive assessments.',
+            'You are an expert HR professional and hiring manager. You evaluate candidates based on their resume, interview responses, and job requirements to provide comprehensive, consistent assessments.\n- Return strictly valid JSON following the schema. Do not invent missing fields. If data is insufficient, state that explicitly.',
         },
-        {
-          role: 'user',
-          content: prompt,
-        },
+        { role: 'user', content: prompt },
       ],
-      temperature: 0.3,
-      max_tokens: 2000,
+      temperature: 0.2,
+      max_tokens: 1800,
     }),
   });
 
@@ -85,7 +78,6 @@ async function callOpenAI(prompt: string): Promise<string> {
 // Parse AI response (similar to aiQuestionService.ts)
 function parseAIResponse(response: string): EvaluationResult {
   try {
-    // Extract JSON from response
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('No JSON found in AI response');
@@ -93,19 +85,18 @@ function parseAIResponse(response: string): EvaluationResult {
 
     const parsed = JSON.parse(jsonMatch[0]);
 
-    // Validate and clean the response
     return {
-      overall_score: Math.max(0, Math.min(100, parsed.overall_score || 0)),
+      overall_score: Math.max(0, Math.min(100, parsed.overall_score ?? 0)),
       overall_status: parsed.overall_status || 'average',
       recommendation: parsed.recommendation || 'maybe',
       evaluation_summary: parsed.evaluation_summary || 'No summary provided',
       evaluation_explanation: parsed.evaluation_explanation || 'No explanation provided',
       radar_metrics: {
-        skills: Math.max(0, Math.min(100, parsed.radar_metrics?.skills || 50)),
-        growth_mindset: Math.max(0, Math.min(100, parsed.radar_metrics?.growth_mindset || 50)),
-        team_work: Math.max(0, Math.min(100, parsed.radar_metrics?.team_work || 50)),
-        culture: Math.max(0, Math.min(100, parsed.radar_metrics?.culture || 50)),
-        communication: Math.max(0, Math.min(100, parsed.radar_metrics?.communication || 50)),
+        skills: Math.max(0, Math.min(100, parsed.radar_metrics?.skills ?? 50)),
+        growth_mindset: Math.max(0, Math.min(100, parsed.radar_metrics?.growth_mindset ?? 50)),
+        team_work: Math.max(0, Math.min(100, parsed.radar_metrics?.team_work ?? 50)),
+        culture: Math.max(0, Math.min(100, parsed.radar_metrics?.culture ?? 50)),
+        communication: Math.max(0, Math.min(100, parsed.radar_metrics?.communication ?? 50)),
       },
       category_scores: parsed.category_scores || {},
       key_strengths: Array.isArray(parsed.key_strengths) ? parsed.key_strengths : [],
@@ -113,6 +104,10 @@ function parseAIResponse(response: string): EvaluationResult {
         ? parsed.areas_for_improvement
         : [],
       red_flags: Array.isArray(parsed.red_flags) ? parsed.red_flags : [],
+      resume_score:
+        typeof parsed.resume_score === 'number'
+          ? Math.max(0, Math.min(100, parsed.resume_score))
+          : undefined,
     };
   } catch (error) {
     console.error('Error parsing AI response:', error);
@@ -120,7 +115,7 @@ function parseAIResponse(response: string): EvaluationResult {
   }
 }
 
-// Create evaluation prompt (simplified)
+// Create evaluation prompt (enhanced)
 function createEvaluationPrompt(params: {
   jobTitle: string;
   jobFields: any;
@@ -137,67 +132,52 @@ function createEvaluationPrompt(params: {
     : 'Not specified';
 
   return `
-Evaluate this candidate for the ${params.jobTitle} position and provide a comprehensive assessment.
+Evaluate this candidate for the ${params.jobTitle} position and provide a comprehensive, consistent assessment. Ground your assessment in provided evidence only.
 
-**Job Information:**
+Job Information:
 - Position: ${params.jobTitle}
 - Experience Level: ${params.experienceLevel}
 - Required Skills: ${requiredSkills}
 - Required Traits: ${requiredTraits}
 
-**Candidate Data:**
-${params.resumeUrl ? `Resume URL: ${params.resumeUrl}` : 'No resume available'}
+Candidate Data:
+${params.resumeUrl ? `- Resume URL: ${params.resumeUrl}` : '- No resume available'}
 
-**Previous Evaluation (if any):**
+Previous Evaluation (if any):
 ${
   params.previousEvaluation
-    ? `
-- Previous Score: ${params.previousEvaluation.score || 'N/A'}
+    ? `- Previous Score: ${params.previousEvaluation.score || 'N/A'}
 - Previous Recommendation: ${params.previousEvaluation.recommendation || 'N/A'}
-- Previous Summary: ${params.previousEvaluation.summary || 'N/A'}
-`
-    : 'No previous evaluation'
+- Previous Summary: ${params.previousEvaluation.summary || 'N/A'}`
+    : '- None'
 }
 
-**Interview Responses:**
+Interview Responses:
 ${params.interviewResponses}
 
-**Instructions:**
-1. Score each area from 0-100 based on job requirements
-2. Be objective and evidence-based
-3. Highlight specific strengths and areas for improvement
-4. Note any red flags or concerning patterns
-5. Consider previous evaluation if available
+Instructions:
+1. Score each area from 0-100 based on job requirements and evidence.
+2. Be objective and cite signals from resume/responses.
+3. Highlight specific strengths and areas for improvement.
+4. Note any red flags or concerning patterns.
+5. Provide a separate resume_score (0-100) estimating match between resume and job requirements. If no resume, omit resume_score.
 
-**Response Format:**
-Return ONLY a valid JSON object with this exact structure:
+Response Format (valid JSON only):
 {
   "overall_score": 75,
   "overall_status": "good",
   "recommendation": "yes",
-  "evaluation_summary": "Brief summary of the candidate's evaluation",
-  "evaluation_explanation": "Detailed explanation of the evaluation reasoning",
-  "radar_metrics": {
-    "skills": 80,
-    "growth_mindset": 75,
-    "team_work": 70,
-    "culture": 85,
-    "communication": 75
-  },
+  "evaluation_summary": "Brief summary",
+  "evaluation_explanation": "Detailed explanation",
+  "resume_score": 70,
+  "radar_metrics": { "skills": 80, "growth_mindset": 75, "team_work": 70, "culture": 85, "communication": 75 },
   "category_scores": {
-    "Technical Skills": {
-      "score": 80,
-      "explanation": "Strong technical foundation",
-      "strengths": ["Good problem solving", "Relevant experience"],
-      "areas_for_improvement": ["Could improve in advanced topics"]
-    }
+    "Technical Skills": { "score": 80, "explanation": "Strong technical foundation", "strengths": ["X"], "areas_for_improvement": ["Y"] }
   },
-  "key_strengths": ["Strong communication", "Good technical skills", "Cultural fit"],
-  "areas_for_improvement": ["Could improve technical depth", "More leadership experience needed"],
+  "key_strengths": ["Strong communication"],
+  "areas_for_improvement": ["Improve depth"],
   "red_flags": []
 }
-
-Evaluate this candidate thoroughly and provide the JSON response.
 `;
 }
 
@@ -226,7 +206,6 @@ async function getResumeUrl(candidateId: string, jobId: string): Promise<string 
 
 async function gatherCandidateData(candidateInfoId: string, jobId: string) {
   try {
-    // First, resolve the actual candidate application row for this person/job
     const { data: candidateRow, error: candidateRowError } = await supabase
       .from('candidates')
       .select('id, is_completed, job_id')
@@ -236,9 +215,7 @@ async function gatherCandidateData(candidateInfoId: string, jobId: string) {
 
     if (candidateRowError) throw candidateRowError;
     if (!candidateRow) throw new Error('Candidate application not found');
-    // const candidateId = candidateInfoId;
 
-    // Get candidate details from the view (includes job info and previous evaluation)
     const { data: candidateDetails, error: candidateError } = await supabase
       .from('candidate_details')
       .select('*')
@@ -249,17 +226,15 @@ async function gatherCandidateData(candidateInfoId: string, jobId: string) {
     if (candidateError) throw candidateError;
     if (!candidateDetails) throw new Error('Candidate not found');
 
-    // Get interview responses for the specific job
     const { data: responses, error: responsesError } = await supabase
       .from('responses')
       .select('question, answer')
-      .eq('candidate_id', candidateRow.id) // get responses based on the candidate application id
+      .eq('candidate_id', candidateRow.id)
       .eq('job_id', jobId)
       .order('created_at', { ascending: true });
 
     if (responsesError) throw new Error('Failed to fetch interview responses');
 
-    // Get previous evaluation data (if exists)
     const previousEvaluation = candidateDetails.evaluation_id
       ? {
           score: candidateDetails.score,
@@ -269,6 +244,7 @@ async function gatherCandidateData(candidateInfoId: string, jobId: string) {
           red_flags: candidateDetails.red_flags,
           skills_assessment: candidateDetails.skills_assessment,
           traits_assessment: candidateDetails.traits_assessment,
+          resume_score: candidateDetails.resume_score,
         }
       : null;
 
@@ -282,8 +258,8 @@ async function gatherCandidateData(candidateInfoId: string, jobId: string) {
       responses: responses || [],
       resumeUrl: candidateDetails.resume_public_url,
       previousEvaluation,
-      candidateId: candidateInfoId, // pass the resolved application id for downstream use
-      candidateApplicationId: candidateRow.id, // pass the resolved application id for downstream use
+      candidateId: candidateInfoId,
+      candidateApplicationId: candidateRow.id,
     };
   } catch (error) {
     console.error('Error gathering candidate data:', error);
@@ -343,10 +319,14 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
       evaluation_sources: evaluationSources,
       processing_duration_ms: processingDuration,
       ai_model_version: 'gpt-4',
-      evaluation_version: '1.0',
-    };
+      evaluation_version: '1.1',
+      // Only include resume_score if provided
+      ...(typeof evaluationResult.resume_score === 'number'
+        ? { resume_score: evaluationResult.resume_score }
+        : {}),
+    } as const;
 
-    // Check if the candidate has already been evaluated for this specific job
+    // Upsert into ai_evaluations (update if exists)
     const { data: existingEvaluation } = await supabase
       .from('ai_evaluations')
       .select('id')
@@ -355,112 +335,99 @@ async function performEvaluationInBackground(candidateId: string, jobId: string)
       .maybeSingle();
 
     if (existingEvaluation) {
-      // Update the existing evaluation
       const { error: updateError } = await supabase
         .from('ai_evaluations')
-        .update({
-          ...candidateEvaluation,
-        })
+        .update({ ...candidateEvaluation })
         .eq('id', existingEvaluation.id);
-
       if (updateError) throw updateError;
-
       console.log(`Updated existing evaluation for candidate ${candidateId}`);
     } else {
-      // Create new evaluation
-      const { error: saveError } = await supabase.from('ai_evaluations').insert({
-        candidate_id: candidateId,
-        job_id: jobId,
-        ...candidateEvaluation,
-      });
-
+      const { error: saveError } = await supabase
+        .from('ai_evaluations')
+        .insert({ candidate_id: candidateId, job_id: jobId, ...candidateEvaluation });
       if (saveError) throw saveError;
-
       console.log(`Created new evaluation for candidate ${candidateId}`);
     }
 
-    console.log('Updating evaluations table for backwards compatibility');
-    // Update evaluations table for backwards compatibility
-    const { error: updateError } = await supabase
-      .from('evaluations')
-      .update({
-        score: evaluationResult.overall_score,
-        recommendation: evaluationResult.recommendation,
-        summary: evaluationResult.evaluation_summary,
-        strengths: evaluationResult.key_strengths,
-        red_flags: evaluationResult.red_flags,
-        skills_assessment: evaluationResult.category_scores,
-        traits_assessment: evaluationResult.radar_metrics,
-        feedback: evaluationResult.evaluation_explanation,
-        evaluation_type: 'combined',
-      })
-      .eq('candidate_id', candidateApplicationId) // TODO: Update table to reference actual candidate id
-      .eq('job_id', jobId);
-
-    if (updateError) {
-      console.error('Error updating evaluations table for backwards compatibility:', updateError);
-
-      await supabase.from('function_logs').insert({
-        function_name: 'ai_evaluation_background',
-        status: 'failed',
-        message: `Error updating evaluations table for backwards compatibility`,
-        candidate_id: candidateId,
-        job_id: jobId,
-        error_message: updateError.message,
-      });
-
-      throw updateError;
+    // Backwards compatibility: update evaluations without resetting resume score inadvertently
+    const partialUpdate: Record<string, unknown> = {
+      score: evaluationResult.overall_score,
+      recommendation: evaluationResult.recommendation,
+      summary: evaluationResult.evaluation_summary,
+      strengths: evaluationResult.key_strengths,
+      red_flags: evaluationResult.red_flags,
+      skills_assessment: evaluationResult.category_scores,
+      traits_assessment: evaluationResult.radar_metrics,
+      feedback: evaluationResult.evaluation_explanation,
+      evaluation_type: 'combined',
+    };
+    if (typeof evaluationResult.resume_score === 'number') {
+      partialUpdate['resume_score'] = evaluationResult.resume_score;
     }
 
-    console.log('Updating evaluations table for backwards compatibility');
+    const { error: legacyUpdateError } = await supabase
+      .from('evaluations')
+      .update(partialUpdate)
+      .eq('candidate_id', candidateApplicationId)
+      .eq('job_id', jobId);
 
-    // Update function logs to show success
-    await supabase.from('function_logs').insert({
-      function_name: 'ai_evaluation_background',
-      status: 'success',
-      message: `AI evaluation completed successfully in ${processingDuration}ms`,
-      candidate_id: candidateId,
-      job_id: jobId,
-      payload: { processingDurationMs: processingDuration },
-    });
+    if (legacyUpdateError) {
+      console.error('Error updating evaluations table:', legacyUpdateError);
+      await supabase
+        .from('function_logs')
+        .insert({
+          function_name: 'ai_evaluation_background',
+          status: 'failed',
+          message: `Error updating evaluations`,
+          candidate_id: candidateId,
+          job_id: jobId,
+          error_message: legacyUpdateError.message,
+        });
+      throw legacyUpdateError;
+    }
+
+    await supabase
+      .from('function_logs')
+      .insert({
+        function_name: 'ai_evaluation_background',
+        status: 'success',
+        message: `AI evaluation completed successfully in ${processingDuration}ms`,
+        candidate_id: candidateId,
+        job_id: jobId,
+        payload: { processingDurationMs: processingDuration },
+      });
 
     console.log(
       `Background evaluation completed successfully for candidate ${candidateId} in ${processingDuration}ms`,
     );
   } catch (error: any) {
     console.error(`Error in background evaluation for candidate ${candidateId}:`, error);
-
-    // Update function logs to show error
-    await supabase.from('function_logs').insert({
-      function_name: 'ai_evaluation_background',
-      status: 'failed',
-      message: `AI evaluation failed: ${error?.message || 'Unknown error'}`,
-      candidate_id: candidateId,
-      job_id: jobId,
-      error_message: error?.message || 'Unknown error',
-    });
-
+    await supabase
+      .from('function_logs')
+      .insert({
+        function_name: 'ai_evaluation_background',
+        status: 'failed',
+        message: `AI evaluation failed: ${error?.message || 'Unknown error'}`,
+        candidate_id: candidateId,
+        job_id: jobId,
+        error_message: error?.message || 'Unknown error',
+      });
     throw error;
   }
 }
 
 // Listen for function shutdown to handle cleanup
-addEventListener('beforeunload', (ev) => {
+addEventListener('beforeunload', () => {
   console.log('Function will be shutdown');
-  // Could add cleanup logic here if needed
 });
 
 const validateInput = (candidateId: string, jobId: string): Response | null => {
   if (!candidateId || !jobId) {
     return new Response(
       JSON.stringify({ success: false, error: 'Missing required parameter: candidateId or jobId' }),
-      {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
-
   return null;
 };
 
@@ -475,7 +442,6 @@ serve(async (req: Request) => {
     const validationResponse = validateInput(candidateInfoId, jobId);
     if (validationResponse) return validationResponse;
 
-    // Look up the candidate application row
     const { data: candidateRow, error: candidateRowError } = await supabase
       .from('candidates')
       .select('id, is_completed, job_id')
@@ -494,24 +460,17 @@ serve(async (req: Request) => {
     if (!candidateRow.is_completed) {
       return new Response(
         JSON.stringify({ success: false, error: 'Candidate interview not completed yet' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
     if (candidateRow.job_id !== jobId) {
       return new Response(
         JSON.stringify({ success: false, error: "Job ID does not match candidate's assigned job" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    // Log the trigger execution
     await supabase.from('function_logs').insert([
       {
         function_name: 'ai_evaluation_trigger',
@@ -529,10 +488,8 @@ serve(async (req: Request) => {
       },
     ]);
 
-    // Start the background evaluation task with the resolved application id
     EdgeRuntime.waitUntil(performEvaluationInBackground(candidateInfoId, jobId));
 
-    // Immediately return success response
     return new Response(
       JSON.stringify({
         success: true,
@@ -541,19 +498,13 @@ serve(async (req: Request) => {
         jobId,
         status: 'processing',
       }),
-      {
-        status: 202,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      { status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (error: any) {
     console.error('Edge Function error:', error);
     return new Response(
       JSON.stringify({ success: false, error: error?.message || 'Internal server error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
 });
