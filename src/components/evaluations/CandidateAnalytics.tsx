@@ -217,14 +217,14 @@ export default function CandidateAnalytics({ className = '' }: CandidateAnalytic
               <span className="text-xs md:text-sm font-medium text-gray-700">Interview Score</span>
             </div>
             <div
-              className={`text-2xl md:text-3xl font-bold ${getResumeScoreColor(analytics.resume_score)}`}
+              className={`text-2xl md:text-3xl font-bold ${getResumeScoreColor(analytics.interview_score)}`}
             >
-              {analytics.resume_score}%
+              {analytics.interview_score}%
             </div>
             <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2 mt-2">
               <div
-                className={`${getInterviewScoreColor(analytics.resume_score)} h-1.5 md:h-2 rounded-full`}
-                style={{ width: `${analytics.resume_score}%` }}
+                className={`${getInterviewScoreColor(analytics.interview_score)} h-1.5 md:h-2 rounded-full`}
+                style={{ width: `${analytics.interview_score}%` }}
               />
             </div>
           </div>
@@ -238,9 +238,9 @@ export default function CandidateAnalytics({ className = '' }: CandidateAnalytic
               </span>
             </div>
             <div
-              className={`text-2xl md:text-3xl font-bold ${getScoreColor(candidateEvaluation?.resumeScore || 0)}`}
+              className={`text-2xl md:text-3xl font-bold ${getScoreColor(analytics.resume_score)}`}
             >
-              {candidateEvaluation?.resumeScore || 0}%
+              {analytics.resume_score}%
             </div>
             <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2 mt-2">
               <div

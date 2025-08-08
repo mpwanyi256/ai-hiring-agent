@@ -4,7 +4,6 @@ import { JobStatus } from '@/types/jobs';
 import { apiError, apiSuccess } from './notification';
 import { twMerge } from 'tailwind-merge';
 import { app } from './constants';
-import { Notification } from '@/types/notifications';
 import { CheckCircle, Info, User, FileText, Calendar, Settings } from 'lucide-react';
 
 // Utility function to merge classes with Tailwind
