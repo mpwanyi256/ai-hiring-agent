@@ -7,14 +7,15 @@ import { fetchApplicationEvents } from '@/store/interviews/interviewsThunks';
 import { clearApplicationEvents } from '@/store/interviews/interviewsSlice';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { selectApplicationEvents } from '@/store/interviews/interviewsSelectors';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 interface EventsTabProps {
   candidate: CandidateWithEvaluation;
   onScheduleEvent?: () => void;
+  onRefreshEvents?: () => void;
 }
 
-const EventsTab: React.FC<EventsTabProps> = ({ candidate, onScheduleEvent }) => {
+const EventsTab: React.FC<EventsTabProps> = ({ candidate, onScheduleEvent, onRefreshEvents }) => {
   const dispatch = useAppDispatch();
   const applicationEvents = useAppSelector(selectApplicationEvents);
   const loading = useAppSelector((state) => state.interviews.isLoading);
@@ -28,6 +29,14 @@ const EventsTab: React.FC<EventsTabProps> = ({ candidate, onScheduleEvent }) => 
       dispatch(clearApplicationEvents());
     };
   }, [dispatch, candidate.id]);
+
+  const handleRefresh = () => {
+    if (onRefreshEvents) {
+      onRefreshEvents();
+    } else if (candidate.id) {
+      dispatch(fetchApplicationEvents(candidate.id));
+    }
+  };
 
   if (loading) {
     return (
@@ -46,6 +55,10 @@ const EventsTab: React.FC<EventsTabProps> = ({ candidate, onScheduleEvent }) => 
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Application Events</h3>
             <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
               {onScheduleEvent && (
                 <Button variant="outline" size="sm" onClick={onScheduleEvent}>
                   Schedule Event

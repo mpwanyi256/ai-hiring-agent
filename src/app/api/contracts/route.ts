@@ -112,11 +112,11 @@ export async function GET(request: NextRequest) {
               name: contract.employment_type_name,
             }
           : undefined,
-        createdByProfile: contract.created_by_name
+        createdByProfile: contract.created_by_first_name
           ? {
               id: contract.created_by,
-              firstName: contract.created_by_name.split(' ')[0] || '',
-              lastName: contract.created_by_name.split(' ').slice(1).join(' ') || '',
+              firstName: contract.created_by_first_name,
+              lastName: contract.created_by_last_name,
               email: contract.created_by_email,
             }
           : undefined,

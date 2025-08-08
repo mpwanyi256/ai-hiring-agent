@@ -64,13 +64,15 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       if (isEdit && interview) {
+        console.log('Edit mode - interview data:', interview);
+        console.log('Available timezones:', timezones);
         setFormData({
           applicationId: candidate.id,
           jobId: jobId,
           eventSummary: `Event with ${candidate.firstName} ${candidate.lastName} for ${jobTitle}`,
           date: interview.date,
           time: interview.time,
-          timezoneId: interview.timezone_id,
+          timezoneId: interview.timezone_id || '', // Use snake_case from API
           duration: interview.duration,
           notes: interview.notes || '',
         });
