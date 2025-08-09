@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import {
   JobQuestion,
   QuestionGenerationRequest,
@@ -350,7 +350,7 @@ class QuestionService {
     questions: Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>[],
   ): Promise<JobQuestion[]> {
     try {
-      const supabase = await createClient();
+      const supabase = createServiceRoleClient();
 
       const questionsToInsert = questions.map((q) => ({
         job_id: jobId,
@@ -405,7 +405,7 @@ class QuestionService {
     },
   ): Promise<JobQuestion> {
     try {
-      const supabase = await createClient();
+      const supabase = createServiceRoleClient();
 
       // Get the next order index
       const { data: existingQuestions } = await supabase
@@ -462,7 +462,7 @@ class QuestionService {
   // Get questions for a job
   async getQuestionsForJob(jobId: string): Promise<JobQuestion[]> {
     try {
-      const supabase = await createClient();
+      const supabase = createServiceRoleClient();
 
       const { data: questions, error } = await supabase
         .from('job_questions')
@@ -500,7 +500,7 @@ class QuestionService {
     updates: Partial<Omit<JobQuestion, 'id' | 'jobId' | 'createdAt' | 'updatedAt'>>,
   ): Promise<JobQuestion | null> {
     try {
-      const supabase = await createClient();
+      const supabase = createServiceRoleClient();
 
       const updateData: any = {};
       if (updates.questionText) updateData.question_text = updates.questionText;
@@ -549,7 +549,7 @@ class QuestionService {
   // Delete a question
   async deleteQuestion(questionId: string): Promise<boolean> {
     try {
-      const supabase = await createClient();
+      const supabase = createServiceRoleClient();
 
       const { error } = await supabase.from('job_questions').delete().eq('id', questionId);
 
@@ -567,7 +567,7 @@ class QuestionService {
   // Reorder questions
   async reorderQuestions(jobId: string, questionIds: string[]): Promise<boolean> {
     try {
-      const supabase = await createClient();
+      const supabase = createServiceRoleClient();
 
       // Update each question with its new order
       const updatePromises = questionIds.map((questionId, index) =>
@@ -589,7 +589,7 @@ class QuestionService {
   // Delete all questions for a job
   async deleteAllQuestionsForJob(jobId: string): Promise<boolean> {
     try {
-      const supabase = await createClient();
+      const supabase = createServiceRoleClient();
 
       const { error } = await supabase.from('job_questions').delete().eq('job_id', jobId);
 

@@ -1,4 +1,4 @@
-import { Tables, TablesInsert, TablesUpdate, Json } from '@/lib/supabase';
+import { Tables, TablesInsert, TablesUpdate, Json } from '@/lib/supabase/types';
 
 // Platform Statistics Types
 export interface PlatformStats {

@@ -245,6 +245,8 @@ export async function POST(request: Request) {
       },
     );
 
+    console.log('candidateDetails error', detailsError);
+
     if (detailsError || !candidateDetails.success) {
       return NextResponse.json(
         {

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { setInterviewStep } from '@/store/interview/interviewSlice';
 import { JobData } from '@/lib/services/jobsService';
-import { ResumeEvaluation, JobQuestion } from '@/types/interview';
+import { ResumeEvaluation } from '@/types/interview';
 import { Button } from '@/components/ui/button';
 import {
   ChevronRightIcon,
@@ -14,8 +14,19 @@ import {
   UserIcon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
-import { selectCandidate } from '@/store/interview/interviewSelectors';
+import {
+  selectCandidate,
+  selectInterviewQuestionResponses,
+  selectInterviewQuestions,
+  selectIsQuestionsLoading,
+} from '@/store/interview/interviewSelectors';
 import Image from 'next/image';
+import {
+  completeInterview,
+  fetchInterviewQuestions,
+  saveInterviewResponse,
+} from '@/store/interview/interviewThunks';
+import { apiError } from '@/lib/notification';
 
 interface InterviewFlowProps {
   jobToken: string;
@@ -25,12 +36,6 @@ interface InterviewFlowProps {
   onComplete: () => void;
 }
 
-interface Response {
-  questionId: string;
-  answer: string;
-  timeSpent: number; // in seconds
-}
-
 export default function InterviewFlow({
   jobToken,
   job,
@@ -38,11 +43,11 @@ export default function InterviewFlow({
   resumeContent,
   onComplete,
 }: InterviewFlowProps) {
-  const [questions, setQuestions] = useState<JobQuestion[]>([]);
+  const questions = useAppSelector(selectInterviewQuestions);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [responses, setResponses] = useState<Response[]>([]);
+  const responses = useAppSelector(selectInterviewQuestionResponses);
   const [currentAnswer, setCurrentAnswer] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const isLoading = useAppSelector(selectIsQuestionsLoading);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [questionStartTime, setQuestionStartTime] = useState<Date>(new Date());
@@ -53,38 +58,21 @@ export default function InterviewFlow({
 
   // Fetch questions from the API
   useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+    dispatch(fetchInterviewQuestions(jobToken));
+    setStartTime(new Date());
+  }, [jobToken, dispatch]);
 
-        // Fetch questions for this job
-        const response = await fetch(`/api/interview/questions?jobToken=${jobToken}`);
-        const data = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch questions');
-        }
-
-        if (!data.questions || data.questions.length === 0) {
-          throw new Error('No questions available for this interview');
-        }
-
-        setQuestions(data.questions);
-        setStartTime(new Date());
-        setQuestionStartTime(new Date());
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load interview questions');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchQuestions();
-  }, [jobToken]);
-
+  // Don't return null immediately if there's no candidate - give it time to load
   if (!isLoading && !candidate) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <h2 className="text-xl font-bold text-text mb-2">Loading Candidate Information</h2>
+          <p className="text-muted-text">Please wait while we load your information...</p>
+        </div>
+      </div>
+    );
   }
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -120,31 +108,12 @@ export default function InterviewFlow({
         question: currentQuestion.questionText,
         answer: currentAnswer.trim(),
         responseTime: timeSpent,
+        jobId: currentQuestion.jobId,
       };
 
-      const saveResponse = await fetch('/api/interview/response', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(responseData),
-      });
-
-      const saveData = await saveResponse.json();
-      if (!saveData.success) {
-        console.warn('Failed to save response to database:', saveData.error);
-        // Continue anyway - we can still store locally
-      }
+      await dispatch(saveInterviewResponse(responseData));
 
       // Save response locally
-      const response: Response = {
-        questionId: currentQuestion.id,
-        answer: currentAnswer.trim(),
-        timeSpent,
-      };
-
-      setResponses((prev) => [...prev, response]);
-
       if (isLastQuestion) {
         await handleInterviewComplete();
       } else {
@@ -154,6 +123,9 @@ export default function InterviewFlow({
         setQuestionStartTime(new Date());
       }
     } catch (err) {
+      apiError(
+        err instanceof Error ? err.message : 'Failed to save your answer. Please try again.',
+      );
       console.error('Error submitting answer:', err);
       setError('Failed to save your answer. Please try again.');
     } finally {
@@ -167,7 +139,7 @@ export default function InterviewFlow({
 
       // Load previous answer
       const previousResponse = responses.find(
-        (r) => r.questionId === questions[currentQuestionIndex - 1].id,
+        (r) => r.jobQuestionId === questions[currentQuestionIndex - 1].id,
       );
       setCurrentAnswer(previousResponse?.answer || '');
       setQuestionStartTime(new Date());
@@ -181,12 +153,8 @@ export default function InterviewFlow({
       }
 
       // Complete the interview session
-      const completeResponse = await fetch('/api/interview/complete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const completeResponse = await dispatch(
+        completeInterview({
           candidateId: candidate.id,
           jobToken,
           candidateInfo: {
@@ -196,15 +164,23 @@ export default function InterviewFlow({
             lastName: candidate.lastName,
             email: candidate.email,
           },
-          resumeEvaluation: resumeEvaluation || null,
+          resumeEvaluation: resumeEvaluation || {
+            score: 0,
+            summary: '',
+            matchingSkills: [],
+            missingSkills: [],
+            experienceMatch: 'under',
+            recommendation: 'proceed',
+            feedback: '',
+            passesThreshold: false,
+          },
           resumeContent,
           totalTimeSpent: Math.round((new Date().getTime() - (startTime?.getTime() || 0)) / 1000),
         }),
-      });
+      ).unwrap();
 
-      const completeData = await completeResponse.json();
-      if (!completeData.success) {
-        console.warn('Failed to complete interview:', completeData.error);
+      if (!completeResponse.success) {
+        apiError(completeResponse.message);
       }
 
       // Navigate to completion step
@@ -255,14 +231,30 @@ export default function InterviewFlow({
   }
 
   if (error) {
+    const isInterviewNotReady = error === 'INTERVIEW_NOT_READY';
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Image src="/illustrations/file_not_found.svg" alt="Error" width={48} height={48} />
+          <div
+            className={`w-12 h-12 ${isInterviewNotReady ? 'bg-yellow-100' : 'bg-red-100'} rounded-full flex items-center justify-center mx-auto mb-4`}
+          >
+            {isInterviewNotReady ? (
+              <ClockIcon className="w-6 h-6 text-yellow-600" />
+            ) : (
+              <Image src="/illustrations/file_not_found.svg" alt="Error" width={48} height={48} />
+            )}
           </div>
-          <h2 className="text-xl font-bold text-text mb-2">Invalid Interview Link</h2>
-          <p className="text-red-600 mb-4">The interview link is invalid or has expired.</p>
+          <h2 className="text-xl font-bold text-text mb-2">
+            {isInterviewNotReady ? 'Interview Not Ready' : 'Interview Error'}
+          </h2>
+          <p className={`${isInterviewNotReady ? 'text-yellow-600' : 'text-red-600'} mb-4`}>
+            {isInterviewNotReady
+              ? 'This interview is not ready yet. The employer needs to set up interview questions first. Please check back later or contact the employer.'
+              : error.includes('invalid') || error.includes('expired')
+                ? 'The interview link is invalid or has expired.'
+                : error}
+          </p>
           <Button onClick={() => window.location.reload()} variant="outline">
             Try Again
           </Button>

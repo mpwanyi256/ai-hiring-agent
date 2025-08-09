@@ -26,6 +26,7 @@ export interface Interview {
   id: string;
   applicationId: string; // Links to candidates.id
   jobId: string;
+  title?: string;
   jobTitle: string;
   candidateName: string;
   candidateEmail: string;
@@ -64,6 +65,7 @@ export interface CreateInterviewData {
 
 export interface UpdateInterviewData {
   id: string;
+  eventSummary?: string;
   date?: string;
   time?: string;
   timezoneId?: string; // Changed from timezone string

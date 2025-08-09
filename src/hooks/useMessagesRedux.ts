@@ -74,6 +74,7 @@ export function useMessagesRedux({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fetchingNewMessageRef = useRef<boolean>(false);
   const [optimisticMessages, setOptimisticMessages] = useState<Map<string, Message>>(new Map());
+  const [optimisticReactions, setOptimisticReactions] = useState<Map<string, string[]>>(new Map());
 
   // Use consistent conversation ID creation - just use jobId for job-based conversations
   const conversationId = jobId;
@@ -90,17 +91,40 @@ export function useMessagesRedux({
   const sendingMessage = useAppSelector(selectIsSendingMessage);
   const typingUsers = useAppSelector(selectCurrentConversationTypingUsers);
 
-  // Combine real messages with optimistic messages
+  // Combine real messages with optimistic messages and apply optimistic reactions
   const allMessages = [
     ...Array.from(optimisticMessages.values()),
-    ...messages.filter((m) => !optimisticMessages.has(m.id)),
+    ...messages
+      .filter((m: Message) => !optimisticMessages.has(m.id))
+      .map((message) => {
+        // Apply optimistic reactions if any
+        const messageOptimisticReactions = optimisticReactions.get(message.id);
+        if (messageOptimisticReactions && messageOptimisticReactions.length > 0) {
+          return {
+            ...message,
+            reactions: [...(message.reactions || [])].map((reaction) => {
+              if (messageOptimisticReactions.includes(reaction.emoji)) {
+                return {
+                  ...reaction,
+                  hasReacted: true,
+                  count: reaction.count + (reaction.hasReacted ? 0 : 1),
+                  users: reaction.hasReacted
+                    ? reaction.users
+                    : [...reaction.users, currentUser?.firstName || 'You'],
+                };
+              }
+              return reaction;
+            }),
+          };
+        }
+        return message;
+      }),
   ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()); // Oldest first (newest at bottom)
 
   // Set current conversation on mount and cleanup on unmount
   useEffect(() => {
     if (enabled && jobId) {
-      // For job-based messaging, use jobId as the conversation ID
-      dispatch(setCurrentConversation({ candidateId: jobId, jobId }));
+      dispatch(setCurrentConversation({ jobId }));
 
       return () => {
         dispatch(clearCurrentConversation());
@@ -133,27 +157,29 @@ export function useMessagesRedux({
             return newMap;
           });
 
-          // Immediately fetch the complete message with user details
-          dispatch(
-            fetchMessageById({
-              messageId: payload.new.id,
-              conversationId,
-            }),
-          )
-            .then((action) => {
-              fetchingNewMessageRef.current = false;
-              if (fetchMessageById.fulfilled.match(action)) {
-                dispatch(
-                  addMessage({
-                    conversationId,
-                    message: action.payload.message,
-                  }),
-                );
-              }
-            })
-            .catch(() => {
-              fetchingNewMessageRef.current = false;
-            });
+          // Small delay to ensure smooth transition
+          setTimeout(() => {
+            dispatch(
+              fetchMessageById({
+                messageId: payload.new.id,
+                conversationId,
+              }),
+            )
+              .then((action) => {
+                fetchingNewMessageRef.current = false;
+                if (fetchMessageById.fulfilled.match(action)) {
+                  dispatch(
+                    addMessage({
+                      conversationId,
+                      message: action.payload.message,
+                    }),
+                  );
+                }
+              })
+              .catch(() => {
+                fetchingNewMessageRef.current = false;
+              });
+          }, 100); // Small delay to prevent flickering
         },
       )
       .on(
@@ -215,9 +241,30 @@ export function useMessagesRedux({
           schema: 'public',
           table: 'message_reactions',
         },
-        (payload: any) => {
+        (payload: {
+          new?: { message_id?: string; emoji?: string };
+          old?: { message_id?: string; emoji?: string };
+        }) => {
+          // Clear optimistic reaction for this message/emoji combination
+          const messageId = payload.new?.message_id || payload.old?.message_id;
+          const emoji = payload.new?.emoji || payload.old?.emoji;
+
+          if (messageId && emoji) {
+            setOptimisticReactions((prev) => {
+              const newMap = new Map(prev);
+              const reactions = newMap.get(messageId) || [];
+              newMap.set(
+                messageId,
+                reactions.filter((r) => r !== emoji),
+              );
+              if (newMap.get(messageId)?.length === 0) {
+                newMap.delete(messageId);
+              }
+              return newMap;
+            });
+          }
+
           // Refresh the specific message to get updated reactions
-          const messageId = payload.new.message_id || payload.old.message_id;
           if (messageId) {
             dispatch(
               fetchMessageById({
@@ -261,6 +308,34 @@ export function useMessagesRedux({
               force: false, // Respect minimum display time
             }),
           );
+        }
+      })
+      .on('broadcast', { event: 'reaction' }, (payload) => {
+        // Handle real-time reaction broadcasts for instant feedback
+        const { message_id, emoji, user_id, action } = payload.payload;
+
+        // Don't handle own reactions (they're already optimistic)
+        if (currentUser && user_id === currentUser.id) {
+          return;
+        }
+
+        // Refresh the message to get the latest reactions
+        if (message_id) {
+          dispatch(
+            fetchMessageById({
+              messageId: message_id,
+              conversationId,
+            }),
+          ).then((action) => {
+            if (fetchMessageById.fulfilled.match(action)) {
+              dispatch(
+                updateMessage({
+                  conversationId,
+                  message: action.payload.message,
+                }),
+              );
+            }
+          });
         }
       })
       .subscribe();
@@ -327,7 +402,7 @@ export function useMessagesRedux({
     }
   }, [currentUser]);
 
-  // API functions with optimistic updates
+  // API functions with enhanced optimistic updates
   const sendMessage = useCallback(
     async (text: string, replyToId?: string, attachment?: File) => {
       if (!enabled || !jobId || !currentUser) return;
@@ -335,7 +410,7 @@ export function useMessagesRedux({
       dispatch(setSendingMessage(true));
 
       // Create optimistic message
-      const tempId = `temp-${Date.now()}`;
+      const tempId = `temp-${Date.now()}-${Math.random()}`;
       const optimisticMessage: Message = {
         id: tempId,
         text,
@@ -370,12 +445,24 @@ export function useMessagesRedux({
           }),
         ).unwrap();
 
-        // Remove optimistic message since real one will come via real-time
+        // Update optimistic message to 'sent' status first, then remove with delay
         setOptimisticMessages((prev) => {
           const newMap = new Map(prev);
-          newMap.delete(tempId);
+          const msg = newMap.get(tempId);
+          if (msg) {
+            newMap.set(tempId, { ...msg, status: 'sent' });
+          }
           return newMap;
         });
+
+        // Remove optimistic message with delay to prevent flickering
+        setTimeout(() => {
+          setOptimisticMessages((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(tempId);
+            return newMap;
+          });
+        }, 500); // Longer delay to ensure real message arrives
 
         // Stop typing when message is sent
         stopTyping();
@@ -401,23 +488,97 @@ export function useMessagesRedux({
   const addReaction = useCallback(
     async (messageId: string, emoji: string) => {
       try {
+        // Add optimistic reaction immediately
+        setOptimisticReactions((prev) => {
+          const newMap = new Map(prev);
+          const reactions = newMap.get(messageId) || [];
+          if (!reactions.includes(emoji)) {
+            newMap.set(messageId, [...reactions, emoji]);
+          }
+          return newMap;
+        });
+
+        // Broadcast reaction for instant feedback to other users
+        if (channelRef.current && currentUser) {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'reaction',
+            payload: {
+              message_id: messageId,
+              emoji: emoji,
+              user_id: currentUser.id,
+              action: 'add',
+            },
+          });
+        }
+
         await dispatch(addReactionThunk({ messageId, emoji })).unwrap();
       } catch (error) {
         console.error('Failed to add reaction:', error);
+        // Remove optimistic reaction on error
+        setOptimisticReactions((prev) => {
+          const newMap = new Map(prev);
+          const reactions = newMap.get(messageId) || [];
+          newMap.set(
+            messageId,
+            reactions.filter((r) => r !== emoji),
+          );
+          if (newMap.get(messageId)?.length === 0) {
+            newMap.delete(messageId);
+          }
+          return newMap;
+        });
       }
     },
-    [dispatch],
+    [dispatch, currentUser],
   );
 
   const removeReaction = useCallback(
     async (messageId: string, emoji: string) => {
       try {
+        // Remove optimistic reaction immediately
+        setOptimisticReactions((prev) => {
+          const newMap = new Map(prev);
+          const reactions = newMap.get(messageId) || [];
+          newMap.set(
+            messageId,
+            reactions.filter((r) => r !== emoji),
+          );
+          if (newMap.get(messageId)?.length === 0) {
+            newMap.delete(messageId);
+          }
+          return newMap;
+        });
+
+        // Broadcast reaction removal for instant feedback to other users
+        if (channelRef.current && currentUser) {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'reaction',
+            payload: {
+              message_id: messageId,
+              emoji: emoji,
+              user_id: currentUser.id,
+              action: 'remove',
+            },
+          });
+        }
+
         await dispatch(removeReactionThunk({ messageId, emoji })).unwrap();
       } catch (error) {
         console.error('Failed to remove reaction:', error);
+        // Re-add optimistic reaction on error
+        setOptimisticReactions((prev) => {
+          const newMap = new Map(prev);
+          const reactions = newMap.get(messageId) || [];
+          if (!reactions.includes(emoji)) {
+            newMap.set(messageId, [...reactions, emoji]);
+          }
+          return newMap;
+        });
       }
     },
-    [dispatch],
+    [dispatch, currentUser],
   );
 
   const markAsRead = useCallback(async () => {
@@ -502,7 +663,7 @@ export function useMessagesRedux({
     async (file: File): Promise<string> => {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('job_id', jobId); // Use job_id instead of candidate_id
+      formData.append('job_id', jobId); // Job-based file upload
 
       const response = await fetch('/api/messages/upload', {
         method: 'POST',

@@ -13,15 +13,17 @@ interface ExistingEvaluationDisplayProps {
   evaluation: InterviewEvaluation;
   job: JobData;
   onProceedToInterview: () => void;
+  onRetryUpload?: () => void; // Add retry option
 }
 
 export default function ExistingEvaluationDisplay({
   evaluation,
   job,
   onProceedToInterview,
+  onRetryUpload,
 }: ExistingEvaluationDisplayProps) {
   const resumeScore = evaluation.resumeScore || evaluation.score || 0;
-  const passesThreshold = resumeScore >= 60;
+  const passesThreshold = resumeScore >= 50; // Changed threshold to 50
   const isNewEvaluation =
     evaluation.createdAt &&
     new Date().getTime() - new Date(evaluation.createdAt).getTime() < 5 * 60 * 1000; // Within 5 minutes
@@ -33,13 +35,13 @@ export default function ExistingEvaluationDisplay({
         <div className="text-center">
           <div
             className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-              passesThreshold ? 'bg-green-100' : 'bg-yellow-100'
+              passesThreshold ? 'bg-green-100' : 'bg-red-100'
             }`}
           >
             {passesThreshold ? (
               <CheckCircleIcon className="w-8 h-8 text-green-600" />
             ) : (
-              <ExclamationTriangleIcon className="w-8 h-8 text-yellow-600" />
+              <ExclamationTriangleIcon className="w-8 h-8 text-red-600" />
             )}
           </div>
           <h1 className="text-2xl font-bold text-text mb-2">
@@ -65,9 +67,7 @@ export default function ExistingEvaluationDisplay({
             <div className="flex justify-between items-center">
               <span className="text-muted-text">Resume Score:</span>
               <span
-                className={`font-semibold ${
-                  passesThreshold ? 'text-green-600' : 'text-yellow-600'
-                }`}
+                className={`font-semibold ${passesThreshold ? 'text-green-600' : 'text-red-600'}`}
               >
                 {resumeScore}%
               </span>
@@ -77,10 +77,10 @@ export default function ExistingEvaluationDisplay({
               <span className="text-muted-text">Status:</span>
               <span
                 className={`font-medium px-2 py-1 rounded-full text-xs ${
-                  passesThreshold ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                  passesThreshold ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                 }`}
               >
-                {passesThreshold ? 'Passed' : 'Below Threshold'}
+                {passesThreshold ? 'Passed' : 'Below Threshold (50% required)'}
               </span>
             </div>
 
@@ -151,15 +151,35 @@ export default function ExistingEvaluationDisplay({
             </>
           ) : (
             <>
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-yellow-800 text-sm">
-                  Your resume score is below the 60% threshold required to proceed. Consider
-                  updating your resume with more relevant experience and skills for this position.
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 text-sm font-medium mb-2">
+                  Resume Score Below Threshold
+                </p>
+                <p className="text-red-700 text-sm">
+                  Your resume score is below the 50% threshold required to proceed. Consider
+                  updating your resume with more relevant experience and skills for this position,
+                  then upload it again.
                 </p>
               </div>
 
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                {onRetryUpload && (
+                  <Button onClick={onRetryUpload} variant="outline" className="w-full sm:w-auto">
+                    Upload New Resume
+                  </Button>
+                )}
+
+                <Button
+                  onClick={() => window.history.back()}
+                  variant="secondary"
+                  className="w-full sm:w-auto"
+                >
+                  Go Back
+                </Button>
+              </div>
+
               <p className="text-sm text-muted-text">
-                Unfortunately, you cannot proceed to the interview questions at this time.
+                You can upload a new or updated resume to try again.
               </p>
             </>
           )}

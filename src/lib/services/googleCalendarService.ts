@@ -60,7 +60,7 @@ export async function updateInterviewEvent({
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
 
-  const event = await calendar.events.patch({
+  const event = await calendar.events.update({
     auth,
     calendarId: 'primary',
     eventId,
@@ -94,6 +94,7 @@ export async function deleteInterviewEvent({
   const calendar = google.calendar('v3');
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
+
   await calendar.events.delete({
     auth,
     calendarId: 'primary',

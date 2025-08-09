@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { TablesInsert } from '@/lib/supabase';
+import { TablesInsert } from '@/lib/supabase/types';
 
 export async function GET() {
   try {

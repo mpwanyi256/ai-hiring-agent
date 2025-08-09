@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { evaluateResume, getResumeEvaluation } from '@/store/evaluation/evaluationThunks';
 import { clearResumeError } from '@/store/evaluation/evaluationSlice';
-import { setInterviewStep } from '@/store/interview/interviewSlice';
 import {
   selectCurrentResumeEvaluation,
   selectResumeEvaluationLoading,
@@ -69,8 +68,12 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
   }, [candidateInfo?.id, jobId, dispatch]);
 
   const handleFileSelect = (file: File) => {
-    // Don't allow file selection if there's already an evaluation
-    if (existingEvaluation) {
+    // Allow file selection even if there's an existing evaluation (for re-upload)
+    // Only prevent if the existing evaluation passed the threshold
+    if (existingEvaluation && existingEvaluation.resumeScore >= 50) {
+      setValidationError(
+        'You already have a passing resume evaluation. You can proceed to the interview.',
+      );
       return;
     }
 
@@ -81,13 +84,16 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
   const uploadAndEvaluateResume = async () => {
     if (!selectedFile || !candidateInfo) return;
 
-    // Don't allow upload if there's already an evaluation
-    if (existingEvaluation) {
+    // Allow re-upload if existing evaluation didn't pass threshold
+    if (existingEvaluation && existingEvaluation.resumeScore >= 50) {
+      setValidationError(
+        'You already have a passing resume evaluation. You can proceed to the interview.',
+      );
       return;
     }
 
     try {
-      dispatch(
+      await dispatch(
         evaluateResume({
           resumeFile: selectedFile,
           jobToken,
@@ -110,16 +116,18 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
   };
 
   const proceedToInterview = () => {
-    // Move to step 4 (interview questions)
-    dispatch(setInterviewStep(4));
+    // With centralized step management, we don't need to manually set the step
+    // The JobApplicationTab will automatically detect the passing evaluation
+    // and transition to the correct step.
+    // This function can be used to trigger a refresh if needed
+    console.log('Proceeding to interview - step will be managed centrally');
   };
 
   const handleEvaluationComplete = (evaluation: any) => {
-    // If evaluation passes threshold, automatically proceed to interview
-    if (evaluation?.passesThreshold) {
-      dispatch(setInterviewStep(4));
-    }
-    // If evaluation fails, stay on current step to show results
+    // Evaluation completion is now handled by centralized step management
+    // The JobApplicationTab will automatically detect the evaluation result
+    // and transition to the appropriate step
+    console.log('Evaluation complete - step will be managed centrally', evaluation);
   };
 
   return {
@@ -140,6 +148,7 @@ export function useResumeEvaluation({ jobToken, candidateInfo, jobId }: UseResum
     clearError,
     proceedToInterview,
     handleEvaluationComplete,
+    setSelectedFile, // Expose setSelectedFile for resetting
 
     // Computed
     hasExistingEvaluation: !!existingEvaluation,

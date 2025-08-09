@@ -20,6 +20,7 @@ import { CompanyJobs } from '@/types/jobs';
 import { selectCompanyJobs } from '@/store/jobs/jobsSelectors';
 import { apiError } from '@/lib/notification';
 import { selectCompanySlug, selectHasActiveSubscription } from '@/store/auth/authSelectors';
+import { useSubscriptionGuard } from '@/hooks/useSubscriptionGuard';
 
 export default function JobsPage() {
   const { user } = useAppSelector((state) => state.auth);
@@ -29,17 +30,23 @@ export default function JobsPage() {
   const { pagination, jobs } = useAppSelector(selectCompanyJobs);
   const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
 
-  // State for jobs and pagination
+  // State for jobs and pagination - moved before conditional returns
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Search and filter state
+  // Search and filter state - moved before conditional returns
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Fetch jobs function
+  // Subscription guard - redirect to pricing if no active subscription
+  const { isSubscriptionValid } = useSubscriptionGuard({
+    allowTrialing: true,
+    bypassFor: ['admin', 'hr'],
+  });
+
+  // Fetch jobs function - moved before conditional returns
   const fetchJobs = useCallback(
     async (page = 1, reset = false, search = '', status = '') => {
       if (!user?.id) return;
@@ -67,12 +74,12 @@ export default function JobsPage() {
     [dispatch, user?.id],
   );
 
-  // Initial load
+  // Initial load - moved before conditional returns
   useEffect(() => {
     fetchJobs(1, true);
   }, [fetchJobs]);
 
-  // Search handler
+  // Handle search and filter functions - moved before conditional returns
   const handleSearch = useCallback(
     (query: string) => {
       setSearchQuery(query);
@@ -81,7 +88,6 @@ export default function JobsPage() {
     [fetchJobs, statusFilter],
   );
 
-  // Filter handler
   const handleStatusFilter = useCallback(
     (status: string) => {
       setStatusFilter(status);
@@ -90,34 +96,35 @@ export default function JobsPage() {
     [fetchJobs, searchQuery],
   );
 
-  // Clear filters
-  const handleClearFilters = useCallback(() => {
-    setStatusFilter('');
-    setShowFilters(false);
-    fetchJobs(1, true, searchQuery, '');
-  }, [fetchJobs, searchQuery]);
-
-  // Load more for infinite scroll
-  const loadMore = useCallback(() => {
+  const handleLoadMore = useCallback(() => {
     if (pagination?.hasMore && !isLoadingMore) {
-      fetchJobs(pagination.page + 1, false, searchQuery, statusFilter);
+      fetchJobs((pagination.page || 0) + 1, false, searchQuery, statusFilter);
     }
-  }, [pagination, isLoadingMore, fetchJobs, searchQuery, statusFilter]);
+  }, [fetchJobs, pagination, isLoadingMore, searchQuery, statusFilter]);
 
-  // Infinite scroll effect
+  // Infinite scroll effect - moved before conditional returns
   useEffect(() => {
     const handleScroll = () => {
       if (
         window.innerHeight + document.documentElement.scrollTop >=
         document.documentElement.offsetHeight - 1000
       ) {
-        loadMore();
+        handleLoadMore();
       }
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loadMore]);
+  }, [handleLoadMore]);
+
+  // Don't render content if subscription is invalid (guard will redirect)
+  if (!isSubscriptionValid) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   const copyInterviewLink = async (job: CompanyJobs) => {
     const link = `${window.location.origin}/jobs/${companySlug}/${job.interview_token}`;
@@ -209,7 +216,11 @@ export default function JobsPage() {
             onSearchChange={handleSearch}
             onStatusFilterChange={handleStatusFilter}
             onToggleFilters={() => setShowFilters(!showFilters)}
-            onClearFilters={handleClearFilters}
+            onClearFilters={() => {
+              setStatusFilter('');
+              setShowFilters(false);
+              fetchJobs(1, true, searchQuery, '');
+            }}
           />
         </div>
 
@@ -262,7 +273,7 @@ export default function JobsPage() {
             {/* Load more button (backup for infinite scroll) */}
             {pagination?.hasMore && !isLoadingMore && (
               <div className="mt-6 text-center">
-                <Button variant="outline" size="sm" onClick={loadMore} className="text-sm">
+                <Button variant="outline" size="sm" onClick={handleLoadMore} className="text-sm">
                   Load More Jobs
                 </Button>
               </div>

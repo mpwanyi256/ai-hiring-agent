@@ -252,12 +252,38 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               <span className="text-xs">{formatTime(message.timestamp)}</span>
               {isCurrentUser && getStatusIcon(message.status)}
             </div>
+
+            {/* Reactions positioned on top of message bubble (WhatsApp style) */}
+            {message.reactions && message.reactions.length > 0 && (
+              <div
+                className={`absolute -bottom-2 ${isCurrentUser ? 'left-2' : 'right-2'} flex flex-wrap gap-1 z-10`}
+              >
+                {message.reactions.map((reaction) => (
+                  <button
+                    key={reaction.id}
+                    onClick={() => onReaction(message.id, reaction.emoji)}
+                    className={`
+                      flex items-center space-x-1 px-2 py-1 rounded-full text-xs transition-all duration-200 shadow-sm
+                      ${
+                        reaction.hasReacted
+                          ? 'bg-blue-500 text-white border border-blue-600 scale-105'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                      }
+                    `}
+                    title={reaction.users.join(', ')}
+                  >
+                    <span className="text-sm">{reaction.emoji}</span>
+                    <span className="font-medium">{reaction.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* Message Actions */}
         {(canEdit || canDelete) && (
-          <div className={`${isCurrentUser ? 'self-end' : 'self-start'} px-3`}>
+          <div className={`${isCurrentUser ? 'self-end' : 'self-start'} px-3 mt-1`}>
             <MessageActions
               message={message}
               onEdit={onEdit!}
@@ -269,54 +295,31 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         )}
 
-        {/* Reactions */}
-        {message.reactions && message.reactions.length > 0 && (
-          <div
-            className={`flex flex-wrap gap-1 px-3 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-          >
-            {message.reactions.map((reaction) => (
-              <button
-                key={reaction.id}
-                onClick={() => onReaction(message.id, reaction.emoji)}
-                className={`
-                  flex items-center space-x-1 px-2 py-1 rounded-full text-xs transition-colors
-                  ${
-                    reaction.hasReacted
-                      ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                      : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
-                  }
-                `}
-                title={reaction.users.join(', ')}
-              >
-                <span>{reaction.emoji}</span>
-                <span>{reaction.count}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Quick Reactions (show on hover) */}
+        {/* Enhanced Quick Reactions (show on hover) */}
         <div
           className={`
-            absolute ${isCurrentUser ? 'right-0' : 'left-0'} -top-6 
-            opacity-0 group-hover:opacity-100 transition-opacity
-            flex items-center space-x-1 bg-white rounded-full shadow-lg border border-gray-200 px-2 py-1
+            absolute ${isCurrentUser ? 'right-0' : 'left-0'} ${message.text ? '-top-8' : '-top-6'}
+            opacity-0 group-hover:opacity-100 transition-all duration-200 transform group-hover:scale-100 scale-95
+            flex items-center space-x-1 bg-white rounded-full shadow-lg border border-gray-200 px-2 py-1.5 z-20
           `}
         >
-          {['❤️', '👍', '😂'].map((emoji) => (
+          {['❤️', '👍', '😂', '😮', '😢', '😡'].map((emoji) => (
             <button
               key={emoji}
               onClick={() => onReaction(message.id, emoji)}
-              className="w-6 h-6 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
+              className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors duration-150 hover:scale-110"
+              title={`React with ${emoji}`}
             >
-              <span className="text-sm">{emoji}</span>
+              <span className="text-base">{emoji}</span>
             </button>
           ))}
+          <div className="w-px h-4 bg-gray-300 mx-1" />
           <button
             onClick={() => onReply(message)}
-            className="w-6 h-6 flex items-center justify-center bg-white rounded-full shadow-sm hover:shadow-md transition-shadow"
+            className="w-7 h-7 flex items-center justify-center bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-150 hover:scale-110"
+            title="Reply to message"
           >
-            <span className="text-xs text-gray-500">↳</span>
+            <Reply className="h-3.5 w-3.5 text-gray-600" />
           </button>
         </div>
       </div>

@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/providers/ToastProvider';
+import { formatDateTime } from '@/lib/utils';
 
 interface TeamResponse {
   id: string;
@@ -418,18 +419,20 @@ export function TeamResponses() {
                               ? `${response.user_first_name} ${response.user_last_name}`
                               : response.user_email}
                           </p>
-                          <p className="text-xs text-gray-500">{response.user_role}</p>
+                          <p className="text-xs text-gray-500">
+                            {response.user_role}
+                            <span className="text-xs text-gray-500 ml-1">
+                              @{formatDateTime(response.created_at)}
+                            </span>
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full border ${getVoteColor(response.vote)}`}
+                          className={`p-1 text-xs font-medium rounded-full border ${getVoteColor(response.vote)}`}
                         >
                           {getVoteIcon(response.vote)}
-                          <span className="ml-1 capitalize">{response.vote}</span>
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(response.created_at).toLocaleDateString()}
+                          {/* <span className="ml-1 capitalize">{response.vote}</span> */}
                         </span>
                       </div>
                     </div>

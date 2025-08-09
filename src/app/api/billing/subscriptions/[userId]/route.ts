@@ -32,7 +32,7 @@ export async function GET(
           )
         `,
       )
-      .eq('user_id', userId)
+      .eq('profile_id', userId)
       .single();
 
     if (error && error.code !== 'PGRST116') {

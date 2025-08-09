@@ -12,6 +12,7 @@ import AccountTab from '@/components/settings/AccountTab';
 import BillingTab from '@/components/settings/BillingTab';
 import ConnectedAccountsTab from '@/components/settings/ConnectedAccountsTab';
 import NotificationSettings from '@/components/settings/NotificationSettings';
+import { useSubscriptionGuard } from '@/hooks/useSubscriptionGuard';
 
 const tabs = [
   { id: 'general', label: 'General' },
@@ -28,6 +29,12 @@ function SettingsContent() {
     return searchParams.get('tab') || 'general';
   });
 
+  // Subscription guard - redirect to pricing if no active subscription
+  const { isSubscriptionValid } = useSubscriptionGuard({
+    allowTrialing: true,
+    bypassFor: ['admin', 'hr'],
+  });
+
   // Update active tab when URL changes
   React.useEffect(() => {
     const tabFromUrl = searchParams.get('tab');
@@ -37,6 +44,15 @@ function SettingsContent() {
   }, [searchParams]);
 
   if (!user) return null;
+
+  // Don't render content if subscription is invalid (guard will redirect)
+  if (!isSubscriptionValid) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   return (
     <DashboardLayout>

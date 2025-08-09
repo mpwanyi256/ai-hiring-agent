@@ -33,6 +33,97 @@ import { selectJobPermissions } from '@/store/jobPermissions/jobPermissionsSelec
 import { selectUser } from '@/store/auth/authSelectors';
 import { CandidateSkillsAnalysis } from './CandidateSkillsAnalysis';
 
+// Small reusable components
+const InfoCard = ({
+  icon: Icon,
+  label,
+  value,
+  className = '',
+}: {
+  icon: React.ComponentType<{ className: string }>;
+  label: string;
+  value: string;
+  className?: string;
+}) => (
+  <div className={`bg-gray-50 p-4 md:p-3 rounded-lg ${className}`}>
+    <div className="flex items-center">
+      <Icon className="h-5 w-5 text-gray-400 mr-2" />
+      <span className="text-sm font-medium text-gray-700">{label}</span>
+    </div>
+    <p className="mt-1 text-sm text-gray-900">{value}</p>
+  </div>
+);
+
+const ResumeSection = ({ candidate }: { candidate: any }) => {
+  const getResumeScoreStyle = (score: number | null | undefined) => {
+    if (!score) return 'bg-gray-100';
+    if (score >= 80) return 'bg-green-100';
+    if (score >= 60) return 'bg-yellow-100';
+    return 'bg-red-100';
+  };
+
+  const getResumeScoreTextColor = (score: number | null | undefined) => {
+    if (!score) return 'text-gray-700';
+    if (score >= 80) return 'text-green-800';
+    if (score >= 60) return 'text-yellow-800';
+    return 'text-red-800';
+  };
+
+  if (!candidate.resume) return null;
+
+  return (
+    <div className="border rounded-lg p-4 md:p-3">
+      <h3 className="text-lg font-medium text-gray-900 mb-3 md:mb-2 flex items-center">
+        <PaperClipIcon className="h-5 w-5 mr-2" />
+        Resume
+      </h3>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-900">{candidate.resume.filename}</p>
+          <p className="text-xs text-gray-500">
+            {formatFileSize(candidate.resume.fileSize)} • {candidate.resume.wordCount} words
+          </p>
+        </div>
+        {candidate.evaluation?.resumeScore && (
+          <div
+            className={`px-3 py-1 rounded-full text-xs font-medium ${getResumeScoreStyle(
+              candidate.evaluation.resumeScore,
+            )} ${getResumeScoreTextColor(candidate.evaluation.resumeScore)}`}
+          >
+            Resume Score: {candidate.evaluation.resumeScore}%
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CandidateOverviewTab = ({ candidate }: { candidate: any }) => (
+  <div className="space-y-6 md:space-y-4">
+    {/* Candidate Info Grid */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-3">
+      <InfoCard
+        icon={UserCircleIcon}
+        label="Status"
+        value={candidate.status}
+        className="capitalize"
+      />
+      <InfoCard
+        icon={CalendarIcon}
+        label="Applied"
+        value={new Date(candidate.createdAt).toLocaleDateString()}
+      />
+      <InfoCard icon={BriefcaseIcon} label="Progress" value={`${candidate.progress}%`} />
+    </div>
+
+    {/* Resume Section */}
+    <ResumeSection candidate={candidate} />
+
+    {/* AI Evaluation Card */}
+    <AIEvaluationCard />
+  </div>
+);
+
 // Get user's permission level for the current job
 const getUserPermissionLevel = (permissions: any[], userId: string | undefined) => {
   if (!userId) return null;
@@ -43,24 +134,9 @@ const getUserPermissionLevel = (permissions: any[], userId: string | undefined) 
 const candidateTabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'responses', label: 'Interview Responses' },
-  { id: 'analytics', label: 'Analytics' },
+  { id: 'ai-evaluation', label: 'AI Evaluation' },
   { id: 'team-responses', label: 'Team Responses' },
 ];
-
-// Resume score styling functions
-const getResumeScoreStyle = (score: number | null | undefined) => {
-  if (!score) return 'bg-gray-100';
-  if (score >= 80) return 'bg-green-100';
-  if (score >= 60) return 'bg-yellow-100';
-  return 'bg-red-100';
-};
-
-const getResumeScoreTextColor = (score: number | null | undefined) => {
-  if (!score) return 'text-gray-700';
-  if (score >= 80) return 'text-green-800';
-  if (score >= 60) return 'text-yellow-800';
-  return 'text-red-800';
-};
 
 export default function JobCandidates() {
   const dispatch = useDispatch<AppDispatch>();
@@ -116,7 +192,7 @@ export default function JobCandidates() {
     <div className="space-y-6">
       <CandidatesOverview
         totalCandidates={stats.total}
-        shortlisted={0} // This would need to be added to stats if needed
+        shortlisted={0}
         completed={stats.completed}
         averageScore={stats.averageScore}
       />
@@ -156,73 +232,9 @@ export default function JobCandidates() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 md:p-4">
-                {activeTab === 'overview' && (
-                  <div className="space-y-6 md:space-y-4">
-                    {/* Candidate Info Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-3">
-                      <div className="bg-gray-50 p-4 md:p-3 rounded-lg">
-                        <div className="flex items-center">
-                          <UserCircleIcon className="h-5 w-5 text-gray-400 mr-2" />
-                          <span className="text-sm font-medium text-gray-700">Status</span>
-                        </div>
-                        <p className="mt-1 text-sm text-gray-900 capitalize">
-                          {selectedCandidate.status}
-                        </p>
-                      </div>
-                      <div className="bg-gray-50 p-4 md:p-3 rounded-lg">
-                        <div className="flex items-center">
-                          <CalendarIcon className="h-5 w-5 text-gray-400 mr-2" />
-                          <span className="text-sm font-medium text-gray-700">Applied</span>
-                        </div>
-                        <p className="mt-1 text-sm text-gray-900">
-                          {new Date(selectedCandidate.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="bg-gray-50 p-4 md:p-3 rounded-lg">
-                        <div className="flex items-center">
-                          <BriefcaseIcon className="h-5 w-5 text-gray-400 mr-2" />
-                          <span className="text-sm font-medium text-gray-700">Progress</span>
-                        </div>
-                        <p className="mt-1 text-sm text-gray-900">{selectedCandidate.progress}%</p>
-                      </div>
-                    </div>
-
-                    {/* Resume Section */}
-                    {selectedCandidate.resume && (
-                      <div className="border rounded-lg p-4 md:p-3">
-                        <h3 className="text-lg font-medium text-gray-900 mb-3 md:mb-2 flex items-center">
-                          <PaperClipIcon className="h-5 w-5 mr-2" />
-                          Resume
-                        </h3>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">
-                              {selectedCandidate.resume.filename}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {formatFileSize(selectedCandidate.resume.fileSize)} •{' '}
-                              {selectedCandidate.resume.wordCount} words
-                            </p>
-                          </div>
-                          {selectedCandidate.evaluation?.resumeScore && (
-                            <div
-                              className={`px-3 py-1 rounded-full text-xs font-medium ${getResumeScoreStyle(
-                                selectedCandidate.evaluation.resumeScore,
-                              )} ${getResumeScoreTextColor(selectedCandidate.evaluation.resumeScore)}`}
-                            >
-                              Resume Score: {selectedCandidate.evaluation.resumeScore}%
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* AI Evaluation Card */}
-                    <AIEvaluationCard />
-                  </div>
-                )}
+                {activeTab === 'overview' && <CandidateOverviewTab candidate={selectedCandidate} />}
                 {activeTab === 'responses' && <CandidateResponses />}
-                {activeTab === 'analytics' && <CandidateAnalytics />}
+                {activeTab === 'ai-evaluation' && <CandidateAnalytics />}
                 {activeTab === 'team-responses' && <TeamResponses />}
               </div>
             </div>

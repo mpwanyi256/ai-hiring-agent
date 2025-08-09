@@ -19,7 +19,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         const response = await dispatch(checkAuth()).unwrap();
         if (!response) {
           const currentPath = window.location.pathname;
-          console.log('Current path:', currentPath);
           if (currentPath.startsWith('/dashboard')) {
             router.push('/signin');
           }

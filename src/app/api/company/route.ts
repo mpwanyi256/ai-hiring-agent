@@ -8,13 +8,33 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const searchParams = request.nextUrl.searchParams;
-    const companyId = searchParams.get('company_id');
+    let companyId = searchParams.get('company_id');
 
+    // Get current user
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // If no company_id provided, get it from user's profile
     if (!companyId) {
-      return NextResponse.json(
-        { success: false, error: 'Company ID is required' },
-        { status: 404 },
-      );
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile?.company_id) {
+        return NextResponse.json(
+          { success: false, error: 'No company associated with user' },
+          { status: 404 },
+        );
+      }
+      companyId = profile.company_id;
     }
 
     // Get company data with timezone and country information

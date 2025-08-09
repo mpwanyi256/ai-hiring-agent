@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { generateInterviewToken } from '@/lib/utils';
-import { Database } from '@/lib/supabase';
+import { Database } from '@/lib/supabase/types';
 import { app } from '@/lib/constants';
 import { GetCompanyJobsPayload, GetCompanyJobsResponse, JobStatus } from '@/types/jobs';
 
@@ -15,6 +15,9 @@ export interface JobData {
   id: string;
   profileId: string;
   title: string;
+  description?: string;
+  requirements?: string;
+  location?: string;
   fields: {
     skills?: string[];
     experienceLevel?: string;
@@ -31,14 +34,21 @@ export interface JobData {
   candidateCount?: number;
   interviewLink?: string;
   departmentId: string;
+  departmentName?: string;
   jobTitleId: string;
+  jobTitleName?: string;
   employmentTypeId: string;
+  employmentTypeName?: string;
   workplaceType: string;
   jobType: string;
   companyId: string;
   companyName?: string;
   companyLogo?: string;
   companySlug?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
+  salaryPeriod?: string;
   shortlistedCount?: number;
 }
 
@@ -201,6 +211,9 @@ function transformJobFromDB(dbJob: JobComprehensiveRow): JobData {
     id: dbJob.id || '',
     profileId: dbJob.profile_id || '',
     title: dbJob.title || '',
+    description: dbJob.description || '',
+    requirements: dbJob.requirements || '',
+    location: dbJob.location || '',
     fields: dbToSimplifiedFields(dbJob.fields as JobFieldsConfig),
     interviewFormat: dbJob.interview_format as 'text' | 'video',
     interviewToken: dbJob.interview_token || '',
@@ -210,14 +223,21 @@ function transformJobFromDB(dbJob: JobComprehensiveRow): JobData {
     updatedAt: dbJob.updated_at || '',
     candidateCount: 0, // This would be calculated from candidates table
     departmentId: dbJob.department_id || '',
+    departmentName: dbJob.department_name || '',
     jobTitleId: dbJob.job_title_id || '',
+    jobTitleName: dbJob.job_title_name || '',
     employmentTypeId: dbJob.employment_type_id || '',
+    employmentTypeName: dbJob.employment_type_name || '',
     workplaceType: dbJob.workplace_type || '',
     jobType: dbJob.job_type || '',
     companyId: dbJob.company_id || '',
     companyName: dbJob.company_name || '',
-    companyLogo: dbJob.company_logo_url || '',
+    companyLogo: dbJob.company_logo_url || '', // Now using the actual company_logo_url field
     companySlug: dbJob.company_slug || '',
+    salaryMin: dbJob.salary_min ?? undefined,
+    salaryMax: dbJob.salary_max ?? undefined,
+    salaryCurrency: dbJob.salary_currency ?? undefined,
+    salaryPeriod: dbJob.salary_period ?? undefined,
   };
 }
 
@@ -244,6 +264,10 @@ function transformJobToDB(jobData: Partial<JobData>): Partial<JobInsert> {
       | 'volunteer'
       | 'internship'
       | 'other';
+  if (jobData.salaryMin !== undefined) dbData.salary_min = jobData.salaryMin;
+  if (jobData.salaryMax !== undefined) dbData.salary_max = jobData.salaryMax;
+  if (jobData.salaryCurrency) dbData.salary_currency = jobData.salaryCurrency;
+  if (jobData.salaryPeriod) dbData.salary_period = jobData.salaryPeriod;
 
   // If status is provided
   if (jobData.status) {
@@ -983,14 +1007,21 @@ class JobsService {
         createdAt: job.created_at || '',
         updatedAt: job.updated_at || '',
         departmentId: job.department_id || '',
+        departmentName: job.department_name || '',
         jobTitleId: job.job_title_id || '',
+        jobTitleName: job.job_title_name || '',
         employmentTypeId: job.employment_type_id || '',
+        employmentTypeName: job.employment_type_name || '',
         workplaceType: job.workplace_type || '',
         jobType: job.job_type || '',
         companyId: job.company_id || '',
         companyName: job.company_name || '',
-        companyLogo: job.company_logo_url || '',
+        companyLogo: '', // Company logo not available in jobs_comprehensive view
         companySlug: job.company_slug || '',
+        salaryMin: job.salary_min,
+        salaryMax: job.salary_max,
+        salaryCurrency: job.salary_currency,
+        salaryPeriod: job.salary_period,
       };
     } catch (error) {
       console.error('Error getting job by interview token:', error);

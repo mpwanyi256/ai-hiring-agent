@@ -121,7 +121,9 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
           // Update Google Calendar event
           const googleCalendarService = await import('@/lib/services/googleCalendarService');
           const eventData = {
-            summary: `Interview with ${interview.candidate_first_name} ${interview.candidate_last_name} for ${interview.job_title}`,
+            summary:
+              interview.event_summary ||
+              `Interview with ${interview.candidate_first_name} ${interview.candidate_last_name} for ${interview.job_title}`,
             description: `Interview for ${interview.job_title} position at ${interview.company_name}.
 \n${notes || ''}`,
             start: {

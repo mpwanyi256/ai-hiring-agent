@@ -46,17 +46,39 @@ const MessagesList: React.FC<MessagesListProps> = ({
       const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
       const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
 
-      // Auto-scroll to new messages or when typing indicators appear/disappear
+      // Auto-scroll to new messages, when typing indicators appear/disappear, or when reactions are added
       if (isNearBottom || messages.length > 0) {
-        setTimeout(() => {
+        // Use requestAnimationFrame for smoother scrolling
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'end',
+            });
+          }, 50); // Small delay to ensure DOM has updated
+        });
+      }
+    }
+  }, [messages, typingUsers]);
+
+  // Additional effect to handle reaction changes for better auto-scroll
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer && messagesEndRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 50;
+
+      // Only auto-scroll for reactions if user is near the bottom
+      if (isNearBottom) {
+        requestAnimationFrame(() => {
           messagesEndRef.current?.scrollIntoView({
             behavior: 'smooth',
             block: 'end',
           });
-        }, 50); // Small delay to ensure DOM has updated
+        });
       }
     }
-  }, [messages, typingUsers]);
+  }, [messages.map((m) => m.reactions?.length || 0).join(',')]); // React to reaction count changes
 
   // Get typing indicator text
   const getTypingText = () => {
@@ -124,7 +146,7 @@ const MessagesList: React.FC<MessagesListProps> = ({
 
         {/* Messages */}
         {messages.length > 0 && (
-          <div className="px-3 py-2 space-y-3">
+          <div className="px-3 py-2 space-y-4">
             {messages.map((message, index) => {
               const showAvatar = index === 0 || messages[index - 1].sender.id !== message.sender.id;
               const isLastInGroup =
@@ -132,23 +154,24 @@ const MessagesList: React.FC<MessagesListProps> = ({
                 messages[index + 1].sender.id !== message.sender.id;
 
               return (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  showAvatar={showAvatar}
-                  isLastInGroup={isLastInGroup}
-                  onReaction={onReaction}
-                  onReply={onReply}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  currentUserId={currentUserId}
-                />
+                <div key={message.id} className="relative pb-3">
+                  <MessageBubble
+                    message={message}
+                    showAvatar={showAvatar}
+                    isLastInGroup={isLastInGroup}
+                    onReaction={onReaction}
+                    onReply={onReply}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    currentUserId={currentUserId}
+                  />
+                </div>
               );
             })}
 
             {/* Enhanced Typing Indicator */}
             {typingUsers.length > 0 && (
-              <div className="flex items-center space-x-3 pl-2">
+              <div className="flex items-center space-x-3 pl-2 pb-2">
                 <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                   <div className="flex space-x-1">
                     <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"></div>

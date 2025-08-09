@@ -14,6 +14,7 @@ import {
   JobTitle,
   EmploymentType,
   CreateJobPayload,
+  JobStatus,
 } from '@/types';
 import { apiUtils } from '../api';
 import { RootState } from '..';
@@ -242,7 +243,7 @@ export const saveJobTemplate = createAsyncThunk(
 
 export const updateJobStatus = createAsyncThunk(
   'jobs/updateJobStatus',
-  async ({ jobId, status }: { jobId: string; status: 'draft' | 'interviewing' | 'closed' }) => {
+  async ({ jobId, status }: { jobId: string; status: JobStatus }) => {
     try {
       const response = await apiUtils.put<JobResponse>(`/api/jobs/${jobId}`, { status });
       return response.job;

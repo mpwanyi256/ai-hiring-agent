@@ -80,6 +80,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // If user doesn't have a company, we still allow the integration but company_id will be null
+  // This can be updated later when user creates/joins a company
+
   // Check if integration already exists
   const { data: existingIntegration, error: checkError } = await supabase
     .from('integrations')
@@ -96,7 +99,7 @@ export async function GET(request: NextRequest) {
   }
 
   const integrationData = {
-    company_id: profile.company_id,
+    company_id: profile.company_id, // Can be null
     user_id: user.id,
     provider: 'google',
     access_token: tokens.access_token,

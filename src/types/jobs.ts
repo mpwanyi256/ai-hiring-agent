@@ -1,9 +1,9 @@
-import { Database } from '@/lib/supabase';
+import { Database } from '@/lib/supabase/types';
 import { JobQuestion } from './interview';
 import z from 'zod';
 
-export type JobStatus = Database['public']['Enums']['job_status'];
-export type UserRole = Database['public']['Enums']['user_role'];
+export type JobStatus = 'draft' | 'active' | 'paused' | 'closed' | 'interviewing';
+export type UserRole = 'admin' | 'recruiter' | 'hiring_manager' | 'interviewer';
 
 export interface Skill {
   id: string;

@@ -10,6 +10,8 @@ import TimelineTab from './TimelineTab';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
 import SendContractModal from '../contracts/SendContractModal';
 import { cn } from '@/lib/utils';
+import { useAppDispatch } from '@/store';
+import { fetchApplicationEvents } from '@/store/interviews/interviewsThunks';
 
 // --- Main Panel ---
 interface CandidateDetailsPanelProps {
@@ -35,10 +37,27 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [schedulingModalOpen, setSchedulingModalOpen] = useState(false);
   const [sendContractModalOpen, setSendContractModalOpen] = useState(false);
+  const dispatch = useAppDispatch();
+
   const handleScheduleEvent = () => setSchedulingModalOpen(true);
-  const handleCloseSchedulingModal = () => setSchedulingModalOpen(false);
+
+  const handleCloseSchedulingModal = () => {
+    setSchedulingModalOpen(false);
+    // Refresh events after modal closes (which happens after successful creation)
+    if (candidate.id) {
+      dispatch(fetchApplicationEvents(candidate.id));
+    }
+  };
+
   const handleSendContract = () => setSendContractModalOpen(true);
   const handleCloseSendContractModal = () => setSendContractModalOpen(false);
+
+  // Function to refresh events that can be passed to EventsTab
+  const refreshEvents = () => {
+    if (candidate.id) {
+      dispatch(fetchApplicationEvents(candidate.id));
+    }
+  };
 
   return (
     <SidePanel
@@ -83,6 +102,7 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
                     candidate={candidate}
                     onScheduleEvent={handleScheduleEvent}
                     onSendContract={handleSendContract}
+                    onRefreshEvents={refreshEvents}
                   />
                 ) : (
                   <tab.Component candidate={candidate} onSendContract={handleSendContract} />

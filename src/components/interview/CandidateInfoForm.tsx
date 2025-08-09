@@ -3,9 +3,7 @@
 import { useState } from 'react';
 import { useAppDispatch } from '@/store';
 import { getCandidateDetails } from '@/store/interview/interviewThunks';
-import { setInterviewStep } from '@/store/interview/interviewSlice';
 import { apiError } from '@/lib/notification';
-import { getResumeEvaluation } from '@/store/evaluation/evaluationThunks';
 
 interface CandidateInfo {
   firstName: string;
@@ -51,34 +49,10 @@ export default function CandidateInfoForm({ jobToken }: CandidateInfoFormProps) 
         }),
       ).unwrap();
 
-      // Check for isCompleted and evaluation logic
-      if ('isCompleted' in candidate && candidate.isCompleted) {
-        dispatch(setInterviewStep(5)); // Step 5: Interview complete/results
-        return;
-      } else {
-        dispatch(
-          getResumeEvaluation({
-            candidateId: candidate.id,
-            jobId: candidate.jobId,
-          }),
-        );
-      }
-
-      // Type guard for evaluation property
-      if ('evaluation' in candidate && candidate.evaluation) {
-        const evaluation = candidate.evaluation as { resumeScore?: number; score?: number };
-        // Prefer resumeScore if available, otherwise use score
-        const score = evaluation?.resumeScore ?? evaluation?.score;
-        if (score !== undefined && score >= 50) {
-          dispatch(setInterviewStep(4)); // Step 4: Interview questions
-        } else {
-          dispatch(setInterviewStep(5)); // Step 5: Results/failure
-        }
-        return;
-      }
-
-      // If no evaluation, go to resume upload
-      dispatch(setInterviewStep(3));
+      // Data is now saved and will be picked up by JobApplicationTab
+      // The JobApplicationTab will automatically render the correct component
+      // based on the candidate data and evaluation status
+      console.log('Candidate details saved:', candidate);
     } catch (err) {
       console.error('Error saving candidate info:', err);
       setError('Something went wrong. Please try again.');

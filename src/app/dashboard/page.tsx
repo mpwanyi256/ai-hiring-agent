@@ -35,6 +35,7 @@ import { selectHasActiveSubscription } from '@/store/auth/authSelectors';
 import { useAppDispatch } from '@/store';
 import { fetchDashboardMetrics } from '@/store/dashboard/dashboardThunks';
 import { selectDashboardMetrics, selectMetricsLoading } from '@/store/dashboard/dashboardSlice';
+import { useSubscriptionGuard } from '@/hooks/useSubscriptionGuard';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -43,6 +44,12 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showInviteWelcome, setShowInviteWelcome] = useState(false);
   const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
+
+  // Subscription guard - redirect to pricing if no active subscription
+  const { isSubscriptionValid } = useSubscriptionGuard({
+    allowTrialing: true,
+    bypassFor: ['admin', 'hr'], // Allow admins and HR to access dashboard
+  });
 
   // Dashboard metrics state
   const metrics = useAppSelector(selectDashboardMetrics);
@@ -71,6 +78,15 @@ export default function DashboardPage() {
   }, [dispatch, user]);
 
   if (!user) return null;
+
+  // Don't render dashboard content if subscription is invalid (guard will redirect)
+  if (!isSubscriptionValid) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   const interviewStats = [
     { label: 'This Week', value: 15, color: '#8B5CF6' },
