@@ -1,7 +1,7 @@
 import { SelectedCandidateState } from '@/types/selectedCandidate';
 import { createSlice } from '@reduxjs/toolkit';
 import { fetchSelectedCandidateAnalytics } from './selectedCandidateThunks';
-import { updateCandidateStatus } from '../candidates/candidatesThunks';
+import { fetchJobCandidates, updateCandidateStatus } from '../candidates/candidatesThunks';
 
 const initialState: SelectedCandidateState = {
   candidate: null,
@@ -15,8 +15,16 @@ const selectedCandidateSlice = createSlice({
     setSelectedCandidate: (state, action) => {
       state.candidate = action.payload;
     },
+    resetSelectedCandidate: (state) => {
+      state.candidate = null;
+      state.candidateAnalytics = null;
+    },
   },
   extraReducers: (builder) => {
+    builder.addCase(fetchJobCandidates.pending, (state) => {
+      state.candidate = null;
+      state.candidateAnalytics = null;
+    });
     builder.addCase(updateCandidateStatus.fulfilled, (state, action) => {
       if (state.candidate && state.candidate.id === action.payload.id) {
         state.candidate = { ...state.candidate, candidateStatus: action.payload.status };

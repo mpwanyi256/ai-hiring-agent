@@ -458,3 +458,7 @@ export function getNotificationPriorityColor(priority: string): string {
       return 'text-gray-600 bg-gray-50';
   }
 }
+
+export const pluralize = (count: number, word: string) => {
+  return count === 1 ? word : `${word}s`;
+};

@@ -37,14 +37,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = (page - 1) * limit;
-    const status = searchParams.get('status') || null;
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
     const minScore = searchParams.get('minScore') ? parseInt(searchParams.get('minScore')!) : null;
     const maxScore = searchParams.get('maxScore') ? parseInt(searchParams.get('maxScore')!) : null;
     const startDate = searchParams.get('startDate') || null;
     const endDate = searchParams.get('endDate') || null;
-    const candidateStatus = searchParams.get('candidateStatus') || null;
+    const statusFilter = searchParams.get('candidateStatus');
+    const candidateStatus = ['all'].includes(statusFilter || '') ? null : statusFilter;
 
     // Get job details
     const { data: job, error: jobError } = await supabase
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       {
         p_job_id: jobId,
         p_search: search,
-        p_status: status,
+        p_status: candidateStatus,
         p_limit: limit,
         p_offset: offset,
       },

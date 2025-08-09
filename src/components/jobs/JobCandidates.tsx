@@ -1,26 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import CandidatesOverview from './CandidatesOverview';
 import CandidatesList from './CandidatesList';
 import CandidateAnalytics from '@/components/evaluations/CandidateAnalytics';
 import CandidateResponses from '@/components/candidates/CandidateResponses';
 import { TeamResponses } from '@/components/candidates/TeamResponses';
-import { AppDispatch, useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchJobCandidates } from '@/store/candidates/candidatesThunks';
 import {
   UserCircleIcon,
-  DocumentTextIcon,
-  ChartBarIcon,
   CalendarIcon,
   PaperClipIcon,
   BriefcaseIcon,
   EyeIcon,
-  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { CandidateDetailsHeader } from '../evaluations/CandidateDetailsHeader';
-import { CandidateStatus } from '@/types';
 import { formatFileSize } from '@/lib/utils';
 import AIEvaluationCard from '@/components/evaluations/AIEvaluationCard';
 import {
@@ -31,7 +26,7 @@ import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
 import { selectJobCandidatesStats } from '@/store/candidates/candidatesSelectors';
 import { selectJobPermissions } from '@/store/jobPermissions/jobPermissionsSelectors';
 import { selectUser } from '@/store/auth/authSelectors';
-import { CandidateSkillsAnalysis } from './CandidateSkillsAnalysis';
+import { setSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSlice';
 
 // Small reusable components
 const InfoCard = ({
@@ -139,10 +134,8 @@ const candidateTabs = [
 ];
 
 export default function JobCandidates() {
-  const dispatch = useDispatch<AppDispatch>();
   const selectedCandidate = useAppSelector(selectSelectedCandidate);
   const selectedCandidateId = useAppSelector(selectSelectedCandidateId);
-  const currentJob = useAppSelector(selectCurrentJob);
   const stats = useAppSelector(selectJobCandidatesStats);
   const permissions = useAppSelector(selectJobPermissions);
   const user = useAppSelector(selectUser);
@@ -172,20 +165,8 @@ export default function JobCandidates() {
     }
   }, [activeTab, filteredTabs]);
 
-  useEffect(() => {
-    if (currentJob?.id) {
-      dispatch(fetchJobCandidates({ jobId: currentJob.id, search: searchQuery }));
-    }
-  }, [dispatch, currentJob?.id, searchQuery]);
-
   const handleCandidateSelect = () => {
     setActiveTab('overview');
-  };
-
-  const handleFiltersChange = (filters: any) => {
-    if (currentJob?.id) {
-      dispatch(fetchJobCandidates({ jobId: currentJob.id, search: searchQuery, ...filters }));
-    }
   };
 
   return (
@@ -204,7 +185,6 @@ export default function JobCandidates() {
             onCandidateSelect={handleCandidateSelect}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            onFiltersChange={handleFiltersChange}
           />
         </div>
 

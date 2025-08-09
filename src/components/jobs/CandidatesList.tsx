@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -22,6 +22,8 @@ import {
   getCandidateStatusLabelStyle,
   getCandidateStatusOptions,
   getScoreColor,
+  formatDate,
+  pluralize,
 } from '@/lib/utils';
 import { useAppDispatch, useAppSelector } from '@/store';
 import {
@@ -29,21 +31,14 @@ import {
   selectCandidatesLoading,
 } from '@/store/candidates/candidatesSelectors';
 import { setSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSlice';
+import { fetchJobCandidates } from '@/store/candidates/candidatesThunks';
+import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
 
 interface CandidatesListProps {
   selectedCandidateId?: string;
   onCandidateSelect: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  onFiltersChange?: (filters: {
-    minScore?: number;
-    maxScore?: number;
-    startDate?: string;
-    endDate?: string;
-    candidateStatus?: CandidateStatus;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-  }) => void;
 }
 
 const statusOptions = getCandidateStatusOptions();
@@ -52,11 +47,11 @@ export default function CandidatesList({
   selectedCandidateId,
   searchQuery,
   onSearchChange,
-  onFiltersChange,
 }: CandidatesListProps) {
   const candidates = useAppSelector(selectCandidatesList);
   const dispatch = useAppDispatch();
   const isLoading = useAppSelector(selectCandidatesLoading);
+  const currentJob = useAppSelector(selectCurrentJob);
   const [filters, setFilters] = useState({
     minScore: '',
     maxScore: '',
@@ -67,58 +62,9 @@ export default function CandidatesList({
     sortOrder: 'desc' as 'asc' | 'desc',
   });
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'text-green-600';
-      case 'in_progress':
-        return 'text-blue-600';
-      case 'pending':
-        return 'text-amber-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'Completed';
-      case 'in_progress':
-        return 'In Progress';
-      case 'pending':
-        return 'Pending';
-      default:
-        return 'Unknown';
-    }
-  };
-
   const handleFilterChange = (key: string, value: string | number) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-
-    if (onFiltersChange) {
-      onFiltersChange({
-        minScore: newFilters.minScore ? parseInt(newFilters.minScore) : undefined,
-        maxScore: newFilters.maxScore ? parseInt(newFilters.maxScore) : undefined,
-        startDate: newFilters.startDate || undefined,
-        endDate: newFilters.endDate || undefined,
-        candidateStatus:
-          newFilters.candidateStatus === 'all'
-            ? undefined
-            : (newFilters.candidateStatus as CandidateStatus | undefined),
-        sortBy: newFilters.sortBy,
-        sortOrder: newFilters.sortOrder,
-      });
-    }
   };
 
   const clearFilters = () => {
@@ -132,15 +78,33 @@ export default function CandidatesList({
       sortOrder: 'desc' as 'asc' | 'desc',
     };
     setFilters(clearedFilters);
-
-    if (onFiltersChange) {
-      onFiltersChange({});
-    }
   };
 
   const handleCandidateSelect = (candidate: Candidate) => {
     dispatch(setSelectedCandidate(candidate));
   };
+
+  useEffect(() => {
+    if (currentJob?.id) {
+      dispatch(
+        fetchJobCandidates({
+          jobId: currentJob.id,
+          search: searchQuery,
+          minScore: filters.minScore ? parseInt(filters.minScore) : undefined,
+          maxScore: filters.maxScore ? parseInt(filters.maxScore) : undefined,
+          startDate: filters.startDate || undefined,
+          endDate: filters.endDate || undefined,
+          candidateStatus: filters.candidateStatus || undefined,
+          sortBy: filters.sortBy || undefined,
+          sortOrder: filters.sortOrder || undefined,
+        }),
+      );
+    }
+
+    return () => {
+      dispatch(setSelectedCandidate(null));
+    };
+  }, [dispatch, currentJob?.id, searchQuery, filters]);
 
   const hasActiveFilters =
     filters.minScore ||
@@ -154,7 +118,11 @@ export default function CandidatesList({
       {/* Header - Fixed */}
       <div className="p-4 border-b border-gray-100 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Candidates ({candidates.length})</h3>
+          <h3 className="text-lg font-semibold text-gray-900 capitalize">
+            {!candidates.length
+              ? 'No candidates found'
+              : `${candidates.length} ${pluralize(candidates.length, 'Candidate')}`}
+          </h3>
           <Popover>
             <PopoverTrigger asChild>
               <button
@@ -287,11 +255,11 @@ export default function CandidatesList({
                     </span>
                   </div>
 
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
                     {/* Name and Email */}
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center justify-between">
                       <h4 className="text-sm font-medium text-gray-900 truncate">
-                        {candidate.name || 'Anonymous Candidate'}
+                        {candidate.name}
                       </h4>
                       <div
                         className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(candidate?.evaluation?.score || 0)}`}
@@ -300,7 +268,7 @@ export default function CandidatesList({
                       </div>
                     </div>
 
-                    <p className="text-xs text-gray-500 truncate mb-2">{candidate.email}</p>
+                    <p className="text-xs text-gray-500 truncate">{candidate.email}</p>
 
                     {/* Progress and Status */}
                     <div className="flex items-center space-x-4 text-xs text-gray-500">
@@ -312,17 +280,14 @@ export default function CandidatesList({
                         <ClockIcon className="w-3 h-3" />
                         <span>{candidate.evaluation?.resumeScore} score</span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <CalendarIcon className="w-3 h-3" />
-                        <span>{formatDate(candidate.createdAt)}</span>
-                      </div>
                     </div>
 
                     {/* Status and Evaluation Summary */}
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className={`text-xs font-medium ${getStatusColor(candidate.status)}`}>
-                        {getStatusLabel(candidate.status)}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-1 text-xs text-gray-500">
+                        <CalendarIcon className="w-3 h-3" />
+                        <span>{formatDate(candidate.createdAt)}</span>
+                      </div>
                       {candidate.candidateStatus && (
                         <span
                           className={`text-xs text-gray-500 px-2 py-1 rounded-full ${getCandidateStatusLabelStyle(
