@@ -62,6 +62,10 @@ export default function CandidatesList({
     sortBy: 'created_at',
     sortOrder: 'desc' as 'asc' | 'desc',
   });
+  const selected = useAppSelector((s) => s.selectedCandidate.candidate);
+  const selectedLoading = useAppSelector((s) => s.selectedCandidate.isLoading);
+  const [isResumePreviewOpen, setIsResumePreviewOpen] = useState(false);
+  const [pendingResumeCandidateId, setPendingResumeCandidateId] = useState<string | null>(null);
 
   const handleFilterChange = (key: string, value: string | number) => {
     const newFilters = { ...filters, [key]: value };
@@ -85,6 +89,28 @@ export default function CandidatesList({
     dispatch(setSelectedCandidate(candidate));
     dispatch(fetchSelectedCandidateDetails(candidate.id));
   };
+
+  const handlePreviewResume = (candidate: Candidate) => {
+    if (selected?.id === candidate.id && selected?.resume?.publicUrl) {
+      setIsResumePreviewOpen(true);
+      return;
+    }
+    dispatch(setSelectedCandidate(candidate));
+    dispatch(fetchSelectedCandidateDetails(candidate.id));
+    setPendingResumeCandidateId(candidate.id);
+  };
+
+  useEffect(() => {
+    if (
+      pendingResumeCandidateId &&
+      selected?.id === pendingResumeCandidateId &&
+      selected?.resume?.publicUrl &&
+      !selectedLoading
+    ) {
+      setIsResumePreviewOpen(true);
+      setPendingResumeCandidateId(null);
+    }
+  }, [pendingResumeCandidateId, selected?.id, selected?.resume?.publicUrl, selectedLoading]);
 
   useEffect(() => {
     if (currentJob?.id) {
@@ -264,7 +290,9 @@ export default function CandidatesList({
                         {candidate.name}
                       </h4>
                       <div
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(candidate?.evaluation?.score || 0)}`}
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(
+                          candidate?.evaluation?.score || 0,
+                        )}`}
                       >
                         {candidate.evaluation?.score || 0}%
                       </div>
@@ -273,32 +301,42 @@ export default function CandidatesList({
                     <p className="text-xs text-gray-500 truncate">{candidate.email}</p>
 
                     {/* Progress and Status */}
-                    <div className="flex items-center space-x-4 text-xs text-gray-500">
-                      <div className="flex items-center space-x-1">
-                        <ChartBarIcon className="w-3 h-3" />
-                        <span>Progress: {candidate.progress}%</span>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-1">
+                          <ChartBarIcon className="w-3 h-3" />
+                          <span>Progress: {candidate.progress}%</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <ClockIcon className="w-3 h-3" />
+                          <span>{candidate.evaluation?.resumeScore} score</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <CalendarIcon className="w-3 h-3" />
+                          <span>{formatDate(candidate.createdAt)}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <ClockIcon className="w-3 h-3" />
-                        <span>{candidate.evaluation?.resumeScore} score</span>
-                      </div>
-                    </div>
-
-                    {/* Status and Evaluation Summary */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-1 text-xs text-gray-500">
-                        <CalendarIcon className="w-3 h-3" />
-                        <span>{formatDate(candidate.createdAt)}</span>
-                      </div>
-                      {candidate.candidateStatus && (
-                        <span
-                          className={`text-xs text-gray-500 px-2 py-1 rounded-full ${getCandidateStatusLabelStyle(
-                            candidate.candidateStatus,
-                          )}`}
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePreviewResume(candidate);
+                          }}
+                          className="text-[11px] px-2 py-1 rounded border border-gray-300 hover:bg-gray-50"
                         >
-                          {candidate.candidateStatus}
-                        </span>
-                      )}
+                          Resume
+                        </button>
+                        {candidate.candidateStatus && (
+                          <span
+                            className={`text-xs text-gray-500 px-2 py-1 rounded-full ${getCandidateStatusLabelStyle(
+                              candidate.candidateStatus,
+                            )}`}
+                          >
+                            {candidate.candidateStatus}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -307,6 +345,42 @@ export default function CandidatesList({
           </div>
         )}
       </div>
+
+      {/* Resume Preview Modal */}
+      {isResumePreviewOpen && selected?.resume?.publicUrl && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between p-3 border-b">
+              <div className="text-sm font-medium">Resume Preview</div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={selected.resume.publicUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-50"
+                >
+                  Open in new tab
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setIsResumePreviewOpen(false)}
+                  className="text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-50"
+                  aria-label="Close"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <div className="flex-1">
+              <iframe
+                src={selected.resume.publicUrl}
+                className="w-full h-full"
+                title="Candidate Resume"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

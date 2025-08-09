@@ -12,6 +12,7 @@ import { fetchShortlistedCandidates } from '@/store/candidates/candidatesThunks'
 import CandidateDetailsPanel from '../candidates/CandidateDetailsPanel';
 import { UpdateApplicationStatus } from './UpdateApplicationStatus';
 import { setSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSlice';
+import { fetchSelectedCandidateDetails } from '@/store/selectedCandidate/selectedCandidateThunks';
 
 interface JobShortlistedProps {
   jobId: string;
@@ -52,6 +53,7 @@ export default function JobShortlisted({ jobId }: JobShortlistedProps) {
   const handleOpenDetails = (candidate: CandidateWithEvaluation) => {
     // TODO:: Remove all props to child components for candidate and rely on the store
     dispatch(setSelectedCandidate(candidate));
+    dispatch(fetchSelectedCandidateDetails(candidate.id));
     setDetailsPanel({ isOpen: true, candidate });
   };
 

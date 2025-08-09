@@ -10,7 +10,7 @@ import TimelineTab from './TimelineTab';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
 import SendContractModal from '../contracts/SendContractModal';
 import { cn } from '@/lib/utils';
-import { useAppDispatch } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchApplicationEvents } from '@/store/interviews/interviewsThunks';
 
 // --- Main Panel ---
@@ -38,6 +38,7 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
   const [schedulingModalOpen, setSchedulingModalOpen] = useState(false);
   const [sendContractModalOpen, setSendContractModalOpen] = useState(false);
   const dispatch = useAppDispatch();
+  const isLoading = useAppSelector((s) => s.selectedCandidate.isLoading);
 
   const handleScheduleEvent = () => setSchedulingModalOpen(true);
 
@@ -66,6 +67,13 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
       width="xl"
       title={`${candidate.firstName} ${candidate.lastName} - Details`}
     >
+      <div className="relative">
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
+            <div className="animate-spin h-6 w-6 border-2 border-gray-300 border-t-primary rounded-full" />
+          </div>
+        )}
+      </div>
       <div className="flex flex-col h-full min-h-0">
         {/* Tabs Section */}
         <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>

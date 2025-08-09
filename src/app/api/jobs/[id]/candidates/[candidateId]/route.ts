@@ -106,6 +106,7 @@ export async function GET(
             parsingStatus: row.resume_parsing_status || 'pending',
             parsingError: row.resume_parsing_error,
             uploadedAt: row.resume_uploaded_at,
+            score: row.resume_score || 0,
           }
         : null,
     };

@@ -14,6 +14,7 @@ export interface CandidateResume {
   parsingStatus: 'pending' | 'success' | 'failed';
   parsingError: string | null;
   uploadedAt: string;
+  score?: number; // resume evaluation score (0-100)
 }
 
 // AI Evaluation Types
@@ -138,7 +139,13 @@ export interface CandidateWithEvaluation extends Omit<Candidate, 'evaluation' | 
     strengths: string[];
     redFlags: string[];
     createdAt: string;
+    // optional fields for compatibility with detailed candidate object
+    resumeScore?: number;
+    resumeSummary?: string;
+    evaluationType?: 'resume' | 'interview' | 'combined';
   } | null;
+  // include latest resume (optional) for details rendering
+  resume?: CandidateResume | null;
 }
 
 export interface CandidateEvaluationSummary {

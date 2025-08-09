@@ -17,6 +17,8 @@ import {
   AlertTriangle,
   Brain,
   Lightbulb,
+  X as CloseIcon,
+  ExternalLink,
 } from 'lucide-react';
 
 interface TeamResponseSummary {
@@ -50,6 +52,7 @@ const GeneralTab: React.FC<{
   const [resumeLoading, setResumeLoading] = useState(false);
   const [teamSummary, setTeamSummary] = useState<TeamResponseSummary | null>(null);
   const [resumeEvaluation, setResumeEvaluation] = useState<ResumeEvaluation | null>(null);
+  const [isResumePreviewOpen, setIsResumePreviewOpen] = useState(false);
   useEffect(() => {
     // Fetch team response summary
     fetchTeamResponseSummary();
@@ -275,34 +278,61 @@ const GeneralTab: React.FC<{
             <FileText className="h-5 w-5 text-gray-600" />
             <h3 className="text-lg font-semibold text-gray-900">Resume Analysis</h3>
           </div>
-          {resumeLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          <div className="flex items-center gap-2">
+            {candidate.resume?.publicUrl && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsResumePreviewOpen(true)}
+                  className="text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-50"
+                >
+                  Preview
+                </button>
+                <a
+                  href={candidate.resume.publicUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-50 inline-flex items-center gap-1"
+                >
+                  <ExternalLink className="h-3 w-3" /> View in new tab
+                </a>
+              </>
+            )}
+            {resumeLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          </div>
         </div>
 
-        {resumeEvaluation ? (
+        {resumeEvaluation || candidate.resume?.score != null ? (
           <div className="space-y-4">
             {/* Resume Score */}
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
                 <p className="text-sm font-medium text-gray-700">Overall Resume Score</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Analyzed on {new Date(resumeEvaluation.createdAt).toLocaleDateString()}
+                  {resumeEvaluation
+                    ? `Analyzed on ${new Date(resumeEvaluation.createdAt).toLocaleDateString()}`
+                    : 'Latest recorded score'}
                 </p>
               </div>
               <div
-                className={`text-2xl font-bold px-4 py-2 rounded-lg ${getScoreColor(resumeEvaluation.score)}`}
+                className={`text-2xl font-bold px-4 py-2 rounded-lg ${getScoreColor(
+                  (resumeEvaluation?.score ?? candidate.resume?.score ?? 0) as number,
+                )}`}
               >
-                {resumeEvaluation.score}%
+                {resumeEvaluation?.score ?? candidate.resume?.score ?? 0}%
               </div>
             </div>
 
             {/* Summary */}
-            {resumeEvaluation.summary && (
+            {(resumeEvaluation?.summary || candidate.evaluation?.resumeSummary) && (
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <div className="flex items-start space-x-2">
                   <Lightbulb className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <h4 className="font-medium text-blue-900 mb-2">AI Summary</h4>
-                    <p className="text-sm text-blue-800">{resumeEvaluation.summary}</p>
+                    <p className="text-sm text-blue-800">
+                      {resumeEvaluation?.summary || candidate.evaluation?.resumeSummary || ''}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -310,51 +340,55 @@ const GeneralTab: React.FC<{
 
             {/* Strengths and Red Flags */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {resumeEvaluation.strengths && resumeEvaluation.strengths.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-green-900 flex items-center">
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Key Strengths
-                  </h4>
-                  <ul className="space-y-1">
-                    {resumeEvaluation.strengths.slice(0, 3).map((strength, index) => (
-                      <li
-                        key={index}
-                        className="text-sm text-green-800 bg-green-50 px-3 py-2 rounded border border-green-200"
-                      >
-                        {strength}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {resumeEvaluation &&
+                resumeEvaluation.strengths &&
+                resumeEvaluation.strengths.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-green-900 flex items-center">
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Key Strengths
+                    </h4>
+                    <ul className="space-y-1">
+                      {resumeEvaluation?.strengths?.slice(0, 3).map((strength, index) => (
+                        <li
+                          key={index}
+                          className="text-sm text-green-800 bg-green-50 px-3 py-2 rounded border border-green-200"
+                        >
+                          {strength}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
-              {resumeEvaluation.redFlags && resumeEvaluation.redFlags.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-red-900 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    Areas of Concern
-                  </h4>
-                  <ul className="space-y-1">
-                    {resumeEvaluation.redFlags.slice(0, 3).map((flag, index) => (
-                      <li
-                        key={index}
-                        className="text-sm text-red-800 bg-red-50 px-3 py-2 rounded border border-red-200"
-                      >
-                        {flag}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {resumeEvaluation &&
+                resumeEvaluation.redFlags &&
+                resumeEvaluation.redFlags.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-red-900 flex items-center">
+                      <AlertTriangle className="h-4 w-4 mr-1" />
+                      Areas of Concern
+                    </h4>
+                    <ul className="space-y-1">
+                      {resumeEvaluation?.redFlags?.slice(0, 3).map((flag, index) => (
+                        <li
+                          key={index}
+                          className="text-sm text-red-800 bg-red-50 px-3 py-2 rounded border border-red-200"
+                        >
+                          {flag}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
             </div>
 
             {/* Recommendation */}
-            {resumeEvaluation.recommendation && (
+            {resumeEvaluation && resumeEvaluation.recommendation && (
               <div
                 className={`p-3 rounded-lg border ${
-                  resumeEvaluation.recommendation === 'yes' ||
-                  resumeEvaluation.recommendation === 'proceed'
+                  resumeEvaluation?.recommendation === 'yes' ||
+                  resumeEvaluation?.recommendation === 'proceed'
                     ? 'bg-green-50 border-green-200'
                     : 'bg-red-50 border-red-200'
                 }`}
@@ -364,14 +398,14 @@ const GeneralTab: React.FC<{
                   Recommendation:
                   <span
                     className={`ml-1 ${
-                      resumeEvaluation.recommendation === 'yes' ||
-                      resumeEvaluation.recommendation === 'proceed'
+                      resumeEvaluation?.recommendation === 'yes' ||
+                      resumeEvaluation?.recommendation === 'proceed'
                         ? 'text-green-700'
                         : 'text-red-700'
                     }`}
                   >
-                    {resumeEvaluation.recommendation === 'yes' ||
-                    resumeEvaluation.recommendation === 'proceed'
+                    {resumeEvaluation?.recommendation === 'yes' ||
+                    resumeEvaluation?.recommendation === 'proceed'
                       ? 'Proceed to Interview'
                       : 'Needs Review'}
                   </span>
@@ -389,6 +423,32 @@ const GeneralTab: React.FC<{
           </div>
         )}
       </div>
+
+      {/* Resume Preview Modal */}
+      {isResumePreviewOpen && candidate.resume?.publicUrl && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between p-3 border-b">
+              <div className="text-sm font-medium">Resume Preview</div>
+              <button
+                type="button"
+                onClick={() => setIsResumePreviewOpen(false)}
+                className="p-1 rounded hover:bg-gray-100"
+                aria-label="Close"
+              >
+                <CloseIcon className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1">
+              <iframe
+                src={candidate.resume.publicUrl}
+                className="w-full h-full"
+                title="Candidate Resume"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
