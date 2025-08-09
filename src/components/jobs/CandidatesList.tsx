@@ -33,6 +33,7 @@ import {
 import { setSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSlice';
 import { fetchJobCandidates } from '@/store/candidates/candidatesThunks';
 import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
+import { fetchSelectedCandidateDetails } from '@/store/selectedCandidate/selectedCandidateThunks';
 
 interface CandidatesListProps {
   selectedCandidateId?: string;
@@ -82,6 +83,7 @@ export default function CandidatesList({
 
   const handleCandidateSelect = (candidate: Candidate) => {
     dispatch(setSelectedCandidate(candidate));
+    dispatch(fetchSelectedCandidateDetails(candidate.id));
   };
 
   useEffect(() => {
