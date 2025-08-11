@@ -127,7 +127,7 @@ export default function CandidateAnalytics({ className = '' }: CandidateAnalytic
           subtitle={`Rank #${analytics.rank_in_job} of ${analytics.total_candidates_in_job}`}
         />
         <MetricCard
-          title="Completion Rate"
+          title="Completion"
           value={`${analytics.completion_percentage}%`}
           icon={<CheckCircleIcon className="w-4 md:w-5 h-4 md:h-5 text-green-500" />}
           progressPercent={analytics.completion_percentage}

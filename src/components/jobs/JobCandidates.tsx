@@ -6,8 +6,7 @@ import CandidatesList from './CandidatesList';
 import CandidateAnalytics from '@/components/evaluations/CandidateAnalytics';
 import CandidateResponses from '@/components/candidates/CandidateResponses';
 import { TeamResponses } from '@/components/candidates/TeamResponses';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchJobCandidates } from '@/store/candidates/candidatesThunks';
+import { useAppSelector } from '@/store';
 import {
   UserCircleIcon,
   CalendarIcon,
@@ -22,11 +21,10 @@ import {
   selectSelectedCandidate,
   selectSelectedCandidateId,
 } from '@/store/selectedCandidate/selectedCandidateSelectors';
-import { selectCurrentJob } from '@/store/jobs/jobsSelectors';
 import { selectJobCandidatesStats } from '@/store/candidates/candidatesSelectors';
 import { selectJobPermissions } from '@/store/jobPermissions/jobPermissionsSelectors';
 import { selectUser } from '@/store/auth/authSelectors';
-import { setSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSlice';
+import { CandidateRemiseModal } from './CandidateRemiseModal';
 
 // Small reusable components
 const InfoCard = ({
@@ -50,6 +48,7 @@ const InfoCard = ({
 );
 
 const ResumeSection = ({ candidate }: { candidate: any }) => {
+  const [isResumePreviewOpen, setIsResumePreviewOpen] = useState(false);
   const getResumeScoreStyle = (score: number | null | undefined) => {
     if (!score) return 'bg-gray-100';
     if (score >= 80) return 'bg-green-100';
@@ -68,10 +67,20 @@ const ResumeSection = ({ candidate }: { candidate: any }) => {
 
   return (
     <div className="border rounded-lg p-4 md:p-3">
-      <h3 className="text-lg font-medium text-gray-900 mb-3 md:mb-2 flex items-center">
-        <PaperClipIcon className="h-5 w-5 mr-2" />
-        Resume
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium text-gray-900 mb-3 md:mb-2 flex items-center">
+          <PaperClipIcon className="h-5 w-5 mr-2" />
+          Resume
+        </h3>
+        {/* View  */}
+        <button
+          type="button"
+          onClick={() => setIsResumePreviewOpen(true)}
+          className="text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-50"
+        >
+          View Resume
+        </button>
+      </div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-900">{candidate.resume.filename}</p>
@@ -89,6 +98,12 @@ const ResumeSection = ({ candidate }: { candidate: any }) => {
           </div>
         )}
       </div>
+      {/* Modal */}
+      <CandidateRemiseModal
+        isOpen={isResumePreviewOpen}
+        onClose={() => setIsResumePreviewOpen(false)}
+        resumeUrl={candidate.resume.publicUrl}
+      />
     </div>
   );
 };
