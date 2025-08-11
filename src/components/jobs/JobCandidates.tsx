@@ -25,6 +25,8 @@ import { selectJobCandidatesStats } from '@/store/candidates/candidatesSelectors
 import { selectJobPermissions } from '@/store/jobPermissions/jobPermissionsSelectors';
 import { selectUser } from '@/store/auth/authSelectors';
 import { CandidateRemiseModal } from './CandidateRemiseModal';
+import { Candidate } from '@/types/candidates';
+import { JobPermission } from '@/types/jobPermissions';
 
 // Small reusable components
 const InfoCard = ({
@@ -47,7 +49,7 @@ const InfoCard = ({
   </div>
 );
 
-const ResumeSection = ({ candidate }: { candidate: any }) => {
+const ResumeSection = ({ candidate }: { candidate: Candidate }) => {
   const [isResumePreviewOpen, setIsResumePreviewOpen] = useState(false);
   const getResumeScoreStyle = (score: number | null | undefined) => {
     if (!score) return 'bg-gray-100';
@@ -108,7 +110,7 @@ const ResumeSection = ({ candidate }: { candidate: any }) => {
   );
 };
 
-const CandidateOverviewTab = ({ candidate }: { candidate: any }) => (
+const CandidateOverviewTab = ({ candidate }: { candidate: Candidate }) => (
   <div className="space-y-6 md:space-y-4">
     {/* Candidate Info Grid */}
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-3">
@@ -135,7 +137,7 @@ const CandidateOverviewTab = ({ candidate }: { candidate: any }) => (
 );
 
 // Get user's permission level for the current job
-const getUserPermissionLevel = (permissions: any[], userId: string | undefined) => {
+const getUserPermissionLevel = (permissions: JobPermission[], userId: string | undefined) => {
   if (!userId) return null;
   const userPermission = permissions.find((p) => p.user_id === userId);
   return userPermission?.permission_level || null;
