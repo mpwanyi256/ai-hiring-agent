@@ -520,12 +520,29 @@ export interface ContractEmailTemplate {
 }
 
 export interface ContractPlaceholder {
+  id: string;
   key: string;
   label: string;
-  description: string;
-  category: 'candidate' | 'company' | 'contract' | 'date';
-  example: string;
+  description?: string;
+  category: string;
+  example?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
+
+export interface ContractPlaceholdersResponse {
+  success: boolean;
+  placeholders: ContractPlaceholder[];
+}
+
+export type PlaceholderCategory =
+  | 'candidate'
+  | 'company'
+  | 'job'
+  | 'compensation'
+  | 'dates'
+  | 'contract'
+  | 'general';
 export type ContractOfferStatus = 'sent' | 'viewed' | 'signed' | 'rejected' | 'expired';
 export type SignatureType = 'typed' | 'drawn';
 
