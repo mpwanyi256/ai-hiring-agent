@@ -13,8 +13,6 @@ import {
   FileText,
   Building,
   User,
-  Calendar,
-  DollarSign,
   Clock,
   CheckCircle,
   XCircle,

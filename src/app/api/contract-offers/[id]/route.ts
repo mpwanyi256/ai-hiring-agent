@@ -9,14 +9,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = await createClient();
 
     // Check authentication
-    const {
-      data: { session },
-      error: authError,
-    } = await supabase.auth.getSession();
+    // const {
+    //   data: { session },
+    //   error: authError,
+    // } = await supabase.auth.getSession();
 
-    if (authError || !session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // if (authError || !session) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // }
 
     // Fetch contract offer details using the view
     const { data: contractOfferDetails, error } = await supabase
