@@ -31,31 +31,43 @@ export default function TopNavigation({
   const dispatch = useAppDispatch();
   const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDashboardPage, setIsDashboardPage] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+    setIsDashboardPage(pathname.startsWith('/dashboard'));
+  }, [pathname]);
 
   useEffect(() => {
     if (isAuthenticated && user?.companyId) {
-      // Load company data and timezones
       dispatch(fetchCompanyData());
       dispatch(fetchTimezones());
       dispatch(fetchSubscriptionPlans());
     }
   }, [isAuthenticated, user, dispatch]);
 
-  // Determine if we're on a dashboard page
-  const isDashboardPage = pathname.startsWith('/dashboard');
+  if (!isHydrated) {
+    return (
+      <header className="border-b border-surface bg-white shadow-sm sticky top-0 z-50">
+        <div className="flex items-center justify-between h-16 px-6">
+          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header
       className={`border-b border-surface bg-white shadow-sm sticky top-0 z-50 ${isDashboardPage ? '' : 'fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100'}`}
     >
       {isDashboardPage ? (
-        // Use DashboardNavigation for dashboard pages
         <DashboardNavigation
           onToggleSidebar={onToggleSidebar}
           sidebarCollapsed={sidebarCollapsed}
         />
       ) : (
-        // Landing page layout
         <Container>
           <div className="flex items-center justify-between h-16">
             <Logo />

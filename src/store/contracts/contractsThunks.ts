@@ -212,7 +212,7 @@ export const bulkSendContracts = createAsyncThunk<BulkOperationResponse, BulkSen
 
 // Analytics
 export const fetchContractAnalytics = createAsyncThunk<
-  ContractAnalyticsData | undefined,
+  ContractAnalyticsData | null,
   void,
   {
     state: RootState;
@@ -239,7 +239,7 @@ export const fetchContractAnalytics = createAsyncThunk<
     return rejectWithValue(response.error);
   }
 
-  return response.data;
+  return response.data || null;
 });
 
 // AI Contract Generation

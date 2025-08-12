@@ -404,9 +404,14 @@ export interface ContractsState {
   };
 
   // Analytics
-  analytics: ContractAnalyticsResponse | null;
+  analytics: ContractAnalyticsData | null;
   analyticsLoading: boolean;
   analyticsError: string | null;
+
+  // Categories
+  categories: ContractCategoryEntity[];
+  categoriesLoading: boolean;
+  categoriesError: string | null;
 
   // UI state
   filters: {

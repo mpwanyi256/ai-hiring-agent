@@ -17,10 +17,7 @@ interface ContractPreviewModalProps {
   contract: {
     title: string;
     body: string;
-    jobTitle?: { name: string };
-    employmentType?: { name: string };
-    contractDuration?: string;
-    category: string;
+    jobTitle: { name: string };
     status: string;
   };
   trigger?: React.ReactNode;
@@ -96,9 +93,7 @@ export default function ContractPreviewModal({ contract, trigger }: ContractPrev
               <DialogTitle className="text-xl font-semibold">{contract.title}</DialogTitle>
               <DialogDescription className="mt-1">
                 Contract preview - {contract.jobTitle?.name && `${contract.jobTitle.name} • `}
-                {contract.employmentType?.name && `${contract.employmentType.name} • `}
-                {contract.contractDuration && `${contract.contractDuration} • `}
-                {contract.category} • {contract.status}
+                {contract.status}
               </DialogDescription>
             </div>
             <div className="flex items-center gap-2">

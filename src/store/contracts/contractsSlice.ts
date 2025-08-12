@@ -349,9 +349,9 @@ const contractsSlice = createSlice({
         state.analyticsLoading = true;
         state.analyticsError = null;
       })
-      .addCase(fetchContractAnalytics.fulfilled, (state, action) => {
+      .addCase(fetchContractAnalytics.fulfilled, (state, { payload }) => {
         state.analyticsLoading = false;
-        state.analytics = action.payload;
+        state.analytics = payload || null;
       })
       .addCase(fetchContractAnalytics.rejected, (state, action) => {
         state.analyticsLoading = false;
