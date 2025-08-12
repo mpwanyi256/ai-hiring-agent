@@ -129,15 +129,33 @@ export async function GET(
     );
 
     // Transform the data to match the frontend interface
-    const transformedOffer: ContractOfferSigning = {
+    const transformedOffer = {
       id: contractOfferDetails.id,
+      contractId: contractOfferDetails.contract_id,
+      candidateId: contractOfferDetails.candidate_id,
+      status: contractOfferDetails.status,
+      signedCopyUrl: contractOfferDetails.signed_copy_url,
+      sentBy: contractOfferDetails.sent_by,
+      sentAt: contractOfferDetails.sent_at,
+      signedAt: contractOfferDetails.signed_at,
+      rejectedAt: contractOfferDetails.rejected_at,
+      rejectionReason: contractOfferDetails.rejection_reason,
+      signingToken: contractOfferDetails.signing_token,
+      expiresAt: contractOfferDetails.expires_at,
+      salaryAmount: contractOfferDetails.salary_amount,
+      salaryCurrency: contractOfferDetails.salary_currency,
+      startDate: contractOfferDetails.start_date,
+      endDate: contractOfferDetails.end_date,
+      additionalTerms: contractOfferDetails.additional_terms,
+      createdAt: contractOfferDetails.created_at,
+      updatedAt: contractOfferDetails.updated_at,
 
       // Contract details
       contract: {
         id: contractOfferDetails.contract_id,
         title: contractOfferDetails.contract_title,
-        body: contractBody,
-        jobTitle: { name: contractOfferDetails.job_title_name },
+        body: contractOfferDetails.contract_content || '',
+        jobTitle: { name: contractOfferDetails.job_title_name || '' },
       },
 
       // Candidate details
@@ -147,22 +165,14 @@ export async function GET(
         lastName: contractOfferDetails.candidate_last_name,
         email: contractOfferDetails.candidate_email,
       },
-      status: contractOfferDetails.status,
-      signedCopyUrl: contractOfferDetails.signed_copy_url,
+
+      // Sender details
       sentByProfile: {
         firstName: contractOfferDetails.sender_first_name,
         lastName: contractOfferDetails.sender_last_name,
         email: contractOfferDetails.sender_email,
       },
-      sentAt: contractOfferDetails.sent_at,
-      signedAt: contractOfferDetails.signed_at,
-      rejectedAt: contractOfferDetails.rejected_at,
-      expiresAt: contractOfferDetails.expires_at,
-      salaryAmount: contractOfferDetails.salary_amount,
-      salaryCurrency: contractOfferDetails.salary_currency,
-      startDate: contractOfferDetails.start_date,
-      endDate: contractOfferDetails.end_date,
-      additionalTerms: contractOfferDetails.additional_terms,
+
       companyName: contractOfferDetails.company_name,
     };
 

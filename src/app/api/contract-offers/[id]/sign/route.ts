@@ -213,11 +213,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           return filledBody;
         };
 
-        const filledContractHtml = autoFillPlaceholders(contractOffer.contract_body, contractOffer);
+        const filledContractHtml = autoFillPlaceholders(
+          contractOffer.contract_content || contractOffer.contract_body || '',
+          contractOffer,
+        );
 
         const pdfResult = await generateAndSaveContractPDF({
           contractOffer,
-          contractHtml: filledContractHtml,
+          contractHtml:
+            filledContractHtml || '<div><h1>Contract</h1><p>No content available.</p></div>',
           candidateData: {
             id: contractOffer.candidate_id,
             first_name: contractOffer.candidate_first_name,
