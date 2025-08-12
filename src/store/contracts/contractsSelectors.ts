@@ -387,3 +387,7 @@ export const selectFilteredContractOffers = createSelector(
     });
   },
 );
+
+export const selectSigningOffer = (state: RootState) => state.contracts.signingOffer;
+export const selectSigningLoading = (state: RootState) => state.contracts.signingLoading;
+export const selectSigningError = (state: RootState) => state.contracts.signingError;

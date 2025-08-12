@@ -439,6 +439,11 @@ export interface ContractsState {
   // AI operations
   aiOperationLoading: boolean;
   aiOperationError: string | null;
+
+  // Candidate signing view state
+  signingOffer: ContractOfferSigning | null;
+  signingLoading: boolean;
+  signingError: string | null;
 }
 
 // Utility types
@@ -598,4 +603,59 @@ export interface ContractAnalyticsData {
     name: string;
     count: number;
   }[];
+}
+
+export interface ContractOfferSigning {
+  id: string;
+  status: 'sent' | 'signed' | 'rejected';
+  salaryAmount: number | null;
+  salaryCurrency: string | null;
+  startDate: string | null;
+  endDate?: string | null;
+  expiresAt: string;
+  sentAt: string | null;
+  signedAt?: string | null;
+  rejectedAt?: string | null;
+  signedCopyUrl?: string | null;
+  additionalTerms?: Record<string, unknown> | null;
+  contract: {
+    id: string;
+    title: string;
+    body: string; // HTML
+    jobTitle: { name: string };
+  };
+  candidate: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  sentByProfile: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  companyName: string;
+}
+
+export interface FetchSigningOfferParams {
+  offerId: string;
+  token: string;
+}
+
+export interface SignByCandidatePayload {
+  offerId: string;
+  token: string;
+  signature: {
+    type: 'typed' | 'drawn';
+    data: string;
+    fullName: string;
+    signedAt: string;
+  };
+}
+
+export interface RejectByCandidatePayload {
+  offerId: string;
+  token: string;
+  rejectionReason?: string;
 }

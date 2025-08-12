@@ -28,6 +28,10 @@ import {
   EmploymentListResponse,
   ContractCategoryEntity,
   ContractAnalyticsData,
+  ContractOfferSigning,
+  FetchSigningOfferParams,
+  SignByCandidatePayload,
+  RejectByCandidatePayload,
 } from '@/types/contracts';
 import { apiUtils } from '../api';
 import { RootState } from '@/store';
@@ -627,3 +631,56 @@ export const cancelContractOffer = createAsyncThunk<
   const data = await response.json();
   return data;
 });
+
+export const fetchSigningOffer = createAsyncThunk<ContractOfferSigning, FetchSigningOfferParams>(
+  'contracts/fetchSigningOffer',
+  async ({ offerId, token }) => {
+    const response = await apiUtils.get<ApiResponse<ContractOfferSigning>>(
+      `/api/contract-offers/${offerId}`,
+      {
+        params: {
+          token,
+        },
+      },
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    console.log('Returned contract offer', response.data);
+    return response.data;
+  },
+);
+
+export const signByCandidate = createAsyncThunk<ContractOfferSigning, SignByCandidatePayload>(
+  'contracts/signByCandidate',
+  async ({ offerId, token, signature }) => {
+    const response = await fetch(`/api/contract-offers/${offerId}/sign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, signature }),
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || 'Failed to sign contract');
+    }
+    const data = await response.json();
+    return (data.contractOffer || data.contract_offer || data) as ContractOfferSigning;
+  },
+);
+
+export const rejectByCandidate = createAsyncThunk<ContractOfferSigning, RejectByCandidatePayload>(
+  'contracts/rejectByCandidate',
+  async ({ offerId, token, rejectionReason }) => {
+    const response = await fetch(`/api/contract-offers/${offerId}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ signingToken: token, rejectionReason }),
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || 'Failed to reject contract');
+    }
+    const data = await response.json();
+    return (data.contractOffer || data.contract_offer || data) as ContractOfferSigning;
+  },
+);

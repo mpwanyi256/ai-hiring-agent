@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { ContractOfferSigning } from '@/types/contracts';
+import { ApiResponse } from '@/types';
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<NextResponse<ApiResponse<ContractOfferSigning | null>>> {
   try {
-    const { searchParams } = new URL(request.url);
     const { id } = await params;
 
     const supabase = await createClient();
-
-    // Check authentication
-    // const {
-    //   data: { session },
-    //   error: authError,
-    // } = await supabase.auth.getSession();
-
-    // if (authError || !session) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
 
     // Fetch contract offer details using the view
     const { data: contractOfferDetails, error } = await supabase
@@ -27,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (error) {
       console.error('Error fetching contract offer:', error);
-      return NextResponse.json({ error: 'Contract offer not found' }, { status: 404 });
+      return NextResponse.json({ data: null, error: 'Contract offer not found' }, { status: 404 });
     }
 
     // Get dynamic placeholders from the database
@@ -129,56 +123,52 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return filledBody;
     };
 
+    const contractBody = await autoFillPlaceholders(
+      contractOfferDetails.contract_content,
+      contractOfferDetails,
+    );
+
     // Transform the data to match the frontend interface
-    const transformedOffer = {
+    const transformedOffer: ContractOfferSigning = {
       id: contractOfferDetails.id,
-      contractId: contractOfferDetails.contract_id,
-      candidateId: contractOfferDetails.candidate_id,
+
+      // Contract details
+      contract: {
+        id: contractOfferDetails.contract_id,
+        title: contractOfferDetails.contract_title,
+        body: contractBody,
+        jobTitle: { name: contractOfferDetails.job_title_name },
+      },
+
+      // Candidate details
+      candidate: {
+        id: contractOfferDetails.candidate_id,
+        firstName: contractOfferDetails.candidate_first_name,
+        lastName: contractOfferDetails.candidate_last_name,
+        email: contractOfferDetails.candidate_email,
+      },
       status: contractOfferDetails.status,
       signedCopyUrl: contractOfferDetails.signed_copy_url,
-      sentBy: contractOfferDetails.sent_by,
+      sentByProfile: {
+        firstName: contractOfferDetails.sender_first_name,
+        lastName: contractOfferDetails.sender_last_name,
+        email: contractOfferDetails.sender_email,
+      },
       sentAt: contractOfferDetails.sent_at,
       signedAt: contractOfferDetails.signed_at,
       rejectedAt: contractOfferDetails.rejected_at,
-      rejectionReason: contractOfferDetails.rejection_reason,
-      signingToken: contractOfferDetails.signing_token,
       expiresAt: contractOfferDetails.expires_at,
       salaryAmount: contractOfferDetails.salary_amount,
       salaryCurrency: contractOfferDetails.salary_currency,
       startDate: contractOfferDetails.start_date,
       endDate: contractOfferDetails.end_date,
       additionalTerms: contractOfferDetails.additional_terms,
-      createdAt: contractOfferDetails.created_at,
-      updatedAt: contractOfferDetails.updated_at,
-
-      // Contract details
-      contractTitle: contractOfferDetails.contract_title,
-      contractContent: await autoFillPlaceholders(
-        contractOfferDetails.contract_content,
-        contractOfferDetails,
-      ),
-
-      // Candidate details
-      candidateFirstName: contractOfferDetails.candidate_first_name,
-      candidateLastName: contractOfferDetails.candidate_last_name,
-      candidateEmail: contractOfferDetails.candidate_email,
-
-      // Company details
       companyName: contractOfferDetails.company_name,
-
-      // Job details
-      jobTitleName: contractOfferDetails.job_title_name,
-      employmentTypeName: contractOfferDetails.employment_type_name,
-
-      // Sender details
-      senderFirstName: contractOfferDetails.sender_first_name,
-      senderLastName: contractOfferDetails.sender_last_name,
-      senderEmail: contractOfferDetails.sender_email,
     };
 
-    return NextResponse.json(transformedOffer);
+    return NextResponse.json({ data: transformedOffer });
   } catch (error) {
     console.error('Error in contract offer API:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ data: null, error: 'Internal server error' }, { status: 500 });
   }
 }
