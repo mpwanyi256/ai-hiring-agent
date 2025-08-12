@@ -100,18 +100,6 @@ export const selectContractsByStatus = createSelector([selectContracts], (contra
   };
 });
 
-// Contracts by Category
-export const selectContractsByCategory = createSelector([selectContracts], (contracts) => {
-  return {
-    general: contracts.filter((c) => c.category === 'general'),
-    technical: contracts.filter((c) => c.category === 'technical'),
-    executive: contracts.filter((c) => c.category === 'executive'),
-    intern: contracts.filter((c) => c.category === 'intern'),
-    freelance: contracts.filter((c) => c.category === 'freelance'),
-    custom: contracts.filter((c) => c.category === 'custom'),
-  };
-});
-
 // Favorite Contracts
 export const selectFavoriteContracts = createSelector([selectContracts], (contracts) =>
   contracts.filter((contract) => contract.isFavorite),
@@ -145,39 +133,6 @@ export const selectContractsByJobTitle = createSelector(
   (contracts, jobTitleId) => contracts.filter((contract) => contract.jobTitleId === jobTitleId),
 );
 
-// Contract Templates by Employment Type
-export const selectContractsByEmploymentType = createSelector(
-  [selectContracts, (state: RootState, employmentTypeId: string) => employmentTypeId],
-  (contracts, employmentTypeId) =>
-    contracts.filter((contract) => contract.employmentTypeId === employmentTypeId),
-);
-
-// Contracts by Tags
-export const selectContractsByTag = createSelector(
-  [selectContracts, (state: RootState, tag: string) => tag],
-  (contracts, tag) => contracts.filter((contract) => contract.tags.includes(tag)),
-);
-
-// All Tags from Contracts
-export const selectAllContractTags = createSelector([selectContracts], (contracts) => {
-  const allTags = contracts.flatMap((contract) => contract.tags);
-  const uniqueTags = [...new Set(allTags)];
-  return uniqueTags.sort();
-});
-
-// Tag Usage Count
-export const selectTagUsage = createSelector([selectContracts], (contracts) => {
-  const tagCounts: Record<string, number> = {};
-  contracts.forEach((contract) => {
-    contract.tags.forEach((tag) => {
-      tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-    });
-  });
-  return Object.entries(tagCounts)
-    .map(([tag, count]) => ({ tag, count }))
-    .sort((a, b) => b.count - a.count);
-});
-
 // Employment for specific candidate
 export const selectEmploymentForCandidate = createSelector(
   [selectEmployment, (state: RootState, candidateId: string) => candidateId],
@@ -201,48 +156,6 @@ export const selectEmploymentByDepartment = createSelector(
   [selectEmployment, (state: RootState, departmentId: string) => departmentId],
   (employment, departmentId) => employment.filter((emp) => emp.companyId === departmentId),
 );
-
-// Enhanced Statistics selectors
-export const selectContractsStats = createSelector([selectContracts], (contracts) => ({
-  total: contracts.length,
-  byStatus: {
-    draft: contracts.filter((c) => c.status === 'draft').length,
-    active: contracts.filter((c) => c.status === 'active').length,
-    archived: contracts.filter((c) => c.status === 'archived').length,
-  },
-  byCategory: {
-    general: contracts.filter((c) => c.category === 'general').length,
-    technical: contracts.filter((c) => c.category === 'technical').length,
-    executive: contracts.filter((c) => c.category === 'executive').length,
-    intern: contracts.filter((c) => c.category === 'intern').length,
-    freelance: contracts.filter((c) => c.category === 'freelance').length,
-    custom: contracts.filter((c) => c.category === 'custom').length,
-  },
-  favorites: contracts.filter((c) => c.isFavorite).length,
-  totalUsage: contracts.reduce((sum, c) => sum + (c.usageCount || 0), 0),
-  averageUsage:
-    contracts.length > 0
-      ? contracts.reduce((sum, c) => sum + (c.usageCount || 0), 0) / contracts.length
-      : 0,
-  byJobTitle: contracts.reduce(
-    (acc, contract) => {
-      if (contract.jobTitle) {
-        acc[contract.jobTitle.name] = (acc[contract.jobTitle.name] || 0) + 1;
-      }
-      return acc;
-    },
-    {} as Record<string, number>,
-  ),
-  byEmploymentType: contracts.reduce(
-    (acc, contract) => {
-      if (contract.employmentType) {
-        acc[contract.employmentType.name] = (acc[contract.employmentType.name] || 0) + 1;
-      }
-      return acc;
-    },
-    {} as Record<string, number>,
-  ),
-}));
 
 export const selectContractOffersStats = createSelector(
   [selectContractOffers],
@@ -358,7 +271,6 @@ export const selectRecentContractActivity = createSelector(
         title: contract.title,
         date: contract.createdAt,
         status: contract.status,
-        category: contract.category,
         entity: contract,
       })),
       ...contractOffers.map((offer) => ({

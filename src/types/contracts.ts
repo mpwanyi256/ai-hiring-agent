@@ -540,3 +540,40 @@ export interface ContractCategoryEntity {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ContractAnalyticsData {
+  totalContracts: number;
+  contractsByStatus: {
+    draft: number;
+    active: 0;
+    archived: number;
+    deprecated: number;
+  };
+  contractsByCategory: {
+    general: number;
+    technical: number;
+    executive: number;
+    intern: number;
+    freelance: number;
+    custom: number;
+  };
+  mostUsedContracts: [];
+  recentActivity: {
+    contractsCreated: number;
+    contractsSent: number;
+    contractsSigned: number;
+    contractsRejected: number;
+  };
+  conversionRate: number;
+  averageSigningTime: number;
+  popularJobTitles: {
+    id: string;
+    name: string;
+    count: number;
+  }[];
+  popularEmploymentTypes: {
+    id: string;
+    name: string;
+    count: number;
+  }[];
+}

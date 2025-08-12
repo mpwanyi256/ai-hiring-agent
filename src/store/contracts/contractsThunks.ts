@@ -13,7 +13,6 @@ import {
   ContractOffersFilters,
   EmploymentFilters,
   ContractsListResponse,
-  ContractAnalyticsResponse,
   BulkUpdateContractData,
   BulkOperationResponse,
   BulkSendContractData,
@@ -28,7 +27,11 @@ import {
   CreateJobTitleResponse,
   EmploymentListResponse,
   ContractCategoryEntity,
+  ContractAnalyticsData,
 } from '@/types/contracts';
+import { apiUtils } from '../api';
+import { RootState } from '@/store';
+import { ApiResponse } from '@/types';
 
 // Contract Templates
 export const fetchContracts = createAsyncThunk<ContractsListResponse, ContractsFilters | undefined>(
@@ -38,13 +41,10 @@ export const fetchContracts = createAsyncThunk<ContractsListResponse, ContractsF
 
     if (filters.search) params.append('search', filters.search);
     if (filters.status) params.append('status', filters.status);
-    if (filters.category) params.append('category', filters.category);
     if (filters.jobTitleId) params.append('jobTitleId', filters.jobTitleId);
-    if (filters.employmentTypeId) params.append('employmentTypeId', filters.employmentTypeId);
     if (filters.createdBy) params.append('createdBy', filters.createdBy);
     if (filters.isFavorite !== undefined)
       params.append('isFavorite', filters.isFavorite.toString());
-    if (filters.tags && filters.tags.length > 0) params.append('tags', filters.tags.join(','));
     if (filters.dateRange?.from) params.append('dateFrom', filters.dateRange.from);
     if (filters.dateRange?.to) params.append('dateTo', filters.dateRange.to);
     if (filters.sortBy) params.append('sortBy', filters.sortBy);
@@ -211,18 +211,36 @@ export const bulkSendContracts = createAsyncThunk<BulkOperationResponse, BulkSen
 );
 
 // Analytics
-export const fetchContractAnalytics = createAsyncThunk<ContractAnalyticsResponse, void>(
-  'contracts/fetchContractAnalytics',
-  async () => {
-    const response = await fetch('/api/contracts/analytics');
+export const fetchContractAnalytics = createAsyncThunk<
+  ContractAnalyticsData | undefined,
+  void,
+  {
+    state: RootState;
+    rejectWithValue: (error: string) => void;
+  }
+>('contracts/fetchContractAnalytics', async (_, { getState, rejectWithValue }) => {
+  const state = getState() as RootState;
+  const companyId = state.auth.user?.companyId;
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch contract analytics');
-    }
+  if (!companyId) {
+    return rejectWithValue('Company ID is required.');
+  }
 
-    return response.json();
-  },
-);
+  const response = await apiUtils.get<ApiResponse<ContractAnalyticsData>>(
+    '/api/contracts/analytics',
+    {
+      params: {
+        companyId,
+      },
+    },
+  );
+
+  if (response.error) {
+    return rejectWithValue(response.error);
+  }
+
+  return response.data;
+});
 
 // AI Contract Generation
 export const generateContractWithAI = createAsyncThunk<
@@ -529,7 +547,7 @@ export const enhanceContractWithAI = createAsyncThunk<
 
 // Send Contract Offer
 export const sendContractOffer = createAsyncThunk<
-  { success: boolean; contractOffer: any; message: string },
+  { success: boolean; contractOffer: ContractOffer; message: string },
   {
     contractId: string;
     candidateId: string;
@@ -591,7 +609,7 @@ export const sendContractOffer = createAsyncThunk<
 
 // Cancel Contract Offer
 export const cancelContractOffer = createAsyncThunk<
-  { success: boolean; message: string; contractOffer: any },
+  { success: boolean; message: string; contractOffer: ContractOffer },
   string
 >('contracts/cancelContractOffer', async (contractOfferId) => {
   const response = await fetch(`/api/contracts/${contractOfferId}/cancel`, {
