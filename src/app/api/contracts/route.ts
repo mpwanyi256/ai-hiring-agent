@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { ContractsFilters, ContractStatus, ContractCategory } from '@/types/contracts';
+import { ContractStatus, ContractCategory } from '@/types/contracts';
 
 export async function GET(request: NextRequest) {
   try {
@@ -172,42 +172,30 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      title,
-      body: contractBody,
-      jobTitleId,
-      employmentTypeId,
-      contractDuration,
-      status = 'draft',
-      category = 'general',
-      tags = [],
-    } = body;
+    const { title, body: contractBody, content, jobTitleId, status = 'draft' } = body;
 
     // Validate required fields
-    if (!title || !contractBody) {
+    const rawBody = contractBody ?? content;
+    if (!title || !rawBody || typeof rawBody !== 'string' || rawBody.trim().length === 0) {
       return NextResponse.json({ error: 'Title and body are required' }, { status: 400 });
     }
+    const bodyText = rawBody.trim();
 
     // Create the contract
     const { data: contract, error: createError } = await supabase
       .from('contracts')
       .insert({
-        company_id: profile.company_id,
         title: title.trim(),
-        body: contractBody.trim(),
-        job_title_id: jobTitleId || null,
-        employment_type_id: employmentTypeId || null,
-        contract_duration: contractDuration || null,
-        status,
-        category,
-        tags,
+        content: bodyText,
+        company_id: profile.company_id,
         created_by: user.id,
+        job_title_id: jobTitleId || null,
+        status,
       })
       .select(
         `
         *,
         job_title:job_titles(id, name),
-        employment_type:employment_types(id, name),
         created_by_profile:profiles!contracts_created_by_fkey(
           id, first_name, last_name, email
         )
@@ -230,19 +218,11 @@ export async function POST(request: NextRequest) {
       jobTitleId: contract.job_title_id,
       title: contract.title,
       body: contract.body,
-      employmentTypeId: contract.employment_type_id,
-      contractDuration: contract.contract_duration,
-      status: contract.status,
-      category: contract.category,
       isFavorite: contract.is_favorite,
-      tags: contract.tags || [],
-      usageCount: contract.usage_count || 0,
-      lastUsedAt: contract.last_used_at,
       createdBy: contract.created_by,
       createdAt: contract.created_at,
       updatedAt: contract.updated_at,
       jobTitle: contract.job_title,
-      employmentType: contract.employment_type,
       createdByProfile: contract.created_by_profile,
     };
 

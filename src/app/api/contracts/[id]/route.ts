@@ -49,8 +49,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       jobTitleId: contract.job_title_id,
       title: contract.title,
       body: contract.body,
-      employmentTypeId: contract.employment_type_id,
-      contractDuration: contract.contract_duration,
+      status: contract.status,
+      isFavorite: contract.is_favorite,
       createdBy: contract.created_by,
       createdAt: contract.created_at,
       updatedAt: contract.updated_at,
@@ -120,8 +120,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (updateData.title !== undefined) updateObj.title = updateData.title;
     if (updateData.content !== undefined) updateObj.content = updateData.content;
     if (updateData.jobTitleId !== undefined) updateObj.job_title_id = updateData.jobTitleId;
-    if (updateData.employmentTypeId !== undefined)
-      updateObj.employment_type_id = updateData.employmentTypeId;
+    // employmentTypeId removed from simplified model
 
     // Update the contract
     const { data: contract, error } = await supabase
@@ -156,8 +155,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       jobTitleId: contract.job_title_id,
       title: contract.title,
       body: contract.body,
-      employmentTypeId: contract.employment_type_id,
-      contractDuration: contract.contract_duration,
+      status: contract.status,
+      isFavorite: contract.is_favorite,
       createdBy: contract.created_by,
       createdAt: contract.created_at,
       updatedAt: contract.updated_at,

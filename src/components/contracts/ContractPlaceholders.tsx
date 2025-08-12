@@ -30,6 +30,13 @@ const AVAILABLE_PLACEHOLDERS: ContractPlaceholder[] = [
     example: 'john.smith@email.com',
   },
   {
+    key: 'candidate_signature',
+    label: 'Candidate Signature',
+    description: 'Signature of the candidate',
+    category: 'candidate',
+    example: 'John Smith',
+  },
+  {
     key: 'job_title',
     label: 'Job Title',
     description: 'Position title for the role',

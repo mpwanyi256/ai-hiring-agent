@@ -27,6 +27,7 @@ import {
   CreateJobTitleData,
   CreateJobTitleResponse,
   EmploymentListResponse,
+  ContractCategoryEntity,
 } from '@/types/contracts';
 
 // Contract Templates
@@ -262,6 +263,33 @@ export const createJobTitle = createAsyncThunk<CreateJobTitleResponse, CreateJob
     }
 
     return response.json();
+  },
+);
+
+// Contract Categories
+export const fetchContractCategories = createAsyncThunk<ContractCategoryEntity[]>(
+  'contracts/fetchContractCategories',
+  async () => {
+    const res = await fetch('/api/contracts/categories');
+    if (!res.ok) throw new Error('Failed to fetch categories');
+    const data = await res.json();
+    return data.categories as ContractCategoryEntity[];
+  },
+);
+
+export const createContractCategory = createAsyncThunk<ContractCategoryEntity, { name: string }>(
+  'contracts/createContractCategory',
+  async ({ name }) => {
+    const res = await fetch('/api/contracts/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to create category');
+    }
+    return (await res.json()).category as ContractCategoryEntity;
   },
 );
 

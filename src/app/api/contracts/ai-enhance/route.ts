@@ -80,9 +80,9 @@ function cleanMarkdownFromResponse(text: string): string {
   cleaned = cleaned.trim();
 
   // Step 13: Restore placeholders
-  placeholders.forEach((placeholder, index) => {
-    cleaned = cleaned.replace(`__PLACEHOLDER_${index}__`, placeholder);
-  });
+  // placeholders.forEach((placeholder, index) => {
+  //   cleaned = cleaned.replace(`__PLACEHOLDER_${index}__`, placeholder);
+  // });
 
   return cleaned;
 }

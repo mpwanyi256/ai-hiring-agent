@@ -21,6 +21,8 @@ import {
   generateContractWithAI,
   createJobTitle,
   cancelContractOffer,
+  fetchContractCategories,
+  createContractCategory,
 } from './contractsThunks';
 
 const initialState: ContractsState = {
@@ -67,6 +69,11 @@ const initialState: ContractsState = {
   analytics: null,
   analyticsLoading: false,
   analyticsError: null,
+
+  // Categories
+  categories: [],
+  categoriesLoading: false,
+  categoriesError: null,
 
   // UI state
   filters: {
@@ -379,6 +386,33 @@ const contractsSlice = createSlice({
       .addCase(createJobTitle.rejected, (state, action) => {
         state.contractsLoading = false;
         state.contractsError = action.error.message || 'Failed to create job title';
+      });
+
+    // Categories
+    builder
+      .addCase(fetchContractCategories.pending, (state) => {
+        state.categoriesLoading = true;
+        state.categoriesError = null;
+      })
+      .addCase(fetchContractCategories.fulfilled, (state, action) => {
+        state.categoriesLoading = false;
+        state.categories = action.payload;
+      })
+      .addCase(fetchContractCategories.rejected, (state, action) => {
+        state.categoriesLoading = false;
+        state.categoriesError = action.error.message || 'Failed to fetch categories';
+      })
+      .addCase(createContractCategory.pending, (state) => {
+        state.categoriesLoading = true;
+        state.categoriesError = null;
+      })
+      .addCase(createContractCategory.fulfilled, (state, action) => {
+        state.categoriesLoading = false;
+        state.categories.unshift(action.payload);
+      })
+      .addCase(createContractCategory.rejected, (state, action) => {
+        state.categoriesLoading = false;
+        state.categoriesError = action.error.message || 'Failed to create category';
       });
 
     // Send Contract

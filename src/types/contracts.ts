@@ -4,6 +4,7 @@ export interface Contract {
   title: string;
   content: string;
   category: string;
+  contractCategoryId?: string;
   status: 'draft' | 'active' | 'archived';
   tags: string[];
   jobTitleId?: string;
@@ -215,10 +216,7 @@ export interface ContractAnalyticsResponse {
 export interface CreateContractData {
   title: string;
   content: string;
-  category: string;
-  tags?: string[];
   jobTitleId?: string;
-  employmentTypeId?: string;
   status?: 'draft' | 'active';
 }
 
@@ -226,10 +224,7 @@ export interface UpdateContractData {
   id: string;
   title?: string;
   content?: string;
-  category?: string;
-  tags?: string[];
   jobTitleId?: string;
-  employmentTypeId?: string;
   status?: 'draft' | 'active' | 'archived';
   isFavorite?: boolean;
 }
@@ -425,6 +420,11 @@ export interface ContractsState {
   analyticsLoading: boolean;
   analyticsError: string | null;
 
+  // Contract categories
+  categories: ContractCategoryEntity[];
+  categoriesLoading?: boolean;
+  categoriesError?: string | null;
+
   // UI state
   filters: {
     contracts: ContractsFilters;
@@ -546,4 +546,14 @@ export interface ContractAPIError {
   message: string;
   code?: string;
   details?: any;
+}
+
+export interface ContractCategoryEntity {
+  id: string;
+  name: string;
+  companyId: string;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }

@@ -92,11 +92,6 @@ const JobCreateStep1: React.FC<JobCreateStep1Props> = ({
             label="Job Title"
             loading={jobTitlesLoading}
             error={form.formState.errors.jobTitleId?.message}
-            searchValue={jobTitleSearch}
-            onSearchChange={setJobTitleSearch}
-            dropdownOpen={jobTitleDropdownOpen}
-            onDropdownToggle={setJobTitleDropdownOpen}
-            dataDropdown="job-title"
             createLabel="Add job title"
           />
 
@@ -109,11 +104,6 @@ const JobCreateStep1: React.FC<JobCreateStep1Props> = ({
             label="Department"
             loading={departmentsLoading}
             error={form.formState.errors.departmentId?.message}
-            searchValue={departmentSearch}
-            onSearchChange={setDepartmentSearch}
-            dropdownOpen={departmentDropdownOpen}
-            onDropdownToggle={setDepartmentDropdownOpen}
-            dataDropdown="department"
             createLabel="Add department"
           />
         </div>
@@ -129,11 +119,6 @@ const JobCreateStep1: React.FC<JobCreateStep1Props> = ({
             label="Employment Type"
             loading={employmentTypesLoading}
             error={form.formState.errors.employmentTypeId?.message}
-            searchValue={employmentTypeSearch}
-            onSearchChange={setEmploymentTypeSearch}
-            dropdownOpen={employmentTypeDropdownOpen}
-            onDropdownToggle={setEmploymentTypeDropdownOpen}
-            dataDropdown="employment-type"
             createLabel="Add employment type"
           />
         </div>

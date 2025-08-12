@@ -290,6 +290,12 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error extracting PDF content:', error);
-    return NextResponse.json({ error: 'Failed to extract content from PDF' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          'Failed to extract content from PDF. Please make sure the file is a valid PDF document.',
+      },
+      { status: 500 },
+    );
   }
 }

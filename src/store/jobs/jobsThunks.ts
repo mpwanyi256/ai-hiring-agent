@@ -394,9 +394,14 @@ export const fetchDepartments = createAsyncThunk('jobs/fetchDepartments', async 
   }
 });
 
-export const fetchJobTitles = createAsyncThunk('jobs/fetchJobTitles', async () => {
+export const fetchJobTitles = createAsyncThunk('jobs/fetchJobTitles', async (_, { getState }) => {
   try {
-    const response = await apiUtils.get<JobTitlesResponse>('/api/job-titles');
+    const state = getState() as RootState;
+    const companyId = state.auth.user?.companyId;
+    const url = companyId
+      ? `/api/job-titles?companyId=${encodeURIComponent(companyId)}`
+      : '/api/job-titles';
+    const response = await apiUtils.get<JobTitlesResponse>(url);
     return response.jobTitles;
   } catch (error: unknown) {
     throw new Error(error instanceof Error ? error.message : 'Failed to fetch job titles');
