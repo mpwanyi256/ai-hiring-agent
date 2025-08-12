@@ -51,9 +51,6 @@ export default function EditContractPage() {
           title: contract.title || '',
           body: contract.content || '',
           jobTitle: contract.jobTitle || undefined,
-          employmentType: contract.employmentType || undefined,
-          contractDuration: contract.contractDuration || '',
-          category: contract.category || 'general',
           status: contract.status || 'draft',
         }}
         trigger={

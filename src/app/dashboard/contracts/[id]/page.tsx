@@ -205,26 +205,6 @@ export default function ContractDetailPage() {
                   </div>
                 )}
 
-                {contract.employmentType && (
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <Badge variant="outline">{contract.employmentType.name}</Badge>
-                      <p className="text-sm text-muted-foreground">Employment Type</p>
-                    </div>
-                  </div>
-                )}
-
-                {contract.contractDuration && (
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{contract.contractDuration}</p>
-                      <p className="text-sm text-muted-foreground">Duration</p>
-                    </div>
-                  </div>
-                )}
-
                 <div className="flex items-center gap-3">
                   <User className="h-4 w-4 text-muted-foreground" />
                   <div>

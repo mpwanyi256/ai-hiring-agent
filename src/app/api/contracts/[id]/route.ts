@@ -24,7 +24,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         `
         *,
         job_title:job_titles(id, name),
-        employment_type:employment_types(id, name),
         created_by_profile:profiles!contracts_created_by_fkey(
           id, first_name, last_name, email
         )
@@ -48,7 +47,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       companyId: contract.company_id,
       jobTitleId: contract.job_title_id,
       title: contract.title,
-      body: contract.body,
+      content: contract.content,
       status: contract.status,
       isFavorite: contract.is_favorite,
       createdBy: contract.created_by,
@@ -60,15 +59,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             name: contract.job_title.name,
           }
         : undefined,
-      employmentType: contract.employment_type
+      creator: contract.created_by_profile
         ? {
-            id: contract.employment_type.id,
-            name: contract.employment_type.name,
-          }
-        : undefined,
-      createdByProfile: contract.created_by_profile
-        ? {
-            id: contract.created_by_profile.id,
             firstName: contract.created_by_profile.first_name,
             lastName: contract.created_by_profile.last_name,
             email: contract.created_by_profile.email,
@@ -131,7 +123,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         `
         *,
         job_title:job_titles(id, name),
-        employment_type:employment_types(id, name),
         created_by_profile:profiles!contracts_created_by_fkey(
           id, first_name, last_name, email
         )
@@ -154,7 +145,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       companyId: contract.company_id,
       jobTitleId: contract.job_title_id,
       title: contract.title,
-      body: contract.body,
+      content: contract.content,
       status: contract.status,
       isFavorite: contract.is_favorite,
       createdBy: contract.created_by,
@@ -166,15 +157,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             name: contract.job_title.name,
           }
         : undefined,
-      employmentType: contract.employment_type
+      creator: contract.created_by_profile
         ? {
-            id: contract.employment_type.id,
-            name: contract.employment_type.name,
-          }
-        : undefined,
-      createdByProfile: contract.created_by_profile
-        ? {
-            id: contract.created_by_profile.id,
             firstName: contract.created_by_profile.first_name,
             lastName: contract.created_by_profile.last_name,
             email: contract.created_by_profile.email,

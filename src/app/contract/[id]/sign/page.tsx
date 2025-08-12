@@ -43,7 +43,6 @@ interface ContractOffer {
     title: string;
     body: string;
     jobTitle: { name: string };
-    employmentType: { name: string };
   };
   candidate: {
     id: string;
@@ -467,10 +466,6 @@ export default function ContractSigningPage() {
                 <div>
                   <Label className="text-sm font-medium text-gray-500">Position</Label>
                   <p className="text-sm">{contractOffer.contract.jobTitle.name}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Employment Type</Label>
-                  <p className="text-sm">{contractOffer.contract.employmentType.name}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-500">Salary</Label>

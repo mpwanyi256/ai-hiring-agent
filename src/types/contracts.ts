@@ -3,26 +3,17 @@ export interface Contract {
   id: string;
   title: string;
   content: string;
-  category: string;
-  contractCategoryId?: string;
   status: 'draft' | 'active' | 'archived';
-  tags: string[];
   jobTitleId?: string;
-  employmentTypeId?: string;
   companyId: string;
   createdBy: string;
   isFavorite: boolean;
-  contractDuration?: string;
   usageCount?: number;
   lastUsedAt?: string;
   createdAt: string;
   updatedAt: string;
   // Optional fields for detailed views
   jobTitle?: {
-    id: string;
-    name: string;
-  };
-  employmentType?: {
     id: string;
     name: string;
   };
@@ -107,12 +98,9 @@ export interface Employment {
 export interface ContractsFilters {
   search?: string;
   status?: string;
-  category?: string;
   jobTitleId?: string;
-  employmentTypeId?: string;
   createdBy?: string;
   isFavorite?: boolean;
-  tags?: string[];
   dateRange?: {
     from: string;
     to: string;
@@ -419,11 +407,6 @@ export interface ContractsState {
   analytics: ContractAnalyticsResponse | null;
   analyticsLoading: boolean;
   analyticsError: string | null;
-
-  // Contract categories
-  categories: ContractCategoryEntity[];
-  categoriesLoading?: boolean;
-  categoriesError?: string | null;
 
   // UI state
   filters: {

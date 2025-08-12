@@ -78,9 +78,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get most used contracts
+    // Get most used contracts from the view which has usage_count
     const { data: mostUsedContracts, error: mostUsedError } = await supabase
-      .from('contracts')
+      .from('contracts_view')
       .select('id, title, usage_count')
       .eq('company_id', profile.company_id)
       .gt('usage_count', 0)
