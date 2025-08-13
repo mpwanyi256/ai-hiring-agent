@@ -1,10 +1,12 @@
-import DashboardLayout from '../layout/DashboardLayout';
+import DashboardLayout from './DashboardLayout';
 
-interface LoadingProps {
+interface PageLoadingWrapperProps {
   message?: string;
 }
 
-export const Loading: React.FC<LoadingProps> = ({ message = 'Loading...' }) => {
+export const PageLoadingWrapper: React.FC<PageLoadingWrapperProps> = ({
+  message = 'Loading...',
+}) => {
   return (
     <DashboardLayout>
       <div className="h-[calc(100vh-185px)] flex flex-col gap-4 overflow-hidden justify-center items-center">

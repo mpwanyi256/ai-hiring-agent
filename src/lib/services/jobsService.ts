@@ -475,37 +475,7 @@ class JobsService {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    // If user is not an admin, filter by permissions
-    if (profile.role !== 'admin') {
-      // Get job IDs the user has access to (either created by them or has permissions)
-      const { data: accessibleJobIds, error: accessError } = await supabase.rpc(
-        'get_user_accessible_jobs',
-        {
-          p_user_id: user.id,
-          p_company_id: company_id,
-        },
-      );
-
-      if (accessError) {
-        console.error('Error fetching accessible jobs:', accessError);
-        // Fallback to only jobs created by user
-        query = query.eq('profile_id', user.id);
-      } else if (accessibleJobIds && accessibleJobIds.length > 0) {
-        query = query.in('id', accessibleJobIds);
-      } else {
-        // User has no accessible jobs
-        return {
-          jobs: [],
-          pagination: {
-            page,
-            limit,
-            total: 0,
-            totalPages: 0,
-            hasMore: false,
-          },
-        };
-      }
-    }
+    // Rely on RLS to expose all company jobs to company members; admins see all by policy
 
     if (search) {
       query = query.ilike('title', `%${search}%`);
@@ -527,34 +497,7 @@ class JobsService {
       .select('*', { count: 'exact', head: true })
       .eq('company_id', company_id);
 
-    // Apply same permission filtering for count
-    if (profile.role !== 'admin') {
-      const { data: accessibleJobIds, error: accessError } = await supabase.rpc(
-        'get_user_accessible_jobs',
-        {
-          p_user_id: user.id,
-          p_company_id: company_id,
-        },
-      );
-
-      if (!accessError && accessibleJobIds && accessibleJobIds.length > 0) {
-        countQuery = countQuery.in('id', accessibleJobIds);
-      } else if (accessError) {
-        countQuery = countQuery.eq('profile_id', user.id);
-      } else {
-        // No accessible jobs
-        return {
-          jobs: [],
-          pagination: {
-            page,
-            limit,
-            total: 0,
-            totalPages: 0,
-            hasMore: false,
-          },
-        };
-      }
-    }
+    // Rely on RLS for count as well
 
     if (search) {
       countQuery = countQuery.ilike('title', `%${search}%`);
@@ -580,39 +523,6 @@ class JobsService {
         hasMore: offset + limit < (count || 0),
       },
     };
-  }
-
-  async getJobsByProfileId(profileId: string): Promise<JobData[]> {
-    try {
-      const supabase = await createClient();
-      const { data: jobs, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('profile_id', profileId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const jobsWithLinks = jobs.map((job) => {
-        const transformed = transformJobFromDB(job);
-        return this.addInterviewLink(transformed);
-      });
-
-      // Add candidate counts
-      const jobsWithCounts = await Promise.all(
-        jobsWithLinks.map(async (job) => ({
-          ...job,
-          candidateCount: await this.getCandidateCount(job.id),
-        })),
-      );
-
-      return jobsWithCounts;
-    } catch (error) {
-      console.error('Error fetching jobs by profile:', error);
-      throw error;
-    }
   }
 
   // New paginated method with search and filtering

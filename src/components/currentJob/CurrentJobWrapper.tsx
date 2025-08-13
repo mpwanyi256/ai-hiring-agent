@@ -11,11 +11,11 @@ import { fetchJobById } from '@/store/jobs/jobsThunks';
 import { resetCurrentJob } from '@/store/jobs/jobsSlice';
 import { selectCurrentJob, selectJobsError } from '@/store/jobs/jobsSelectors';
 import { shareJob } from '@/lib/utils';
-import { Loading } from '@/components/ui/Loading';
-import { DashboardError } from '../ui/DashboardError';
 import { useToast } from '../providers/ToastProvider';
 import { setSelectedCandidate } from '@/store/selectedCandidate/selectedCandidateSlice';
 import { selectCompany } from '@/store/company/companySelectors';
+import { PermissionAccessWrapper } from '../layout/PermissionAccessWrapper';
+import { PageLoadingWrapper } from '../layout/PageLoadingWrapper';
 
 interface CurrentJobWrapperPageProps {
   params: Promise<{
@@ -37,36 +37,32 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
   // Fetch job details and questions
   useEffect(() => {
     setLoading(true);
-    dispatch(fetchJobById(resolvedParams.id))
-      .unwrap()
-      .catch((err) => {
-        showError(err instanceof Error ? err.message : 'Failed to fetch job details');
-      })
-      .finally(() => {
+
+    const fetchJobDetails = async () => {
+      try {
+        await dispatch(fetchJobById(resolvedParams.id)).unwrap();
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+    fetchJobDetails();
 
     return () => {
       // Clean up function to reset the current job when the component unmounts
       dispatch(resetCurrentJob());
       dispatch(setSelectedCandidate(null));
     };
-  }, [resolvedParams.id, dispatch, showError]);
+  }, [resolvedParams.id, dispatch, showError, job]);
 
   if (loading) {
-    return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center py-12">
-        <Loading message="Loading job details..." />
-      </div>
-    );
+    return <PageLoadingWrapper message="Loading job details..." />;
   }
 
   if (error || !job) {
     return (
-      <DashboardError
+      <PermissionAccessWrapper
         title="Job Not Found"
         message={
-          error ||
           'The job you are looking for does not exist or you do not have permission to view it.'
         }
       />
