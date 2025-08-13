@@ -605,6 +605,14 @@ export interface ContractAnalyticsData {
   }[];
 }
 
+export interface SignatureData {
+  type: 'typed' | 'drawn';
+  data: string;
+  fullName: string;
+  signedAt: string;
+  ipAddress?: string;
+}
+
 export interface ContractOfferSigning {
   id: string;
   status: 'sent' | 'signed' | 'rejected';
@@ -617,7 +625,7 @@ export interface ContractOfferSigning {
   signedAt?: string | null;
   rejectedAt?: string | null;
   signedCopyUrl?: string | null;
-  additionalTerms?: Record<string, unknown> | null;
+  additionalTerms?: { signature: SignatureData } | null;
   rejectionReason?: string | null;
   contract: {
     id: string;

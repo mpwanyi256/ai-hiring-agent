@@ -4,14 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { PenTool, Type, Calendar, User } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import Image from 'next/image';
-
-interface SignatureData {
-  type: 'typed' | 'drawn';
-  fullName?: string;
-  signatureData?: string; // Base64 for drawn signatures
-  timestamp?: string;
-  ipAddress?: string;
-}
+import { SignatureData } from '@/types/contracts';
 
 interface SignatureDisplayProps {
   signature: SignatureData;
@@ -26,16 +19,16 @@ const SignatureDisplay: React.FC<SignatureDisplayProps> = ({
   compact = false,
   showMetadata = true,
 }) => {
-  if (!signature || (!signature.fullName && !signature.signatureData)) {
+  if (!signature || (!signature.fullName && !signature.data)) {
     return null;
   }
 
   const renderSignature = () => {
-    if (signature.type === 'drawn' && signature.signatureData) {
+    if (signature.type === 'drawn' && signature.data) {
       return (
         <div className="flex items-center justify-center p-4 bg-gray-50 border border-gray-200 rounded-lg">
           <Image
-            src={signature.signatureData}
+            src={signature.data}
             alt="Signature"
             width={200}
             height={64}
@@ -115,11 +108,11 @@ const SignatureDisplay: React.FC<SignatureDisplayProps> = ({
                   <span>{signature.fullName}</span>
                 </div>
               )}
-              {signature.timestamp && (
+              {signature.signedAt && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Calendar className="h-3 w-3" />
                   <span className="font-medium">Signed on:</span>
-                  <span>{formatDate(signature.timestamp)}</span>
+                  <span>{formatDate(signature.signedAt)}</span>
                 </div>
               )}
               {signature.ipAddress && (
