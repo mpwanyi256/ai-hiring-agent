@@ -105,6 +105,14 @@ export default function TopNavigation({
             showAuthButtons={showAuthButtons}
             onClose={() => setIsMobileMenuOpen(false)}
           />
+
+          {isMobileMenuOpen ? (
+            <div className="md:hidden px-4 pb-4" onClick={() => setIsMobileMenuOpen(false)}>
+              <div className="flex flex-col space-y-4">
+                <NavigationLinks />
+              </div>
+            </div>
+          ) : null}
         </Container>
       )}
     </header>
