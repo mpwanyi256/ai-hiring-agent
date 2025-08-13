@@ -52,7 +52,7 @@ export default function CurrentJobWrapper({ params }: CurrentJobWrapperPageProps
       dispatch(resetCurrentJob());
       dispatch(setSelectedCandidate(null));
     };
-  }, [resolvedParams.id, dispatch, showError, job]);
+  }, [resolvedParams.id, dispatch, showError]);
 
   if (loading) {
     return <PageLoadingWrapper message="Loading job details..." />;
