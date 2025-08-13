@@ -9,6 +9,49 @@ const openai = new OpenAI({
   apiKey: ai.openaiApiKey,
 });
 
+// Function to get dynamic placeholders from database
+async function getDynamicPlaceholders(): Promise<
+  Array<{ key: string; label: string; example: string }>
+> {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase.rpc('get_contract_placeholders_by_category');
+
+    if (error) {
+      console.error('Error fetching placeholders:', error);
+      return getFallbackPlaceholders();
+    }
+
+    return data || getFallbackPlaceholders();
+  } catch (error) {
+    console.error('Error getting dynamic placeholders:', error);
+    return getFallbackPlaceholders();
+  }
+}
+
+// Fallback placeholders if database is unavailable
+function getFallbackPlaceholders() {
+  return [
+    { key: 'candidate_name', label: 'Candidate Name', example: 'John Smith' },
+    { key: 'candidate_email', label: 'Candidate Email', example: 'john.smith@email.com' },
+    { key: 'company_name', label: 'Company Name', example: 'Acme Corporation' },
+    {
+      key: 'company_address',
+      label: 'Company Address',
+      example: '123 Business St, City, State 12345',
+    },
+    { key: 'job_title', label: 'Job Title', example: 'Software Engineer' },
+    { key: 'salary_amount', label: 'Salary Amount', example: '75000' },
+    { key: 'salary_currency', label: 'Salary Currency', example: 'USD' },
+    { key: 'start_date', label: 'Start Date', example: 'January 15, 2024' },
+    { key: 'end_date', label: 'End Date', example: 'January 15, 2025' },
+    { key: 'signing_date', label: 'Signing Date', example: 'December 1, 2023' },
+    { key: 'employment_type', label: 'Employment Type', example: 'Full-time' },
+    { key: 'contract_duration', label: 'Contract Duration', example: '12 months' },
+  ];
+}
+
 // Function to clean markdown formatting and ensure HTML output
 function cleanMarkdownFromResponse(text: string): string {
   let cleaned = text;
@@ -73,20 +116,19 @@ async function enhanceWithAI(content: string): Promise<string> {
   }
 
   try {
+    // Get dynamic placeholders from database
+    const availablePlaceholders = await getDynamicPlaceholders();
+
+    // Build placeholder instructions dynamically
+    const placeholderInstructions = availablePlaceholders
+      .map((p) => `- ${p.label} → {{ ${p.key} }}`)
+      .join('\n');
+
     const prompt = `You are an expert contract template creator. Your task is to analyze the following contract text, correct grammar/spelling, and replace specific values with appropriate placeholders that can be dynamically filled later.
 
 Replace the following types of content with these exact placeholders:
-- Names of people (employees, candidates) → {{ candidate_name }}
-- Company names → {{ company_name }}
-- Job titles/positions → {{ job_title }}
-- Salary amounts → {{ salary_amount }}
-- Currency → {{ salary_currency }}
-- Start dates → {{ start_date }}
-- End dates → {{ end_date }}
-- Contract duration → {{ contract_duration }}
-- Employment type → {{ employment_type }}
-- Signing dates → {{ signing_date }}
-- Email addresses → {{ candidate_email }}
+
+${placeholderInstructions}
 
 IMPORTANT: Only replace actual values, not the descriptive text. For example, replace "John Smith" with "{{ candidate_name }}" but keep "Employee Name:" as is.
 
@@ -126,7 +168,7 @@ Return only the enhanced contract text as clean HTML with placeholders:`;
   } catch (error) {
     console.error('Error enhancing content with AI:', error);
     // Fallback to basic placeholder replacement
-    return basicPlaceholderReplacement(content);
+    return await basicPlaceholderReplacement(content);
   }
 }
 
@@ -171,35 +213,57 @@ function validateAndCleanContent(content: string): {
 }
 
 // Fallback function for basic placeholder replacement
-function basicPlaceholderReplacement(content: string): string {
+async function basicPlaceholderReplacement(content: string): Promise<string> {
   let enhancedContent = content;
 
-  // Basic regex patterns for common contract elements
-  const replacements = [
-    {
-      pattern:
-        /\b[A-Z][a-z]+ [A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b(?=.*(?:Employee|Contractor|Worker))/g,
-      placeholder: '{{ candidate_name }}',
-    },
-    {
-      pattern: /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:Inc\.|LLC|Corporation|Corp\.|Company)\b/g,
-      placeholder: '{{ company_name }}',
-    },
-    { pattern: /\$[\d,]+(?:\.\d{2})?/g, placeholder: '{{ salary_amount }}' },
-    {
-      pattern:
-        /\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\b/g,
-      placeholder: '{{ start_date }}',
-    },
-    {
-      pattern: /\b(?:full-time|part-time|contract|temporary|permanent)\b/gi,
-      placeholder: '{{ employment_type }}',
-    },
-  ];
+  try {
+    // Get dynamic placeholders for fallback enhancement
+    const availablePlaceholders = await getDynamicPlaceholders();
 
-  replacements.forEach(({ pattern, placeholder }) => {
-    enhancedContent = enhancedContent.replace(pattern, placeholder);
-  });
+    // Create dynamic replacements based on available placeholders
+    const replacements = availablePlaceholders
+      .map((placeholder) => {
+        switch (placeholder.key) {
+          case 'candidate_name':
+            return {
+              pattern:
+                /\b[A-Z][a-z]+ [A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b(?=.*(?:Employee|Contractor|Worker))/g,
+              placeholder: `{{ ${placeholder.key} }}`,
+            };
+          case 'company_name':
+            return {
+              pattern:
+                /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:Inc\.|LLC|Corporation|Corp\.|Company)\b/g,
+              placeholder: `{{ ${placeholder.key} }}`,
+            };
+          case 'salary_amount':
+            return {
+              pattern: /\$[\d,]+(?:\.\d{2})?/g,
+              placeholder: `{{ ${placeholder.key} }}`,
+            };
+          case 'start_date':
+            return {
+              pattern:
+                /\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\b/g,
+              placeholder: `{{ ${placeholder.key} }}`,
+            };
+          case 'employment_type':
+            return {
+              pattern: /\b(?:full-time|part-time|contract|temporary|permanent)\b/gi,
+              placeholder: `{{ ${placeholder.key} }}`,
+            };
+          default:
+            return null;
+        }
+      })
+      .filter((item): item is { pattern: RegExp; placeholder: string } => item !== null);
+
+    replacements.forEach(({ pattern, placeholder }) => {
+      enhancedContent = enhancedContent.replace(pattern, placeholder);
+    });
+  } catch (error) {
+    console.error('Error in basic placeholder replacement:', error);
+  }
 
   return enhancedContent;
 }
@@ -290,6 +354,12 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error extracting PDF content:', error);
-    return NextResponse.json({ error: 'Failed to extract content from PDF' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          'Failed to extract content from PDF. Please make sure the file is a valid PDF document.',
+      },
+      { status: 500 },
+    );
   }
 }

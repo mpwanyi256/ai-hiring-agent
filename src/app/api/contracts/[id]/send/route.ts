@@ -8,7 +8,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { id: contractId } = await params;
     const supabase = await createClient();
 
-    // Get current user
+    // Get current user (for auth + fallback email)
     const {
       data: { user },
       error: authError,
@@ -19,24 +19,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const sendData = await request.json();
     const { userInfo } = sendData;
-
-    // Use profile data from thunk if available, otherwise fetch from DB
-    let profile = userInfo;
-    if (!profile) {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('company_id, email, first_name, last_name')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError || !profileData?.company_id) {
-        return NextResponse.json(
-          { success: false, error: 'User profile or company not found' },
-          { status: 404 },
-        );
-      }
-      profile = profileData;
-    }
 
     // Validate required fields
     if (!sendData.candidateId || !sendData.salaryAmount || !sendData.salaryCurrency) {
@@ -49,28 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
-    // Fetch the contract with related data
-    const { data: contract, error: contractError } = await supabase
-      .from('contracts')
-      .select(
-        `
-        *,
-        job_title:job_titles(id, name),
-        employment_type:employment_types(id, name)
-      `,
-      )
-      .eq('id', contractId)
-      .eq('company_id', userInfo?.companyId || profile?.company_id)
-      .single();
-
-    if (contractError || !contract) {
-      return NextResponse.json(
-        { success: false, error: 'Contract not found or access denied' },
-        { status: 404 },
-      );
-    }
-
-    // Fetch candidate details using the candidate_details view
+    // Fetch candidate details (used for email). RLS will enforce access.
     const { data: candidate, error: candidateError } = await supabase
       .from('candidate_details')
       .select(
@@ -88,41 +49,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .single();
 
     if (candidateError || !candidate) {
-      console.error('Candidate query error:', candidateError);
       return NextResponse.json({ success: false, error: 'Candidate not found' }, { status: 404 });
     }
 
-    // Get job details to verify company ownership
-    const { data: job, error: jobError } = await supabase
-      .from('jobs')
-      .select('profile_id')
-      .eq('id', candidate.job_id)
-      .single();
-
-    if (jobError || !job) {
-      return NextResponse.json({ success: false, error: 'Job not found' }, { status: 404 });
-    }
-
-    // Get profile to verify company
-    const { data: jobProfile, error: jobProfileError } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', job.profile_id)
-      .single();
-
-    if (jobProfileError || !jobProfile) {
-      return NextResponse.json({ success: false, error: 'Job profile not found' }, { status: 404 });
-    }
-
-    // Verify the candidate belongs to a job in the same company as the contract
-    if (jobProfile.company_id !== contract.company_id) {
-      return NextResponse.json(
-        { success: false, error: 'Candidate and contract must be from the same company' },
-        { status: 403 },
-      );
-    }
-
-    // Check if there's already a pending contract offer for this candidate
+    // Check for existing pending offers for this contract + candidate (business logic)
     const { data: existingOffers, error: existingError } = await supabase
       .from('contract_offers')
       .select('id, status')
@@ -131,19 +61,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .order('created_at', { ascending: false });
 
     if (existingError) {
-      console.error('Error checking existing offers:', existingError);
       return NextResponse.json(
         {
           success: false,
-          error: 'Database error',
+          error: 'Database error while checking existing offers',
         },
         { status: 500 },
       );
     }
 
-    // Check if there are any pending (sent) offers
     const pendingOffers = existingOffers?.filter((offer) => offer.status === 'sent') || [];
-
     if (pendingOffers.length > 0) {
       return NextResponse.json(
         {
@@ -162,7 +89,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    // Create the contract offer
+    // Create the contract offer (RLS ensures permissions)
     const { data: contractOffer, error: createError } = await supabase
       .from('contract_offers')
       .insert({
@@ -180,11 +107,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       })
       .select(
         `
-        *,
-        contract:contracts(
-          id, title, body, job_title:job_titles(id, name),
-          employment_type:employment_types(id, name)
-        ),
+        id, contract_id, candidate_id, status, sent_by, sent_at, signing_token, expires_at,
+        salary_amount, salary_currency, start_date, end_date, additional_terms, created_at, updated_at,
         sent_by_profile:profiles!contract_offers_sent_by_fkey(
           id, first_name, last_name, email
         )
@@ -192,13 +116,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       )
       .single();
 
-    if (createError) {
-      console.error('Error creating contract offer:', createError);
+    if (createError || !contractOffer) {
       return NextResponse.json(
         {
           success: false,
           error: 'Failed to create contract offer',
-          details: createError.message,
+          details: createError?.message || 'Unknown error',
         },
         { status: 500 },
       );
@@ -224,30 +147,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       additionalTerms: contractOffer.additional_terms,
       createdAt: contractOffer.created_at,
       updatedAt: contractOffer.updated_at,
-      contract: contractOffer.contract,
-      candidate: {
-        id: candidate.id,
-        first_name: candidate.first_name,
-        last_name: candidate.last_name,
-        email: candidate.email,
-      },
       sentByProfile: contractOffer.sent_by_profile,
     };
 
-    // Send email notification to candidate
+    // Send email notification to candidate (best-effort)
     try {
-      // Build CC list with sender and additional recipients
-      const ccList = [profile.email]; // Always CC the sender
+      const ccList: string[] = [];
       if (sendData.ccEmails && Array.isArray(sendData.ccEmails)) {
         ccList.push(...sendData.ccEmails.filter((email: string) => email && email.trim()));
       }
+      if (userInfo?.email) ccList.unshift(userInfo.email); // CC sender from auth slice
 
-      const emailResult = await sendContractOfferEmail({
+      await sendContractOfferEmail({
         to: candidate.email,
         candidateName: `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim(),
-        companyName: userInfo?.companyName || profile?.companyName || 'Company',
+        companyName: userInfo?.companyName || 'Company',
         jobTitle: candidate.job_title || 'Position',
-        employmentType: contract.employment_type?.name || 'Full-time',
+        employmentType: 'Full-time',
         startDate: sendData.startDate
           ? new Date(sendData.startDate).toLocaleDateString()
           : 'To be determined',
@@ -255,19 +171,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         salaryCurrency: sendData.salaryCurrency,
         expiresAt: expiresAt.toISOString(),
         signingLink,
-        contactEmail: profile.email,
+        contactEmail: userInfo?.email || user.email || 'noreply@example.com',
         cc: ccList,
       });
-
-      if (!emailResult.success) {
-        console.error('Failed to send contract offer email:', emailResult.error);
-        // Continue anyway - the contract offer was created successfully
-      } else {
-        console.log('Contract offer email sent successfully');
-      }
     } catch (emailError) {
+      // Log and continue
       console.error('Error sending contract offer email:', emailError);
-      // Continue anyway - the contract offer was created successfully
     }
 
     return NextResponse.json({

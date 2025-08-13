@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { ContractsFilters, ContractStatus, ContractCategory } from '@/types/contracts';
+import { ContractStatus, ContractCategory } from '@/types/contracts';
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,9 +31,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || undefined;
     const status = (searchParams.get('status') as ContractStatus) || undefined;
-    const category = (searchParams.get('category') as ContractCategory) || undefined;
     const jobTitleId = searchParams.get('jobTitleId') || undefined;
-    const employmentTypeId = searchParams.get('employmentTypeId') || undefined;
     const createdBy = searchParams.get('createdBy') || undefined;
     const isFavorite =
       searchParams.get('isFavorite') === 'true'
@@ -41,7 +39,6 @@ export async function GET(request: NextRequest) {
         : searchParams.get('isFavorite') === 'false'
           ? false
           : undefined;
-    const tags = searchParams.get('tags')?.split(',').filter(Boolean) || undefined;
     const dateFrom = searchParams.get('dateFrom') || undefined;
     const dateTo = searchParams.get('dateTo') || undefined;
     const sortBy = searchParams.get('sortBy') || 'created_at';
@@ -60,12 +57,9 @@ export async function GET(request: NextRequest) {
         p_offset: offset,
         p_search: search,
         p_job_title_id: jobTitleId,
-        p_employment_type_id: employmentTypeId,
         p_created_by: createdBy,
         p_status: status,
-        p_category: category,
         p_is_favorite: isFavorite,
-        p_tags: tags,
         p_date_from: dateFrom ? new Date(dateFrom).toISOString() : null,
         p_date_to: dateTo ? new Date(dateTo).toISOString() : null,
         p_sort_by: sortBy,
@@ -88,13 +82,9 @@ export async function GET(request: NextRequest) {
         companyId: contract.company_id,
         jobTitleId: contract.job_title_id,
         title: contract.title,
-        body: contract.body,
-        employmentTypeId: contract.employment_type_id,
-        contractDuration: contract.contract_duration,
+        content: contract.content,
         status: contract.status,
-        category: contract.category,
         isFavorite: contract.is_favorite,
-        tags: contract.tags || [],
         usageCount: contract.usage_count || 0,
         lastUsedAt: contract.last_used_at,
         createdBy: contract.created_by,
@@ -106,15 +96,8 @@ export async function GET(request: NextRequest) {
               name: contract.job_title_name,
             }
           : undefined,
-        employmentType: contract.employment_type_name
+        creator: contract.created_by_first_name
           ? {
-              id: contract.employment_type_id,
-              name: contract.employment_type_name,
-            }
-          : undefined,
-        createdByProfile: contract.created_by_first_name
-          ? {
-              id: contract.created_by,
               firstName: contract.created_by_first_name,
               lastName: contract.created_by_last_name,
               email: contract.created_by_email,
@@ -172,42 +155,30 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      title,
-      body: contractBody,
-      jobTitleId,
-      employmentTypeId,
-      contractDuration,
-      status = 'draft',
-      category = 'general',
-      tags = [],
-    } = body;
+    const { title, body: contractBody, content, jobTitleId, status = 'draft' } = body;
 
     // Validate required fields
-    if (!title || !contractBody) {
+    const rawBody = contractBody ?? content;
+    if (!title || !rawBody || typeof rawBody !== 'string' || rawBody.trim().length === 0) {
       return NextResponse.json({ error: 'Title and body are required' }, { status: 400 });
     }
+    const bodyText = rawBody.trim();
 
     // Create the contract
     const { data: contract, error: createError } = await supabase
       .from('contracts')
       .insert({
-        company_id: profile.company_id,
         title: title.trim(),
-        body: contractBody.trim(),
-        job_title_id: jobTitleId || null,
-        employment_type_id: employmentTypeId || null,
-        contract_duration: contractDuration || null,
-        status,
-        category,
-        tags,
+        content: bodyText,
+        company_id: profile.company_id,
         created_by: user.id,
+        job_title_id: jobTitleId || null,
+        status,
       })
       .select(
         `
         *,
         job_title:job_titles(id, name),
-        employment_type:employment_types(id, name),
         created_by_profile:profiles!contracts_created_by_fkey(
           id, first_name, last_name, email
         )
@@ -230,19 +201,11 @@ export async function POST(request: NextRequest) {
       jobTitleId: contract.job_title_id,
       title: contract.title,
       body: contract.body,
-      employmentTypeId: contract.employment_type_id,
-      contractDuration: contract.contract_duration,
-      status: contract.status,
-      category: contract.category,
       isFavorite: contract.is_favorite,
-      tags: contract.tags || [],
-      usageCount: contract.usage_count || 0,
-      lastUsedAt: contract.last_used_at,
       createdBy: contract.created_by,
       createdAt: contract.created_at,
       updatedAt: contract.updated_at,
       jobTitle: contract.job_title,
-      employmentType: contract.employment_type,
       createdByProfile: contract.created_by_profile,
     };
 

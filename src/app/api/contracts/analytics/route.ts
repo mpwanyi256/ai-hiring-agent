@@ -5,32 +5,18 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const searchParams = request.nextUrl.searchParams;
+    const companyId = searchParams.get('companyId');
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get user's company
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile?.company_id) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    if (!companyId) {
+      return NextResponse.json({ error: 'Missing required parameter companyId' }, { status: 400 });
     }
 
     // Get analytics using the database function
     const { data: analyticsData, error: analyticsError } = await supabase.rpc(
       'get_contract_analytics',
       {
-        p_company_id: profile.company_id,
+        p_company_id: companyId,
       },
     );
 
@@ -78,11 +64,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get most used contracts
+    // Get most used contracts from the view which has usage_count
     const { data: mostUsedContracts, error: mostUsedError } = await supabase
-      .from('contracts')
+      .from('contracts_view')
       .select('id, title, usage_count')
-      .eq('company_id', profile.company_id)
+      .eq('company_id', companyId)
       .gt('usage_count', 0)
       .order('usage_count', { ascending: false })
       .limit(5);
@@ -95,7 +81,7 @@ export async function GET(request: NextRequest) {
     const { data: popularJobTitles, error: jobTitlesError } = await supabase.rpc(
       'get_popular_contract_job_titles',
       {
-        p_company_id: profile.company_id,
+        p_company_id: companyId,
         p_limit: 5,
       },
     );
@@ -108,7 +94,7 @@ export async function GET(request: NextRequest) {
     const { data: popularEmploymentTypes, error: employmentTypesError } = await supabase.rpc(
       'get_popular_contract_employment_types',
       {
-        p_company_id: profile.company_id,
+        p_company_id: companyId,
         p_limit: 5,
       },
     );
@@ -164,7 +150,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      analytics,
+      data: analytics,
     });
   } catch (error) {
     console.error('Error in analytics API:', error);

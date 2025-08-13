@@ -1,4 +1,4 @@
-import { RootState } from '..';
+import { RootState } from '@/store';
 
 export const selectTeamMembers = (state: RootState) => state.teams.members;
 export const selectTeamInvites = (state: RootState) => state.teams.invites;

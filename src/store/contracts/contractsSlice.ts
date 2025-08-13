@@ -21,6 +21,11 @@ import {
   generateContractWithAI,
   createJobTitle,
   cancelContractOffer,
+  fetchContractCategories,
+  createContractCategory,
+  fetchSigningOffer,
+  signByCandidate,
+  rejectByCandidate,
 } from './contractsThunks';
 
 const initialState: ContractsState = {
@@ -68,6 +73,11 @@ const initialState: ContractsState = {
   analyticsLoading: false,
   analyticsError: null,
 
+  // Categories
+  categories: [],
+  categoriesLoading: false,
+  categoriesError: null,
+
   // UI state
   filters: {
     contracts: {},
@@ -94,6 +104,11 @@ const initialState: ContractsState = {
   // AI operations
   aiOperationLoading: false,
   aiOperationError: null,
+
+  // Candidate signing view
+  signingOffer: null,
+  signingLoading: false,
+  signingError: null,
 };
 
 const contractsSlice = createSlice({
@@ -342,9 +357,9 @@ const contractsSlice = createSlice({
         state.analyticsLoading = true;
         state.analyticsError = null;
       })
-      .addCase(fetchContractAnalytics.fulfilled, (state, action) => {
+      .addCase(fetchContractAnalytics.fulfilled, (state, { payload }) => {
         state.analyticsLoading = false;
-        state.analytics = action.payload;
+        state.analytics = payload || null;
       })
       .addCase(fetchContractAnalytics.rejected, (state, action) => {
         state.analyticsLoading = false;
@@ -379,6 +394,33 @@ const contractsSlice = createSlice({
       .addCase(createJobTitle.rejected, (state, action) => {
         state.contractsLoading = false;
         state.contractsError = action.error.message || 'Failed to create job title';
+      });
+
+    // Categories
+    builder
+      .addCase(fetchContractCategories.pending, (state) => {
+        state.categoriesLoading = true;
+        state.categoriesError = null;
+      })
+      .addCase(fetchContractCategories.fulfilled, (state, action) => {
+        state.categoriesLoading = false;
+        state.categories = action.payload;
+      })
+      .addCase(fetchContractCategories.rejected, (state, action) => {
+        state.categoriesLoading = false;
+        state.categoriesError = action.error.message || 'Failed to fetch categories';
+      })
+      .addCase(createContractCategory.pending, (state) => {
+        state.categoriesLoading = true;
+        state.categoriesError = null;
+      })
+      .addCase(createContractCategory.fulfilled, (state, action) => {
+        state.categoriesLoading = false;
+        state.categories.unshift(action.payload);
+      })
+      .addCase(createContractCategory.rejected, (state, action) => {
+        state.categoriesLoading = false;
+        state.categoriesError = action.error.message || 'Failed to create category';
       });
 
     // Send Contract
@@ -532,6 +574,43 @@ const contractsSlice = createSlice({
       .addCase(cancelContractOffer.rejected, (state, action) => {
         state.contractOffersLoading = false;
         state.contractOffersError = action.error.message || 'Failed to cancel contract offer';
+      });
+
+    // Candidate signing view
+    builder
+      .addCase(fetchSigningOffer.pending, (state) => {
+        state.signingLoading = true;
+        state.signingError = null;
+      })
+      .addCase(fetchSigningOffer.fulfilled, (state, action) => {
+        state.signingLoading = false;
+        state.signingOffer = action.payload;
+      })
+      .addCase(fetchSigningOffer.rejected, (state, action) => {
+        state.signingLoading = false;
+        state.signingError = action.error.message || 'Failed to load contract offer';
+      })
+      .addCase(signByCandidate.pending, (state) => {
+        state.signingLoading = true;
+      })
+      .addCase(signByCandidate.fulfilled, (state, action) => {
+        state.signingLoading = false;
+        state.signingOffer = action.payload;
+      })
+      .addCase(signByCandidate.rejected, (state, action) => {
+        state.signingLoading = false;
+        state.signingError = action.error.message || 'Failed to sign contract';
+      })
+      .addCase(rejectByCandidate.pending, (state) => {
+        state.signingLoading = true;
+      })
+      .addCase(rejectByCandidate.fulfilled, (state, action) => {
+        state.signingLoading = false;
+        state.signingOffer = action.payload;
+      })
+      .addCase(rejectByCandidate.rejected, (state, action) => {
+        state.signingLoading = false;
+        state.signingError = action.error.message || 'Failed to reject contract';
       });
   },
 });

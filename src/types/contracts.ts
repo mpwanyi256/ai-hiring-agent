@@ -3,25 +3,17 @@ export interface Contract {
   id: string;
   title: string;
   content: string;
-  category: string;
   status: 'draft' | 'active' | 'archived';
-  tags: string[];
   jobTitleId?: string;
-  employmentTypeId?: string;
   companyId: string;
   createdBy: string;
   isFavorite: boolean;
-  contractDuration?: string;
   usageCount?: number;
   lastUsedAt?: string;
   createdAt: string;
   updatedAt: string;
   // Optional fields for detailed views
   jobTitle?: {
-    id: string;
-    name: string;
-  };
-  employmentType?: {
     id: string;
     name: string;
   };
@@ -106,12 +98,9 @@ export interface Employment {
 export interface ContractsFilters {
   search?: string;
   status?: string;
-  category?: string;
   jobTitleId?: string;
-  employmentTypeId?: string;
   createdBy?: string;
   isFavorite?: boolean;
-  tags?: string[];
   dateRange?: {
     from: string;
     to: string;
@@ -215,10 +204,7 @@ export interface ContractAnalyticsResponse {
 export interface CreateContractData {
   title: string;
   content: string;
-  category: string;
-  tags?: string[];
   jobTitleId?: string;
-  employmentTypeId?: string;
   status?: 'draft' | 'active';
 }
 
@@ -226,10 +212,7 @@ export interface UpdateContractData {
   id: string;
   title?: string;
   content?: string;
-  category?: string;
-  tags?: string[];
   jobTitleId?: string;
-  employmentTypeId?: string;
   status?: 'draft' | 'active' | 'archived';
   isFavorite?: boolean;
 }
@@ -421,9 +404,14 @@ export interface ContractsState {
   };
 
   // Analytics
-  analytics: ContractAnalyticsResponse | null;
+  analytics: ContractAnalyticsData | null;
   analyticsLoading: boolean;
   analyticsError: string | null;
+
+  // Categories
+  categories: ContractCategoryEntity[];
+  categoriesLoading: boolean;
+  categoriesError: string | null;
 
   // UI state
   filters: {
@@ -451,6 +439,11 @@ export interface ContractsState {
   // AI operations
   aiOperationLoading: boolean;
   aiOperationError: string | null;
+
+  // Candidate signing view state
+  signingOffer: ContractOfferSigning | null;
+  signingLoading: boolean;
+  signingError: string | null;
 }
 
 // Utility types
@@ -532,12 +525,29 @@ export interface ContractEmailTemplate {
 }
 
 export interface ContractPlaceholder {
+  id: string;
   key: string;
   label: string;
-  description: string;
-  category: 'candidate' | 'company' | 'contract' | 'date';
-  example: string;
+  description?: string;
+  category: string;
+  example?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
+
+export interface ContractPlaceholdersResponse {
+  success: boolean;
+  placeholders: ContractPlaceholder[];
+}
+
+export type PlaceholderCategory =
+  | 'candidate'
+  | 'company'
+  | 'job'
+  | 'compensation'
+  | 'dates'
+  | 'contract'
+  | 'general';
 export type ContractOfferStatus = 'sent' | 'viewed' | 'signed' | 'rejected' | 'expired';
 export type SignatureType = 'typed' | 'drawn';
 
@@ -546,4 +556,115 @@ export interface ContractAPIError {
   message: string;
   code?: string;
   details?: any;
+}
+
+export interface ContractCategoryEntity {
+  id: string;
+  name: string;
+  companyId: string;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContractAnalyticsData {
+  totalContracts: number;
+  contractsByStatus: {
+    draft: number;
+    active: 0;
+    archived: number;
+    deprecated: number;
+  };
+  contractsByCategory: {
+    general: number;
+    technical: number;
+    executive: number;
+    intern: number;
+    freelance: number;
+    custom: number;
+  };
+  mostUsedContracts: [];
+  recentActivity: {
+    contractsCreated: number;
+    contractsSent: number;
+    contractsSigned: number;
+    contractsRejected: number;
+  };
+  conversionRate: number;
+  averageSigningTime: number;
+  popularJobTitles: {
+    id: string;
+    name: string;
+    count: number;
+  }[];
+  popularEmploymentTypes: {
+    id: string;
+    name: string;
+    count: number;
+  }[];
+}
+
+export interface SignatureData {
+  type: 'typed' | 'drawn';
+  data: string;
+  fullName: string;
+  signedAt: string;
+  ipAddress?: string;
+}
+
+export interface ContractOfferSigning {
+  id: string;
+  status: 'sent' | 'signed' | 'rejected';
+  salaryAmount: number | null;
+  salaryCurrency: string | null;
+  startDate: string | null;
+  endDate?: string | null;
+  expiresAt: string;
+  sentAt: string | null;
+  signedAt?: string | null;
+  rejectedAt?: string | null;
+  signedCopyUrl?: string | null;
+  additionalTerms?: { signature: SignatureData } | null;
+  rejectionReason?: string | null;
+  contract: {
+    id: string;
+    title: string;
+    body: string; // HTML
+    jobTitle: { name: string };
+  };
+  candidate: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  sentByProfile: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  companyName: string;
+}
+
+export interface FetchSigningOfferParams {
+  offerId: string;
+  token: string;
+}
+
+export interface SignByCandidatePayload {
+  offerId: string;
+  token: string;
+  signature: {
+    type: 'typed' | 'drawn';
+    data: string;
+    fullName: string;
+    signedAt: string;
+  };
+}
+
+export interface RejectByCandidatePayload {
+  offerId: string;
+  token: string;
+  rejectionReason?: string;
 }

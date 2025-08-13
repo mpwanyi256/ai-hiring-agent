@@ -2,7 +2,6 @@ import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 import { DocxLoader } from '@langchain/community/document_loaders/fs/docx';
 import { TextLoader } from 'langchain/document_loaders/fs/text';
 import { Document } from '@langchain/core/documents';
-import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { writeFileSync, unlinkSync, mkdtempSync, rmdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -19,45 +18,38 @@ export interface ParsedDocument {
 }
 
 class DocumentParsingService {
-  // Main parsing method using LangChain document loaders
   async parseDocument(file: File): Promise<ParsedDocument> {
     const fileType = this.getFileType(file);
 
     try {
-      // Parsing file
       let documents: Document[];
       let pages: number | undefined;
 
-      // Create a temporary file-like object for LangChain loaders
-      const blob = new Blob([file], { type: file.type });
-      const tempFile = new File([blob], file.name, { type: file.type });
-
       switch (fileType) {
         case 'pdf':
-          documents = await this.parsePDFWithLangChain(tempFile);
-          pages = documents.length; // Each page typically becomes a document
+          documents = await this.parsePDFWithMultipleStrategies(file);
+          // Get pages from PDF metadata if available
+          pages = documents[0]?.metadata?.pdf?.totalPages || documents.length;
           break;
         case 'docx':
-          documents = await this.parseDocxWithLangChain(tempFile);
+          documents = await this.parseDocxWithLangChain(file);
           break;
         case 'doc':
-          // For .doc files, we'll fall back to buffer parsing since LangChain DocxLoader primarily handles .docx
-          documents = await this.parseDocWithFallback(tempFile);
+          documents = await this.parseDocWithFallback(file);
           break;
         case 'txt':
-          documents = await this.parseTextWithLangChain(tempFile);
+          documents = await this.parseTextWithLangChain(file);
           break;
         default:
           throw new Error(`Unsupported file type: ${fileType}`);
       }
 
-      // Combine all document content
+      // Combine all document content without cleaning
       const combinedText = documents.map((doc) => doc.pageContent).join('\n\n');
-      const cleanedText = this.cleanText(combinedText);
-      const wordCount = this.countWords(cleanedText);
+      const wordCount = this.countWords(combinedText);
 
       return {
-        text: cleanedText,
+        text: combinedText,
         metadata: {
           pages: pages || documents.length,
           wordCount,
@@ -67,71 +59,76 @@ class DocumentParsingService {
         },
       };
     } catch (error) {
-      console.error('LangChain PDF parsing failed:', error);
-
-      // Enhanced fallback for large/complex PDFs
-      try {
-        console.log('Attempting fallback PDF text extraction...');
-
-        // Try alternative parsing approach for large files
-        const buffer = await file.arrayBuffer();
-
-        // Try multiple text extraction approaches
-        let extractedText = '';
-
-        // Approach 1: UTF-8 decoding
-        try {
-          const decoder = new TextDecoder('utf-8');
-          const text = decoder.decode(buffer);
-          extractedText = this.extractTextFromPDFString(text);
-        } catch (_e) {
-          console.log('UTF-8 decoding failed, trying latin1...');
-        }
-
-        // Approach 2: Latin1 decoding (for older PDFs)
-        if (!extractedText || extractedText.length < 10) {
-          try {
-            const decoder = new TextDecoder('latin1');
-            const text = decoder.decode(buffer);
-            extractedText = this.extractTextFromPDFString(text);
-          } catch (_e) {
-            console.log('Latin1 decoding also failed');
-          }
-        }
-
-        if (extractedText && extractedText.length > 10) {
-          console.log(`Fallback extraction successful: ${extractedText.length} characters`);
-          return {
-            text: extractedText,
-            metadata: {
-              pages: 1,
-              wordCount: this.countWords(extractedText),
-              fileType: 'PDF',
-              fileName: file.name,
-              fileSize: file.size,
-            },
-          };
-        }
-      } catch (fallbackError) {
-        console.error('Fallback PDF extraction failed:', fallbackError);
-      }
-
-      // If all methods fail, provide a more helpful error message
-      const errorMessage =
-        file.size > 5 * 1024 * 1024
-          ? 'Failed to parse large PDF file. The file may contain complex graphics, signatures, or be password-protected. Please try with a simpler PDF or convert to text format.'
-          : 'Failed to parse PDF file. The file may be corrupted, password-protected, or in an unsupported format.';
-
-      throw new Error(errorMessage);
+      console.error('Document parsing failed:', error);
+      throw new Error(
+        `Failed to parse ${fileType.toUpperCase()} file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
-  private async parsePDFWithLangChain(file: File): Promise<Document[]> {
+  private async parsePDFWithMultipleStrategies(file: File): Promise<Document[]> {
+    console.log(`Attempting to parse PDF: ${file.name} (${file.size} bytes)`);
+
+    // Strategy 1: Try LangChain PDFLoader with default settings
+    try {
+      console.log('Strategy 1: Trying LangChain PDFLoader with default settings...');
+      const documents = await this.parsePDFWithLangChain(file, { splitPages: true });
+      if (documents && documents.length > 0) {
+        const totalContent = documents.map((doc) => doc.pageContent).join('');
+        if (totalContent.trim().length > 10) {
+          console.log(`Strategy 1 successful: ${documents.length} pages extracted`);
+          return documents;
+        }
+      }
+    } catch (error) {
+      console.log('Strategy 1 failed:', error instanceof Error ? error.message : 'Unknown error');
+    }
+
+    // Strategy 2: Try LangChain PDFLoader without page splitting
+    try {
+      console.log('Strategy 2: Trying LangChain PDFLoader without page splitting...');
+      const documents = await this.parsePDFWithLangChain(file, { splitPages: false });
+      if (documents && documents.length > 0) {
+        const totalContent = documents.map((doc) => doc.pageContent).join('');
+        if (totalContent.trim().length > 10) {
+          console.log(`Strategy 2 successful: ${documents.length} pages extracted`);
+          return documents;
+        }
+      }
+    } catch (error) {
+      console.log('Strategy 2 failed:', error instanceof Error ? error.message : 'Unknown error');
+    }
+
+    // Strategy 3: Try LangChain PDFLoader with empty separator
+    try {
+      console.log('Strategy 3: Trying LangChain PDFLoader with empty separator...');
+      const documents = await this.parsePDFWithLangChain(file, {
+        splitPages: true,
+        parsedItemSeparator: '',
+      });
+      if (documents && documents.length > 0) {
+        const totalContent = documents.map((doc) => doc.pageContent).join('');
+        if (totalContent.trim().length > 10) {
+          console.log(`Strategy 3 successful: ${documents.length} pages extracted`);
+          return documents;
+        }
+      }
+    } catch (error) {
+      console.log('Strategy 3 failed:', error instanceof Error ? error.message : 'Unknown error');
+    }
+
+    throw new Error(
+      'All PDF parsing strategies failed - file may be corrupted, password-protected, or contain only images/scanned content',
+    );
+  }
+
+  private async parsePDFWithLangChain(
+    file: File,
+    options: { splitPages?: boolean; parsedItemSeparator?: string } = {},
+  ): Promise<Document[]> {
     let tempFilePath: string | null = null;
 
     try {
-      console.log(`Attempting to parse PDF: ${file.name} (${file.size} bytes)`);
-
       // Create a temporary directory and file for LangChain PDFLoader
       const tempDir = mkdtempSync(join(tmpdir(), 'pdf-parsing-'));
       tempFilePath = join(tempDir, file.name);
@@ -141,43 +138,34 @@ class DocumentParsingService {
       const buffer = Buffer.from(arrayBuffer);
       writeFileSync(tempFilePath, buffer);
 
-      // Use LangChain PDFLoader with file path (as recommended)
-      const loader = new PDFLoader(tempFilePath);
+      // Use LangChain PDFLoader with provided configuration
+      const loaderOptions: any = {};
+      if (options.splitPages !== undefined) {
+        loaderOptions.splitPages = options.splitPages;
+      }
+      if (options.parsedItemSeparator !== undefined) {
+        loaderOptions.parsedItemSeparator = options.parsedItemSeparator;
+      }
 
-      // Set a timeout for large file parsing (30 seconds)
+      const loader = new PDFLoader(tempFilePath, loaderOptions);
+
+      // Set a timeout for large file parsing (30 seconds for LangChain)
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('PDF parsing timeout - file may be too complex')), 30000);
+        setTimeout(() => reject(new Error('LangChain PDF parsing timeout')), 30000);
       });
 
       const documents = await Promise.race([loader.load(), timeoutPromise]);
 
       if (!documents || documents.length === 0) {
-        throw new Error('No content extracted from PDF');
+        throw new Error('LangChain returned empty documents');
       }
 
-      // Optional: Split documents into smaller chunks for better processing
-      const textSplitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 2000,
-        chunkOverlap: 200,
-      });
-
-      const splitDocs = await textSplitter.splitDocuments(documents);
-
-      console.log(
-        `Successfully parsed PDF: ${documents.length} pages, ${splitDocs.length} chunks extracted`,
-      );
-      return splitDocs;
-    } catch (error) {
-      console.error('LangChain PDF parsing error:', error);
-      throw new Error(
-        `LangChain PDF parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+      return documents;
     } finally {
       // Clean up temporary file
       if (tempFilePath) {
         try {
           unlinkSync(tempFilePath);
-          // Also try to remove the temp directory if it's empty
           const tempDir = join(tempFilePath, '..');
           try {
             rmdirSync(tempDir);
@@ -198,7 +186,6 @@ class DocumentParsingService {
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       });
 
-      // Use LangChain DocxLoader with blob
       const loader = new DocxLoader(blob);
       const documents = await loader.load();
 
@@ -207,9 +194,10 @@ class DocumentParsingService {
       }
 
       return documents;
-    } catch {
-      // LangChain DOCX parsing error
-      throw new Error('LangChain DOCX parsing failed');
+    } catch (error) {
+      throw new Error(
+        `DOCX parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -234,7 +222,7 @@ class DocumentParsingService {
       } catch {
         // Fallback text extraction failed
       }
-      throw new Error('Failed to parse DOC file');
+      throw new Error('Failed to parse DOC file - format may not be supported');
     }
   }
 
@@ -243,7 +231,6 @@ class DocumentParsingService {
       // Convert File to Blob for LangChain TextLoader
       const blob = new Blob([await file.arrayBuffer()], { type: 'text/plain' });
 
-      // Use LangChain TextLoader with blob
       const loader = new TextLoader(blob);
       const documents = await loader.load();
 
@@ -252,43 +239,11 @@ class DocumentParsingService {
       }
 
       return documents;
-    } catch {
-      // LangChain text parsing error
-      throw new Error('LangChain text parsing failed');
+    } catch (error) {
+      throw new Error(
+        `Text parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
-  }
-
-  // Extract text from PDF string using basic regex patterns
-  private extractTextFromPDFString(pdfString: string): string {
-    // Basic PDF text extraction using regex patterns
-    // This is a fallback method and may not work for all PDFs
-    const textMatches = pdfString.match(/BT\s*[\s\S]*?ET/g);
-    if (textMatches) {
-      return textMatches
-        .map((match) => {
-          // Extract text between parentheses or brackets
-          const textContent = match.match(/\((.*?)\)/g) || match.match(/\[(.*?)\]/g);
-          return textContent ? textContent.map((t) => t.slice(1, -1)).join(' ') : '';
-        })
-        .join('\n')
-        .replace(/\\[rn]/g, '\n')
-        .replace(/\s+/g, ' ')
-        .trim();
-    }
-
-    // Fallback: try to extract any readable text
-    return pdfString
-      .replace(/[^\x20-\x7E\n\r\t]/g, '') // Remove non-printable characters
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  // Clean extracted text
-  private cleanText(text: string): string {
-    return text
-      .replace(/\s+/g, ' ') // Normalize whitespace
-      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '') // Remove control characters
-      .trim();
   }
 
   // Count words in text

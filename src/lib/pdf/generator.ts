@@ -1,10 +1,10 @@
 // PDF generation service for contracts using Puppeteer
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import puppeteer from 'puppeteer';
 
 // Helper function to replace contract placeholders with actual data
 function replaceContractPlaceholders(htmlContent: string, data: Record<string, any>): string {
-  let result = htmlContent;
+  let result = typeof htmlContent === 'string' ? htmlContent : '';
 
   const placeholders = {
     candidate_name: data.candidateName || '',
@@ -19,12 +19,15 @@ function replaceContractPlaceholders(htmlContent: string, data: Record<string, a
     employment_type: data.employmentType || '',
     signing_date: new Date().toLocaleDateString(),
     candidate_signature: data.candidateSignature || '',
-    ...data.additionalTerms, // Allow custom placeholders
-  };
+    ...(data?.additionalTerms && typeof data.additionalTerms === 'object'
+      ? data.additionalTerms
+      : {}),
+  } as Record<string, unknown>;
 
   Object.entries(placeholders).forEach(([key, value]) => {
     const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-    result = result.replace(regex, String(value));
+    const replacement = value == null ? '' : String(value);
+    result = result.replace(regex, replacement);
   });
 
   return result;
@@ -195,12 +198,16 @@ export async function saveContractPDF(
   error?: any;
 }> {
   try {
-    const supabase = await createClient();
+    // Use service role to bypass RLS for server-side storage writes
+    const supabase = createServiceRoleClient();
+
+    // Ensure bucket exists (idempotent check)
+    await supabase.storage.createBucket(bucketName, { public: true }).catch(() => {});
 
     // Upload PDF to Supabase Storage
     const { data, error } = await supabase.storage.from(bucketName).upload(fileName, pdfBuffer, {
       contentType: 'application/pdf',
-      upsert: false, // Don't overwrite existing files
+      upsert: false,
     });
 
     if (error) {
@@ -208,7 +215,6 @@ export async function saveContractPDF(
       return { success: false, error };
     }
 
-    // Get public URL for the uploaded file
     const { data: urlData } = supabase.storage.from(bucketName).getPublicUrl(data.path);
 
     return {

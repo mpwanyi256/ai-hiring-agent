@@ -5,9 +5,9 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   ChartBarIcon,
-  ClockIcon,
   CalendarIcon,
   XMarkIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 import { Candidate, CandidateStatus } from '@/types/candidates';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -64,7 +64,6 @@ export default function CandidatesList({
   });
   const selected = useAppSelector((s) => s.selectedCandidate.candidate);
   const selectedLoading = useAppSelector((s) => s.selectedCandidate.isLoading);
-  const [isResumePreviewOpen, setIsResumePreviewOpen] = useState(false);
   const [pendingResumeCandidateId, setPendingResumeCandidateId] = useState<string | null>(null);
 
   const handleFilterChange = (key: string, value: string | number) => {
@@ -90,24 +89,8 @@ export default function CandidatesList({
     dispatch(fetchSelectedCandidateDetails(candidate.id));
   };
 
-  const handlePreviewResume = (candidate: Candidate) => {
-    if (selected?.id === candidate.id && selected?.resume?.publicUrl) {
-      setIsResumePreviewOpen(true);
-      return;
-    }
-    dispatch(setSelectedCandidate(candidate));
-    dispatch(fetchSelectedCandidateDetails(candidate.id));
-    setPendingResumeCandidateId(candidate.id);
-  };
-
   useEffect(() => {
-    if (
-      pendingResumeCandidateId &&
-      selected?.id === pendingResumeCandidateId &&
-      selected?.resume?.publicUrl &&
-      !selectedLoading
-    ) {
-      setIsResumePreviewOpen(true);
+    if (pendingResumeCandidateId && selected?.id === pendingResumeCandidateId && !selectedLoading) {
       setPendingResumeCandidateId(null);
     }
   }, [pendingResumeCandidateId, selected?.id, selected?.resume?.publicUrl, selectedLoading]);
@@ -301,32 +284,22 @@ export default function CandidatesList({
                     <p className="text-xs text-gray-500 truncate">{candidate.email}</p>
 
                     {/* Progress and Status */}
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex flex-col gap-1 text-xs text-gray-500">
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-1">
                           <ChartBarIcon className="w-3 h-3" />
                           <span>Progress: {candidate.progress}%</span>
                         </div>
                         <div className="flex items-center space-x-1">
-                          <ClockIcon className="w-3 h-3" />
-                          <span>{candidate.evaluation?.resumeScore} score</span>
+                          <DocumentTextIcon className="w-4 h-4 text-red-500" />
+                          <span>Resume score:{candidate.evaluation?.resumeScore}%</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <CalendarIcon className="w-3 h-3" />
                           <span>{formatDate(candidate.createdAt)}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePreviewResume(candidate);
-                          }}
-                          className="text-[11px] px-2 py-1 rounded border border-gray-300 hover:bg-gray-50"
-                        >
-                          Resume
-                        </button>
+                      <div className="flex gap-2">
                         {candidate.candidateStatus && (
                           <span
                             className={`text-xs text-gray-500 px-2 py-1 rounded-full ${getCandidateStatusLabelStyle(
@@ -345,42 +318,6 @@ export default function CandidatesList({
           </div>
         )}
       </div>
-
-      {/* Resume Preview Modal */}
-      {isResumePreviewOpen && selected?.resume?.publicUrl && (
-        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between p-3 border-b">
-              <div className="text-sm font-medium">Resume Preview</div>
-              <div className="flex items-center gap-2">
-                <a
-                  href={selected.resume.publicUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-50"
-                >
-                  Open in new tab
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setIsResumePreviewOpen(false)}
-                  className="text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-50"
-                  aria-label="Close"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-            <div className="flex-1">
-              <iframe
-                src={selected.resume.publicUrl}
-                className="w-full h-full"
-                title="Candidate Resume"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

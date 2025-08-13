@@ -13,7 +13,6 @@ import {
   ContractOffersFilters,
   EmploymentFilters,
   ContractsListResponse,
-  ContractAnalyticsResponse,
   BulkUpdateContractData,
   BulkOperationResponse,
   BulkSendContractData,
@@ -27,7 +26,16 @@ import {
   CreateJobTitleData,
   CreateJobTitleResponse,
   EmploymentListResponse,
+  ContractCategoryEntity,
+  ContractAnalyticsData,
+  ContractOfferSigning,
+  FetchSigningOfferParams,
+  SignByCandidatePayload,
+  RejectByCandidatePayload,
 } from '@/types/contracts';
+import { apiUtils } from '../api';
+import { RootState } from '@/store';
+import { ApiResponse } from '@/types';
 
 // Contract Templates
 export const fetchContracts = createAsyncThunk<ContractsListResponse, ContractsFilters | undefined>(
@@ -37,13 +45,10 @@ export const fetchContracts = createAsyncThunk<ContractsListResponse, ContractsF
 
     if (filters.search) params.append('search', filters.search);
     if (filters.status) params.append('status', filters.status);
-    if (filters.category) params.append('category', filters.category);
     if (filters.jobTitleId) params.append('jobTitleId', filters.jobTitleId);
-    if (filters.employmentTypeId) params.append('employmentTypeId', filters.employmentTypeId);
     if (filters.createdBy) params.append('createdBy', filters.createdBy);
     if (filters.isFavorite !== undefined)
       params.append('isFavorite', filters.isFavorite.toString());
-    if (filters.tags && filters.tags.length > 0) params.append('tags', filters.tags.join(','));
     if (filters.dateRange?.from) params.append('dateFrom', filters.dateRange.from);
     if (filters.dateRange?.to) params.append('dateTo', filters.dateRange.to);
     if (filters.sortBy) params.append('sortBy', filters.sortBy);
@@ -210,18 +215,36 @@ export const bulkSendContracts = createAsyncThunk<BulkOperationResponse, BulkSen
 );
 
 // Analytics
-export const fetchContractAnalytics = createAsyncThunk<ContractAnalyticsResponse, void>(
-  'contracts/fetchContractAnalytics',
-  async () => {
-    const response = await fetch('/api/contracts/analytics');
+export const fetchContractAnalytics = createAsyncThunk<
+  ContractAnalyticsData | null,
+  void,
+  {
+    state: RootState;
+    rejectWithValue: (error: string) => void;
+  }
+>('contracts/fetchContractAnalytics', async (_, { getState, rejectWithValue }) => {
+  const state = getState() as RootState;
+  const companyId = state.auth.user?.companyId;
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch contract analytics');
-    }
+  if (!companyId) {
+    return rejectWithValue('Company ID is required.');
+  }
 
-    return response.json();
-  },
-);
+  const response = await apiUtils.get<ApiResponse<ContractAnalyticsData>>(
+    '/api/contracts/analytics',
+    {
+      params: {
+        companyId,
+      },
+    },
+  );
+
+  if (response.error) {
+    return rejectWithValue(response.error);
+  }
+
+  return response.data || null;
+});
 
 // AI Contract Generation
 export const generateContractWithAI = createAsyncThunk<
@@ -262,6 +285,33 @@ export const createJobTitle = createAsyncThunk<CreateJobTitleResponse, CreateJob
     }
 
     return response.json();
+  },
+);
+
+// Contract Categories
+export const fetchContractCategories = createAsyncThunk<ContractCategoryEntity[]>(
+  'contracts/fetchContractCategories',
+  async () => {
+    const res = await fetch('/api/contracts/categories');
+    if (!res.ok) throw new Error('Failed to fetch categories');
+    const data = await res.json();
+    return data.categories as ContractCategoryEntity[];
+  },
+);
+
+export const createContractCategory = createAsyncThunk<ContractCategoryEntity, { name: string }>(
+  'contracts/createContractCategory',
+  async ({ name }) => {
+    const res = await fetch('/api/contracts/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to create category');
+    }
+    return (await res.json()).category as ContractCategoryEntity;
   },
 );
 
@@ -501,7 +551,7 @@ export const enhanceContractWithAI = createAsyncThunk<
 
 // Send Contract Offer
 export const sendContractOffer = createAsyncThunk<
-  { success: boolean; contractOffer: any; message: string },
+  { success: boolean; contractOffer: ContractOffer; message: string },
   {
     contractId: string;
     candidateId: string;
@@ -563,7 +613,7 @@ export const sendContractOffer = createAsyncThunk<
 
 // Cancel Contract Offer
 export const cancelContractOffer = createAsyncThunk<
-  { success: boolean; message: string; contractOffer: any },
+  { success: boolean; message: string; contractOffer: ContractOffer },
   string
 >('contracts/cancelContractOffer', async (contractOfferId) => {
   const response = await fetch(`/api/contracts/${contractOfferId}/cancel`, {
@@ -581,3 +631,60 @@ export const cancelContractOffer = createAsyncThunk<
   const data = await response.json();
   return data;
 });
+
+export const fetchSigningOffer = createAsyncThunk<ContractOfferSigning, FetchSigningOfferParams>(
+  'contracts/fetchSigningOffer',
+  async ({ offerId, token }) => {
+    const response = await apiUtils.get<ApiResponse<ContractOfferSigning>>(
+      `/api/contract-offers/${offerId}`,
+      {
+        params: {
+          token,
+        },
+      },
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    console.log('Returned contract offer', response.data);
+    return response.data;
+  },
+);
+
+export const signByCandidate = createAsyncThunk<ContractOfferSigning, SignByCandidatePayload>(
+  'contracts/signByCandidate',
+  async ({ offerId, token, signature }, { dispatch }) => {
+    const response = await fetch(`/api/contract-offers/${offerId}/sign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, signature }),
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || 'Failed to sign contract');
+    }
+    const data = await response.json();
+
+    dispatch(fetchSigningOffer({ offerId, token }));
+
+    return (data.contractOffer || data.contract_offer || data) as ContractOfferSigning;
+  },
+);
+
+export const rejectByCandidate = createAsyncThunk<ContractOfferSigning, RejectByCandidatePayload>(
+  'contracts/rejectByCandidate',
+  async ({ offerId, token, rejectionReason }, { dispatch }) => {
+    const response = await fetch(`/api/contract-offers/${offerId}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ signingToken: token, rejectionReason }),
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || 'Failed to reject contract');
+    }
+    const data = await response.json();
+    dispatch(fetchSigningOffer({ offerId, token }));
+    return (data.contractOffer || data.contract_offer || data) as ContractOfferSigning;
+  },
+);

@@ -228,9 +228,7 @@ The Hiring Team`;
                     <SelectItem key={contract.id} value={contract.id}>
                       <div className="flex flex-col">
                         <span className="font-medium">{contract.title}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {contract.category} • {contract.status}
-                        </span>
+                        <span className="text-xs text-muted-foreground">{contract.status}</span>
                       </div>
                     </SelectItem>
                   ))
@@ -242,10 +240,7 @@ The Hiring Team`;
                 <p className="text-sm text-blue-800">
                   <strong>Selected:</strong> {selectedContract.title}
                 </p>
-                <p className="text-xs text-blue-600 mt-1">
-                  Category: {selectedContract.category} • Duration:{' '}
-                  {selectedContract.contractDuration || 'Not specified'}
-                </p>
+                <p className="text-xs text-blue-600 mt-1">Status: {selectedContract.status}</p>
               </div>
             )}
           </div>

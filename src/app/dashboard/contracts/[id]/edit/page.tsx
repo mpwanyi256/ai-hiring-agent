@@ -50,10 +50,7 @@ export default function EditContractPage() {
         contract={{
           title: contract.title || '',
           body: contract.content || '',
-          jobTitle: contract.jobTitle || undefined,
-          employmentType: contract.employmentType || undefined,
-          contractDuration: contract.contractDuration || '',
-          category: contract.category || 'general',
+          jobTitle: contract.jobTitle || { id: '', name: '' },
           status: contract.status || 'draft',
         }}
         trigger={

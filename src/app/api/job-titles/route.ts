@@ -14,27 +14,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's company
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile?.company_id) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
-    }
-
-    // Get search query from URL params
+    // Get search query and optional companyId from URL params
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
+    const companyIdParam = searchParams.get('companyId');
 
-    // Fetch job titles (global + company-specific)
-    let query = supabase
-      .from('job_titles')
-      .select('*')
-      .or(`company_id.is.null,company_id.eq.${profile.company_id}`)
-      .order('name');
+    const companyId = companyIdParam || null;
+    if (!companyId) {
+      return NextResponse.json({ error: 'Missing required companyId parameter' }, { status: 400 });
+    }
+
+    let query = supabase.from('job_titles').select('*').eq('company_id', companyId).order('name');
 
     if (search) {
       query = query.ilike('name', `%${search}%`);

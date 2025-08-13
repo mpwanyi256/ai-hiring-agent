@@ -1,113 +1,70 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { ContractPlaceholder } from '@/types/contracts';
-import { Plus, Search, Copy } from 'lucide-react';
+import { Search, Copy, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { ContractPlaceholder } from '@/types/contracts';
+import { placeholderService } from '@/lib/services/placeholderService';
 
 interface ContractPlaceholdersProps {
   onInsertPlaceholder: (placeholder: string) => void;
 }
 
-// Define all available contract placeholders
-const AVAILABLE_PLACEHOLDERS: ContractPlaceholder[] = [
-  {
-    key: 'candidate_name',
-    label: 'Candidate Name',
-    description: 'Full name of the candidate',
-    category: 'candidate',
-    example: 'John Smith',
-  },
-  {
-    key: 'candidate_email',
-    label: 'Candidate Email',
-    description: 'Email address of the candidate',
-    category: 'candidate',
-    example: 'john.smith@email.com',
-  },
-  {
-    key: 'job_title',
-    label: 'Job Title',
-    description: 'Position title for the role',
-    category: 'contract',
-    example: 'Senior Software Engineer',
-  },
-  {
-    key: 'company_name',
-    label: 'Company Name',
-    description: 'Name of the hiring company',
-    category: 'company',
-    example: 'Acme Corporation',
-  },
-  {
-    key: 'start_date',
-    label: 'Start Date',
-    description: 'Employment start date',
-    category: 'date',
-    example: '01/15/2024',
-  },
-  {
-    key: 'end_date',
-    label: 'End Date',
-    description: 'Employment end date (if applicable)',
-    category: 'date',
-    example: '01/15/2025',
-  },
-  {
-    key: 'salary_amount',
-    label: 'Salary Amount',
-    description: 'Salary amount (formatted with commas)',
-    category: 'contract',
-    example: '75,000',
-  },
-  {
-    key: 'salary_currency',
-    label: 'Salary Currency',
-    description: 'Currency for the salary',
-    category: 'contract',
-    example: 'USD',
-  },
-  {
-    key: 'contract_duration',
-    label: 'Contract Duration',
-    description: 'Duration of the contract',
-    category: 'contract',
-    example: '12 months',
-  },
-  {
-    key: 'employment_type',
-    label: 'Employment Type',
-    description: 'Type of employment',
-    category: 'contract',
-    example: 'Full-time',
-  },
-  {
-    key: 'signing_date',
-    label: 'Signing Date',
-    description: 'Date when the contract is signed',
-    category: 'date',
-    example: '12/01/2023',
-  },
-];
-
 export default function ContractPlaceholders({ onInsertPlaceholder }: ContractPlaceholdersProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [placeholders, setPlaceholders] = useState<ContractPlaceholder[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch placeholders when component mounts or popover opens
+  useEffect(() => {
+    if (isOpen && placeholders.length === 0) {
+      fetchPlaceholders();
+    }
+  }, [isOpen]);
+
+  const fetchPlaceholders = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const fetchedPlaceholders = await placeholderService.getPlaceholders();
+      setPlaceholders(fetchedPlaceholders);
+    } catch (err) {
+      setError('Failed to load placeholders');
+      console.error('Error fetching placeholders:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter placeholders based on search term
-  const filteredPlaceholders = AVAILABLE_PLACEHOLDERS.filter(
+  const filteredPlaceholders = placeholders.filter(
     (placeholder) =>
       placeholder.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      placeholder.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      placeholder.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       placeholder.key.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  // Group placeholders by category
+  const groupedPlaceholders = filteredPlaceholders.reduce(
+    (acc, placeholder) => {
+      const category = placeholder.category || 'general';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(placeholder);
+      return acc;
+    },
+    {} as Record<string, ContractPlaceholder[]>,
+  );
+
   const handleInsertPlaceholder = (key: string) => {
-    const placeholderText = `{{ ${key} }}`;
+    const placeholderText = placeholderService.formatPlaceholder(key);
     onInsertPlaceholder(placeholderText);
     setIsOpen(false);
     toast.success(`Inserted placeholder: ${placeholderText}`);
@@ -115,83 +72,118 @@ export default function ContractPlaceholders({ onInsertPlaceholder }: ContractPl
 
   const handleCopyPlaceholder = (key: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    const placeholderText = `{{ ${key} }}`;
+    const placeholderText = placeholderService.formatPlaceholder(key);
     navigator.clipboard.writeText(placeholderText);
     toast.success(`Copied to clipboard: ${placeholderText}`);
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colors = {
+      candidate: 'bg-blue-100 text-blue-800 border-blue-200',
+      company: 'bg-green-100 text-green-800 border-green-200',
+      job: 'bg-purple-100 text-purple-800 border-purple-200',
+      compensation: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      dates: 'bg-orange-100 text-orange-800 border-orange-200',
+      contract: 'bg-gray-100 text-gray-800 border-gray-200',
+      general: 'bg-gray-100 text-gray-800 border-gray-200',
+    };
+    return colors[category as keyof typeof colors] || colors.general;
   };
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" size="sm">
-          <Plus className="h-4 w-4 mr-2" />
+        <Button type="button" variant="outline" size="sm" className="h-8 gap-1 text-xs">
+          <Plus className="h-3 w-3" />
           Add Placeholder
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="start">
-        <div className="p-4 border-b flex flex-col gap-2">
-          <h3 className="font-semibold text-sm mb-2">Contract Placeholders</h3>
-          <p className="text-xs text-muted-foreground mb-3">
-            Click to insert placeholders that will be replaced with actual values when contracts are
-            generated.
-          </p>
+      <PopoverContent className="w-96 p-0" align="end">
+        <div className="border-b p-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search placeholders..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
+              className="pl-8 h-8 text-xs"
             />
           </div>
         </div>
 
-        <div className="max-h-80 overflow-y-auto">
-          {filteredPlaceholders.length === 0 ? (
+        <div className="h-80 overflow-y-auto">
+          {loading ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
-              No placeholders found matching &ldquo;{searchTerm}&rdquo;
+              Loading placeholders...
+            </div>
+          ) : error ? (
+            <div className="p-4 text-center">
+              <p className="text-sm text-red-600 mb-2">{error}</p>
+              <Button variant="outline" size="sm" onClick={fetchPlaceholders} className="text-xs">
+                Try Again
+              </Button>
+            </div>
+          ) : Object.keys(groupedPlaceholders).length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              {searchTerm
+                ? 'No placeholders found matching your search.'
+                : 'No placeholders available.'}
             </div>
           ) : (
             <div className="p-2">
-              {filteredPlaceholders.map((placeholder) => (
-                <div
-                  key={placeholder.key}
-                  className="flex items-start justify-between p-3 rounded-lg hover:bg-accent cursor-pointer transition-colors group"
-                  onClick={() => handleInsertPlaceholder(placeholder.key)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col items-start gap-2">
-                      <span className="font-medium text-sm">{placeholder.label}</span>
-                      <Badge variant="secondary" className="text-xs font-mono">
-                        {`{{ ${placeholder.key} }}`}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-1">{placeholder.description}</p>
-                    <p className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">
-                      Example: {placeholder.example}
-                    </p>
+              {Object.entries(groupedPlaceholders).map(([category, categoryPlaceholders]) => (
+                <div key={category} className="mb-4 last:mb-0">
+                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {category}
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 h-8 w-8 p-0"
-                    onClick={(e) => handleCopyPlaceholder(placeholder.key, e)}
-                    title="Copy to clipboard"
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
+                  <div className="space-y-1">
+                    {categoryPlaceholders.map((placeholder) => (
+                      <div
+                        key={placeholder.id}
+                        onClick={() => handleInsertPlaceholder(placeholder.key)}
+                        className="group flex items-center justify-between p-2 rounded-md hover:bg-muted cursor-pointer"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-foreground">
+                              {placeholder.label}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={`text-xs px-1.5 py-0 ${getCategoryColor(placeholder.category)}`}
+                            >
+                              {placeholder.category}
+                            </Badge>
+                          </div>
+                          {placeholder.description && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {placeholder.description}
+                            </p>
+                          )}
+                          {placeholder.example && (
+                            <p className="text-xs text-muted-foreground/70 italic mt-1">
+                              e.g., {placeholder.example}
+                            </p>
+                          )}
+                          <code className="text-xs bg-muted px-1 py-0.5 rounded mt-1 inline-block">
+                            {placeholderService.formatPlaceholder(placeholder.key)}
+                          </code>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => handleCopyPlaceholder(placeholder.key, e)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 ml-2"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
-
-        <div className="p-3 border-t bg-muted/50">
-          <p className="text-xs text-muted-foreground">
-            💡 Tip: You can also type placeholders manually using the format{' '}
-            <code className="bg-muted px-1 py-0.5 rounded text-xs">{`{{ placeholder_name }}`}</code>
-          </p>
         </div>
       </PopoverContent>
     </Popover>

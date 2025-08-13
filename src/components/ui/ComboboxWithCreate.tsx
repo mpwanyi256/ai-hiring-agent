@@ -17,12 +17,9 @@ interface ComboboxWithCreateProps {
   label: string;
   loading?: boolean;
   error?: string;
-  searchValue: string;
-  onSearchChange: (value: string) => void;
-  dropdownOpen: boolean;
-  onDropdownToggle: (open: boolean) => void;
-  dataDropdown: string;
   createLabel?: string;
+  className?: string;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export default function ComboboxWithCreate({
@@ -34,35 +31,64 @@ export default function ComboboxWithCreate({
   label,
   loading = false,
   error,
-  searchValue,
-  onSearchChange,
-  dropdownOpen,
-  onDropdownToggle,
-  dataDropdown,
   createLabel = 'Add new',
+  className,
+  onOpenChange,
 }: ComboboxWithCreateProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const selectedOption = options.find((option) => option.id === value);
-  const filteredOptions = options.filter((option) =>
-    option.name.toLowerCase().includes(searchValue.toLowerCase()),
-  );
 
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
-  // Handle keyboard navigation
+  const filteredOptions = options.filter((option) =>
+    (open ? query : selectedOption?.name || '').trim() === ''
+      ? true
+      : option.name
+          .toLowerCase()
+          .includes((open ? query : selectedOption?.name || '').toLowerCase()),
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        onOpenChange?.(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onOpenChange]);
+
+  const close = () => {
+    setOpen(false);
+    onOpenChange?.(false);
+  };
+
+  const openDropdown = () => {
+    setOpen(true);
+    onOpenChange?.(true);
+    setQuery(selectedOption?.name || '');
+    // focus next tick
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
   const handleKeyDown = async (e: React.KeyboardEvent) => {
     if (
       e.key === 'Enter' &&
-      searchValue.trim() &&
-      !filteredOptions.some((option) => option.name.toLowerCase() === searchValue.toLowerCase())
+      query.trim() &&
+      !options.some((o) => o.name.toLowerCase() === query.toLowerCase())
     ) {
       e.preventDefault();
       if (!isCreating) {
         setIsCreating(true);
         try {
-          await onCreateNew(searchValue.trim());
-          onSearchChange('');
-          onDropdownToggle(false);
+          await onCreateNew(query.trim());
+          setQuery('');
+          close();
         } catch (error) {
           console.error('Failed to create new item:', error);
         } finally {
@@ -70,18 +96,17 @@ export default function ComboboxWithCreate({
         }
       }
     } else if (e.key === 'Escape') {
-      onDropdownToggle(false);
+      close();
     }
   };
 
   const handleCreateNew = async () => {
-    if (!searchValue.trim() || isCreating) return;
-
+    if (!query.trim() || isCreating) return;
     setIsCreating(true);
     try {
-      await onCreateNew(searchValue.trim());
-      onSearchChange('');
-      onDropdownToggle(false);
+      await onCreateNew(query.trim());
+      setQuery('');
+      close();
     } catch (error) {
       console.error('Failed to create new item:', error);
     } finally {
@@ -91,25 +116,22 @@ export default function ComboboxWithCreate({
 
   const handleOptionSelect = (option: Option) => {
     onChange(option.id);
-    onSearchChange('');
-    onDropdownToggle(false);
+    setQuery('');
+    close();
   };
 
   return (
-    <div className="relative" data-dropdown={dataDropdown}>
+    <div ref={containerRef} className={`relative ${className || ''}`}>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
 
       <div className="relative">
         <input
           ref={inputRef}
           type="text"
-          value={dropdownOpen ? searchValue : selectedOption?.name || ''}
-          onChange={(e) => onSearchChange(e.target.value)}
+          value={open ? query : selectedOption?.name || ''}
+          onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
-            if (!dropdownOpen) {
-              onSearchChange(selectedOption?.name || '');
-              onDropdownToggle(true);
-            }
+            if (!open) openDropdown();
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
@@ -121,16 +143,14 @@ export default function ComboboxWithCreate({
 
         <button
           type="button"
-          onClick={() => onDropdownToggle(!dropdownOpen)}
+          onClick={() => (open ? close() : openDropdown())}
           className="absolute inset-y-0 right-0 flex items-center px-2 text-gray-400 hover:text-gray-600"
           disabled={loading}
         >
-          <ChevronDown
-            className={`h-4 w-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
-          />
+          <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
 
-        {dropdownOpen && (
+        {open && (
           <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
             {loading ? (
               <div className="px-3 py-2 text-sm text-gray-500">Loading...</div>
@@ -147,7 +167,7 @@ export default function ComboboxWithCreate({
                       {option.name}
                     </button>
                   ))
-                ) : searchValue.trim() ? (
+                ) : query.trim() ? (
                   <button
                     type="button"
                     onClick={handleCreateNew}
@@ -155,7 +175,7 @@ export default function ComboboxWithCreate({
                     className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none flex items-center gap-2 disabled:opacity-50"
                   >
                     <Plus className="h-4 w-4" />
-                    {isCreating ? 'Creating...' : `${createLabel} ${searchValue}`}
+                    {isCreating ? 'Creating...' : `${createLabel} ${query}`}
                   </button>
                 ) : (
                   <div className="px-3 py-2 text-sm text-gray-500">No options found</div>
@@ -166,13 +186,11 @@ export default function ComboboxWithCreate({
         )}
       </div>
 
-      {searchValue.trim() &&
-        !filteredOptions.some(
-          (option) => option.name.toLowerCase() === searchValue.toLowerCase(),
-        ) &&
-        dropdownOpen && (
+      {query.trim() &&
+        !options.some((option) => option.name.toLowerCase() === query.toLowerCase()) &&
+        open && (
           <div className="mt-1 text-xs text-gray-500">
-            Press Enter or click to add <span className="font-medium">{searchValue}</span> as a new{' '}
+            Press Enter or click to add <span className="font-medium">{query}</span> as a new{' '}
             {label.toLowerCase()}
           </div>
         )}

@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { toast } from 'sonner';
 import {
   Plus,
   Search,
@@ -84,15 +83,6 @@ const CONTRACT_STATUS_OPTIONS = [
   { value: 'deprecated', label: 'Deprecated', color: 'red' },
 ];
 
-const CONTRACT_CATEGORY_OPTIONS = [
-  { value: 'general', label: 'General', color: 'blue' },
-  { value: 'technical', label: 'Technical', color: 'purple' },
-  { value: 'executive', label: 'Executive', color: 'indigo' },
-  { value: 'intern', label: 'Intern', color: 'pink' },
-  { value: 'freelance', label: 'Freelance', color: 'orange' },
-  { value: 'custom', label: 'Custom', color: 'gray' },
-];
-
 export default function ContractsPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -109,7 +99,6 @@ export default function ContractsPage() {
   const [filters, setFilters] = useState<ContractsFilters>({
     search: '',
     status: undefined,
-    category: undefined,
     page: 1,
     limit: 10,
     sortBy: 'updatedAt',
@@ -239,7 +228,7 @@ export default function ContractsPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
               <div className="ml-2">
                 <p className="text-xs font-medium text-muted-foreground">Active Contracts</p>
-                <p className="text-xl font-bold">{analytics.activeContracts || 0}</p>
+                <p className="text-xl font-bold">{analytics.contractsByStatus?.active || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -310,26 +299,6 @@ export default function ContractsPage() {
             </SelectContent>
           </Select>
 
-          {/* Category Filter */}
-          <Select
-            value={filters.category || ''}
-            onValueChange={(value) =>
-              handleFilterChange('category', value === 'all' ? undefined : value)
-            }
-          >
-            <SelectTrigger className="w-full lg:w-[180px]">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {CONTRACT_CATEGORY_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           {/* Bulk Actions */}
           {selectedContracts.length > 0 && (
             <DropdownMenu>
@@ -378,7 +347,6 @@ export default function ContractsPage() {
               </TableHead>
               <TableHead className="text-xs">Contract</TableHead>
               <TableHead className="text-xs">Status</TableHead>
-              <TableHead className="text-xs">Category</TableHead>
               <TableHead className="text-xs">Usage</TableHead>
               <TableHead className="text-xs">Last Used</TableHead>
               <TableHead className="text-xs">Created</TableHead>
@@ -407,32 +375,12 @@ export default function ContractsPage() {
                     {contract.jobTitle && (
                       <p className="text-xs text-muted-foreground">{contract.jobTitle.name}</p>
                     )}
-                    {contract?.tags?.length > 0 && (
-                      <div className="flex gap-1 flex-wrap">
-                        {contract.tags.slice(0, 2).map((tag) => (
-                          <Badge key={tag} variant="secondary" className="text-xs px-1 py-0">
-                            {tag}
-                          </Badge>
-                        ))}
-                        {contract.tags.length > 2 && (
-                          <Badge variant="secondary" className="text-xs px-1 py-0">
-                            +{contract.tags.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className="text-xs">
                     {CONTRACT_STATUS_OPTIONS.find((opt) => opt.value === contract.status)?.label ||
                       contract.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {CONTRACT_CATEGORY_OPTIONS.find((opt) => opt.value === contract.category)
-                      ?.label || contract.category}
                   </Badge>
                 </TableCell>
                 <TableCell>
