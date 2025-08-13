@@ -30,10 +30,10 @@ export async function GET(request: NextRequest) {
 
     const companyId = profile.company_id;
 
-    // Get candidates count metrics
+    // Get candidates count metrics (company-wide)
     const candidatesMetrics = await getCandidatesMetrics(supabase, companyId);
 
-    // Get average response time metrics
+    // Get average response time metrics (company-wide)
     const responseTimeMetrics = await getResponseTimeMetrics(supabase, companyId);
 
     return NextResponse.json({
@@ -50,61 +50,38 @@ export async function GET(request: NextRequest) {
 }
 
 async function getCandidatesMetrics(supabase: any, companyId: string) {
-  // Get total candidates count
-  const { data: totalCandidates, error: totalError } = await supabase
-    .from('candidate_details')
-    .select('id', { count: 'exact', head: true })
-    .eq('company_id', companyId);
-
-  if (totalError) {
-    console.error('Error fetching total candidates:', totalError);
-    throw totalError;
-  }
-
-  // Get candidates count for this week
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-  const { data: weekCandidates, error: weekError } = await supabase
-    .from('candidate_details')
-    .select('id', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .gte('created_at', oneWeekAgo.toISOString());
+  const { data, error } = await supabase.rpc('get_company_candidate_counts', {
+    p_company_id: companyId,
+    p_since: oneWeekAgo.toISOString(),
+  });
 
-  if (weekError) {
-    console.error('Error fetching week candidates:', weekError);
-    throw weekError;
+  if (error) {
+    console.error('Error fetching company candidate counts:', error);
+    throw error;
   }
 
+  const total = Array.isArray(data) && data[0]?.total ? Number(data[0].total) : 0;
+  const since = Array.isArray(data) && data[0]?.since_count ? Number(data[0].since_count) : 0;
+
   return {
-    total: totalCandidates || 0,
-    thisWeek: weekCandidates || 0,
+    total,
+    thisWeek: since,
     trend: {
-      value: weekCandidates || 0,
-      isPositive: (weekCandidates || 0) > 0,
+      value: since,
+      isPositive: since > 0,
       label: 'this week',
     },
   };
 }
 
 async function getResponseTimeMetrics(supabase: any, companyId: string) {
-  // Get completed interviews with their response times
-  const { data: interviews, error: interviewsError } = await supabase
-    .from('interviews')
-    .select(
-      `
-      id,
-      created_at,
-      date,
-      time,
-      status,
-      candidate_details!inner(company_id)
-    `,
-    )
-    .eq('candidate_details.company_id', companyId)
-    .eq('status', 'completed')
-    .order('created_at', { ascending: false })
-    .limit(100); // Get last 100 completed interviews for calculation
+  const { data: interviews, error: interviewsError } = await supabase.rpc(
+    'get_company_completed_interviews',
+    { p_company_id: companyId, p_limit: 100 },
+  );
 
   if (interviewsError) {
     console.error('Error fetching interviews for response time:', interviewsError);
@@ -128,7 +105,7 @@ async function getResponseTimeMetrics(supabase: any, companyId: string) {
 
   for (const interview of interviews) {
     const createdAt = new Date(interview.created_at);
-    const interviewDateTime = new Date(`${interview.date}T${interview.time}`);
+    const interviewDateTime = new Date(`${interview.interview_date}T${interview.interview_time}`);
 
     // Calculate hours between creation and interview
     const diffMs = interviewDateTime.getTime() - createdAt.getTime();
