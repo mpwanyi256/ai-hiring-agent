@@ -128,6 +128,11 @@ const contractsSlice = createSlice({
     clearAnalyticsError: (state) => {
       state.analyticsError = null;
     },
+    resetSigningOffer: (state) => {
+      state.signingOffer = null;
+      state.signingLoading = false;
+      state.signingError = null;
+    },
 
     // Set current items
     setCurrentContract: (state, action: PayloadAction<Contract | null>) => {
@@ -629,6 +634,7 @@ export const {
   setSelectedContracts,
   clearContractsState,
   updateContractOfferStatus,
+  resetSigningOffer,
 } = contractsSlice.actions;
 
 export default contractsSlice.reducer;

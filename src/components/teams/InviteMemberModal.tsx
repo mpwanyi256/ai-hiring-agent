@@ -33,8 +33,11 @@ export default function InviteMemberModal({ open, onClose }: InviteMemberModalPr
       e.preventDefault();
       setTouched(true);
       if (!isValid) return;
-      await dispatch(inviteUser({ firstName, lastName, email, role }));
-
+      const response = await dispatch(inviteUser({ firstName, lastName, email, role })).unwrap();
+      if (response.error) {
+        apiError(response.error);
+        return;
+      }
       apiSuccess('Invite sent successfully');
       onClose();
       setFirstName('');

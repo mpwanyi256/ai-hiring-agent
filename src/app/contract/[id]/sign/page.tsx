@@ -8,6 +8,7 @@ import {
   signByCandidate,
   rejectByCandidate,
 } from '@/store/contracts/contractsThunks';
+import { resetSigningOffer } from '@/store/contracts/contractsSlice';
 import {
   selectSigningOffer,
   selectSigningLoading,
@@ -53,6 +54,10 @@ export default function ContractSigningPage() {
   useEffect(() => {
     if (!contractOfferId || !signingToken) return;
     dispatch(fetchSigningOffer({ offerId: contractOfferId, token: signingToken }));
+
+    return () => {
+      dispatch(resetSigningOffer());
+    };
   }, [dispatch, contractOfferId, signingToken]);
 
   const handleSignatureSubmit = async (signature: {
@@ -428,7 +433,7 @@ export default function ContractSigningPage() {
         {contractOffer.status === 'signed' && contractOffer.signedCopyUrl ? (
           <Button variant="outline" onClick={downloadContract} className="w-full">
             <Download className="h-4 w-4 mr-2" />
-            View Signed Contract
+            Download Signed Contract
           </Button>
         ) : (
           <div className="text-center py-4">

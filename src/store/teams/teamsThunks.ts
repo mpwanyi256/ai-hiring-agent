@@ -16,9 +16,18 @@ export const fetchTeam = createAsyncThunk('teams/fetchTeam', async () => {
   return res.data;
 });
 
-export const inviteUser = createAsyncThunk(
+export const inviteUser = createAsyncThunk<
+  APIResponse<TeamInvite>,
+  Omit<InviteUserPayload, 'companyId'>,
+  {
+    rejectValue: { error: string };
+  }
+>(
   'teams/inviteUser',
-  async (inviteData: Omit<InviteUserPayload, 'companyId'>, { getState, dispatch }) => {
+  async (
+    inviteData: Omit<InviteUserPayload, 'companyId'>,
+    { getState, dispatch, rejectWithValue },
+  ) => {
     const { auth } = getState() as RootState;
     const { user } = auth;
     if (!user?.companyId) throw new Error('No company ID found');
@@ -28,8 +37,12 @@ export const inviteUser = createAsyncThunk(
       companyName: user.companyName,
     });
 
+    if (res.error) {
+      return rejectWithValue({ error: res.error });
+    }
+
     dispatch(fetchTeamInvites({ companyId: user.companyId, page: 1 }));
-    return res.data;
+    return res;
   },
 );
 
