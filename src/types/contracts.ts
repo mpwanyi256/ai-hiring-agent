@@ -618,6 +618,7 @@ export interface ContractOfferSigning {
   rejectedAt?: string | null;
   signedCopyUrl?: string | null;
   additionalTerms?: Record<string, unknown> | null;
+  rejectionReason?: string | null;
   contract: {
     id: string;
     title: string;

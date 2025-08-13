@@ -154,7 +154,7 @@ export async function GET(
       contract: {
         id: contractOfferDetails.contract_id,
         title: contractOfferDetails.contract_title,
-        body: contractOfferDetails.contract_content || '',
+        body: contractBody,
         jobTitle: { name: contractOfferDetails.job_title_name || '' },
       },
 

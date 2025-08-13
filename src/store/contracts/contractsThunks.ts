@@ -653,7 +653,7 @@ export const fetchSigningOffer = createAsyncThunk<ContractOfferSigning, FetchSig
 
 export const signByCandidate = createAsyncThunk<ContractOfferSigning, SignByCandidatePayload>(
   'contracts/signByCandidate',
-  async ({ offerId, token, signature }) => {
+  async ({ offerId, token, signature }, { dispatch }) => {
     const response = await fetch(`/api/contract-offers/${offerId}/sign`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -664,13 +664,16 @@ export const signByCandidate = createAsyncThunk<ContractOfferSigning, SignByCand
       throw new Error(text || 'Failed to sign contract');
     }
     const data = await response.json();
+
+    dispatch(fetchSigningOffer({ offerId, token }));
+
     return (data.contractOffer || data.contract_offer || data) as ContractOfferSigning;
   },
 );
 
 export const rejectByCandidate = createAsyncThunk<ContractOfferSigning, RejectByCandidatePayload>(
   'contracts/rejectByCandidate',
-  async ({ offerId, token, rejectionReason }) => {
+  async ({ offerId, token, rejectionReason }, { dispatch }) => {
     const response = await fetch(`/api/contract-offers/${offerId}/reject`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -681,6 +684,7 @@ export const rejectByCandidate = createAsyncThunk<ContractOfferSigning, RejectBy
       throw new Error(text || 'Failed to reject contract');
     }
     const data = await response.json();
+    dispatch(fetchSigningOffer({ offerId, token }));
     return (data.contractOffer || data.contract_offer || data) as ContractOfferSigning;
   },
 );

@@ -76,7 +76,6 @@ export default function ContractSigningPage() {
       ).unwrap();
       toast.success('Contract signed successfully!');
       setShowSignatureModal(false);
-      dispatch(fetchSigningOffer({ offerId: contractOfferId, token: signingToken }));
     } catch (e) {
       toast.error('Failed to sign contract');
     } finally {
@@ -85,7 +84,7 @@ export default function ContractSigningPage() {
   };
 
   const handleRejectContract = async () => {
-    if (!contractOffer) return;
+    if (!contractOffer || !rejectionReason.trim().length) return;
     setActionLoading(true);
     try {
       await dispatch(
@@ -293,7 +292,7 @@ export default function ContractSigningPage() {
             ) : (
               <CheckCircle className="h-4 w-4 mr-2" />
             )}
-            Accept & Sign Contract
+            Accept & Sign Offer
           </Button>
           <Button
             variant="outline"
@@ -302,7 +301,7 @@ export default function ContractSigningPage() {
             className="border-red-200 text-red-700 hover:bg-red-50"
           >
             <XCircle className="h-4 w-4 mr-2" />
-            Decline Contract
+            Decline Offer
           </Button>
         </div>
       </CardContent>
@@ -428,7 +427,7 @@ export default function ContractSigningPage() {
         {contractOffer.status === 'signed' && contractOffer.signedCopyUrl ? (
           <Button variant="outline" onClick={downloadContract} className="w-full">
             <Download className="h-4 w-4 mr-2" />
-            Download Signed Contract
+            View Signed Contract
           </Button>
         ) : (
           <div className="text-center py-4">
@@ -467,7 +466,7 @@ export default function ContractSigningPage() {
       </div>
 
       <SignatureModal
-        isOpen={showSignatureModal}
+        isOpen={showSignatureModal && !actionLoading}
         onClose={() => setShowSignatureModal(false)}
         onSign={handleSignatureSubmit}
         candidateName={`${contractOffer.candidate.firstName} ${contractOffer.candidate.lastName}`}

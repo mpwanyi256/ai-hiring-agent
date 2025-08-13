@@ -146,11 +146,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       // Generate and save signed contract PDF
       try {
         // Auto-fill the contract body with signature before generating PDF
-        const autoFillPlaceholders = (contractBody: string, data: any): string => {
+        const autoFillPlaceholders = (
+          contractBody: string,
+          data: any,
+          signatureInput?: {
+            type: 'typed' | 'drawn';
+            data: string;
+            fullName: string;
+            signedAt?: string;
+          },
+        ): string => {
           if (!contractBody) return contractBody;
 
-          // Check if contract has signature data
-          const signatureData = data.additional_terms?.signature;
+          // Prefer provided signature; fallback to additional_terms.signature
+          const signatureData = signatureInput || data.additional_terms?.signature;
           let signatureHtml = '';
 
           if (signatureData) {
@@ -161,7 +170,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
                   <div style="font-family: 'Brush Script MT', cursive; font-size: 24px; font-style: italic; color: #000; padding: 10px; background-color: white; border: 1px solid #ccc; border-radius: 3px;">
                     ${signatureData.fullName}
                   </div>
-                  <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">Signed on: ${new Date(signatureData.signedAt).toLocaleDateString()}</p>
+                  <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">Signed on: ${new Date(signatureData.signedAt || Date.now()).toLocaleDateString()}</p>
                 </div>
               `;
             } else if (signatureData.type === 'drawn') {
@@ -172,7 +181,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
                     <img src="${signatureData.data}" alt="Signature" style="max-width: 300px; max-height: 100px; display: block;" />
                   </div>
                   <p style="margin: 10px 0 5px 0; font-size: 14px; color: #333;">Name: ${signatureData.fullName}</p>
-                  <p style="margin: 0; font-size: 12px; color: #666;">Signed on: ${new Date(signatureData.signedAt).toLocaleDateString()}</p>
+                  <p style="margin: 0; font-size: 12px; color: #666;">Signed on: ${new Date(signatureData.signedAt || Date.now()).toLocaleDateString()}</p>
                 </div>
               `;
             }
@@ -202,20 +211,35 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
               `${data.sender_first_name || ''} ${data.sender_last_name || ''}`.trim(),
             '{{ sender_email }}': data.sender_email || '',
             '{{ candidate_signature }}': signatureHtml,
-          };
+          } as Record<string, string>;
 
           let filledBody = contractBody;
           Object.entries(placeholders).forEach(([placeholder, value]) => {
-            const regex = new RegExp(placeholder.replace(/[{}]/g, '\\&'), 'gi');
+            const regex = new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'gi');
             filledBody = filledBody.replace(regex, value);
           });
+
+          // Append signature block if placeholder was not present
+          const placeholderPresent = /\{\{\s*candidate_signature\s*\}\}/i.test(contractBody);
+          if (!placeholderPresent && signatureHtml) {
+            filledBody += `
+              <div style="margin-top: 32px; padding-top: 12px; border-top: 1px dashed #ccc;">
+                <p style="margin: 0 0 8px 0; font-weight: bold;">Signature</p>
+                ${signatureHtml}
+              </div>
+            `;
+          }
 
           return filledBody;
         };
 
         const filledContractHtml = autoFillPlaceholders(
           contractOffer.contract_content || contractOffer.contract_body || '',
-          contractOffer,
+          {
+            ...contractOffer,
+            additional_terms: updateData.additional_terms || contractOffer.additional_terms,
+          },
+          signature,
         );
 
         const pdfResult = await generateAndSaveContractPDF({

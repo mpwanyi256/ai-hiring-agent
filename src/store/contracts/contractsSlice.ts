@@ -581,7 +581,6 @@ const contractsSlice = createSlice({
       .addCase(fetchSigningOffer.pending, (state) => {
         state.signingLoading = true;
         state.signingError = null;
-        state.signingOffer = null;
       })
       .addCase(fetchSigningOffer.fulfilled, (state, action) => {
         state.signingLoading = false;
