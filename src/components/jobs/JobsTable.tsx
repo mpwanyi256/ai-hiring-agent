@@ -14,6 +14,7 @@ import { useAppSelector } from '@/store';
 import { selectCompanyJobs } from '@/store/jobs/jobsSelectors';
 import { CompanyJobs, JobField } from '@/types';
 import { getJobStatusColor } from '@/lib/utils';
+import { selectUserDetails } from '@/store/auth/authSelectors';
 
 interface JobsTableProps {
   onCopyLink: (job: CompanyJobs) => void;
@@ -22,6 +23,7 @@ interface JobsTableProps {
 
 export default function JobsTable({ onCopyLink, isLoading }: JobsTableProps) {
   const { jobs } = useAppSelector(selectCompanyJobs);
+  const user = useAppSelector(selectUserDetails);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -42,7 +44,7 @@ export default function JobsTable({ onCopyLink, isLoading }: JobsTableProps) {
     );
   }
 
-  if (jobs.length === 0) {
+  if (jobs.length === 0 || !user) {
     return (
       <div className="bg-white rounded-lg border border-gray-100 p-8 text-center">
         <div className="text-gray-400 mb-3">
@@ -72,9 +74,6 @@ export default function JobsTable({ onCopyLink, isLoading }: JobsTableProps) {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Created
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Format
-              </th>
               <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -93,7 +92,8 @@ export default function JobsTable({ onCopyLink, isLoading }: JobsTableProps) {
                     </Link>
                     {job.fields?.experienceLevel && (
                       <span className="text-xs text-gray-500 mt-0.5 capitalize">
-                        {job.fields['experienceLevel']?.value}
+                        {job.fields['experienceLevel']?.value} -{' '}
+                        {`${job.creator_details.firstName} ${job.creator_details.lastName}`}
                       </span>
                     )}
                     {job.fields?.skills && job.fields.skills.length > 0 && (
@@ -147,40 +147,31 @@ export default function JobsTable({ onCopyLink, isLoading }: JobsTableProps) {
                   </div>
                 </td>
 
-                <td className="px-4 py-4">
-                  <span className="text-sm text-gray-500 capitalize">
-                    {job.interview_format === 'text' ? 'Text' : 'Video'}
-                  </span>
-                </td>
-
                 <td className="px-4 py-4 text-right">
-                  <div className="flex items-center justify-end space-x-2">
-                    <Link href={`/dashboard/jobs/${job.id}`}>
-                      <Button variant="ghost" size="sm" className="text-xs">
-                        <EyeIcon className="w-3 h-3 mr-1" />
-                        View
-                      </Button>
-                    </Link>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs"
-                      onClick={() => onCopyLink(job)}
-                    >
-                      <LinkIcon className="w-3 h-3 mr-1" />
-                      Copy interview link
-                    </Button>
-
-                    {/* {job.candidateCount && job.candidateCount > 0 && (
-                      <Link href={`/dashboard/candidates?job=${job.id}`}>
-                        <Button size="sm" className="text-xs">
-                          <UserGroupIcon className="w-3 h-3 mr-1" />
-                          Candidates
+                  {job.member_ids?.includes(user.id) ? (
+                    <div className="flex items-center justify-end space-x-2">
+                      <Link href={`/dashboard/jobs/${job.id}`}>
+                        <Button variant="ghost" size="sm" className="text-xs">
+                          <EyeIcon className="w-3 h-3 mr-1" />
+                          View
                         </Button>
                       </Link>
-                    )} */}
-                  </div>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => onCopyLink(job)}
+                      >
+                        <LinkIcon className="w-3 h-3 mr-1" />
+                        Copy interview link
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-end space-x-2">
+                      <span className="text-sm text-gray-500">Request Access</span>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}

@@ -47,12 +47,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 });
     }
 
+    // Normalize IDs: use real notification_id when available for update operations
+    type NotificationViewRow = {
+      id: string;
+      notification_id: string | null;
+      read: boolean;
+      [key: string]: unknown;
+    };
+
+    const normalized = (notifications || []).map((n: NotificationViewRow) => ({
+      ...n,
+      id: n.notification_id ? String(n.notification_id) : n.id,
+    })) as unknown as NotificationsResponse['notifications'];
+
     const response: NotificationsResponse = {
       success: true,
       error: null,
-      notifications: notifications || [],
+      notifications: normalized,
       total: count || 0,
-      unreadCount: notifications?.filter((n) => !n.read).length || 0,
+      unreadCount: normalized.filter((n) => !n.read).length || 0,
     };
 
     return NextResponse.json(response);

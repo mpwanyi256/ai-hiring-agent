@@ -1,4 +1,4 @@
-import { Database } from '@/lib/supabase/types';
+// import { Database } from '@/lib/supabase/types';
 import { JobQuestion } from './interview';
 import z from 'zod';
 
@@ -238,8 +238,8 @@ export interface CompanyJobs {
     id: string;
     role: string;
     email: string;
-    first_name: string;
-    last_name: string;
+    firstName: string;
+    lastName: string;
   };
   company_id: string;
   company_name: string;
@@ -249,6 +249,8 @@ export interface CompanyJobs {
   response_count: number;
   evaluation_count: number;
   average_score: number;
+  // List of users with explicit access to the job (from job_permissions)
+  member_ids?: string[];
 }
 
 export interface GetCompanyJobsPayload {
