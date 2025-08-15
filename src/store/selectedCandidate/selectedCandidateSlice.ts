@@ -3,6 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import {
   fetchSelectedCandidateAnalytics,
   fetchSelectedCandidateDetails,
+  fetchSelectedCandidateContractOffers,
 } from './selectedCandidateThunks';
 import { fetchJobCandidates, updateCandidateStatus } from '../candidates/candidatesThunks';
 
@@ -10,6 +11,7 @@ const initialState: SelectedCandidateState = {
   candidate: null,
   candidateAnalytics: null,
   isLoading: false,
+  contractOffers: [],
 };
 
 const selectedCandidateSlice = createSlice({
@@ -23,9 +25,21 @@ const selectedCandidateSlice = createSlice({
       state.candidate = null;
       state.candidateAnalytics = null;
       state.isLoading = false;
+      state.contractOffers = [];
     },
   },
   extraReducers: (builder) => {
+    builder.addCase(fetchSelectedCandidateContractOffers.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(fetchSelectedCandidateContractOffers.fulfilled, (state, action) => {
+      state.contractOffers = action.payload;
+      state.isLoading = false;
+    });
+    builder.addCase(fetchSelectedCandidateContractOffers.rejected, (state) => {
+      state.contractOffers = null;
+      state.isLoading = false;
+    });
     builder.addCase(fetchJobCandidates.pending, (state) => {
       state.candidate = null;
       state.candidateAnalytics = null;

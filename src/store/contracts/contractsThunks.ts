@@ -36,6 +36,7 @@ import {
 import { apiUtils } from '../api';
 import { RootState } from '@/store';
 import { ApiResponse } from '@/types';
+import { fetchSelectedCandidateContractOffers } from '../selectedCandidate/selectedCandidateThunks';
 
 // Contract Templates
 export const fetchContracts = createAsyncThunk<ContractsListResponse, ContractsFilters | undefined>(
@@ -562,7 +563,7 @@ export const sendContractOffer = createAsyncThunk<
     customMessage?: string;
     ccEmails?: string[];
   }
->('contracts/sendContractOffer', async (contractData, { getState, rejectWithValue }) => {
+>('contracts/sendContractOffer', async (contractData, { getState, rejectWithValue, dispatch }) => {
   const state = getState() as {
     auth: {
       user: {
@@ -608,6 +609,7 @@ export const sendContractOffer = createAsyncThunk<
   }
 
   const data = await response.json();
+  dispatch(fetchSelectedCandidateContractOffers());
   return data;
 });
 

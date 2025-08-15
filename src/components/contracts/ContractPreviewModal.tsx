@@ -52,7 +52,7 @@ export default function ContractPreviewModal({ contract, trigger }: ContractPrev
         toast.success('Contract content copied to clipboard');
       }
     } catch (error) {
-      toast.error('Failed to copy content');
+      toast.error(error instanceof Error ? error.message : 'Failed to copy content');
     }
   };
 
@@ -72,7 +72,7 @@ export default function ContractPreviewModal({ contract, trigger }: ContractPrev
       document.body.removeChild(element);
       toast.success('Contract downloaded');
     } catch (error) {
-      toast.error('Failed to download contract');
+      toast.error(error instanceof Error ? error.message : 'Failed to download contract');
     }
   };
 

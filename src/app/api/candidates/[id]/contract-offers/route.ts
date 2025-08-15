@@ -64,7 +64,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       contractTitle: offer.contract_title,
     }));
 
-    return NextResponse.json({ success: true, offers: transformed });
+    return NextResponse.json({ success: true, data: transformed });
   } catch (err) {
     console.error('Error in candidate contract offers route:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

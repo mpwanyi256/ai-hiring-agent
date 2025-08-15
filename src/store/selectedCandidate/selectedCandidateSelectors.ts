@@ -10,3 +10,9 @@ export const selectSelectedCandidateEvaluation = (state: RootState) =>
 
 export const selectSelectedCandidateAnalytics = (state: RootState) =>
   state.selectedCandidate.candidateAnalytics;
+
+export const selectSelectedCandidateLoading = (state: RootState) =>
+  state.selectedCandidate.isLoading;
+
+export const selectSelectedCandidateContractOffers = (state: RootState) =>
+  state.selectedCandidate.contractOffers;

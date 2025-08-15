@@ -28,6 +28,7 @@ export interface ContractOffer {
   id: string;
   candidateId: string;
   contractId: string;
+  contractTitle: string;
   status: 'sent' | 'viewed' | 'signed' | 'rejected' | 'expired';
   salaryAmount: number;
   salaryCurrency: string;

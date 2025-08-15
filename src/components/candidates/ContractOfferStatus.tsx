@@ -30,6 +30,11 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { ContractOffer } from '@/types';
+import {
+  selectSelectedCandidateContractOffers,
+  selectSelectedCandidateLoading,
+} from '@/store/selectedCandidate/selectedCandidateSelectors';
+import { fetchSelectedCandidateContractOffers } from '@/store/selectedCandidate/selectedCandidateThunks';
 
 interface ContractOfferStatusProps {
   candidateId: string;
@@ -46,8 +51,9 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
   candidate,
 }) => {
   const dispatch = useAppDispatch();
-  const contractOffers = useAppSelector(selectContractOffers);
-  const loading = useAppSelector(selectContractOffersLoading);
+  const contractOffers = useAppSelector(selectSelectedCandidateContractOffers);
+  //useAppSelector(selectContractOffers);
+  const loading = useAppSelector(selectSelectedCandidateLoading);
 
   // Modal states
   const [showViewContractModal, setShowViewContractModal] = useState(false);
@@ -55,14 +61,9 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
   const [selectedContract, setSelectedContract] = useState<any>(null);
 
   // Filter contract offers for this specific candidate
-  const candidateOffers = contractOffers.filter(
+  const candidateOffers = contractOffers?.filter(
     (offer: ContractOffer) => offer.candidateId === candidateId,
   );
-
-  useEffect(() => {
-    // Fetch contract offers when component mounts
-    dispatch(fetchContractOffers());
-  }, [dispatch]);
 
   // Helper functions
   const handleViewContract = (offer: any) => {
@@ -73,31 +74,6 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
   const handleResendContract = (offer: any) => {
     setSelectedContract(offer);
     setShowResendContractModal(true);
-  };
-
-  const handleCancelContract = async (offerId: string) => {
-    try {
-      await dispatch(cancelContractOffer(offerId)).unwrap();
-      // Refetch contract offers to update the UI
-      if (candidate?.id) {
-        dispatch(fetchContractOffers({ candidateId: candidate.id }));
-      }
-    } catch (error) {
-      console.error('Failed to cancel contract offer:', error);
-    }
-  };
-
-  const handleResendContractSubmit = async (contractId: string, data: any) => {
-    try {
-      await dispatch(resendContractOffer({ contractId, ...data })).unwrap();
-      // Refetch contract offers to update the UI
-      if (candidate?.id) {
-        dispatch(fetchContractOffers({ candidateId: candidate.id }));
-      }
-      setShowResendContractModal(false);
-    } catch (error) {
-      console.error('Failed to resend contract offer:', error);
-    }
   };
 
   const canSendContract =
@@ -122,7 +98,7 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
     );
   }
 
-  if (candidateOffers.length === 0) {
+  if (candidateOffers?.length === 0) {
     return (
       <Card className="mt-6">
         <CardHeader>
@@ -174,7 +150,7 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center">
               <FileSignature className="h-5 w-5 mr-2" />
-              Contract Offers ({candidateOffers.length})
+              Contract Offers ({candidateOffers?.length})
             </CardTitle>
             {onSendContract && canSendContract && (
               <Button variant="default" size="sm" onClick={onSendContract}>
@@ -186,7 +162,7 @@ const ContractOfferStatus: React.FC<ContractOfferStatusProps> = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {candidateOffers.map((offer: ContractOffer) => {
+            {candidateOffers?.map((offer: ContractOffer) => {
               const statusBadge = getContractStatusBadge(offer.status);
               const expired = isExpired(offer);
 

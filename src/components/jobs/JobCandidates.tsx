@@ -20,6 +20,7 @@ import AIEvaluationCard from '@/components/evaluations/AIEvaluationCard';
 import {
   selectSelectedCandidate,
   selectSelectedCandidateId,
+  selectSelectedCandidateLoading,
 } from '@/store/selectedCandidate/selectedCandidateSelectors';
 import { selectJobCandidatesStats } from '@/store/candidates/candidatesSelectors';
 import { selectJobPermissions } from '@/store/jobPermissions/jobPermissionsSelectors';
@@ -27,6 +28,7 @@ import { selectUser } from '@/store/auth/authSelectors';
 import { CandidateRemiseModal } from './CandidateRemiseModal';
 import { Candidate } from '@/types/candidates';
 import { JobPermission } from '@/types/jobPermissions';
+import { Loading } from '@/components/ui/Loading';
 
 // Small reusable components
 const InfoCard = ({
@@ -158,6 +160,7 @@ export default function JobCandidates() {
   const user = useAppSelector(selectUser);
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
+  const loading = true; // useAppSelector(selectSelectedCandidateLoading);
 
   // Get user's permission level
   const userPermissionLevel = getUserPermissionLevel(permissions, user?.id);
@@ -204,49 +207,57 @@ export default function JobCandidates() {
             onSearchChange={setSearchQuery}
           />
         </div>
+        {loading ? (
+          <Loading
+            message="Loading candidate details..."
+            className="lg:col-span-8 h-full max-h-[800px] overflow-y-auto"
+          />
+        ) : (
+          <div className="lg:col-span-8 h-full max-h-[800px] overflow-y-auto">
+            {selectedCandidate ? (
+              <div className="bg-white rounded-lg border border-gray-100 h-full flex flex-col">
+                <CandidateDetailsHeader />
 
-        <div className="lg:col-span-8 h-full max-h-[800px] overflow-y-auto">
-          {selectedCandidate ? (
-            <div className="bg-white rounded-lg border border-gray-100 h-full flex flex-col">
-              <CandidateDetailsHeader />
+                <div className="border-b border-gray-200">
+                  <nav className="flex space-x-8 px-6 md:px-4">
+                    {filteredTabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                          activeTab === tab.id
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </nav>
+                </div>
 
-              <div className="border-b border-gray-200">
-                <nav className="flex space-x-8 px-6 md:px-4">
-                  {filteredTabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                        activeTab === tab.id
-                          ? 'border-primary text-primary'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </nav>
+                <div className="flex-1 overflow-y-auto p-6 md:p-4">
+                  {activeTab === 'overview' && (
+                    <CandidateOverviewTab candidate={selectedCandidate} />
+                  )}
+                  {activeTab === 'responses' && <CandidateResponses />}
+                  {activeTab === 'ai-evaluation' && <CandidateAnalytics />}
+                  {activeTab === 'team-responses' && <TeamResponses />}
+                </div>
               </div>
-
-              <div className="flex-1 overflow-y-auto p-6 md:p-4">
-                {activeTab === 'overview' && <CandidateOverviewTab candidate={selectedCandidate} />}
-                {activeTab === 'responses' && <CandidateResponses />}
-                {activeTab === 'ai-evaluation' && <CandidateAnalytics />}
-                {activeTab === 'team-responses' && <TeamResponses />}
+            ) : (
+              <div className="bg-white rounded-lg border border-gray-100 h-full flex items-center justify-center">
+                <div className="text-center">
+                  <EyeIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No candidate selected</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Select a candidate to view their details
+                  </p>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg border border-gray-100 h-full flex items-center justify-center">
-              <div className="text-center">
-                <EyeIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No candidate selected</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Select a candidate to view their details
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

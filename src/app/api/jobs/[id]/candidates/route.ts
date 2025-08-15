@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+type MinimalCandidateRow = {
+  id: string;
+  job_id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  full_name: string | null;
+  created_at: string;
+  progress_percentage: number;
+  candidate_status?: string | null;
+  job_title: string | null;
+  evaluation_score?: number | null;
+  score?: number | null;
+  resume_score?: number | null;
+};
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient();
@@ -47,14 +63,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       p_offset: offset,
     });
 
-    let rows = minimalRows;
+    let rows: MinimalCandidateRow[] | null =
+      (minimalRows as unknown as MinimalCandidateRow[]) || null;
     if (listError) {
       if (listError.code === 'PGRST202') {
         // Fallback to candidate_details view with minimal column selection
         let q = supabase
           .from('candidate_details')
           .select(
-            'id, job_id, email, first_name, last_name, full_name, created_at, progress_percentage, candidate_status, job_title, score, resume_score',
+            'id, job_id, email, first_name, last_name, full_name, created_at, progress_percentage, candidate_status:status, job_title, score, resume_score',
           )
           .eq('job_id', jobId)
           .order('created_at', { ascending: false })
@@ -65,11 +82,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           );
         }
         if (status) {
-          q = q.eq('candidate_status', status);
+          q = q.eq('status', status);
         }
         const { data: fallbackRows, error: fallbackError } = await q;
         if (fallbackError) throw fallbackError;
-        rows = fallbackRows as any[];
+        rows = (fallbackRows as unknown as MinimalCandidateRow[]) || [];
       } else if (listError.code === '42501') {
         return NextResponse.json(
           { success: false, error: 'You do not have permission to view candidates for this job' },
@@ -80,7 +97,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
-    const candidates = (rows || []).map((row: any) => ({
+    const candidates = (rows || []).map((row: MinimalCandidateRow) => ({
       id: row.id,
       jobId: row.job_id,
       jobTitle: row.job_title,
@@ -128,7 +145,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }));
 
     // Stats using existing function (RLS-protected)
-    const { data: stats, error: statsError } = await supabase.rpc('get_job_candidate_stats', {
+    const { data: stats } = await supabase.rpc('get_job_candidate_stats', {
       p_job_id: jobId,
       p_profile_id: null,
     });

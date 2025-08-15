@@ -9,43 +9,33 @@ export async function GET(
     const supabase = await createClient();
     const { id: jobId, candidateId } = await params;
 
+    // Ensure session is loaded so RLS can authorize
+    await supabase.auth.getUser();
+
     // Ensure job exists and is accessible (RLS enforced)
-    const { data: job, error: jobError } = await supabase
-      .from('jobs')
-      .select('id')
-      .eq('id', jobId)
-      .single();
+    const { error: jobError } = await supabase.from('jobs').select('id').eq('id', jobId).single();
 
     if (jobError) {
       const status = jobError.code === 'PGRST116' ? 404 : jobError.code === '42501' ? 403 : 500;
       return NextResponse.json({ success: false, error: 'Job access denied' }, { status });
     }
 
-    // Fetch full candidate row from view via function
-    const { data, error } = await supabase.rpc('get_candidate_details_by_id', {
-      p_candidate_id: candidateId,
-    });
+    // Fetch full candidate row directly from the view
+    const { data: rowData, error } = await supabase
+      .from('candidate_details')
+      .select('*')
+      .eq('id', candidateId)
+      .eq('job_id', jobId)
+      .single();
 
-    let row = (data || [])[0];
-    if (error && error.code === 'PGRST202') {
-      // Fallback to view
-      const { data: vrows, error: vErr } = await supabase
-        .from('candidate_details')
-        .select('*')
-        .eq('id', candidateId)
-        .single();
-      if (vErr) {
-        const status = vErr.code === 'PGRST116' ? 404 : vErr.code === '42501' ? 403 : 500;
-        return NextResponse.json(
-          { success: false, error: 'Failed to fetch candidate' },
-          { status },
-        );
-      }
-      row = vrows as any;
-    } else if (error) {
+    console.log('Error', error);
+
+    if (error) {
       const status = error.code === 'PGRST116' ? 404 : error.code === '42501' ? 403 : 500;
       return NextResponse.json({ success: false, error: 'Failed to fetch candidate' }, { status });
     }
+
+    const row = rowData;
 
     if (!row) {
       return NextResponse.json({ success: false, error: 'Candidate not found' }, { status: 404 });
@@ -71,7 +61,7 @@ export async function GET(
       submittedAt: row.submitted_at,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      candidateStatus: row.candidate_status,
+      candidateStatus: row.status,
       evaluation: row.evaluation_id
         ? {
             id: row.evaluation_id,
