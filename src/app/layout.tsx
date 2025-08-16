@@ -8,6 +8,7 @@ import { Toaster } from 'sonner';
 import CookieConsent from '@/components/cookies/CookieConsent';
 import { isDev, integrations } from '@/lib/constants';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import AnalyticsProvider from '@/providers/analytics-provider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -37,7 +38,9 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <ReduxProvider>
           <AuthProvider>
-            <ToastProvider>{children}</ToastProvider>
+            <AnalyticsProvider>
+              <ToastProvider>{children}</ToastProvider>
+            </AnalyticsProvider>
           </AuthProvider>
         </ReduxProvider>
         <Toaster position="top-right" />
