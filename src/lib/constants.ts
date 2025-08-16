@@ -33,7 +33,7 @@ export const app = {
 };
 
 export const ai = {
-  openaiApiKey: process.env.NEXT_PUBLIC_OPENAI_KEY,
+  openaiApiKey: process.env.OPENAI_KEY,
   model: 'gpt-4o-mini', // TODO: Make this dynamic based on the user's plan
   maxTokens: 2000,
   temperature: 0.7, // Balanced creativity for question generation
@@ -62,6 +62,15 @@ export const integrations = {
     webhookSecret: isDev
       ? process.env.NEXT_PUBLIC_STRIPE_WEBHOOK_SECRET_TEST
       : process.env.NEXT_PUBLIC_STRIPE_WEBHOOK_SECRET,
+  },
+  firebase: {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
   },
 };
 
