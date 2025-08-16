@@ -252,7 +252,9 @@ export default function ContractsPage() {
               <Clock className="h-4 w-4 text-muted-foreground" />
               <div className="ml-2">
                 <p className="text-xs font-medium text-muted-foreground">Avg. Signing Time</p>
-                <p className="text-xl font-bold">{analytics.averageSigningTime || 0}d</p>
+                <p className="text-xl font-bold">
+                  {analytics.averageSigningTime?.toFixed(1) || 0}d
+                </p>
               </div>
             </div>
           </CardContent>
