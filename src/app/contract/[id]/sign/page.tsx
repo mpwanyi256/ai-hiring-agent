@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, Fragment, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store';
 import {
@@ -35,7 +35,7 @@ import { toast } from 'sonner';
 import SignatureModal from '@/components/contracts/SignatureModal';
 import SignatureDisplay from '@/components/contracts/SignatureDisplay';
 
-export default function ContractSigningPage() {
+function ContractSigningContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const contractOfferId = params.id as string;
@@ -482,5 +482,13 @@ export default function ContractSigningPage() {
         isLoading={actionLoading}
       />
     </div>
+  );
+}
+
+export default function ContractSigningPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ContractSigningContent />
+    </Suspense>
   );
 }

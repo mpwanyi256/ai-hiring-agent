@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { getClientAnalytics, track } from '@/lib/firebase/client';
 import { isDev } from '@/lib/constants';
 
-export default function AnalyticsProvider({ children }: { children: React.ReactNode }) {
+function AnalyticsContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -30,4 +30,12 @@ export default function AnalyticsProvider({ children }: { children: React.ReactN
   }, [pathname, searchParams]);
 
   return <>{children}</>;
+}
+
+export default function AnalyticsProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<>{children}</>}>
+      <AnalyticsContent>{children}</AnalyticsContent>
+    </Suspense>
+  );
 }
