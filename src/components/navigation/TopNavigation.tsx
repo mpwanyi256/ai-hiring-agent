@@ -14,6 +14,7 @@ import MobileMenu from './MobileMenu';
 import DashboardNavigation from './DashboardNavigation';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 import { fetchSubscriptionPlans } from '@/store/billing/billingThunks';
+import { fetchIntegrations } from '@/store/integrations/integrationsThunks';
 
 interface TopNavigationProps {
   showAuthButtons?: boolean;
@@ -41,9 +42,13 @@ export default function TopNavigation({
 
   useEffect(() => {
     if (isAuthenticated && user?.companyId) {
-      dispatch(fetchCompanyData());
-      dispatch(fetchTimezones());
-      dispatch(fetchSubscriptionPlans());
+      // Load user data in parallel
+      Promise.all([
+        dispatch(fetchCompanyData()),
+        dispatch(fetchTimezones()),
+        dispatch(fetchSubscriptionPlans()),
+        dispatch(fetchIntegrations()),
+      ]);
     }
   }, [isAuthenticated, user, dispatch]);
 

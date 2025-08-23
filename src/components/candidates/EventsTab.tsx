@@ -8,6 +8,9 @@ import { clearApplicationEvents } from '@/store/interviews/interviewsSlice';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { selectApplicationEvents } from '@/store/interviews/interviewsSelectors';
 import { Loader2, RefreshCw } from 'lucide-react';
+import { IntegrationByProvider } from '@/store/integrations/integrationsSelectors';
+import { ConnectProviderButton } from '../generics/ConnectProviderButton';
+import Image from 'next/image';
 
 interface EventsTabProps {
   candidate: CandidateWithEvaluation;
@@ -19,6 +22,7 @@ const EventsTab: React.FC<EventsTabProps> = ({ candidate, onScheduleEvent, onRef
   const dispatch = useAppDispatch();
   const applicationEvents = useAppSelector(selectApplicationEvents);
   const loading = useAppSelector((state) => state.interviews.isLoading);
+  const googleIntegration = useAppSelector(IntegrationByProvider('google'));
 
   useEffect(() => {
     if (candidate.id) {
@@ -60,9 +64,21 @@ const EventsTab: React.FC<EventsTabProps> = ({ candidate, onScheduleEvent, onRef
                 Refresh
               </Button>
               {onScheduleEvent && (
-                <Button variant="outline" size="sm" onClick={onScheduleEvent}>
-                  Schedule Event
-                </Button>
+                <>
+                  {!googleIntegration?.access_token ? (
+                    <ConnectProviderButton provider="google" />
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={onScheduleEvent}>
+                      <Image
+                        src="/illustrations/google_calendar.svg"
+                        alt="Google Calendar"
+                        width={20}
+                        height={20}
+                      />
+                      Schedule Event
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
