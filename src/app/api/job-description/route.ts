@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { ai } from '@/lib/constants';
 
 export async function POST(req: Request) {
@@ -40,7 +39,24 @@ export async function POST(req: Request) {
         
         <p><em>This is a placeholder job description. Please configure your OpenAI API key for AI-generated descriptions.</em></p>
       `;
-      return NextResponse.json({ success: true, html: mockHtml });
+
+      // Create a streaming response that sends the mock data
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ content: mockHtml, done: true })}\n\n`),
+          );
+          controller.close();
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Transfer-Encoding': 'chunked',
+        },
+      });
     }
 
     // Build a comprehensive prompt for OpenAI
@@ -73,7 +89,7 @@ Job Details:
 
 Write in a professional yet approachable tone that would attract qualified candidates.`;
 
-    // Use OpenAI
+    // Use OpenAI with streaming
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -92,6 +108,7 @@ Write in a professional yet approachable tone that would attract qualified candi
         ],
         max_tokens: 1000,
         temperature: 0.7,
+        stream: true,
       }),
     });
 
@@ -99,18 +116,88 @@ Write in a professional yet approachable tone that would attract qualified candi
       throw new Error(`OpenAI API error: ${openaiRes.status}`);
     }
 
-    const openaiData = await openaiRes.json();
-    const html = openaiData.choices?.[0]?.message?.content || '';
+    // Create a streaming response
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
 
-    return NextResponse.json({ success: true, html });
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const reader = openaiRes.body?.getReader();
+          if (!reader) {
+            throw new Error('No response body reader');
+          }
+
+          let buffer = '';
+          let accumulatedContent = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmedLine = line.trim();
+              if (trimmedLine === '' || trimmedLine === 'data: [DONE]') continue;
+
+              if (trimmedLine.startsWith('data: ')) {
+                try {
+                  const jsonStr = trimmedLine.slice(6);
+                  const data = JSON.parse(jsonStr);
+                  const content = data.choices?.[0]?.delta?.content || '';
+
+                  if (content) {
+                    accumulatedContent += content;
+                    // Send incremental update
+                    controller.enqueue(
+                      encoder.encode(
+                        `data: ${JSON.stringify({ content: accumulatedContent, done: false })}\n\n`,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  console.error('Error parsing OpenAI response:', e);
+                }
+              }
+            }
+          }
+
+          // Send final message
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ content: accumulatedContent, done: true })}\n\n`,
+            ),
+          );
+          controller.close();
+        } catch (error) {
+          console.error('Streaming error:', error);
+          controller.error(error);
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
+      },
+    });
   } catch (error) {
     console.error('Job description generation error:', error);
-    return NextResponse.json(
-      {
+    return new Response(
+      JSON.stringify({
         success: false,
         error: error instanceof Error ? error.message : 'Failed to generate job description',
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-      { status: 500 },
     );
   }
 }

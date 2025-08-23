@@ -466,6 +466,7 @@ export const generateJobDescriptionWithAI = createAsyncThunk(
       // Add department and employment type display names for mapping
       departmentName?: string;
       employmentTypeName?: string;
+      onProgress?: (content: string) => void; // Callback for streaming updates
     },
     { rejectWithValue, getState },
   ) => {
@@ -499,14 +500,60 @@ export const generateJobDescriptionWithAI = createAsyncThunk(
           traits: jobDetails.traits,
         }),
       });
-      const data = await res.json();
-      if (data.success && data.html) {
-        return data.html as string;
-      } else {
-        return rejectWithValue(data.error || 'Failed to generate job description');
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
       }
-    } catch {
-      return rejectWithValue('Failed to generate job description');
+
+      // Handle streaming response
+      if (res.headers.get('Transfer-Encoding') === 'chunked') {
+        const reader = res.body?.getReader();
+        const decoder = new TextDecoder();
+        let finalContent = '';
+
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.trim().startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  if (data.content) {
+                    finalContent = data.content;
+                    if (jobDetails.onProgress) {
+                      jobDetails.onProgress(data.content);
+                    }
+                  }
+                  if (data.done) {
+                    return finalContent;
+                  }
+                } catch (e) {
+                  console.error('Error parsing streaming data:', e);
+                }
+              }
+            }
+          }
+        }
+
+        return finalContent;
+      } else {
+        // Fallback to non-streaming response
+        const data = await res.json();
+        if (data.success && data.html) {
+          return data.html as string;
+        } else {
+          return rejectWithValue(data.error || 'Failed to generate job description');
+        }
+      }
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to generate job description',
+      );
     }
   },
 );
