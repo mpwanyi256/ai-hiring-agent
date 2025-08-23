@@ -6,7 +6,7 @@ import GeneralTab from './GeneralTab';
 import OffersTab from './OffersTab';
 import EventsTab from './EventsTab';
 import EvaluationsTab from './EvaluationsTab';
-import TimelineTab from './TimelineTab';
+// import TimelineTab from './TimelineTab';
 import InterviewSchedulingModal from '../interviews/InterviewSchedulingModal';
 import SendContractModal from '../contracts/SendContractModal';
 import { cn } from '@/lib/utils';

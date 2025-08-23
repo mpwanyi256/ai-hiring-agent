@@ -93,7 +93,6 @@ const EventsTab: React.FC<EventsTabProps> = ({ candidate, onScheduleEvent, onRef
               applicationEvents.map((event) => {
                 // Safely access event properties with null checks
                 const safeEvent = event || {};
-                const eventInterviewer = (safeEvent as any)?.interviewer;
 
                 return (
                   <InterviewCard
