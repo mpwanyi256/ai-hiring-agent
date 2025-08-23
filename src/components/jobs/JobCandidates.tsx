@@ -160,7 +160,7 @@ export default function JobCandidates() {
   const user = useAppSelector(selectUser);
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
-  const loading = true; // useAppSelector(selectSelectedCandidateLoading);
+  const loading = useAppSelector(selectSelectedCandidateLoading);
 
   // Get user's permission level
   const userPermissionLevel = getUserPermissionLevel(permissions, user?.id);
