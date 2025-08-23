@@ -9,12 +9,16 @@ import Footer from '@/components/landing/Footer';
 import { Button } from '@/components/ui/button';
 import Container from '@/components/ui/Container';
 import SubscriptionCard from '@/components/billing/SubscriptionCard';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function PricingPage() {
   const dispatch = useAppDispatch();
   const plans = useAppSelector(selectSubscriptionPlans);
   const currentPlan = useAppSelector(selectCurrentPlan);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+
+  // Initialize analytics tracking
+  useAnalytics();
 
   useEffect(() => {
     // Fetch both plans and current subscription

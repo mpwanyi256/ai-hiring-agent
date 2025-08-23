@@ -40,6 +40,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import ComboboxWithCreate from '@/components/ui/ComboboxWithCreate';
 import AddJobTitleModal from './AddJobTitleModal';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface ContractFormProps {
   contract?: Contract;
@@ -49,6 +50,10 @@ interface ContractFormProps {
 export default function ContractForm({ contract, mode }: ContractFormProps) {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  // Initialize analytics tracking
+  const analytics = useAnalytics();
 
   const error = useSelector(selectContractsError);
 
@@ -61,7 +66,6 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
   const editorRef = useRef<RichTextEditorRef>(null);
 
   // Add mounted state to prevent hydration issues
-  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState<{
     title: string;
     body: string;
@@ -120,6 +124,9 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
 
     try {
       if (mode === 'create') {
+        // Track form start for creation
+        analytics.trackFormStart('contract_creation', 'contracts');
+
         const contractData: CreateContractData = {
           title: formData.title.trim(),
           content: formData.body.trim(),
@@ -129,12 +136,20 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
 
         const result = await dispatch(createContract(contractData));
         if (result.type === 'contracts/createContract/fulfilled') {
+          // Track successful contract creation
+          analytics.trackContractCreation(formData.status || 'draft');
+          analytics.trackFormSubmission('contract_creation', true, 'contracts');
+
           toast.success('Contract template created successfully');
           router.push('/dashboard/contracts');
         } else {
+          analytics.trackFormSubmission('contract_creation', false, 'contracts');
           toast.error('Failed to create contract template');
         }
       } else {
+        // Track form start for update
+        analytics.trackFormStart('contract_update', 'contracts');
+
         const updateData: UpdateContractData = {
           id: contract!.id,
           title: formData.title.trim(),
@@ -145,14 +160,24 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
 
         const result = await dispatch(updateContract(updateData));
         if (result.type === 'contracts/updateContract/fulfilled') {
+          // Track successful contract update
+          analytics.trackContractUpdate(contract!.id, 'content_update');
+          analytics.trackFormSubmission('contract_update', true, 'contracts');
+
           toast.success('Contract template updated successfully');
           router.push('/dashboard/contracts');
         } else {
+          analytics.trackFormSubmission('contract_update', false, 'contracts');
           toast.error('Failed to update contract template');
         }
       }
     } catch (error) {
       console.error('Error saving contract:', error);
+      analytics.trackFormSubmission(
+        mode === 'create' ? 'contract_creation' : 'contract_update',
+        false,
+        'contracts',
+      );
       toast.error('Failed to save contract template');
     } finally {
       setIsSubmitting(false);

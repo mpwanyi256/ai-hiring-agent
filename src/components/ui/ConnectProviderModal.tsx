@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ArrowRightLeft } from 'lucide-react';
+import { trackProviderConnection } from '@/lib/analytics/tracking';
 
 interface ConnectProviderModalProps {
   provider: IntegrationProvider;
@@ -57,12 +58,23 @@ export const ConnectProviderModal = ({
   const config = providersConfig[provider];
 
   const handleConnect = () => {
+    // Track the connection attempt
+    trackProviderConnection(provider, 'initiated');
+
+    // Call the original onConnect function
     onConnect();
-    onOpenChange(false);
+  };
+
+  const handleModalOpen = (open: boolean) => {
+    if (open) {
+      // Track when modal is opened
+      trackProviderConnection(provider, 'initiated');
+    }
+    onOpenChange(open);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleModalOpen}>
       <DialogContent className="sm:max-w-md overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Dotted background pattern */}
         <div className="absolute inset-0 opacity-5">
@@ -96,7 +108,6 @@ export const ConnectProviderModal = ({
                 <div className="w-1 h-1 bg-green-500 rounded-full"></div>
                 <div className="w-1 h-1 bg-green-500 rounded-full"></div>
                 <ArrowRightLeft className="w-4 h-4 bg-green-500 rounded-full text-white" />
-                <div className="w-1 h-1 bg-green-500 rounded-full"></div>
                 <div className="w-1 h-1 bg-green-500 rounded-full"></div>
                 <div className="w-1 h-1 bg-green-500 rounded-full"></div>
                 <div className="w-1 h-1 bg-green-500 rounded-full"></div>

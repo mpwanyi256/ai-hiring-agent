@@ -11,6 +11,7 @@ import { Loader2, RefreshCw } from 'lucide-react';
 import { IntegrationByProvider } from '@/store/integrations/integrationsSelectors';
 import { ConnectProviderButton } from '../generics/ConnectProviderButton';
 import Image from 'next/image';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface EventsTabProps {
   candidate: CandidateWithEvaluation;
@@ -24,21 +25,36 @@ const EventsTab: React.FC<EventsTabProps> = ({ candidate, onScheduleEvent, onRef
   const loading = useAppSelector((state) => state.interviews.isLoading);
   const googleIntegration = useAppSelector(IntegrationByProvider('google'));
 
+  // Initialize analytics tracking
+  const analytics = useAnalytics();
+
   useEffect(() => {
     if (candidate.id) {
       dispatch(fetchApplicationEvents(candidate.id));
+      // Track candidate page view
+      analytics.trackCandidatePage(candidate.id, 'view_events');
     }
 
     return () => {
       dispatch(clearApplicationEvents());
     };
-  }, [dispatch, candidate.id]);
+  }, [dispatch, candidate.id, analytics]);
 
   const handleRefresh = () => {
     if (onRefreshEvents) {
       onRefreshEvents();
     } else if (candidate.id) {
       dispatch(fetchApplicationEvents(candidate.id));
+    }
+    // Track refresh action
+    analytics.trackFeatureUsage('events_refresh', 'refresh');
+  };
+
+  const handleScheduleEvent = () => {
+    if (onScheduleEvent) {
+      onScheduleEvent();
+      // Track event scheduling
+      analytics.trackInterviewScheduled(candidate.id, 'manual');
     }
   };
 
@@ -68,7 +84,7 @@ const EventsTab: React.FC<EventsTabProps> = ({ candidate, onScheduleEvent, onRef
                   {!googleIntegration?.access_token ? (
                     <ConnectProviderButton provider="google" />
                   ) : (
-                    <Button variant="outline" size="sm" onClick={onScheduleEvent}>
+                    <Button variant="outline" size="sm" onClick={handleScheduleEvent}>
                       <Image
                         src="/illustrations/google_calendar.svg"
                         alt="Google Calendar"

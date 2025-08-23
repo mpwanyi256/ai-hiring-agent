@@ -36,6 +36,7 @@ import { useAppDispatch } from '@/store';
 import { fetchDashboardMetrics } from '@/store/dashboard/dashboardThunks';
 import { selectDashboardMetrics, selectMetricsLoading } from '@/store/dashboard/dashboardSlice';
 import { useSubscriptionGuard } from '@/hooks/useSubscriptionGuard';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -44,6 +45,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showInviteWelcome, setShowInviteWelcome] = useState(false);
   const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
+
+  // Initialize analytics tracking
+  useAnalytics();
 
   // Subscription guard - redirect to pricing if no active subscription
   const { isSubscriptionValid } = useSubscriptionGuard({

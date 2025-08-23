@@ -7,8 +7,12 @@ import WhyChooseSection from '@/components/landing/WhyChooseSection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import CTASection from '@/components/landing/CTASection';
 import Footer from '@/components/landing/Footer';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function LandingPage() {
+  // Initialize analytics tracking
+  useAnalytics();
+
   return (
     <div className="min-h-screen bg-background text-text overflow-x-hidden">
       {/* Background Grid Pattern */}
