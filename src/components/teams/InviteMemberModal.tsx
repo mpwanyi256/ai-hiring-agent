@@ -6,6 +6,7 @@ import { inviteUser } from '@/store/teams/teamsThunks';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { apiError, apiSuccess } from '@/lib/notification';
 import { selectIsLoading } from '@/store/teams/teamSelectors';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface InviteMemberModalProps {
   open: boolean;
@@ -24,6 +25,9 @@ export default function InviteMemberModal({ open, onClose }: InviteMemberModalPr
   const dispatch = useAppDispatch();
   const loading = useAppSelector(selectIsLoading);
 
+  // Initialize analytics tracking
+  const analytics = useAnalytics();
+
   const nameLength = firstName.length + lastName.length;
   const isValid =
     firstName && lastName && email && role && nameLength <= NAME_MAX && email.length <= EMAIL_MAX;
@@ -33,11 +37,21 @@ export default function InviteMemberModal({ open, onClose }: InviteMemberModalPr
       e.preventDefault();
       setTouched(true);
       if (!isValid) return;
+
+      // Track form start
+      analytics.trackFormStart('team_member_invite', 'teams');
+
       const response = await dispatch(inviteUser({ firstName, lastName, email, role })).unwrap();
       if (response.error) {
+        analytics.trackFormSubmission('team_member_invite', false, 'teams');
         apiError(response.error);
         return;
       }
+
+      // Track successful invitation
+      analytics.trackTeamMemberInvited('invite_sent', role, 'modal');
+      analytics.trackFormSubmission('team_member_invite', true, 'teams');
+
       apiSuccess('Invite sent successfully');
       onClose();
       setFirstName('');
@@ -46,6 +60,7 @@ export default function InviteMemberModal({ open, onClose }: InviteMemberModalPr
       setRole('employee');
       setTouched(false);
     } catch (err) {
+      analytics.trackFormSubmission('team_member_invite', false, 'teams');
       apiError(err instanceof Error ? err.message : 'Failed to invite member');
     }
   };

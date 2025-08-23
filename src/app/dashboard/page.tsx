@@ -36,14 +36,24 @@ import { useAppDispatch } from '@/store';
 import { fetchDashboardMetrics } from '@/store/dashboard/dashboardThunks';
 import { selectDashboardMetrics, selectMetricsLoading } from '@/store/dashboard/dashboardSlice';
 import { useSubscriptionGuard } from '@/hooks/useSubscriptionGuard';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function DashboardPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
-  const [loading, setLoading] = useState(true);
+  const auth = useSelector((state: RootState) => state.auth);
+  const { user, isAuthenticated, isLoading } = auth;
   const [showInviteWelcome, setShowInviteWelcome] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const hasActiveSubscription = useAppSelector(selectHasActiveSubscription);
+
+  // Initialize analytics tracking
+  useAnalytics();
+
+  // Ensure client-side rendering to prevent hydration issues
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Subscription guard - redirect to pricing if no active subscription
   const { isSubscriptionValid } = useSubscriptionGuard({
@@ -55,18 +65,16 @@ export default function DashboardPage() {
   const metrics = useAppSelector(selectDashboardMetrics);
   const metricsLoading = useAppSelector(selectMetricsLoading);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
   // Check for invite welcome parameter
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('welcome') === 'invite') {
-      setShowInviteWelcome(true);
-      // Clean up the URL
-      router.replace('/dashboard');
+    // Only run on client side to prevent hydration mismatch
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('welcome') === 'invite') {
+        setShowInviteWelcome(true);
+        // Clean up the URL
+        router.replace('/dashboard');
+      }
     }
   }, [router]);
 
@@ -77,7 +85,14 @@ export default function DashboardPage() {
     }
   }, [dispatch, user]);
 
-  if (!user) return null;
+  // Don't render anything until auth is initialized and client is hydrated
+  if (isLoading || !isAuthenticated || !user || !isClient) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   // Don't render dashboard content if subscription is invalid (guard will redirect)
   if (!isSubscriptionValid) {
@@ -100,7 +115,7 @@ export default function DashboardPage() {
       <DashboardSubscriptionMessage />
 
       {/* Invite Welcome Message */}
-      {showInviteWelcome && (
+      {isClient && showInviteWelcome && (
         <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 rounded-lg border border-green-200 p-6 mb-6">
           <div className="flex items-start space-x-4">
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -140,7 +155,7 @@ export default function DashboardPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {loading ? (
+        {isLoading ? (
           <>
             <MetricCardSkeleton />
             <MetricCardSkeleton />
@@ -272,7 +287,7 @@ export default function DashboardPage() {
           {/* Insights Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CandidatePipelineWidget />
-            {loading ? (
+            {isLoading ? (
               <InsightCardSkeleton />
             ) : (
               <InsightCard

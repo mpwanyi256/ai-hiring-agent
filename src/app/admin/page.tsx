@@ -10,12 +10,16 @@ import { User } from '@/types';
 import { PlatformStatsCards } from '@/components/admin/PlatformStatsCards';
 import { AdminQuickActions } from '@/components/admin/AdminQuickActions';
 import { PlatformOverview } from '@/components/admin/PlatformOverview';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function AdminDashboard() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
   const { platformStats, isLoading, error } = useSelector((state: RootState) => state.admin);
+
+  // Initialize analytics tracking
+  useAnalytics();
 
   // Check if user is admin and redirect if not
   useEffect(() => {

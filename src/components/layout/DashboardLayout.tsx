@@ -57,8 +57,8 @@ export default function DashboardLayout({
     return null;
   }
 
-  // Create dashboard content
-  const dashboardContent = (
+  // Return dashboard content directly
+  return (
     <div className={`h-screen bg-background flex flex-col overflow-hidden ${className || ''}`}>
       {/* Centralized Top Navigation */}
       <TopNavigation
@@ -148,24 +148,49 @@ export default function DashboardLayout({
               Subscribe to a plan to create jobs, manage candidates, and access all features of the
               dashboard.
             </p>
-            <ul className="mb-6 space-y-2 text-sm text-gray-700">
-              <li>• AI-powered candidate evaluation</li>
-              <li>• 30-day free trial on all plans</li>
-              <li>• Cancel anytime, no long-term commitment</li>
-              <li>• Priority support and analytics</li>
-            </ul>
-            <a href="/pricing" className="inline-block w-full">
-              <button className="w-full px-4 py-2 bg-primary text-white rounded font-semibold hover:bg-primary/90 transition-all text-base flex items-center justify-center gap-2">
-                <SparklesIcon className="w-5 h-5" />
-                View Pricing Plans
-              </button>
-            </a>
+            <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+              <SparklesIcon className="w-4 h-4 text-yellow-500" />
+              <span>Get started with a free trial</span>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm">Unlimited job postings</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm">Advanced candidate management</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm">AI-powered evaluations</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm">Team collaboration tools</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                setShowSubscriptionPanel(false);
+                // Navigate to pricing page
+                window.location.href = '/pricing';
+              }}
+              className="flex-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              View Plans
+            </button>
+            <button
+              onClick={() => setShowSubscriptionPanel(false)}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Maybe Later
+            </button>
           </div>
         </SidePanel>
       </div>
     </div>
   );
-
-  // Return dashboard content for all users (no SubscriptionRequired wrapper)
-  return dashboardContent;
 }

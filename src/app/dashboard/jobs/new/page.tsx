@@ -40,6 +40,7 @@ import { apiError, apiSuccess } from '@/lib/notification';
 import Modal from '@/components/ui/Modal';
 import AIGenerationLoader from '@/components/ui/AIGenerationLoader';
 import { selectUser } from '@/store/auth/authSelectors';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 const workplaceTypes: { value: WorkplaceType; label: string }[] = [
   { value: 'on_site', label: 'On-site' },
@@ -60,6 +61,9 @@ export default function NewJobPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
+
+  // Initialize analytics tracking
+  const analytics = useAnalytics();
 
   // Store selectors
   const allSkills = useAppSelector(selectSkillsData);
@@ -254,6 +258,9 @@ export default function NewJobPage() {
 
       // Create the job
       const job = await dispatch(createJob(jobData)).unwrap();
+
+      // Track job creation success
+      analytics.trackJobCreation(data.jobType || 'unknown', 'manual');
 
       // Show success message and start AI generation
       apiSuccess('Job created successfully! Generating interview questions...');

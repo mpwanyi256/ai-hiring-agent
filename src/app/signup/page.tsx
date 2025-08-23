@@ -21,6 +21,7 @@ import {
 import { RootState } from '@/store';
 import { useAppDispatch } from '@/store';
 import { debounce } from 'lodash';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 // Form validation schemas
 const step1Schema = z.object({
@@ -65,6 +66,9 @@ export default function SignupPage() {
     isLoading: boolean;
     error: string | null;
   };
+
+  // Initialize analytics tracking
+  useAnalytics();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<FormData>>({});

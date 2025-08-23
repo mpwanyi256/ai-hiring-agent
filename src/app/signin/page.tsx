@@ -12,6 +12,7 @@ import { signIn } from '@/store/auth/authThunks';
 import { clearError } from '@/store/auth/authSlice';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 // Form validation schema
 const signinSchema = z.object({
@@ -29,6 +30,9 @@ export default function SigninPage() {
     error: string | null;
   };
   const [showPassword, setShowPassword] = useState(false);
+
+  // Initialize analytics tracking
+  useAnalytics();
 
   const form = useForm<SigninData>({
     resolver: zodResolver(signinSchema),

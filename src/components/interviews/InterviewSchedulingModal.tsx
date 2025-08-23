@@ -17,6 +17,7 @@ import { Button } from '../ui/button';
 import Modal from '../ui/Modal';
 import { apiSuccess } from '@/lib/notification';
 import { Loading } from '@/components/ui/Loading';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface InterviewSchedulingModalProps {
   isOpen: boolean;
@@ -43,6 +44,9 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
   const user = useAppSelector(selectUser);
 
   const timezones = useAppSelector(selectCompanyTimezones);
+
+  // Initialize analytics tracking
+  const analytics = useAnalytics();
 
   // Add a new loading state for all async actions
   const [actionLoading, setActionLoading] = useState(false);
@@ -146,25 +150,50 @@ const InterviewSchedulingModal: React.FC<InterviewSchedulingModalProps> = ({
     setActionLoading(true);
     try {
       if (isEdit && interview) {
+        // Track interview update
+        analytics.trackFormStart('interview_update', 'interviews');
+
         await dispatch(
           updateInterview({
             id: interview.id,
             ...formData,
           }),
         ).unwrap();
+
+        // Track successful update
+        analytics.trackInterviewUpdate(interview.id, 'schedule_update');
+        analytics.trackFormSubmission('interview_update', true, 'interviews');
+
+        apiSuccess('Interview updated successfully');
       } else {
+        // Track interview scheduling
+        analytics.trackFormStart('interview_scheduling', 'interviews');
+
         await dispatch(
           scheduleInterview({
             ...formData,
             employerEmail: user?.email || '',
           }),
         ).unwrap();
+
+        // Track successful scheduling
+        analytics.trackInterviewCreation(candidate.id, jobId, 'video');
+        analytics.trackInterviewScheduled(candidate.id, 'video');
+        analytics.trackFormSubmission('interview_scheduling', true, 'interviews');
+
+        apiSuccess('Interview scheduled successfully');
       }
 
-      apiSuccess(isEdit ? 'Interview updated successfully' : 'Interview scheduled successfully');
       onClose();
     } catch (error) {
       console.error('Failed to schedule/update interview:', error);
+
+      // Track failed submission
+      analytics.trackFormSubmission(
+        isEdit ? 'interview_update' : 'interview_scheduling',
+        false,
+        'interviews',
+      );
     } finally {
       setActionLoading(false);
     }

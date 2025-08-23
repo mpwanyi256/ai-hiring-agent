@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { integrationService } from '@/lib/services/integrationService';
 import { useState } from 'react';
 import { ConnectProviderModal } from '@/components/ui/ConnectProviderModal';
+import { trackProviderConnection } from '@/lib/analytics/tracking';
 
 interface ConnectProviderProps {
   name: string;
@@ -33,8 +34,18 @@ export const ConnectProviderButton = ({ provider }: { provider: IntegrationProvi
   const [isOpen, setIsOpen] = useState(false);
   const config = providersConfig[provider];
 
-  const handleConnect = () => {
-    integrationService.connect(provider);
+  const handleConnect = async () => {
+    try {
+      // Track successful connection
+      trackProviderConnection(provider, 'success');
+
+      // Call the integration service
+      await integrationService.connect(provider);
+    } catch (error) {
+      // Track failed connection
+      trackProviderConnection(provider, 'failed');
+      console.error('Failed to connect provider:', error);
+    }
   };
 
   return (
