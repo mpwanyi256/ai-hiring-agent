@@ -24,7 +24,7 @@ const tabs = [
   { name: 'General', Component: GeneralTab },
   { name: 'Offers', Component: OffersTab },
   { name: 'Events', Component: EventsTab },
-  { name: 'Timeline', Component: TimelineTab },
+  // { name: 'Timeline', Component: TimelineTab },
   { name: 'Evaluations', Component: EvaluationsTab },
   // { name: 'Experience', Component: ExperienceTab },
 ];
