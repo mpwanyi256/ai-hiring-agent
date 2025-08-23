@@ -61,7 +61,7 @@ export default function HeroSection() {
             </div>
 
             {/* Stats */}
-            <div className="flex items-center space-x-6 pt-2">
+            {/* <div className="flex items-center space-x-6 pt-2">
               <div className="flex items-center space-x-3">
                 <div className="flex -space-x-2">
                   {[
@@ -92,7 +92,7 @@ export default function HeroSection() {
                 </div>
               </div>
               <span className="text-gray-500 font-medium text-sm">from 500+ reviews</span>
-            </div>
+            </div> */}
           </div>
 
           {/* Right Content - Interface Mockup */}
