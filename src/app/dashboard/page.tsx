@@ -13,7 +13,6 @@ import RecentActivity from '@/components/dashboard/RecentActivity';
 import UpcomingInterviewsWidget from '@/components/dashboard/UpcomingInterviewsWidget';
 import CandidatePipelineWidget from '@/components/dashboard/CandidatePipelineWidget';
 import { RootState, useAppSelector } from '@/store';
-import { User } from '@/types';
 import {
   PlusIcon,
   BriefcaseIcon,
