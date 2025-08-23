@@ -12,28 +12,28 @@ export const trackPageView = (pageName: string, additionalParams?: Record<string
 
 // Marketing pages
 export const trackHomePage = () => {
-  trackPageView('home_page', {
+  track('home_page', {
     page_category: 'marketing',
     page_type: 'landing',
   });
 };
 
 export const trackPricingPage = () => {
-  trackPageView('pricing_page', {
+  track('pricing_page', {
     page_category: 'marketing',
     page_type: 'pricing',
   });
 };
 
 export const trackContactPage = () => {
-  trackPageView('contact_page', {
+  track('contact_page', {
     page_category: 'marketing',
     page_type: 'contact',
   });
 };
 
 export const trackFAQPage = () => {
-  trackPageView('faq_page', {
+  track('faq_page', {
     page_category: 'marketing',
     page_type: 'faq',
   });
@@ -41,21 +41,21 @@ export const trackFAQPage = () => {
 
 // Authentication pages
 export const trackSignInPage = () => {
-  trackPageView('signin_page', {
+  track('signin_page', {
     page_category: 'authentication',
     page_type: 'signin',
   });
 };
 
 export const trackSignUpPage = () => {
-  trackPageView('signup_page', {
+  track('signup_page', {
     page_category: 'authentication',
     page_type: 'signup',
   });
 };
 
 export const trackEmailVerification = () => {
-  trackPageView('email_verification', {
+  track('email_verification', {
     page_category: 'authentication',
     page_type: 'verification',
   });
@@ -63,7 +63,7 @@ export const trackEmailVerification = () => {
 
 // Dashboard and main app
 export const trackDashboard = (section?: string) => {
-  trackPageView('dashboard', {
+  track('dashboard', {
     page_category: 'application',
     page_type: 'dashboard',
     dashboard_section: section || 'main',
@@ -71,7 +71,7 @@ export const trackDashboard = (section?: string) => {
 };
 
 export const trackSettingsPage = (section?: string) => {
-  trackPageView('settings_page', {
+  track('settings_page', {
     page_category: 'application',
     page_type: 'settings',
     settings_section: section || 'general',
@@ -220,6 +220,7 @@ export const trackInterviewScheduled = (candidateId: string, interviewType: stri
   });
 };
 
+// Interview related events
 export const trackInterviewCreation = (
   candidateId: string,
   jobId: string,

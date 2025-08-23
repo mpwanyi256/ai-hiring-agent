@@ -4,7 +4,22 @@ This document outlines the comprehensive analytics tracking system implemented i
 
 ## Overview
 
-The analytics system provides insights into user behavior, feature usage, and application performance across all major user touchpoints.
+The analytics system provides insights into user behavior, feature usage, and application performance across all major user touchpoints. **Events are only tracked in production environments to prevent development noise.**
+
+## Environment-Based Tracking
+
+### Production vs Development
+
+- **Production**: Full analytics tracking enabled
+- **Development**: No events sent to Firebase (console logging only)
+- **Environment Detection**: Uses `isDev` constant from `@/lib/constants`
+
+### Benefits
+
+- Prevents development/testing data from polluting production analytics
+- Maintains clean production data for accurate insights
+- Development errors still logged to console for debugging
+- Easy to test tracking implementation without affecting analytics
 
 ## Architecture
 
@@ -19,6 +34,7 @@ The analytics system provides insights into user behavior, feature usage, and ap
    - Comprehensive event tracking functions
    - Categorized by feature area
    - Consistent parameter structure
+   - **Environment-aware tracking** (production only)
 
 3. **Analytics Hook** (`src/hooks/useAnalytics.ts`)
    - Easy-to-use hook for components
@@ -28,7 +44,7 @@ The analytics system provides insights into user behavior, feature usage, and ap
 4. **Error Tracking** (`src/lib/analytics/errorTracking.ts`)
    - Centralized error tracking
    - Context-aware error reporting
-   - Development-friendly logging
+   - **Development-friendly logging** (console only in dev)
 
 ## Event Categories
 
@@ -265,6 +281,64 @@ trackProviderConnection('google', 'success');
 trackProviderConnection('google', 'failed');
 ```
 
+## Testing and Development
+
+### Testing Analytics in Development
+
+Even though events aren't sent to Firebase in development, you can still test your analytics implementation:
+
+1. **Console Logging**: All events are logged to console in development
+2. **Function Calls**: Verify tracking functions are called correctly
+3. **Parameter Validation**: Check that event parameters are structured properly
+4. **Integration Testing**: Ensure analytics hooks are properly integrated
+
+### Development Console Output
+
+```typescript
+// In development, you'll see console logs like:
+console.log('Event would be tracked:', 'page_view', {
+  page_name: 'dashboard',
+  page_category: 'application',
+  page_type: 'dashboard',
+});
+
+// Error tracking in development:
+console.error('Error tracked (dev mode):', {
+  error: 'API request failed',
+  context: { component: 'UserProfile' },
+  page: '/dashboard/profile',
+});
+```
+
+### Switching to Production Mode
+
+To test with real Firebase tracking:
+
+1. Set environment variable: `NEXT_PUBLIC_CLIENT_ENV=production`
+2. Restart your development server
+3. Events will now be sent to Firebase
+4. Monitor Firebase Analytics dashboard for real-time events
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Events not appearing**
+   - Check `NEXT_PUBLIC_CLIENT_ENV` value
+   - Verify Firebase configuration
+   - Check browser console for errors
+   - Ensure analytics provider is mounted
+
+2. **Development vs Production confusion**
+   - Development: Console logs only, no Firebase calls
+   - Production: Full tracking to Firebase
+   - Check environment variable value
+
+3. **Performance issues**
+   - Development: No network calls to Firebase
+   - Production: Network calls for each event
+   - Monitor bundle size impact
+
 ## Implementation Status
 
 ### ✅ Implemented
@@ -306,6 +380,9 @@ trackProviderConnection('google', 'failed');
 ### Environment Variables
 
 ```env
+# Environment control
+NEXT_PUBLIC_CLIENT_ENV=production  # or 'development'
+
 # Firebase configuration
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
@@ -319,11 +396,37 @@ NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=your_ga_id
 ```
 
+### Environment Control
+
+The analytics system automatically detects the environment using the `isDev` constant:
+
+```typescript
+// From @/lib/constants.ts
+export const isDev = process.env.NEXT_PUBLIC_CLIENT_ENV === 'development';
+
+// Analytics tracking behavior:
+if (!isDev) {
+  // Production: Send events to Firebase
+  track('event_name', parameters);
+} else {
+  // Development: No Firebase calls, console logging only
+  console.log('Event would be tracked:', 'event_name', parameters);
+}
+```
+
 ### Development vs Production
 
-- **Development**: Analytics are disabled to prevent noise
-- **Production**: Full analytics tracking enabled
-- **Testing**: Can be controlled via environment variables
+- **Development** (`NEXT_PUBLIC_CLIENT_ENV=development`):
+  - No events sent to Firebase
+  - Console logging for debugging
+  - Error tracking to console only
+  - Safe for testing and development
+
+- **Production** (`NEXT_PUBLIC_CLIENT_ENV=production`):
+  - Full analytics tracking
+  - Events sent to Firebase
+  - Error tracking to analytics
+  - Real user data collection
 
 ## Best Practices
 

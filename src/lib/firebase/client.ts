@@ -2,7 +2,7 @@
 // lib/firebase/client.ts
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAnalytics, isSupported, logEvent, type Analytics } from 'firebase/analytics';
-import { integrations } from '@/lib/constants';
+import { integrations, isDev } from '@/lib/constants';
 
 // Singleton app
 export const app: FirebaseApp = getApps().length ? getApp() : initializeApp(integrations.firebase);
@@ -20,6 +20,13 @@ export const getClientAnalytics = async (): Promise<Analytics | null> => {
 
 // Convenience helper for events
 export const track = async (name: string, params?: Record<string, any>): Promise<void> => {
+  // Only track events in production environments
+  if (isDev) {
+    // In development, just log to console for debugging
+    console.log('Event would be tracked:', name, params);
+    return;
+  }
+
   const a = await getClientAnalytics();
   if (a) logEvent(a, name as any, params);
 };
