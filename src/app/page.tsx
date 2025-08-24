@@ -51,9 +51,9 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="slide-up">
+      {/* <section id="testimonials" className="slide-up">
         <TestimonialsSection />
-      </section>
+      </section> */}
 
       {/* CTA Section */}
       <section id="cta" className="fade-in">
