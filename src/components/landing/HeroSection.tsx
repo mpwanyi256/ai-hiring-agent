@@ -1,8 +1,6 @@
-import Image from 'next/image';
 import {
   ArrowRightIcon,
   PlayIcon,
-  StarIcon,
   DocumentTextIcon,
   ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';

@@ -180,18 +180,18 @@ export default function Navigation() {
 
             {/* Testimonials Link */}
             {pathname === '/' ? (
-              <button
-                onClick={() => scrollToSection('testimonials')}
+              <Link
+                href="/contact"
                 className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
               >
-                Testimonials
-              </button>
+                Contact Us
+              </Link>
             ) : (
               <Link
-                href="/#testimonials"
+                href="/contact"
                 className="px-5 py-2.5 rounded-full text-gray-600 hover:text-primary hover:bg-gray-50 font-medium transition-all text-sm"
               >
-                Testimonials
+                Contact Us
               </Link>
             )}
 
