@@ -8,22 +8,19 @@ import { createContract, updateContract, createJobTitle } from '@/store/contract
 import { fetchJobTitles, fetchEmploymentTypes } from '@/store/jobs/jobsThunks';
 import { selectContractsError } from '@/store/contracts/contractsSelectors';
 import { selectJobTitles, selectEmploymentTypes } from '@/store/jobs/jobsSelectors';
-import { useAppSelector } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { DialogTrigger } from '@/components/ui/dialog';
 import {
   Contract,
   CreateContractData,
   UpdateContractData,
   ContractStatus,
-  ContractCategory,
 } from '@/types/contracts';
 
-import { Loader2, Plus, Sparkles, Building2, FileText, X, Upload, Save } from 'lucide-react';
+import { Loader2, Sparkles, Building2, FileText, Upload, Save } from 'lucide-react';
 import RichTextEditor, { RichTextEditorRef } from '@/components/ui/RichTextEditor';
 import AIGenerationModal from './AIGenerationModal';
 import ContractPlaceholders from './ContractPlaceholders';
@@ -36,11 +33,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import ComboboxWithCreate from '@/components/ui/ComboboxWithCreate';
 import AddJobTitleModal from './AddJobTitleModal';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useAutoScroll } from '@/hooks/useAutoScroll';
 
 interface ContractFormProps {
   contract?: Contract;
@@ -65,6 +62,10 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
   // Rich text editor ref
   const editorRef = useRef<RichTextEditorRef>(null);
 
+  // State for streaming content
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingContent, setStreamingContent] = useState('');
+
   // Add mounted state to prevent hydration issues
   const [formData, setFormData] = useState<{
     title: string;
@@ -77,6 +78,21 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     jobTitleId: contract?.jobTitleId || '',
     status: contract?.status || 'draft',
   });
+
+  // Auto-scroll hook for streaming content
+  const editorContainerRef = useAutoScroll<HTMLDivElement>([formData.body, isStreaming]);
+
+  // Additional auto-scroll effect for streaming content
+  useEffect(() => {
+    if (isStreaming && editorRef.current) {
+      // Scroll to bottom whenever streaming content updates
+      const timer = setTimeout(() => {
+        editorRef.current?.scrollToBottom();
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [streamingContent, isStreaming]);
 
   // Modal states
   const [showJobTitleModal, setShowJobTitleModal] = useState(false);
@@ -95,7 +111,6 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     // Fetch job titles and employment types
     dispatch(fetchJobTitles());
     dispatch(fetchEmploymentTypes());
-    // dispatch(fetchContractCategories()); // categories removed from create form
 
     // Update form data when contract prop changes (for edit mode)
     if (contract) {
@@ -226,6 +241,26 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
   };
 
   const handleRefinedContent = (content: string) => {
+    handleBodyChange(content);
+    toast.success('Contract template refined successfully!');
+  };
+
+  const handleStreamingContent = (content: string) => {
+    setStreamingContent(content);
+    setIsStreaming(true);
+    handleBodyChange(content);
+
+    // Auto-scroll to bottom to show latest content on every stream update
+    setTimeout(() => {
+      if (editorRef.current) {
+        editorRef.current.scrollToBottom();
+      }
+    }, 50); // Reduced timeout for more responsive scrolling
+  };
+
+  const handleRefineComplete = (content: string) => {
+    setIsStreaming(false);
+    setStreamingContent('');
     handleBodyChange(content);
     toast.success('Contract template refined successfully!');
   };
@@ -365,35 +400,40 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                     }
                   }}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowUploadContractModal(true)}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Contract
-                </Button>
+                {mode === 'create' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowUploadContractModal(true)}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Contract
+                  </Button>
+                )}
                 {formData.body.trim() && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => setShowRefineModal(true)}
+                    disabled={isStreaming}
                   >
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Refine
+                    {isStreaming ? 'Refining...' : 'Refine'}
                   </Button>
                 )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAiGenerationModal(true)}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Generate with AI
-                </Button>
+                {mode === 'create' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAiGenerationModal(true)}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate with AI
+                  </Button>
+                )}
                 <AIGenerationModal
                   open={showAiGenerationModal}
                   onOpenChange={setShowAiGenerationModal}
@@ -410,13 +450,38 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
             </div>
           </CardHeader>
           <CardContent>
-            <RichTextEditor
-              ref={editorRef}
-              content={formData.body}
-              onChange={handleBodyChange}
-              placeholder="Write your contract template here..."
-              className="min-h-[400px]"
-            />
+            {/* Streaming indicator */}
+            {isStreaming && (
+              <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm font-medium">
+                    AI is refining your contract in real-time...
+                  </span>
+                  <span className="text-xs text-blue-600">
+                    ({streamingContent.length.toLocaleString()} characters processed)
+                  </span>
+                </div>
+                <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{
+                      width: `${Math.min((streamingContent.length / Math.max(formData.body.length, 100)) * 100, 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div ref={editorContainerRef}>
+              <RichTextEditor
+                ref={editorRef}
+                content={formData.body}
+                onChange={handleBodyChange}
+                placeholder="Write your contract template here..."
+                className="min-h-[400px]"
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -468,7 +533,8 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
         open={showRefineModal}
         onOpenChange={setShowRefineModal}
         content={formData.body}
-        onContentRefined={handleRefinedContent}
+        onContentRefined={handleRefineComplete}
+        onStreamingContent={handleStreamingContent}
       />
     </div>
   );

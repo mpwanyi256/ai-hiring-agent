@@ -30,6 +30,7 @@ interface RichTextEditorProps {
 export interface RichTextEditorRef {
   insertAtCursor: (text: string) => void;
   focus: () => void;
+  scrollToBottom: () => void;
 }
 
 const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
@@ -94,6 +95,32 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
         focus: () => {
           if (editor && !disabled) {
             editor.chain().focus().run();
+          }
+        },
+        scrollToBottom: () => {
+          if (editor && !disabled) {
+            // Try multiple selectors to find the scrollable container
+            const editorElement =
+              editor.view.dom.closest('.overflow-y-auto') ||
+              editor.view.dom.closest('.max-h-96') ||
+              editor.view.dom.parentElement?.querySelector('.overflow-y-auto') ||
+              editor.view.dom.parentElement?.querySelector('.max-h-96');
+
+            if (editorElement) {
+              editorElement.scrollTo({
+                top: editorElement.scrollHeight,
+                behavior: 'smooth',
+              });
+            } else {
+              // Fallback: scroll the editor view itself
+              const viewport = editor.view.dom.closest('[data-radix-scroll-area-viewport]');
+              if (viewport) {
+                viewport.scrollTo({
+                  top: viewport.scrollHeight,
+                  behavior: 'smooth',
+                });
+              }
+            }
           }
         },
       }),
