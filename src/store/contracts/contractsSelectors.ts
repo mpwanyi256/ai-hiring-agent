@@ -53,6 +53,8 @@ export const selectIsSending = (state: RootState) => state.contracts.isSending;
 export const selectIsSigning = (state: RootState) => state.contracts.isSigning;
 export const selectIsGeneratingAI = (state: RootState) => state.contracts.isGeneratingAI;
 export const selectIsBulkOperating = (state: RootState) => state.contracts.isBulkOperating;
+export const selectIsRefiningAI = (state: RootState) => state.contracts.aiOperationLoading;
+export const selectAIOperationError = (state: RootState) => state.contracts.aiOperationError;
 
 // Derived selectors
 export const selectContractById = createSelector(

@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { ai } from '@/lib/constants';
+import { streamHandler } from '@/lib/utils/streamHandler';
 
 export async function POST(req: Request) {
   try {
@@ -40,7 +40,8 @@ export async function POST(req: Request) {
         
         <p><em>This is a placeholder job description. Please configure your OpenAI API key for AI-generated descriptions.</em></p>
       `;
-      return NextResponse.json({ success: true, html: mockHtml });
+
+      return streamHandler.createMockStreamResponse(mockHtml);
     }
 
     // Build a comprehensive prompt for OpenAI
@@ -73,7 +74,7 @@ Job Details:
 
 Write in a professional yet approachable tone that would attract qualified candidates.`;
 
-    // Use OpenAI
+    // Use OpenAI with streaming
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -92,6 +93,7 @@ Write in a professional yet approachable tone that would attract qualified candi
         ],
         max_tokens: 1000,
         temperature: 0.7,
+        stream: true,
       }),
     });
 
@@ -99,18 +101,20 @@ Write in a professional yet approachable tone that would attract qualified candi
       throw new Error(`OpenAI API error: ${openaiRes.status}`);
     }
 
-    const openaiData = await openaiRes.json();
-    const html = openaiData.choices?.[0]?.message?.content || '';
-
-    return NextResponse.json({ success: true, html });
+    return streamHandler.createStreamResponse(openaiRes);
   } catch (error) {
     console.error('Job description generation error:', error);
-    return NextResponse.json(
-      {
+    return new Response(
+      JSON.stringify({
         success: false,
         error: error instanceof Error ? error.message : 'Failed to generate job description',
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-      { status: 500 },
     );
   }
 }

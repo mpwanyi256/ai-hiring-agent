@@ -24,15 +24,20 @@ interface RichTextEditorProps {
   onChange: (content: string) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export interface RichTextEditorRef {
   insertAtCursor: (text: string) => void;
   focus: () => void;
+  scrollToBottom: () => void;
 }
 
 const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
-  ({ content, onChange, placeholder = 'Start typing...', className = '' }, ref) => {
+  (
+    { content, onChange, placeholder = 'Start typing...', className = '', disabled = false },
+    ref,
+  ) => {
     const editor = useEditor({
       extensions: [
         StarterKit,
@@ -62,8 +67,11 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
       ],
       content,
       onUpdate: ({ editor }) => {
-        onChange(editor.getHTML());
+        if (!disabled) {
+          onChange(editor.getHTML());
+        }
       },
+      editable: !disabled,
       editorProps: {
         attributes: {
           class: 'prose prose-sm max-w-none focus:outline-none min-h-[120px] px-4 py-3',
@@ -76,7 +84,7 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
       ref,
       () => ({
         insertAtCursor: (text: string) => {
-          if (editor) {
+          if (editor && !disabled) {
             editor
               .chain()
               .focus()
@@ -85,12 +93,38 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
           }
         },
         focus: () => {
-          if (editor) {
+          if (editor && !disabled) {
             editor.chain().focus().run();
           }
         },
+        scrollToBottom: () => {
+          if (editor && !disabled) {
+            // Try multiple selectors to find the scrollable container
+            const editorElement =
+              editor.view.dom.closest('.overflow-y-auto') ||
+              editor.view.dom.closest('.max-h-96') ||
+              editor.view.dom.parentElement?.querySelector('.overflow-y-auto') ||
+              editor.view.dom.parentElement?.querySelector('.max-h-96');
+
+            if (editorElement) {
+              editorElement.scrollTo({
+                top: editorElement.scrollHeight,
+                behavior: 'smooth',
+              });
+            } else {
+              // Fallback: scroll the editor view itself
+              const viewport = editor.view.dom.closest('[data-radix-scroll-area-viewport]');
+              if (viewport) {
+                viewport.scrollTo({
+                  top: viewport.scrollHeight,
+                  behavior: 'smooth',
+                });
+              }
+            }
+          }
+        },
       }),
-      [editor],
+      [editor, disabled],
     );
 
     // Update editor content when content prop changes (fixes template loading)
@@ -105,6 +139,8 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
     }
 
     const addLink = () => {
+      if (disabled) return;
+
       const url = prompt('Enter URL:');
       if (url) {
         editor.chain().focus().setLink({ href: url }).run();
@@ -118,8 +154,13 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBold().run()}
-            className={`p-2 rounded hover:bg-gray-200 transition-colors ${
-              editor.isActive('bold') ? 'bg-gray-200 text-primary' : 'text-gray-600'
+            disabled={disabled}
+            className={`p-2 rounded transition-colors ${
+              disabled
+                ? 'text-gray-400 cursor-not-allowed'
+                : editor.isActive('bold')
+                  ? 'bg-gray-200 text-primary hover:bg-gray-200'
+                  : 'text-gray-600 hover:bg-gray-200'
             }`}
             title="Bold"
           >
@@ -129,8 +170,13 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={`p-2 rounded hover:bg-gray-200 transition-colors ${
-              editor.isActive('italic') ? 'bg-gray-200 text-primary' : 'text-gray-600'
+            disabled={disabled}
+            className={`p-2 rounded transition-colors ${
+              disabled
+                ? 'text-gray-400 cursor-not-allowed'
+                : editor.isActive('italic')
+                  ? 'bg-gray-200 text-primary hover:bg-gray-200'
+                  : 'text-gray-600 hover:bg-gray-200'
             }`}
             title="Italic"
           >
@@ -140,8 +186,13 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleStrike().run()}
-            className={`p-2 rounded hover:bg-gray-200 transition-colors ${
-              editor.isActive('strike') ? 'bg-gray-200 text-primary' : 'text-gray-600'
+            disabled={disabled}
+            className={`p-2 rounded transition-colors ${
+              disabled
+                ? 'text-gray-400 cursor-not-allowed'
+                : editor.isActive('strike')
+                  ? 'bg-gray-200 text-primary hover:bg-gray-200'
+                  : 'text-gray-600 hover:bg-gray-200'
             }`}
             title="Strikethrough"
           >
@@ -153,8 +204,13 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={`p-2 rounded hover:bg-gray-200 transition-colors ${
-              editor.isActive('bulletList') ? 'bg-gray-200 text-primary' : 'text-gray-600'
+            disabled={disabled}
+            className={`p-2 rounded transition-colors ${
+              disabled
+                ? 'text-gray-400 cursor-not-allowed'
+                : editor.isActive('bulletList')
+                  ? 'bg-gray-200 text-primary hover:bg-gray-200'
+                  : 'text-gray-600 hover:bg-gray-200'
             }`}
             title="Bullet List"
           >
@@ -164,8 +220,13 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            className={`p-2 rounded hover:bg-gray-200 transition-colors ${
-              editor.isActive('orderedList') ? 'bg-gray-200 text-primary' : 'text-gray-600'
+            disabled={disabled}
+            className={`p-2 rounded transition-colors ${
+              disabled
+                ? 'text-gray-400 cursor-not-allowed'
+                : editor.isActive('orderedList')
+                  ? 'bg-gray-200 text-primary hover:bg-gray-200'
+                  : 'text-gray-600 hover:bg-gray-200'
             }`}
             title="Numbered List"
           >
@@ -177,8 +238,13 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
           <button
             type="button"
             onClick={addLink}
-            className={`p-2 rounded hover:bg-gray-200 transition-colors ${
-              editor.isActive('link') ? 'bg-gray-200 text-primary' : 'text-gray-600'
+            disabled={disabled}
+            className={`p-2 rounded transition-colors ${
+              disabled
+                ? 'text-gray-400 cursor-not-allowed'
+                : editor.isActive('link')
+                  ? 'bg-gray-200 text-primary hover:bg-gray-200'
+                  : 'text-gray-600 hover:bg-gray-200'
             }`}
             title="Add Link"
           >
@@ -188,8 +254,13 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            className={`p-2 rounded hover:bg-gray-200 transition-colors ${
-              editor.isActive('blockquote') ? 'bg-gray-200 text-primary' : 'text-gray-600'
+            disabled={disabled}
+            className={`p-2 rounded transition-colors ${
+              disabled
+                ? 'text-gray-400 cursor-not-allowed'
+                : editor.isActive('blockquote')
+                  ? 'bg-gray-200 text-primary hover:bg-gray-200'
+                  : 'text-gray-600 hover:bg-gray-200'
             }`}
             title="Quote"
           >
@@ -211,7 +282,10 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
                   .run();
               }
             }}
-            className="text-sm border-0 bg-transparent text-gray-600 focus:outline-none"
+            disabled={disabled}
+            className={`text-sm border-0 bg-transparent focus:outline-none ${
+              disabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-600'
+            }`}
             value={
               editor.isActive('heading', { level: 1 })
                 ? 1

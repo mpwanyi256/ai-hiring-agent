@@ -6,24 +6,21 @@ import { useRouter } from 'next/navigation';
 import { AppDispatch } from '@/store';
 import { createContract, updateContract, createJobTitle } from '@/store/contracts/contractsThunks';
 import { fetchJobTitles, fetchEmploymentTypes } from '@/store/jobs/jobsThunks';
-import { selectContractsError } from '@/store/contracts/contractsSelectors';
+import { selectContractsError, selectIsRefiningAI } from '@/store/contracts/contractsSelectors';
 import { selectJobTitles, selectEmploymentTypes } from '@/store/jobs/jobsSelectors';
-import { useAppSelector } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { DialogTrigger } from '@/components/ui/dialog';
 import {
   Contract,
   CreateContractData,
   UpdateContractData,
   ContractStatus,
-  ContractCategory,
 } from '@/types/contracts';
 
-import { Loader2, Plus, Sparkles, Building2, FileText, X, Upload, Save } from 'lucide-react';
+import { Loader2, Sparkles, Building2, FileText, Upload, Save } from 'lucide-react';
 import RichTextEditor, { RichTextEditorRef } from '@/components/ui/RichTextEditor';
 import AIGenerationModal from './AIGenerationModal';
 import ContractPlaceholders from './ContractPlaceholders';
@@ -36,11 +33,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import ComboboxWithCreate from '@/components/ui/ComboboxWithCreate';
 import AddJobTitleModal from './AddJobTitleModal';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useAutoScroll } from '@/hooks/useAutoScroll';
 
 interface ContractFormProps {
   contract?: Contract;
@@ -56,6 +53,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
   const analytics = useAnalytics();
 
   const error = useSelector(selectContractsError);
+  const isRefiningAI = useSelector(selectIsRefiningAI);
 
   // Job-related selectors
   const jobTitles = useSelector(selectJobTitles);
@@ -64,6 +62,10 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
 
   // Rich text editor ref
   const editorRef = useRef<RichTextEditorRef>(null);
+
+  // State for streaming content
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingContent, setStreamingContent] = useState('');
 
   // Add mounted state to prevent hydration issues
   const [formData, setFormData] = useState<{
@@ -77,6 +79,21 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     jobTitleId: contract?.jobTitleId || '',
     status: contract?.status || 'draft',
   });
+
+  // Auto-scroll hook for streaming content
+  const editorContainerRef = useAutoScroll<HTMLDivElement>([formData.body, isStreaming]);
+
+  // Additional auto-scroll effect for streaming content
+  useEffect(() => {
+    if (isStreaming && editorRef.current) {
+      // Scroll to bottom whenever streaming content updates
+      const timer = setTimeout(() => {
+        editorRef.current?.scrollToBottom();
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [streamingContent, isStreaming]);
 
   // Modal states
   const [showJobTitleModal, setShowJobTitleModal] = useState(false);
@@ -95,7 +112,6 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     // Fetch job titles and employment types
     dispatch(fetchJobTitles());
     dispatch(fetchEmploymentTypes());
-    // dispatch(fetchContractCategories()); // categories removed from create form
 
     // Update form data when contract prop changes (for edit mode)
     if (contract) {
@@ -230,6 +246,26 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     toast.success('Contract template refined successfully!');
   };
 
+  const handleStreamingContent = (content: string) => {
+    setStreamingContent(content);
+    setIsStreaming(true);
+    handleBodyChange(content);
+
+    // Auto-scroll to bottom to show latest content on every stream update
+    setTimeout(() => {
+      if (editorRef.current) {
+        editorRef.current.scrollToBottom();
+      }
+    }, 50); // Reduced timeout for more responsive scrolling
+  };
+
+  const handleRefineComplete = (content: string) => {
+    setIsStreaming(false);
+    setStreamingContent('');
+    handleBodyChange(content);
+    toast.success('Contract template refined successfully!');
+  };
+
   // Don't render until mounted to prevent hydration issues
   if (!mounted) {
     return (
@@ -343,6 +379,15 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isStreaming}
+                  className="h-8"
+                >
+                  Preview
+                </Button>
                 <ContractPlaceholders
                   onInsertPlaceholder={(placeholder) => {
                     try {
@@ -365,35 +410,40 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                     }
                   }}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowUploadContractModal(true)}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Contract
-                </Button>
+                {mode === 'create' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowUploadContractModal(true)}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Contract
+                  </Button>
+                )}
                 {formData.body.trim() && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => setShowRefineModal(true)}
+                    disabled={isStreaming || isRefiningAI}
                   >
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Refine
+                    {isStreaming || isRefiningAI ? 'Refining...' : 'Refine'}
                   </Button>
                 )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAiGenerationModal(true)}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Generate with AI
-                </Button>
+                {mode === 'create' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAiGenerationModal(true)}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate with AI
+                  </Button>
+                )}
                 <AIGenerationModal
                   open={showAiGenerationModal}
                   onOpenChange={setShowAiGenerationModal}
@@ -410,13 +460,42 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
             </div>
           </CardHeader>
           <CardContent>
-            <RichTextEditor
-              ref={editorRef}
-              content={formData.body}
-              onChange={handleBodyChange}
-              placeholder="Write your contract template here..."
-              className="min-h-[400px]"
-            />
+            {/* Streaming indicator */}
+            {(isStreaming || isRefiningAI) && (
+              <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm font-medium">
+                    AI is refining your contract in real-time...
+                  </span>
+                  {isStreaming && (
+                    <span className="text-xs text-blue-600">
+                      ({streamingContent.length.toLocaleString()} characters processed)
+                    </span>
+                  )}
+                </div>
+                {isStreaming && (
+                  <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                      style={{
+                        width: `${Math.min((streamingContent.length / Math.max(formData.body.length, 100)) * 100, 100)}%`,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div ref={editorContainerRef}>
+              <RichTextEditor
+                ref={editorRef}
+                content={formData.body}
+                onChange={handleBodyChange}
+                placeholder="Write your contract template here..."
+                className="min-h-[400px]"
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -431,13 +510,15 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
               type="button"
               variant="outline"
               onClick={() => window.history.back()}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isStreaming}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !formData.title.trim() || !formData.body.trim()}
+              disabled={
+                isSubmitting || isStreaming || !formData.title.trim() || !formData.body.trim()
+              }
               className="min-w-[120px]"
             >
               {isSubmitting ? (
@@ -468,7 +549,8 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
         open={showRefineModal}
         onOpenChange={setShowRefineModal}
         content={formData.body}
-        onContentRefined={handleRefinedContent}
+        onContentRefined={handleRefineComplete}
+        onStreamingContent={handleStreamingContent}
       />
     </div>
   );

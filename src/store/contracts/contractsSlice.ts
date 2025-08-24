@@ -26,6 +26,7 @@ import {
   fetchSigningOffer,
   signByCandidate,
   rejectByCandidate,
+  refineContractWithAI,
 } from './contractsThunks';
 
 const initialState: ContractsState = {
@@ -616,6 +617,19 @@ const contractsSlice = createSlice({
       .addCase(rejectByCandidate.rejected, (state, action) => {
         state.signingLoading = false;
         state.signingError = action.error.message || 'Failed to reject contract';
+      })
+
+      // Contract Refinement with AI
+      .addCase(refineContractWithAI.pending, (state) => {
+        state.aiOperationLoading = true;
+        state.aiOperationError = null;
+      })
+      .addCase(refineContractWithAI.fulfilled, (state) => {
+        state.aiOperationLoading = false;
+      })
+      .addCase(refineContractWithAI.rejected, (state, action) => {
+        state.aiOperationLoading = false;
+        state.aiOperationError = action.error.message || 'Failed to refine contract';
       });
   },
 });
