@@ -154,21 +154,10 @@ FROM integrations i
 WHERE i.expires_at IS NOT NULL
 ORDER BY i.provider, i.expires_at ASC NULLS LAST;
 
--- Add RLS policy for the view
-ALTER VIEW provider_token_status ENABLE ROW LEVEL SECURITY;
-
--- Create policy for provider_token_status view
-CREATE POLICY "Users can view their own provider token status"
-ON provider_token_status
-FOR SELECT
-TO authenticated
-USING (
-  user_id = auth.uid()
-);
-
--- Grant permissions on the view
-GRANT SELECT ON provider_token_status TO authenticated;
-GRANT SELECT ON provider_token_status TO service_role;
+-- Enable RLS for the view
+ALTER VIEW public.provider_token_status SET (security_invoker = on);
+GRANT SELECT ON public.provider_token_status TO authenticated;
+GRANT SELECT ON public.provider_token_status TO service_role;
 
 -- Create view specifically for Google token status (for backward compatibility)
 CREATE OR REPLACE VIEW google_token_status AS
@@ -195,24 +184,6 @@ FROM integrations i
 WHERE i.provider = 'google'
 ORDER BY i.expires_at ASC NULLS LAST;
 
--- Add RLS policy for the google_token_status view
-ALTER VIEW google_token_status ENABLE ROW LEVEL SECURITY;
-
--- Create policy for google_token_status view
-CREATE POLICY "Users can view their own Google token status"
-ON google_token_status
-FOR SELECT
-TO authenticated
-USING (
-  user_id = auth.uid() OR 
-  company_id IN (
-    SELECT company_id 
-    FROM profiles 
-    WHERE id = auth.uid() 
-      AND role IN ('admin', 'hr', 'employer')
-  )
-);
-
 -- Grant permissions on the google_token_status view
 GRANT SELECT ON google_token_status TO authenticated;
 GRANT SELECT ON google_token_status TO service_role;
@@ -222,9 +193,11 @@ CREATE INDEX IF NOT EXISTS idx_integrations_provider_expires_at
 ON integrations (provider, expires_at) 
 WHERE expires_at IS NOT NULL;
 
-CREATE INDEX IF NOT EXISTS idx_integrations_expiry_check 
+-- Note: Cannot use NOW() in index predicates as it's not IMMUTABLE
+-- Instead, we'll create a simple index on expires_at and filter in queries
+CREATE INDEX IF NOT EXISTS idx_integrations_expires_at 
 ON integrations (expires_at) 
-WHERE expires_at <= NOW() + INTERVAL '2 days';
+WHERE expires_at IS NOT NULL;
 
 -- Create function to get expiring tokens summary for all providers
 CREATE OR REPLACE FUNCTION get_expiring_tokens_summary()
@@ -308,3 +281,9 @@ COMMENT ON VIEW provider_token_status IS 'Provides real-time status of all provi
 COMMENT ON VIEW google_token_status IS 'Provides real-time status of Google OAuth tokens including expiry information.';
 COMMENT ON FUNCTION get_expiring_tokens_summary() IS 'Returns summary statistics of all provider token expiry status across the platform.';
 COMMENT ON FUNCTION get_expiring_google_tokens_summary() IS 'Returns summary statistics of Google token expiry status across the platform.';
+
+-- Note about index limitations:
+-- PostgreSQL requires functions in index predicates to be IMMUTABLE (return same value for same inputs)
+-- NOW() is not IMMUTABLE as it returns different values each time
+-- For time-based filtering, use the simple index on expires_at and filter in queries instead
+-- This provides good performance while maintaining flexibility for dynamic time-based queries

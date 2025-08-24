@@ -690,3 +690,27 @@ export const rejectByCandidate = createAsyncThunk<ContractOfferSigning, RejectBy
     return (data.contractOffer || data.contract_offer || data) as ContractOfferSigning;
   },
 );
+
+// Contract Refinement with Streaming
+export const refineContractWithAI = createAsyncThunk<
+  { success: boolean; message: string },
+  { content: string; additionalInstructions?: string }
+>('contracts/refineContractWithAI', async ({ content, additionalInstructions }) => {
+  const response = await fetch('/api/contracts/ai-enhance', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      content,
+      additionalInstructions: additionalInstructions?.trim() || undefined,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to refine contract');
+  }
+
+  return { success: true, message: 'Contract refinement initiated successfully' };
+});

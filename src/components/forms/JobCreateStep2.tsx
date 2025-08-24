@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { JobFormData } from '@/types/jobs';
 import { Button } from '@/components/ui/button';
-import RichTextEditor from '@/components/ui/RichTextEditor';
+import RichTextEditor, { RichTextEditorRef } from '@/components/ui/RichTextEditor';
 import { defaultJobDescriptionMarkdown } from '@/lib/constants';
 import { marked } from 'marked';
 import Modal from '@/components/ui/Modal';
@@ -10,6 +10,7 @@ import { useAppDispatch } from '@/store';
 import { generateJobDescriptionWithAI } from '@/store/jobs/jobsThunks';
 import { useToast } from '@/components/providers/ToastProvider';
 import { apiError } from '@/lib/notification';
+import { useAutoScroll } from '@/hooks/useAutoScroll';
 
 interface JobCreateStep2Props {
   form: UseFormReturn<JobFormData>;
@@ -52,8 +53,17 @@ const JobCreateStep2: React.FC<JobCreateStep2Props> = ({ form, onPrev, onNext, i
     setIsStreaming(true);
     setAiModalOpen(false); // Hide modal when streaming starts
 
+    // Trigger initial scroll when streaming starts
+    setTimeout(() => {
+      if (editorRef.current) {
+        editorRef.current.scrollToBottom();
+      }
+    }, 50);
+
     try {
       const values = form.getValues();
+      // reset the job description
+      form.setValue('jobDescription', '');
       const resultAction = await dispatch(
         generateJobDescriptionWithAI({
           title: values.title,
@@ -67,6 +77,13 @@ const JobCreateStep2: React.FC<JobCreateStep2Props> = ({ form, onPrev, onNext, i
           onProgress: (content: string) => {
             // Update the form with streaming content
             form.setValue('jobDescription', content);
+
+            // Trigger scroll on each progress update
+            setTimeout(() => {
+              if (editorRef.current) {
+                editorRef.current.scrollToBottom();
+              }
+            }, 25);
           },
         }),
       );
@@ -85,23 +102,82 @@ const JobCreateStep2: React.FC<JobCreateStep2Props> = ({ form, onPrev, onNext, i
     }
   };
 
-  // Auto-scroll effect for streaming content
-  const editorRef = useRef<HTMLDivElement>(null);
+  // RichTextEditor ref for auto-scrolling
+  const editorRef = useRef<RichTextEditorRef>(null);
 
+  // Enhanced auto-scroll effect for streaming content
   useEffect(() => {
     if (isStreaming && editorRef.current) {
-      // Auto-scroll to bottom to show new content
+      // Auto-scroll to bottom to show new content with proper timing
       const scrollToBottom = () => {
         if (editorRef.current) {
-          editorRef.current.scrollTop = editorRef.current.scrollHeight;
+          editorRef.current.scrollToBottom();
         }
       };
 
       // Scroll immediately and then with a small delay to catch any DOM updates
       scrollToBottom();
-      const timeoutId = setTimeout(scrollToBottom, 100);
+      const timeoutId = setTimeout(scrollToBottom, 50);
 
       return () => clearTimeout(timeoutId);
+    }
+  }, [form.watch('jobDescription'), isStreaming]);
+
+  // Additional aggressive auto-scroll for better UX during streaming
+  useEffect(() => {
+    if (isStreaming && editorRef.current) {
+      // More aggressive scrolling with multiple timeouts for better responsiveness
+      const scrollToBottom = () => {
+        if (editorRef.current) {
+          editorRef.current.scrollToBottom();
+        }
+      };
+
+      // Scroll multiple times to ensure content is visible
+      scrollToBottom();
+      const timeout1 = setTimeout(scrollToBottom, 25);
+      const timeout2 = setTimeout(scrollToBottom, 75);
+      const timeout3 = setTimeout(scrollToBottom, 150);
+
+      return () => {
+        clearTimeout(timeout1);
+        clearTimeout(timeout2);
+        clearTimeout(timeout3);
+      };
+    }
+  }, [form.watch('jobDescription'), isStreaming]);
+
+  // Additional auto-scroll effect that triggers on every content change during streaming
+  useEffect(() => {
+    if (isStreaming && editorRef.current) {
+      // Scroll to bottom whenever streaming content updates
+      const timer = setTimeout(() => {
+        editorRef.current?.scrollToBottom();
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [form.watch('jobDescription'), isStreaming]);
+
+  // Most aggressive scroll trigger - fires on every character change during streaming
+  useEffect(() => {
+    if (isStreaming && editorRef.current) {
+      // Immediate scroll with minimal delay for maximum responsiveness
+      const immediateScroll = () => {
+        editorRef.current?.scrollToBottom();
+      };
+
+      // Multiple scroll attempts with different timing for reliability
+      immediateScroll();
+      const timeout1 = setTimeout(immediateScroll, 10);
+      const timeout2 = setTimeout(immediateScroll, 50);
+      const timeout3 = setTimeout(immediateScroll, 100);
+
+      return () => {
+        clearTimeout(timeout1);
+        clearTimeout(timeout2);
+        clearTimeout(timeout3);
+      };
     }
   }, [form.watch('jobDescription'), isStreaming]);
 
@@ -125,9 +201,24 @@ const JobCreateStep2: React.FC<JobCreateStep2Props> = ({ form, onPrev, onNext, i
 
       {/* Streaming indicator */}
       {isStreaming && (
-        <div className="bg-green-50 border border-green-200 rounded px-3 py-2 mb-4 text-sm text-green-900 flex items-center">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2" />
-          <span>AI is generating your job description in real-time...</span>
+        <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2 text-green-700">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600" />
+            <span className="text-sm font-medium">
+              AI is generating your job description in real-time...
+            </span>
+            <span className="text-xs text-green-600">
+              ({form.watch('jobDescription')?.length.toLocaleString() || 0} characters generated)
+            </span>
+          </div>
+          <div className="mt-2 w-full bg-green-200 rounded-full h-2">
+            <div
+              className="bg-green-600 h-2 rounded-full transition-all duration-300 ease-out"
+              style={{
+                width: `${Math.min(((form.watch('jobDescription')?.length || 0) / 1000) * 100, 100)}%`,
+              }}
+            />
+          </div>
         </div>
       )}
 
@@ -147,14 +238,13 @@ const JobCreateStep2: React.FC<JobCreateStep2Props> = ({ form, onPrev, onNext, i
         <label htmlFor="jobDescription" className="block text-sm font-medium text-text mb-2">
           Description*
         </label>
-        <div ref={editorRef} className="max-h-[400px] overflow-y-auto">
-          <RichTextEditor
-            content={form.watch('jobDescription')}
-            onChange={(val) => form.setValue('jobDescription', val)}
-            className="min-h-[250px]"
-            disabled={isStreaming}
-          />
-        </div>
+        <RichTextEditor
+          ref={editorRef}
+          content={form.watch('jobDescription')}
+          onChange={(val) => form.setValue('jobDescription', val)}
+          className="h-[400px] overflow-y-auto"
+          disabled={isStreaming}
+        />
         <div className="text-right text-xs text-muted-text mt-1">
           {form.watch('jobDescription')?.length || 0}/10,000
         </div>

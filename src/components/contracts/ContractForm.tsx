@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AppDispatch } from '@/store';
 import { createContract, updateContract, createJobTitle } from '@/store/contracts/contractsThunks';
 import { fetchJobTitles, fetchEmploymentTypes } from '@/store/jobs/jobsThunks';
-import { selectContractsError } from '@/store/contracts/contractsSelectors';
+import { selectContractsError, selectIsRefiningAI } from '@/store/contracts/contractsSelectors';
 import { selectJobTitles, selectEmploymentTypes } from '@/store/jobs/jobsSelectors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +53,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
   const analytics = useAnalytics();
 
   const error = useSelector(selectContractsError);
+  const isRefiningAI = useSelector(selectIsRefiningAI);
 
   // Job-related selectors
   const jobTitles = useSelector(selectJobTitles);
@@ -378,6 +379,15 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isStreaming}
+                  className="h-8"
+                >
+                  Preview
+                </Button>
                 <ContractPlaceholders
                   onInsertPlaceholder={(placeholder) => {
                     try {
@@ -417,10 +427,10 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowRefineModal(true)}
-                    disabled={isStreaming}
+                    disabled={isStreaming || isRefiningAI}
                   >
                     <Sparkles className="h-4 w-4 mr-2" />
-                    {isStreaming ? 'Refining...' : 'Refine'}
+                    {isStreaming || isRefiningAI ? 'Refining...' : 'Refine'}
                   </Button>
                 )}
                 {mode === 'create' && (
@@ -451,25 +461,29 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
           </CardHeader>
           <CardContent>
             {/* Streaming indicator */}
-            {isStreaming && (
+            {(isStreaming || isRefiningAI) && (
               <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-center gap-2 text-blue-700">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="text-sm font-medium">
                     AI is refining your contract in real-time...
                   </span>
-                  <span className="text-xs text-blue-600">
-                    ({streamingContent.length.toLocaleString()} characters processed)
-                  </span>
+                  {isStreaming && (
+                    <span className="text-xs text-blue-600">
+                      ({streamingContent.length.toLocaleString()} characters processed)
+                    </span>
+                  )}
                 </div>
-                <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
-                    style={{
-                      width: `${Math.min((streamingContent.length / Math.max(formData.body.length, 100)) * 100, 100)}%`,
-                    }}
-                  />
-                </div>
+                {isStreaming && (
+                  <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                      style={{
+                        width: `${Math.min((streamingContent.length / Math.max(formData.body.length, 100)) * 100, 100)}%`,
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -496,13 +510,15 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
               type="button"
               variant="outline"
               onClick={() => window.history.back()}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isStreaming}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !formData.title.trim() || !formData.body.trim()}
+              disabled={
+                isSubmitting || isStreaming || !formData.title.trim() || !formData.body.trim()
+              }
               className="min-w-[120px]"
             >
               {isSubmitting ? (

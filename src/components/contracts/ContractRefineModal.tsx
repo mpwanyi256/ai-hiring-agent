@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,6 +17,8 @@ import { Sparkles, Zap } from 'lucide-react';
 import AIGenerationLoader, { AILoaderPresets } from '@/components/ui/AIGenerationLoader';
 import { toast } from 'sonner';
 import { streamHandler, StreamChunk } from '@/lib/utils/streamHandler';
+import { refineContractWithAI } from '@/store/contracts/contractsThunks';
+import { AppDispatch } from '@/store';
 
 interface ContractRefineModalProps {
   open: boolean;
@@ -34,6 +37,7 @@ export default function ContractRefineModal({
   onContentRefined,
   onStreamingContent,
 }: ContractRefineModalProps) {
+  const dispatch = useDispatch<AppDispatch>();
   const [refineState, setRefineState] = useState<RefineState>('idle');
   const [additionalInstructions, setAdditionalInstructions] = useState<string>('');
 
@@ -41,45 +45,62 @@ export default function ContractRefineModal({
     streamHandler.reset();
 
     try {
-      const response = await fetch('/api/contracts/ai-enhance', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      setRefineState('analyzing');
+
+      // Use the thunk to initiate the refinement
+      const result = await dispatch(
+        refineContractWithAI({
           content,
           additionalInstructions: additionalInstructions.trim() || undefined,
         }),
-      });
+      );
 
-      if (!response.ok) {
-        throw new Error('Failed to refine contract content');
+      if (result.type === 'contracts/refineContractWithAI/fulfilled') {
+        // Close modal immediately when streaming starts for better UX
+        onOpenChange(false);
+
+        // Now fetch the streaming response
+        const response = await fetch('/api/contracts/ai-enhance', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content,
+            additionalInstructions: additionalInstructions.trim() || undefined,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to refine contract content');
+        }
+
+        // Handle streaming response
+        await streamHandler.handleClientStream(response, {
+          onChunk: (chunk: StreamChunk) => {
+            if (chunk.content) {
+              // Send streaming content to parent component for real-time updates
+              onStreamingContent?.(chunk.content);
+            }
+          },
+          onComplete: (finalContent: string) => {
+            // Apply the refined content
+            onContentRefined(finalContent);
+            toast.success('Contract refined successfully!');
+          },
+          onError: (error: Error) => {
+            console.error('Error refining contract:', error);
+            toast.error('Failed to refine contract. Please try again.');
+          },
+        });
+      } else {
+        throw new Error('Failed to initiate contract refinement');
       }
-
-      // Close modal immediately when streaming starts for better UX
-      onOpenChange(false);
-
-      // Handle streaming response
-      await streamHandler.handleClientStream(response, {
-        onChunk: (chunk: StreamChunk) => {
-          if (chunk.content) {
-            // Send streaming content to parent component for real-time updates
-            onStreamingContent?.(chunk.content);
-          }
-        },
-        onComplete: (finalContent: string) => {
-          // Apply the refined content
-          onContentRefined(finalContent);
-          toast.success('Contract refined successfully!');
-        },
-        onError: (error: Error) => {
-          console.error('Error refining contract:', error);
-          toast.error('Failed to refine contract. Please try again.');
-        },
-      });
     } catch (error) {
       console.error('Error refining contract:', error);
       toast.error('Failed to refine contract. Please try again.');
+    } finally {
+      setRefineState('idle');
     }
   };
 

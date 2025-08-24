@@ -1,5 +1,6 @@
 import { ai } from '@/lib/constants';
 import { streamHandler } from '@/lib/utils/streamHandler';
+import { placeholderService } from '@/lib/services/placeholderService';
 
 export async function POST(req: Request) {
   try {
@@ -38,29 +39,11 @@ export async function POST(req: Request) {
       return streamHandler.createMockStreamResponse(JSON.stringify(mockResponse));
     }
 
-    // Available placeholders for contract enhancement
-    const availablePlaceholders = [
-      '{{ candidate_name }}',
-      '{{ candidate_email }}',
-      '{{ company_name }}',
-      '{{ company_address }}',
-      '{{ job_title }}',
-      '{{ salary_amount }}',
-      '{{ salary_currency }}',
-      '{{ start_date }}',
-      '{{ end_date }}',
-      '{{ signing_date }}',
-      '{{ employment_type }}',
-      '{{ contract_duration }}',
-      '{{ work_location }}',
-      '{{ reporting_to }}',
-      '{{ department }}',
-      '{{ notice_period }}',
-      '{{ termination_reason }}',
-      '{{ benefits }}',
-      '{{ working_hours }}',
-      '{{ overtime_policy }}',
-    ];
+    // Get available placeholders from the database
+    const placeholders = await placeholderService.getPlaceholders();
+    const availablePlaceholders = placeholders.map((p) =>
+      placeholderService.formatPlaceholder(p.key),
+    );
 
     // Build prompt for contract enhancement
     const prompt = `Please analyze and enhance the following contract template. Focus on:
