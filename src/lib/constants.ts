@@ -22,7 +22,8 @@ export const app = {
   domain: 'intavia.app',
   description: 'AI Hiring Platform',
   projectRef: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  anonKey: process.env.SUPABASE_ANON_KEY,
+  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   email: 'connect@intavia.app',
   address: {
     street: 'Innovations Village',
@@ -43,25 +44,23 @@ export const isDev = process.env.NEXT_PUBLIC_CLIENT_ENV === 'development';
 
 export const integrations = {
   google: {
-    clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-    clientSecret: process.env.NEXT_PUBLIC_GOOGLE_SECRET_ID,
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_SECRET_ID,
     redirectUri: process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI,
     analyticsId: process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID,
   },
   resend: {
-    apiKey: process.env.NEXT_PUBLIC_RESEND_API_KEY,
-    audienceId: process.env.NEXT_PUBLIC_RESEND_AUDIENCE_ID,
+    apiKey: process.env.RESEND_API_KEY,
+    audienceId: process.env.RESEND_AUDIENCE_ID,
   },
   stripe: {
-    secretKey: isDev
-      ? process.env.NEXT_PUBLIC_STRIPE_SECRET_TEST
-      : process.env.NEXT_PUBLIC_STRIPE_SECRET,
+    secretKey: isDev ? process.env.STRIPE_SECRET_TEST : process.env.STRIPE_SECRET,
     publishableKey: isDev
       ? process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_TEST
       : process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE,
     webhookSecret: isDev
-      ? process.env.NEXT_PUBLIC_STRIPE_WEBHOOK_SECRET_TEST
-      : process.env.NEXT_PUBLIC_STRIPE_WEBHOOK_SECRET,
+      ? process.env.STRIPE_WEBHOOK_SECRET_TEST
+      : process.env.STRIPE_WEBHOOK_SECRET,
   },
   firebase: {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
