@@ -505,8 +505,8 @@ export const generateJobDescriptionWithAI = createAsyncThunk(
         throw new Error(`HTTP error! status: ${res.status}`);
       }
 
-      // Handle streaming response
-      if (res.headers.get('Transfer-Encoding') === 'chunked') {
+      // Handle streaming response - check for text/plain content type which indicates streaming
+      if (res.headers.get('Content-Type')?.includes('text/plain')) {
         const reader = res.body?.getReader();
         const decoder = new TextDecoder();
         let finalContent = '';

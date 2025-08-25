@@ -1,11 +1,13 @@
 import { ai } from '@/lib/constants';
 import { streamHandler } from '@/lib/utils/streamHandler';
-import { placeholderService } from '@/lib/services/placeholderService';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { content, additionalInstructions } = body;
+
+    const supabase = await createClient();
 
     if (!content || typeof content !== 'string') {
       return new Response(JSON.stringify({ error: 'Content is required and must be a string' }), {
@@ -40,10 +42,37 @@ export async function POST(req: Request) {
     }
 
     // Get available placeholders from the database
-    const placeholders = await placeholderService.getPlaceholders();
-    const availablePlaceholders = placeholders.map((p) =>
-      placeholderService.formatPlaceholder(p.key),
-    );
+    let availablePlaceholders: string[] = [];
+    try {
+      const { data, error } = await supabase
+        .from('contract_placeholders')
+        .select('key')
+        .eq('is_active', true);
+      if (error) {
+        throw error;
+      }
+      availablePlaceholders = data.map((p) => p.key);
+    } catch (error) {
+      // Use fallback placeholders if service fails
+      // Use fallback placeholders if service fails
+      availablePlaceholders = [
+        '{{ candidate_name }}',
+        '{{ candidate_email }}',
+        '{{ company_name }}',
+        '{{ company_address }}',
+        '{{ job_title }}',
+        '{{ salary_amount }}',
+        '{{ salary_currency }}',
+        '{{ start_date }}',
+        '{{ contract_duration }}',
+        '{{ work_location }}',
+        '{{ reporting_to }}',
+        '{{ department }}',
+        '{{ benefits }}',
+        '{{ notice_period }}',
+        '{{ termination_terms }}',
+      ];
+    }
 
     // Build prompt for contract enhancement
     const prompt = `Please analyze and enhance the following contract template. Focus on:

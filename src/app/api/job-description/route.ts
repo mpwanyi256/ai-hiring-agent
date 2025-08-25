@@ -41,7 +41,22 @@ export async function POST(req: Request) {
         <p><em>This is a placeholder job description. Please configure your OpenAI API key for AI-generated descriptions.</em></p>
       `;
 
-      return streamHandler.createMockStreamResponse(mockHtml);
+      // For mock response, we'll simulate streaming by returning the content immediately
+      // but still in the streaming format that the client expects
+      const mockStream = new ReadableStream({
+        start(controller) {
+          const encoder = new TextEncoder();
+          const mockData = JSON.stringify({ content: mockHtml, done: true });
+          controller.enqueue(encoder.encode(`data: ${mockData}\n\n`));
+          controller.close();
+        },
+      });
+
+      return new Response(mockStream, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      });
     }
 
     // Build a comprehensive prompt for OpenAI
