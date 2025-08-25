@@ -11,6 +11,15 @@ export async function GET(request: NextRequest, { params }: AppRequestParams<{ i
     const search = searchParams.get('search');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
+    const status = searchParams.get('status')?.split(',') || [
+      'interview_scheduled',
+      'shortlisted',
+      'reference_check',
+      'offer_extended',
+      'offer_accepted',
+      'hired',
+      'withdrawn',
+    ];
     const offset = (page - 1) * limit;
 
     // Advanced filters
@@ -27,6 +36,7 @@ export async function GET(request: NextRequest, { params }: AppRequestParams<{ i
     let query = supabase
       .from('candidate_details')
       .select('*')
+      .in('candidate_status', status)
       .eq('job_id', jobId)
       .eq('is_completed', true);
 
@@ -38,7 +48,8 @@ export async function GET(request: NextRequest, { params }: AppRequestParams<{ i
     const { count } = await supabase
       .from('candidate_details')
       .select('*', { count: 'exact', head: true })
-      .eq('job_id', jobId);
+      .eq('job_id', jobId)
+      .in('candidate_status', status);
 
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
@@ -68,7 +79,7 @@ export async function GET(request: NextRequest, { params }: AppRequestParams<{ i
         responseCount: candidate.response_count || 0,
         submittedAt: candidate.submitted_at,
         createdAt: candidate.created_at,
-        status: candidate.candidate_status || 'under_review',
+        status: candidate.candidate_status,
         interviewDetails: candidate.interview_details,
         evaluation: candidate.evaluation_id
           ? {
