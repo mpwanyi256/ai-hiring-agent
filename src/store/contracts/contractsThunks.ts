@@ -122,6 +122,26 @@ export const updateContract = createAsyncThunk<Contract, UpdateContractData>(
   },
 );
 
+export const updateContractStatus = createAsyncThunk<Contract, { id: string; status: string }>(
+  'contracts/updateContractStatus',
+  async ({ id, status }) => {
+    const response = await fetch(`/api/contracts/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update contract status');
+    }
+
+    const data = await response.json();
+    return data.contract;
+  },
+);
+
 export const deleteContract = createAsyncThunk<string, string>(
   'contracts/deleteContract',
   async (contractId) => {

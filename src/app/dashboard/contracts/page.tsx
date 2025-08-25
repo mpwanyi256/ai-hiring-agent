@@ -60,6 +60,7 @@ import {
   fetchContractAnalytics,
   deleteContract,
   updateContract,
+  updateContractStatus,
 } from '@/store/contracts/contractsThunks';
 import {
   selectContracts,
@@ -75,6 +76,7 @@ import { selectIsOnStarterPlan } from '@/store/billing/billingSelectors';
 import { ContractsFilters } from '@/types/contracts';
 import { FeatureSubscriptionCard } from '@/components/billing/FeatureSubscriptionCard';
 import { useSubscriptionGuard } from '@/hooks/useSubscriptionGuard';
+import { useToast } from '@/components/providers/ToastProvider';
 
 const CONTRACT_STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft', color: 'gray' },
@@ -105,9 +107,11 @@ export default function ContractsPage() {
     sortOrder: 'desc',
   });
   const [selectedContracts, setSelectedContracts] = useState<string[]>([]);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   // Billing selectors - moved before conditional returns
   const isOnStarterPlan = useAppSelector(selectIsOnStarterPlan);
+  const { success, error: showError } = useToast();
 
   // Subscription guard - redirect to pricing if no active subscription
   const { isSubscriptionValid } = useSubscriptionGuard({
@@ -165,6 +169,25 @@ export default function ContractsPage() {
       checked ? [...prev, contractId] : prev.filter((id) => id !== contractId),
     );
   }, []);
+
+  // Handle inline status update
+  const handleStatusUpdate = useCallback(
+    async (contractId: string, newStatus: string) => {
+      try {
+        setUpdatingStatus(contractId);
+        await dispatch(updateContractStatus({ id: contractId, status: newStatus })).unwrap();
+        // Refresh contracts to ensure UI is up to date
+        dispatch(fetchContracts(filters));
+        success('Contract status updated successfully');
+      } catch (error) {
+        console.error('Failed to update contract status:', error);
+        showError('Failed to update contract status');
+      } finally {
+        setUpdatingStatus(null);
+      }
+    },
+    [dispatch, filters, success, showError],
+  );
 
   // Don't render content if subscription is invalid (guard will redirect)
   if (!isSubscriptionValid) {
@@ -380,10 +403,61 @@ export default function ContractsPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="secondary" className="text-xs">
-                    {CONTRACT_STATUS_OPTIONS.find((opt) => opt.value === contract.status)?.label ||
-                      contract.status}
-                  </Badge>
+                  <Select
+                    value={contract.status}
+                    onValueChange={(value) => handleStatusUpdate(contract.id, value)}
+                    disabled={updatingStatus === contract.id}
+                  >
+                    <SelectTrigger className="w-32 h-8 text-xs">
+                      {updatingStatus === contract.id ? (
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full" />
+                          <span>Updating...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              CONTRACT_STATUS_OPTIONS.find((opt) => opt.value === contract.status)
+                                ?.color === 'gray'
+                                ? 'bg-gray-400'
+                                : CONTRACT_STATUS_OPTIONS.find(
+                                      (opt) => opt.value === contract.status,
+                                    )?.color === 'green'
+                                  ? 'bg-green-500'
+                                  : CONTRACT_STATUS_OPTIONS.find(
+                                        (opt) => opt.value === contract.status,
+                                      )?.color === 'yellow'
+                                    ? 'bg-yellow-500'
+                                    : 'bg-red-500'
+                            }`}
+                          />
+                          {CONTRACT_STATUS_OPTIONS.find((opt) => opt.value === contract.status)
+                            ?.label || contract.status}
+                        </div>
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CONTRACT_STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                option.color === 'gray'
+                                  ? 'bg-gray-400'
+                                  : option.color === 'green'
+                                    ? 'bg-green-500'
+                                    : option.color === 'yellow'
+                                      ? 'bg-yellow-500'
+                                      : 'bg-red-500'
+                              }`}
+                            />
+                            {option.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell>
                   <p className="text-sm">{contract.usageCount}</p>

@@ -5,6 +5,7 @@ import {
   fetchContractById,
   createContract,
   updateContract,
+  updateContractStatus,
   deleteContract,
   toggleContractFavorite,
   bulkUpdateContracts,
@@ -264,6 +265,27 @@ const contractsSlice = createSlice({
       .addCase(updateContract.rejected, (state, action) => {
         state.isUpdating = false;
         state.contractsError = action.error.message || 'Failed to update contract';
+      });
+
+    // Update Contract Status
+    builder
+      .addCase(updateContractStatus.pending, (state) => {
+        state.isUpdating = true;
+        state.contractsError = null;
+      })
+      .addCase(updateContractStatus.fulfilled, (state, action) => {
+        state.isUpdating = false;
+        const index = state.contracts.findIndex((c) => c.id === action.payload.id);
+        if (index !== -1) {
+          state.contracts[index] = action.payload;
+        }
+        if (state.currentContract?.id === action.payload.id) {
+          state.currentContract = action.payload;
+        }
+      })
+      .addCase(updateContractStatus.rejected, (state, action) => {
+        state.isUpdating = false;
+        state.contractsError = action.error.message || 'Failed to update contract status';
       });
 
     // Delete Contract
