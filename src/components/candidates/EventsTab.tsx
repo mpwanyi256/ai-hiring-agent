@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { CandidateWithEvaluation } from '@/types/candidates';
 import { UpcomingInterview } from '@/store/dashboard/dashboardSlice';
 import InterviewCard from '../dashboard/InterviewCard';
@@ -38,9 +38,9 @@ const EventsTab: React.FC<EventsTabProps> = ({ candidate, onScheduleEvent, onRef
     return () => {
       dispatch(clearApplicationEvents());
     };
-  }, [dispatch, candidate.id, analytics]);
+  }, [dispatch, candidate.id]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     if (onRefreshEvents) {
       onRefreshEvents();
     } else if (candidate.id) {
@@ -48,15 +48,15 @@ const EventsTab: React.FC<EventsTabProps> = ({ candidate, onScheduleEvent, onRef
     }
     // Track refresh action
     analytics.trackFeatureUsage('events_refresh', 'refresh');
-  };
+  }, [onRefreshEvents, candidate.id, dispatch, analytics]);
 
-  const handleScheduleEvent = () => {
+  const handleScheduleEvent = useCallback(() => {
     if (onScheduleEvent) {
       onScheduleEvent();
       // Track event scheduling
       analytics.trackInterviewScheduled(candidate.id, 'manual');
     }
-  };
+  }, [onScheduleEvent, candidate.id, analytics]);
 
   if (loading) {
     return (

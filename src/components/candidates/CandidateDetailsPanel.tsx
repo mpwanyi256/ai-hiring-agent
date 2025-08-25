@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import SidePanel from '../ui/SidePanel';
 import { CandidateWithEvaluation } from '@/types/candidates';
 import { Tab } from '@headlessui/react';
@@ -40,25 +40,25 @@ const CandidateDetailsPanel: React.FC<CandidateDetailsPanelProps> = ({
   const dispatch = useAppDispatch();
   const isLoading = useAppSelector((s) => s.selectedCandidate.isLoading);
 
-  const handleScheduleEvent = () => setSchedulingModalOpen(true);
+  const handleScheduleEvent = useCallback(() => setSchedulingModalOpen(true), []);
 
-  const handleCloseSchedulingModal = () => {
+  const handleCloseSchedulingModal = useCallback(() => {
     setSchedulingModalOpen(false);
     // Refresh events after modal closes (which happens after successful creation)
     if (candidate.id) {
       dispatch(fetchApplicationEvents(candidate.id));
     }
-  };
+  }, [candidate.id, dispatch]);
 
-  const handleSendContract = () => setSendContractModalOpen(true);
-  const handleCloseSendContractModal = () => setSendContractModalOpen(false);
+  const handleSendContract = useCallback(() => setSendContractModalOpen(true), []);
+  const handleCloseSendContractModal = useCallback(() => setSendContractModalOpen(false), []);
 
   // Function to refresh events that can be passed to EventsTab
-  const refreshEvents = () => {
+  const refreshEvents = useCallback(() => {
     if (candidate.id) {
       dispatch(fetchApplicationEvents(candidate.id));
     }
-  };
+  }, [candidate.id, dispatch]);
 
   return (
     <SidePanel
