@@ -75,6 +75,9 @@ export default function AdminDashboard() {
         <AdminQuickActions
           onRefreshStats={() => dispatch(fetchPlatformStats())}
           onManageSubscriptions={() => router.push('/admin/subscriptions')}
+          onManageUsers={() => router.push('/admin/users')}
+          onManageCompanies={() => router.push('/admin/companies')}
+          onViewUserSubscriptions={() => router.push('/admin/user-subscriptions')}
         />
 
         {/* Platform Overview */}

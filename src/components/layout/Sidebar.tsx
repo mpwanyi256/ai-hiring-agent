@@ -11,7 +11,6 @@ import {
   BriefcaseIcon,
   UserGroupIcon,
   ChartBarIcon,
-  // ClockIcon,
   CogIcon,
   SparklesIcon,
   XMarkIcon,
@@ -23,11 +22,11 @@ import {
   BellIcon,
   ShieldCheckIcon,
   CreditCardIcon,
+  BuildingOfficeIcon,
 } from '@heroicons/react/24/outline';
 import UpgradeButton from '@/components/billing/UpgradeButton';
 import { useSubscriptionModal } from '@/components/modals/SubscriptionModal';
 import { selectHasActiveSubscription } from '@/store/auth/authSelectors';
-import { selectCurrentPlan } from '@/store/billing/billingSelectors';
 
 interface ChildRoute {
   name: string;
@@ -64,8 +63,6 @@ export default function Sidebar({
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const { open: openSubscriptionModal } = useSubscriptionModal() || {};
   const hasActiveSubscription = useSelector(selectHasActiveSubscription);
-  const activeSubscription = useSelector(selectCurrentPlan);
-  const isOnStarterPlan = activeSubscription?.name === 'Starter';
 
   const toggleExpanded = (itemName: string) => {
     if (collapsed && !isMobile) return; // Don't expand in collapsed desktop mode
@@ -233,6 +230,24 @@ export default function Sidebar({
                 href: '/admin',
                 icon: ChartBarIcon,
                 description: 'Platform overview',
+              },
+              {
+                name: 'Users',
+                href: '/admin/users',
+                icon: UserGroupIcon,
+                description: 'Manage users',
+              },
+              {
+                name: 'Companies',
+                href: '/admin/companies',
+                icon: BuildingOfficeIcon,
+                description: 'Manage companies',
+              },
+              {
+                name: 'User Subscriptions',
+                href: '/admin/user-subscriptions',
+                icon: CreditCardIcon,
+                description: 'Manage user subscriptions',
               },
               {
                 name: 'Subscriptions',
