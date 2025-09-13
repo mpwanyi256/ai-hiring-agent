@@ -35,7 +35,7 @@ export default function RootLayout({
         <link rel="icon" href="/images/logo.png" />
       </head>
 
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} font-sans antialiased text-neutral-900 font-light`}>
         <ReduxProvider>
           <AuthProvider>
             <AnalyticsProvider>

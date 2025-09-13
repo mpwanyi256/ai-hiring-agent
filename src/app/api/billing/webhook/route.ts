@@ -2,42 +2,58 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
-import { integrations } from '@/lib/constants';
+import { integrations, monitoring } from '@/lib/constants';
 import { sendBillingEmail } from '@/lib/email/billingEmailService';
 
 const stripe = new Stripe(integrations.stripe.secretKey!, {
   apiVersion: '2025-06-30.basil',
 });
 
-// Get webhook secret from query parameter or environment variable (fallback)
-function getWebhookSecret(request: NextRequest): string | null {
+// Validate monitoring API key from query parameter
+function validateMonitoringKey(request: NextRequest): boolean {
   const url = new URL(request.url);
   const keyFromQuery = url.searchParams.get('key');
 
-  console.log('🔍 Webhook Secret Debug:');
+  console.log('🔍 Monitoring Key Debug:');
   console.log('  - URL:', url.toString());
   console.log(
     '  - Key from query:',
     keyFromQuery ? 'Present (length: ' + keyFromQuery.length + ')' : 'Not found',
   );
+  console.log(
+    '  - Expected monitoring key:',
+    monitoring.apiKey ? 'Present (length: ' + monitoring.apiKey.length + ')' : 'Not found',
+  );
 
-  if (keyFromQuery) {
-    return keyFromQuery;
+  if (!keyFromQuery) {
+    console.error('❌ Missing monitoring API key in query parameter');
+    return false;
   }
 
-  // Fallback to environment variable for backward compatibility
+  if (!monitoring.apiKey) {
+    console.error('❌ Missing monitoring API key in environment');
+    return false;
+  }
+
+  const isValid = keyFromQuery === monitoring.apiKey;
+  console.log('  - Monitoring key validation:', isValid ? '✅ Valid' : '❌ Invalid');
+  return isValid;
+}
+
+// Get Stripe webhook secret from environment
+function getStripeWebhookSecret(): string | null {
   const webhookSecret = integrations.stripe.webhookSecret;
   console.log(
-    '  - Webhook secret from env:',
+    '🔍 Stripe Webhook Secret:',
     webhookSecret ? 'Present (length: ' + webhookSecret.length + ')' : 'Not found',
   );
 
-  if (webhookSecret) {
-    return webhookSecret;
+  if (!webhookSecret) {
+    console.error('❌ Missing Stripe webhook secret in environment');
+    return null;
   }
 
-  console.error('❌ No webhook signing key found in query parameter or environment');
-  return null;
+  return webhookSecret;
 }
 
 // Helper function to get subscription ID from plan name using the new database structure
@@ -193,27 +209,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing stripe signature' }, { status: 400 });
     }
 
-    const webhookSecret = getWebhookSecret(request);
-    console.log('  - Webhook secret retrieved:', webhookSecret ? 'Yes' : 'No');
+    // First, validate the monitoring API key
+    if (!validateMonitoringKey(request)) {
+      console.error('❌ Invalid monitoring API key');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
+    // Then, get the Stripe webhook secret for signature verification
+    const webhookSecret = getStripeWebhookSecret();
     if (!webhookSecret) {
-      console.error('❌ Missing webhook signing key');
-      return NextResponse.json({ error: 'Missing webhook signing key' }, { status: 400 });
+      console.error('❌ Missing Stripe webhook secret');
+      return NextResponse.json({ error: 'Missing webhook configuration' }, { status: 500 });
     }
 
     let event: Stripe.Event;
 
     try {
-      console.log('🔍 Attempting to construct event...');
+      console.log('🔍 Attempting to construct event with Stripe signature verification...');
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
       console.log('✅ Event constructed successfully:', event.type);
     } catch (err: any) {
-      console.error('❌ Webhook signature verification failed:');
+      console.error('❌ Stripe webhook signature verification failed:');
       console.error('  - Error message:', err.message);
       console.error('  - Error type:', err.type);
       console.error('  - Signature used:', signature?.substring(0, 20) + '...');
-      console.error('  - Secret prefix:', webhookSecret?.substring(0, 10) + '...');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+      console.error('  - Stripe webhook secret prefix:', webhookSecret?.substring(0, 10) + '...');
+      console.error('  - Note: This is different from the monitoring API key in the URL');
+      return NextResponse.json({ error: 'Invalid Stripe signature' }, { status: 400 });
     }
 
     const supabase = await createClient();
