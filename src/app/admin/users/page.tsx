@@ -3,46 +3,43 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { RootState } from '@/store';
+import { RootState, useAppDispatch } from '@/store';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { User } from '@/types';
+import { UserDetails } from '@/types/admin';
+import { fetchUsers } from '@/store/admin/adminThunks';
+import {
+  selectAdminUsers,
+  selectAdminLoading,
+  selectAdminError,
+} from '@/store/admin/adminSelectors';
+import UserDetailsModal from '@/components/admin/UserDetailsModal';
 import {
   MagnifyingGlassIcon,
   UserIcon,
   BuildingOfficeIcon,
   CalendarIcon,
   EyeIcon,
-  PencilIcon,
-  TrashIcon,
 } from '@heroicons/react/24/outline';
-
-interface UserProfile {
-  id: string;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-  role: string;
-  avatar_url: string | null;
-  company_id: string | null;
-  company_name: string | null;
-  created_at: string;
-  updated_at: string;
-  last_sign_in_at: string | null;
-}
 
 export default function AdminUsers() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
 
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Redux state
+  const users = useSelector(selectAdminUsers);
+  const isLoading = useSelector(selectAdminLoading);
+  const error = useSelector(selectAdminError);
+
+  // Local state
+  const [filteredUsers, setFilteredUsers] = useState<UserDetails[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedUser, setSelectedUser] = useState<UserDetails | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Check if user is admin and redirect if not
   useEffect(() => {
@@ -52,66 +49,55 @@ export default function AdminUsers() {
     }
   }, [user, router]);
 
-  // Fetch users data
+  // Fetch users data using Redux
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch('/api/admin/users');
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch users');
-        }
-
-        const data = await response.json();
-        setUsers(data.users || []);
-        setFilteredUsers(data.users || []);
-      } catch (err) {
-        console.error('Error fetching users:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch users');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     if (user?.role === 'admin') {
-      fetchUsers();
+      dispatch(fetchUsers());
     }
-  }, [user]);
+  }, [user, dispatch]);
 
   // Filter users based on search and filters
   useEffect(() => {
     let filtered = users;
 
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (user) =>
-          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          `${user.first_name || ''} ${user.last_name || ''}`
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          (user.company_name && user.company_name.toLowerCase().includes(searchTerm.toLowerCase())),
-      );
+    // Search filter - search across name, email, and company
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter((userDetail) => {
+        const fullName = `${userDetail.first_name || ''} ${userDetail.last_name || ''}`.trim();
+        const email = userDetail.email || '';
+        const companyName = userDetail.company_name || '';
+
+        return (
+          fullName.toLowerCase().includes(searchLower) ||
+          email.toLowerCase().includes(searchLower) ||
+          companyName.toLowerCase().includes(searchLower)
+        );
+      });
     }
 
-    // Role filter
+    // Role filter - filter by exact role match
     if (roleFilter !== 'all') {
-      filtered = filtered.filter((user) => user.role === roleFilter);
+      filtered = filtered.filter((userDetail) => userDetail.role === roleFilter);
     }
 
-    // Status filter
+    // Status filter - based on last_sign_in_at activity
     if (statusFilter !== 'all') {
       const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
       if (statusFilter === 'active') {
+        // Active: signed in within last 7 days
         filtered = filtered.filter(
-          (user) => user.last_sign_in_at && new Date(user.last_sign_in_at) > thirtyDaysAgo,
+          (userDetail) =>
+            userDetail.last_sign_in_at && new Date(userDetail.last_sign_in_at) >= sevenDaysAgo,
         );
       } else if (statusFilter === 'inactive') {
+        // Inactive: never signed in OR signed in more than 30 days ago
         filtered = filtered.filter(
-          (user) => !user.last_sign_in_at || new Date(user.last_sign_in_at) <= thirtyDaysAgo,
+          (userDetail) =>
+            !userDetail.last_sign_in_at || new Date(userDetail.last_sign_in_at) < thirtyDaysAgo,
         );
       }
     }
@@ -174,13 +160,19 @@ export default function AdminUsers() {
         return 'bg-purple-100 text-purple-800';
       case 'employer':
         return 'bg-blue-100 text-blue-800';
-      case 'recruiter':
-        return 'bg-green-100 text-green-800';
-      case 'candidate':
-        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleViewUser = (userDetail: UserDetails) => {
+    setSelectedUser(userDetail);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
   };
 
   // Don't render if not admin
@@ -208,66 +200,6 @@ export default function AdminUsers() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            {/* Role Filter */}
-            <div>
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Roles</option>
-                <option value="admin">Admin</option>
-                <option value="employer">Employer</option>
-                <option value="recruiter">Recruiter</option>
-                <option value="candidate">Candidate</option>
-              </select>
-            </div>
-
-            {/* Status Filter */}
-            <div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active (7 days)</option>
-                <option value="inactive">Inactive (30+ days)</option>
-              </select>
-            </div>
-
-            {/* Clear Filters */}
-            <div>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm('');
-                  setRoleFilter('all');
-                  setStatusFilter('all');
-                }}
-                className="w-full"
-              >
-                Clear Filters
-              </Button>
-            </div>
-          </div>
-        </div>
-
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
@@ -279,7 +211,60 @@ export default function AdminUsers() {
         {/* Users Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">System Users</h2>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+              <h2 className="text-lg font-semibold text-gray-900">System Users</h2>
+
+              {/* Inline Filters */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Search */}
+                <div className="relative">
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 pr-3 py-2 w-full sm:w-48 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Role Filter */}
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                  className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="admin">Admin</option>
+                  <option value="employer">Employer</option>
+                </select>
+
+                {/* Status Filter */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active (7 days)</option>
+                  <option value="inactive">Inactive (30+ days)</option>
+                </select>
+
+                {/* Clear Filters */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setRoleFilter('all');
+                    setStatusFilter('all');
+                  }}
+                  className="text-sm"
+                >
+                  Clear
+                </Button>
+              </div>
+            </div>
           </div>
 
           {isLoading ? (
@@ -333,22 +318,9 @@ export default function AdminUsers() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
-                            {userProfile.avatar_url ? (
-                              <Image
-                                className="h-10 w-10 rounded-full"
-                                src={userProfile.avatar_url}
-                                alt={
-                                  `${userProfile.first_name} ${userProfile.last_name}` ||
-                                  'User avatar'
-                                }
-                                width={40}
-                                height={40}
-                              />
-                            ) : (
-                              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                <UserIcon className="h-5 w-5 text-gray-600" />
-                              </div>
-                            )}
+                            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                              <UserIcon className="h-5 w-5 text-gray-600" />
+                            </div>
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
@@ -387,27 +359,16 @@ export default function AdminUsers() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(userProfile.created_at).toLocaleDateString()}
+                        {new Date(userProfile.user_created_at || '').toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
                           <button
-                            className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                            onClick={() => handleViewUser(userProfile)}
+                            className="text-blue-600 hover:text-blue-900 p-2 rounded-md hover:bg-blue-50 transition-colors"
                             title="View user details"
                           >
                             <EyeIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            className="text-gray-600 hover:text-gray-900 p-1 rounded"
-                            title="Edit user"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            className="text-red-600 hover:text-red-900 p-1 rounded"
-                            title="Deactivate user"
-                          >
-                            <TrashIcon className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
@@ -418,6 +379,9 @@ export default function AdminUsers() {
             </div>
           )}
         </div>
+
+        {/* User Details Modal */}
+        <UserDetailsModal isOpen={isModalOpen} onClose={handleCloseModal} user={selectedUser} />
       </div>
     </DashboardLayout>
   );

@@ -9,6 +9,7 @@ import {
   DeleteSubscriptionResponse,
   SubscriptionInsert,
   AdminSubscriptionUpdate,
+  UserDetails,
 } from '@/types/admin';
 
 export const fetchPlatformStats = createAsyncThunk<PlatformStats>(
@@ -104,6 +105,25 @@ export const deleteSubscription = createAsyncThunk<string, string>(
       return response.data.id;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to delete subscription';
+      return rejectWithValue(message);
+    }
+  },
+);
+
+export const fetchUsers = createAsyncThunk<UserDetails[]>(
+  'admin/fetchUsers',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch('/api/admin/users');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+
+      const data = await response.json();
+      return data.users || [];
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch users';
       return rejectWithValue(message);
     }
   },

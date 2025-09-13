@@ -47,6 +47,7 @@ export interface SimpleSubscription {
 export interface AdminState {
   platformStats: PlatformStats | null;
   subscriptions: any[];
+  users: UserDetails[];
   isLoading: boolean;
   isCreating: boolean;
   isUpdating: boolean;
@@ -114,6 +115,50 @@ export interface SubscriptionFormProps {
 export interface PlatformStatsCardProps {
   stats: PlatformStats;
   isLoading: boolean;
+}
+
+// User Details from user_details view
+export interface UserDetails {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string;
+  user_created_at: string | null;
+  user_updated_at: string | null;
+  company_id: string | null;
+  company_name: string | null;
+  company_slug: string | null;
+  company_created_at: string | null;
+  subscription_id: string | null;
+  subscription_name: string | null;
+  subscription_description: string | null;
+  price_monthly: number | null;
+  price_yearly: number | null;
+  max_jobs: number | null;
+  max_interviews_per_month: number | null;
+  subscription_features: string[] | null;
+  stripe_price_id_dev: string | null;
+  stripe_price_id_prod: string | null;
+  stripe_price_id_dev_yearly: string | null;
+  stripe_price_id_prod_yearly: string | null;
+  stripe_checkout_link_dev: string | null;
+  stripe_checkout_link_prod: string | null;
+  stripe_checkout_link_dev_yearly: string | null;
+  stripe_checkout_link_prod_yearly: string | null;
+  subscription_status: string | null;
+  subscription_started_at: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  trial_start: string | null;
+  trial_end: string | null;
+  cancel_at_period_end: boolean | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  subscription_updated_at: string | null;
+  active_jobs_count: number | null;
+  interviews_this_month: number | null;
+  last_sign_in_at: string | null; // This will be added from auth.users
 }
 
 // Admin Permission Types

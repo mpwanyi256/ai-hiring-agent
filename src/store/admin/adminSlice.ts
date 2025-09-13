@@ -6,11 +6,13 @@ import {
   createSubscription,
   updateSubscription,
   deleteSubscription,
+  fetchUsers,
 } from './adminThunks';
 
 const initialState: AdminState = {
   platformStats: null,
   subscriptions: [],
+  users: [],
   isLoading: false,
   isCreating: false,
   isUpdating: false,
@@ -110,6 +112,19 @@ const adminSlice = createSlice({
       .addCase(deleteSubscription.rejected, (state, action) => {
         state.isDeleting = false;
         state.error = (action.payload as string) || 'Failed to delete subscription';
+      })
+      // Fetch Users
+      .addCase(fetchUsers.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchUsers.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.users = action.payload;
+      })
+      .addCase(fetchUsers.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = (action.payload as string) || 'Failed to fetch users';
       });
   },
 });
