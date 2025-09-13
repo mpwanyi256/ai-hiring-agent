@@ -10,6 +10,9 @@ import {
   CheckCircleIcon,
   ClockIcon,
   ExclamationCircleIcon,
+  ExclamationTriangleIcon,
+  XCircleIcon,
+  PauseIcon,
 } from '@heroicons/react/24/outline';
 import { UserDetails } from '@/types/admin';
 
@@ -242,8 +245,39 @@ export default function UserDetailsModal({ isOpen, onClose, user }: UserDetailsM
                               {user.subscription_status === 'cancelled' && (
                                 <ExclamationCircleIcon className="h-3 w-3 mr-1" />
                               )}
-                              {user.subscription_status?.charAt(0).toUpperCase() +
-                                user.subscription_status?.slice(1)}
+                              {user.subscription_status === 'canceled' && (
+                                <XCircleIcon className="h-3 w-3 mr-1" />
+                              )}
+                              {user.subscription_status === 'past_due' && (
+                                <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+                              )}
+                              {user.subscription_status === 'unpaid' && (
+                                <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+                              )}
+                              {user.subscription_status === 'expired' && (
+                                <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+                              )}
+                              {user.subscription_status === 'paused' && (
+                                <PauseIcon className="h-3 w-3 mr-1" />
+                              )}
+                              {user.subscription_status === 'incomplete' && (
+                                <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+                              )}
+                              {user.subscription_status === 'incomplete_expired' && (
+                                <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+                              )}
+                              {user.subscription_status === 'incomplete' && (
+                                <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+                              )}
+                              {user.subscription_status === 'incomplete_expired' && (
+                                <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+                              )}
+                              {user.subscription_status === 'incomplete' && (
+                                <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+                              )}
+                              {user.subscription_status === 'incomplete_expired' && (
+                                <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+                              )}
                             </span>
                           </div>
                         </div>
