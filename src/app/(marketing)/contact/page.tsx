@@ -9,8 +9,6 @@ import { useToast } from '@/components/providers/ToastProvider';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { submitContactForm } from '@/store/landing/landingThunks';
 import { selectDemoRequestLoading } from '@/store/landing/landingSelectors';
-import { EnvelopeIcon, PhoneIcon, MapPinIcon, ClockIcon } from '@heroicons/react/24/outline';
-import { app } from '@/lib/constants';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({

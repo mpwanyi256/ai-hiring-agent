@@ -70,12 +70,12 @@ export async function GET(request: NextRequest) {
         id: sub.id,
         profile_id: sub.profile_id,
         user_name:
-          sub.profiles.first_name && sub.profiles.last_name
-            ? `${sub.profiles.first_name} ${sub.profiles.last_name}`
+          sub.profiles[0]?.first_name && sub.profiles[0]?.last_name
+            ? `${sub.profiles[0].first_name} ${sub.profiles[0].last_name}`
             : 'No Name',
-        user_email: sub.profiles.email,
-        company_name: sub.profiles.companies?.name || null,
-        subscription_name: sub.subscriptions.name,
+        user_email: sub.profiles[0]?.email,
+        company_name: sub.profiles[0]?.companies?.[0]?.name || null,
+        subscription_name: sub.subscriptions[0]?.name,
         status: sub.status,
         current_period_start: sub.current_period_start,
         current_period_end: sub.current_period_end,

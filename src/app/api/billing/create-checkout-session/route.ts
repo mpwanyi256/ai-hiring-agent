@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import Stripe from 'stripe';
-import { app, integrations, isDev } from '@/lib/constants';
+import { app, integrations } from '@/lib/constants';
 
 const stripe = new Stripe(integrations.stripe.secretKey!, {
   apiVersion: '2025-06-30.basil',

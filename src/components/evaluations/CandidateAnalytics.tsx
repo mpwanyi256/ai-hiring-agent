@@ -156,14 +156,10 @@ export default function CandidateAnalytics({ className = '' }: CandidateAnalytic
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="text-center">
             <div className="flex items-center justify-center mb-2">
-              <CpuChipIcon className="w-4 md:w-5 h-4 md:h-5 text-blue-500 mr-2" />
+              <CpuChipIcon className="w-4 md:w-5 h-4 md:h-5 mr-2" />
               <span className="text-xs md:text-sm font-medium text-gray-700">Interview Score</span>
             </div>
-            <div
-              className={`text-2xl md:text-3xl font-bold ${getResumeScoreColor(analytics.interview_score)}`}
-            >
-              {analytics.interview_score}%
-            </div>
+            <div className={`text-2xl md:text-3xl font-bold`}>{analytics.interview_score}%</div>
             <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2 mt-2">
               <div
                 className={`${getInterviewScoreColor(analytics.interview_score)} h-1.5 md:h-2 rounded-full`}
@@ -174,17 +170,13 @@ export default function CandidateAnalytics({ className = '' }: CandidateAnalytic
 
           <div className="text-center">
             <div className="flex items-center justify-center mb-2">
-              <DocumentTextIcon className="w-4 md:w-5 h-4 md:h-5 text-green-500 mr-2" />
+              <DocumentTextIcon className="w-4 md:w-5 h-4 md:h-5 text-black mr-2" />
               <span className="text-xs md:text-sm font-medium text-gray-700">Resume Match</span>
             </div>
-            <div
-              className={`text-2xl md:text-3xl font-bold ${getScoreColor(analytics.resume_score || 0)}`}
-            >
-              {analytics.resume_score}%
-            </div>
+            <div className={`text-2xl md:text-3xl font-bold`}>{analytics.resume_score}%</div>
             <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2 mt-2">
               <div
-                className="bg-green-500 h-1.5 md:h-2 rounded-full"
+                className={`${getInterviewScoreColor(analytics.resume_score || 0)} h-1.5 md:h-2 rounded-full`}
                 style={{ width: `${analytics.resume_score || 0}%` }}
               />
             </div>

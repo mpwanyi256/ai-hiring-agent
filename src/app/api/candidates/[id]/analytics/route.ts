@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    // Verify user has access to this job
+    // Verify user has access to this job (either owner or has permissions)
     const { data: job, error: jobError } = await supabase
       .from('jobs')
       .select('id, profile_id')
@@ -33,7 +33,27 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    if (job.profile_id !== user.id) {
+    // Check if user is the job owner
+    let hasAccess = job.profile_id === user.id;
+
+    // If not the owner, check job permissions
+    if (!hasAccess) {
+      const { data: permission, error: permissionError } = await supabase
+        .from('job_permissions')
+        .select('permission_level')
+        .eq('job_id', jobId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (!permissionError && permission) {
+        // Allow access for viewer, interviewer, manager, or admin levels
+        hasAccess = ['viewer', 'interviewer', 'manager', 'admin'].includes(
+          permission.permission_level,
+        );
+      }
+    }
+
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -51,7 +71,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Failed to fetch analytics' }, { status: 500 });
     }
 
-    const result = analyticsResult?.[0] || ({} as any);
+    const result = analyticsResult?.[0] || {};
 
     // Fetch team response summary
     const { data: teamSummary, error: teamSummaryError } = await supabase.rpc(

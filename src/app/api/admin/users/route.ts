@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
         const authUser = authUsers?.users.find((au) => au.id === user.id);
         return {
           ...user,
-          company_name: user.companies?.name || null,
+          company_name: user.companies?.[0]?.name || null,
           last_sign_in_at: authUser?.last_sign_in_at || null,
         };
       }) || [];

@@ -7,6 +7,7 @@ import {
   CurrencyDollarIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 
 export default function JobSidebar() {
   const job = useAppSelector(loadedInterview);
@@ -51,9 +52,11 @@ export default function JobSidebar() {
         <div className="mb-6 pb-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
             {job.companyLogo && (
-              <img
+              <Image
                 src={job.companyLogo}
                 alt={job.companyName}
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-lg object-cover"
               />
             )}
