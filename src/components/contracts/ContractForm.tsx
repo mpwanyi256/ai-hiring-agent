@@ -5,7 +5,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { AppDispatch } from '@/store';
 import { createContract, updateContract, createJobTitle } from '@/store/contracts/contractsThunks';
-import { fetchJobTitles, fetchEmploymentTypes } from '@/store/jobs/jobsThunks';
+import {
+  fetchJobTitles,
+  fetchEmploymentTypes,
+  createEmploymentType,
+} from '@/store/jobs/jobsThunks';
 import { selectContractsError, selectIsRefiningAI } from '@/store/contracts/contractsSelectors';
 import { selectJobTitles, selectEmploymentTypes } from '@/store/jobs/jobsSelectors';
 import { Button } from '@/components/ui/button';
@@ -18,6 +22,7 @@ import {
   CreateContractData,
   UpdateContractData,
   ContractStatus,
+  JobTitle,
 } from '@/types/contracts';
 
 import { Loader2, Sparkles, Building2, FileText, Upload, Save } from 'lucide-react';
@@ -72,11 +77,13 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
     title: string;
     body: string;
     jobTitleId: string;
+    employmentTypeId: string;
     status: ContractStatus;
   }>({
     title: contract?.title || '',
     body: contract?.content || '',
     jobTitleId: contract?.jobTitleId || '',
+    employmentTypeId: '',
     status: contract?.status || 'draft',
   });
 
@@ -119,6 +126,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
         title: contract.title || '',
         body: contract.content || '',
         jobTitleId: contract.jobTitleId || '',
+        employmentTypeId: '',
         status: contract.status || 'draft',
       });
     }
@@ -320,7 +328,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                     handleInputChange('jobTitleId', value === 'none' ? '' : value)
                   }
                   onCreateNew={async (name) => {
-                    const created = await dispatch(createJobTitle(name as any));
+                    const created = await dispatch(createJobTitle({ name }));
                     // Refresh list and select newly created if available
                     await dispatch(fetchJobTitles());
                     const payload: any = (created as any).payload;
@@ -338,6 +346,28 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                   onValueChange={setNewJobTitleName}
                   onSubmit={handleCreateJobTitle}
                   submitting={isCreatingJobTitle}
+                />
+              </div>
+
+              {/* Employment type */}
+              <div className="space-y-2">
+                {/* <Label htmlFor="employmentType" className="text-sm font-medium">
+                  Employment Type
+                </Label> */}
+                <ComboboxWithCreate
+                  options={(employmentTypes || []).map((e) => ({ id: e.id, name: e.name }))}
+                  value={formData.employmentTypeId || ''}
+                  onChange={(value) => handleInputChange('employmentTypeId', value)}
+                  onCreateNew={async (name) => {
+                    const created = await dispatch(createEmploymentType(name));
+                    await dispatch(fetchEmploymentTypes());
+                    const payload: any = (created as any).payload;
+                    const newId = payload?.id || payload?.employmentType?.id;
+                    if (newId) handleInputChange('employmentTypeId', newId);
+                  }}
+                  placeholder="Select or create employment type"
+                  label="Employment Type"
+                  createLabel="Add"
                 />
               </div>
 
@@ -449,6 +479,7 @@ export default function ContractForm({ contract, mode }: ContractFormProps) {
                   onOpenChange={setShowAiGenerationModal}
                   title={formData.title}
                   jobTitleId={formData.jobTitleId}
+                  employmentTypeId={formData.employmentTypeId}
                   jobTitles={jobTitles || []}
                   employmentTypes={employmentTypes || []}
                   onSuccess={(content: string) => {

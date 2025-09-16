@@ -185,6 +185,7 @@ const JobCreateStep1: React.FC<JobCreateStep1Props> = ({
                   <option value="weekly">Per Week</option>
                   <option value="daily">Per Day</option>
                   <option value="hourly">Per Hour</option>
+                  <option value="delivery">Per Deliverable</option>
                 </select>
               </div>
             </div>

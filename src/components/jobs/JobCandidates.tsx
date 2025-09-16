@@ -214,7 +214,7 @@ export default function JobCandidates() {
           />
         ) : (
           <div className="lg:col-span-8 h-full max-h-[800px] overflow-y-auto">
-            {selectedCandidate ? (
+            {selectedCandidate && selectedCandidate?.progress >= 90 ? (
               <div className="bg-white rounded-lg border border-gray-100 h-full flex flex-col">
                 <CandidateDetailsHeader />
 
@@ -249,9 +249,15 @@ export default function JobCandidates() {
               <div className="bg-white rounded-lg border border-gray-100 h-full flex items-center justify-center">
                 <div className="text-center">
                   <EyeIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No candidate selected</h3>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    {selectedCandidate && selectedCandidate?.progress < 90
+                      ? 'Candidate has not completed the interview'
+                      : 'No candidate selected'}
+                  </h3>
                   <p className="mt-1 text-sm text-gray-500">
-                    Select a candidate to view their details
+                    {selectedCandidate && selectedCandidate?.progress < 90
+                      ? 'Details will be available once the interview is completed'
+                      : 'Select a candidate to view their details'}
                   </p>
                 </div>
               </div>

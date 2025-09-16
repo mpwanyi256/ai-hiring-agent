@@ -436,7 +436,7 @@ export const createJobTitle = createAsyncThunk('jobs/createJobTitle', async (nam
   }
 });
 
-export const createEmploymentType = createAsyncThunk(
+export const createEmploymentType = createAsyncThunk<EmploymentType, string>(
   'jobs/createEmploymentType',
   async (name: string) => {
     try {

@@ -74,10 +74,30 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id: jobId } = await params;
 
+    console.log('jobId', jobId);
+
     // update job status
     const { status } = await request.json();
+    const supabase = await createClient();
 
-    const job = await jobsService.updateJobStatus(jobId, status);
+    // Get job details
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('id', jobId)
+      .single();
+
+    if (jobError) {
+      console.error('Error getting job:', jobError);
+      return NextResponse.json({ success: false, error: jobError.message }, { status: 500 });
+    }
+
+    const { error } = await supabase.from('jobs').update({ status }).eq('id', jobId);
+
+    if (error) {
+      console.error('Error updating job:', error);
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true, job });
   } catch (error) {

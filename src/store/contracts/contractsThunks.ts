@@ -291,13 +291,15 @@ export const generateContractWithAI = createAsyncThunk<
 // Job Title Management
 export const createJobTitle = createAsyncThunk<CreateJobTitleResponse, CreateJobTitleData>(
   'contracts/createJobTitle',
-  async (jobTitleData) => {
+  async ({ name }) => {
     const response = await fetch('/api/job-titles', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(jobTitleData),
+      body: JSON.stringify({
+        name,
+      }),
     });
 
     if (!response.ok) {
